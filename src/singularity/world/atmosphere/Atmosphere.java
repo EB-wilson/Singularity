@@ -1,0 +1,209 @@
+package singularity.world.atmosphere;
+
+import arc.func.Cons;
+import arc.func.Cons2;
+import arc.math.WindowedMean;
+import arc.struct.Seq;
+import arc.util.Interval;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
+import mindustry.Vars;
+import mindustry.type.Planet;
+import mindustry.type.Sector;
+import singularity.type.Gas;
+import singularity.type.GasStack;
+import singularity.type.SglContentType;
+
+public class Atmosphere{
+  public static final Atmosphere defaultSettings = new Atmosphere(null){{
+    ingredients = DefaultAtmosphere.defaults.ingredients;
+  }};
+  
+  /**此星球大气的默认状态*/
+  protected DefaultAtmosphere defaults;
+  
+  /**大气成分*/
+  protected float[] ingredients = new float[Vars.content.getBy(SglContentType.gas.value).size];
+  
+  /**此大气所属的行星*/
+  public final Planet attach;
+  /**行星所有地区的存储图，用于计算大气的成分变化信息*/
+  public final Seq<AtmosphereSector> sectors = new Seq<>();
+  /**当前游戏所在的地区*/
+  public Sector currentSector = null;
+  /**当前区域的大气数据*/
+  public AtmosphereSector currAtmoSector = null;
+  
+  /**大气当前气体总量，计算气压时需要*/
+  protected float total;
+  /**大气压状态，大于默认压强时为1，小于时为-1*/
+  protected byte status;
+  
+  public Atmosphere(Planet planet){
+    attach = planet;
+    defaults = new DefaultAtmosphere(this);
+  }
+  
+  public void setSector(){
+    if(Vars.state.isCampaign()){
+      currentSector = Vars.state.getSector();
+      AtmosphereSector temp = sectors.find(e -> e.subordinate == currentSector);
+      if(temp == null){
+        currAtmoSector = new AtmosphereSector();
+        sectors.add(currAtmoSector);
+      }
+      else currAtmoSector = temp;
+    }
+  }
+  
+  public void update(){
+    if(currAtmoSector != null){
+      currAtmoSector.update();
+    }
+    
+    if(Vars.state.isCampaign()){
+      for(AtmosphereSector data : sectors){
+        //不计算当前区域
+        if(data == currAtmoSector) continue;
+        data.each((gas, amount) -> {
+          ingredients[gas.id] += amount;
+        });
+      }
+    }
+    
+    status = (byte)(total > defaults.baseTotal? 1: -1);
+    
+    float recoverRateBase = Math.abs((defaults.baseTotal - total)/defaults.baseTotal);
+    for(int id=0; id<ingredients.length; id++){
+      float recoverRate = recoverRateBase*(defaults.ingredients[id] - ingredients[id]);
+      float delta = recoverRate*defaults.recoverCoeff[id];
+      ingredients[id] += delta;
+      total += delta;
+    }
+  }
+  
+  public float getCurrPressure(){
+    return (total/defaults.baseTotal)*defaults.basePressure;
+  }
+  
+  public float total(){
+    return total;
+  }
+  
+  public void add(GasStack[] stacks){
+    for(GasStack stack: stacks){
+      add(stack);
+    }
+  }
+  
+  public void add(GasStack stack){
+    add(stack.gas, stack.amount);
+  }
+  
+  public final void add(Gas gas, float amount){
+    ingredients[gas.id] += amount;
+    total += amount;
+    
+    if(currAtmoSector != null) currAtmoSector.add(gas, amount);
+  }
+  
+  public void remove(GasStack[] stacks){
+    for(GasStack stack: stacks){
+      remove(stack);
+    }
+  }
+  
+  public void remove(GasStack stack){
+    remove(stack.gas, stack.amount);
+  }
+  
+  public void remove(Gas gas, float amount){
+    add(gas, -amount);
+  }
+  
+  public float get(Gas gas){
+    return ingredients[gas.id];
+  }
+  
+  public void reset(){
+    ingredients = defaults.ingredients;
+  }
+  
+  public void read(Reads read){
+    int count = read.i();
+    
+    for(int id=0; id<count; id++){
+      float amount = read.f();
+      ingredients[id] = amount;
+      total += amount;
+    }
+    
+    if(currAtmoSector != null) currAtmoSector.read(read);
+  }
+  
+  public void write(Writes write){
+    write.i(ingredients.length);
+    
+    for(float gas : ingredients){
+      write.f(gas);
+    }
+    
+    if(currAtmoSector != null) currAtmoSector.write(write);
+  }
+  
+  public static class AtmosphereSector{
+    private static final Interval flowTimer = new Interval();
+    private static final int meanRequire = 10;
+    
+    public float[] delta = new float[Vars.content.getBy(SglContentType.gas.value).size];
+    
+    private final float[] chance = new float[delta.length];
+    private final WindowedMean[] means = new WindowedMean[delta.length];
+    
+    public Sector subordinate;
+    
+    public void add(Gas gas, float amount){
+      chance[gas.id] += amount;
+    }
+    
+    public void update(){
+      if(flowTimer.get(120)){
+        for(int i=0; i<delta.length; i++){
+          if(chance[i] > 0){
+            if(means[i] == null){
+              means[i] = new WindowedMean(meanRequire);
+            }
+            else means[i].clear();
+            means[i].add(chance[i]);
+            chance[i] = 0;
+  
+            delta[i] = means[i].mean()*30;
+          }
+        }
+      }
+    }
+    
+    public void each(Cons2<Gas, Float> cons){
+      for(int id=0; id<delta.length; id++){
+        if(delta[id] != 0) cons.get(Vars.content.getByID(SglContentType.gas.value, id), delta[id]);
+      }
+    }
+  
+    public void read(Reads read){
+      int count = read.i();
+    
+      for(int id=0; id<count; id++){
+        float amount = read.f();
+        delta[id] = amount;
+      }
+    }
+  
+    public void write(Writes write){
+      write.i(delta.length);
+    
+      for(float gas : delta){
+        write.f(gas);
+      }
+    }
+  }
+}

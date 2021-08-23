@@ -1,0 +1,9 @@
+name: "singularity"
+displayName: "[SGL] 奇点"
+author: "EBwilson"
+main: "singularity.Singularity"
+description: ""
+version: "alpha-0.1"
+minGameVersion: 127
+
+dependencies: ["universe-core"]
