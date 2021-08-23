@@ -1,6 +1,9 @@
 package singularity;
 
+import arc.files.Fi;
+import arc.files.ZipFi;
 import arc.graphics.g2d.TextureRegion;
+import arc.util.serialization.Jval;
 import singularity.content.*;
 import singularity.content.override.OverrideBlocks;
 import singularity.type.SglContentType;
@@ -13,7 +16,6 @@ import mindustry.Vars;
 import mindustry.content.TechTree;
 import mindustry.core.ContentLoader;
 import mindustry.ctype.*;
-import mindustry.game.EventType;
 import mindustry.mod.Mod;
 import mindustry.world.Block;
 import universeCore.util.OverrideContentList;
@@ -25,9 +27,10 @@ import java.lang.reflect.Field;
 
 import static mindustry.game.EventType.*;
 import static singularity.ui.SglUI.*;
-import static singularity.Statics.*;
 
 public class Singularity extends Mod{
+  public boolean initialized = false;
+  
   private final ContentList[] modContents = new ContentList[]{
     new SglItems(),//物品
     new SglLiquids(),//液体
@@ -45,11 +48,10 @@ public class Singularity extends Mod{
   public Singularity(){
     //加载模组配置数据
     ModConfig.load();
-    //加载全局变量
-    Sgl.load();
     
-    Log.info("[Singularity] Singularity mod is loading!\nThanks for use this mod.\nauthor: EBwilson\nVisit the GitHub project about this mod: > " + Uris.githubProject + " <");
+    Log.info("[Singularity] Singularity mod is loading!\nThanks for use this mod.\nauthor: EBwilson\nVisit the GitHub project about this mod: > " + Sgl.githubProject + " <");
     
+    //载入新contentType
     for(UncContentType newType: SglContentType.allSglContentType){
       ContentHandler.addNewContentType(newType);
     }
@@ -69,21 +71,17 @@ public class Singularity extends Mod{
       Init.reloadContent();
     });
     
-    Events.run(Trigger.update, () -> Sgl.atmospheres.update());
-    
-    Events.on(SaveLoadEvent.class, e -> {
-      Sgl.atmospheres.loadAtmo();
-      Sgl.atmospheres.read();
+    Events.run(Trigger.update, () -> {
+      if(initialized) Sgl.atmospheres.update();
     });
     
-    Events.on(WorldLoadEvent.class, e -> Sgl.atmospheres.write());
-    
     Time.run(0, () -> {
-      Events.on(EventType.WorldLoadEvent.class, event -> {
+      Events.on(WorldLoadEvent.class, event -> {
         Core.app.post(Init::handleBlockFrag);
+        Sgl.atmospheres.loadAtmo();
       });
   
-      Events.on(EventType.UnlockEvent.class, event -> {
+      Events.on(UnlockEvent.class, event -> {
         if(event.content instanceof Block){
           Init.handleBlockFrag();
         }
@@ -93,15 +91,19 @@ public class Singularity extends Mod{
   
   @Override
   public void init(){
+    //加载全局变量
+    Sgl.init();
+    
     //重加载mod元信息
-    Vars.mods.locateMod(modName).meta.displayName = Core.bundle.get("mod.name");
-    Vars.mods.locateMod(modName).meta.description = Core.bundle.get("mod.description");
-    Vars.mods.locateMod(modName).meta.author = Core.bundle.get("mod.author");
-    Vars.mods.locateMod(modName).meta.version = Core.bundle.get("mod.version");
+    Vars.mods.locateMod(Sgl.modName).meta.displayName = Core.bundle.get("mod.name");
+    Vars.mods.locateMod(Sgl.modName).meta.description = Core.bundle.get("mod.description");
+    Vars.mods.locateMod(Sgl.modName).meta.author = Core.bundle.get("mod.author");
+    Vars.mods.locateMod(Sgl.modName).meta.version = Core.bundle.get("mod.version");
     
     //游戏本体更改初始化
     Init.init();
     
+    initialized = true;
     if(ModConfig.loadInfo)Log.info("[Singularity] mod initialize finished");
   }
   
@@ -132,6 +134,7 @@ public class Singularity extends Mod{
   }
   
   public static TextureRegion getModAtlas(String name){
-    return Core.atlas.find(Statics.modName + "-" + name);
+    return Core.atlas.find(Sgl.modName + "-" + name);
   }
+  
 }

@@ -1,7 +1,7 @@
 package singularity.ui.dialogs;
 
+import singularity.Sgl;
 import singularity.Singularity;
-import singularity.Uris;
 import arc.Core;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Table;
@@ -10,15 +10,15 @@ import mindustry.ui.dialogs.BaseDialog;
 
 public class ContactDialog extends BaseDialog{
   private final String[][] author = new String[][]{
-    new String[]{"qq", Uris.qq},
-    new String[]{"telegram", Uris.telegram},
-    new String[]{"facebook", Uris.facebook},
+    new String[]{"qq", Sgl.qq},
+    new String[]{"telegram", Sgl.telegram},
+    new String[]{"facebook", Sgl.facebook},
   };
   
   private final String[][] groups = new String[][]{
-    new String[]{"qq1", Uris.qqGroup1},
-    new String[]{"qq2", Uris.qqGroup2},
-    new String[]{"telegram", Uris.telegramGroup},
+    new String[]{"qq1", Sgl.qqGroup1},
+    new String[]{"qq2", Sgl.qqGroup2},
+    new String[]{"telegram", Sgl.telegramGroup},
   };
   
   public ContactDialog(){

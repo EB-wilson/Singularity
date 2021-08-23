@@ -1,15 +1,9 @@
 package singularity;
 
-import arc.files.Fi;
-import arc.files.ZipFi;
 import arc.util.Log;
-import arc.util.serialization.Jval;
 import universeCore.util.Ini;
 
 import java.lang.reflect.Field;
-
-import static singularity.Statics.*;
-import static arc.Core.settings;
 
 /**模组配置的加载类，包含了所有配置项的静态变量
  * 从配置文件config.ini加载，必须在init事件之后进行*/
@@ -30,14 +24,14 @@ public class ModConfig{
   public static boolean debugMode;
   
   public static void load(){
-    if(!configFile.exists()){
-      internalConfigDir.child("mod_config.ini").copyTo(configFile);
+    if(!Sgl.configFile.exists()){
+      Sgl.internalConfigDir.child("mod_config.ini").copyTo(Sgl.configFile);
       Log.info("Configuration file is not exist, copying the default configuration");
     }
     
     Field[] configs = ModConfig.class.getFields();
     StringBuilder results = new StringBuilder();
-    Ini config = new Ini(configFile);
+    Ini config = new Ini(Sgl.configFile);
     for(Field cfg: configs){
       String temp = config.get(cfg.getName())[0];
       Class<?> type = cfg.getType();

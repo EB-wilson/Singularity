@@ -1,7 +1,7 @@
 package singularity.ui.dialogs;
 
+import singularity.Sgl;
 import singularity.Singularity;
-import singularity.Uris;
 import arc.Core;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Table;
@@ -17,8 +17,8 @@ public class AboutModDialog extends BaseDialog {
   }
   
   public void build(){
-    OpenUriDialog modDevelopsDialog = new OpenUriDialog(Core.bundle.get("groups.qq.develops"), Uris.modDevelopGroup);
-    OpenUriDialog githubProjectDialog = new OpenUriDialog(Core.bundle.get("github.mod.source"), Uris.githubProject);
+    OpenUriDialog modDevelopsDialog = new OpenUriDialog(Core.bundle.get("groups.qq.develops"), Sgl.modDevelopGroup);
+    OpenUriDialog githubProjectDialog = new OpenUriDialog(Core.bundle.get("github.mod.source"), Sgl.githubProject);
   
     cont.clear();
     

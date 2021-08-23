@@ -1,10 +1,8 @@
 package singularity.world.atmosphere;
 
-import arc.func.Cons;
-import arc.func.Cons2;
-import arc.math.WindowedMean;
-import arc.struct.Seq;
+import arc.struct.IntMap;
 import arc.util.Interval;
+import arc.util.Log;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -15,20 +13,19 @@ import singularity.type.GasStack;
 import singularity.type.SglContentType;
 
 public class Atmosphere{
-  public static final Atmosphere defaultSettings = new Atmosphere(null){{
-    ingredients = DefaultAtmosphere.defaults.ingredients;
-  }};
+  public static final Atmosphere defaultSettings = new Atmosphere(null);
+  private static final Interval timer = new Interval();
   
   /**此星球大气的默认状态*/
   protected DefaultAtmosphere defaults;
   
   /**大气成分*/
-  protected float[] ingredients = new float[Vars.content.getBy(SglContentType.gas.value).size];
+  protected float[] ingredients;
   
   /**此大气所属的行星*/
   public final Planet attach;
   /**行星所有地区的存储图，用于计算大气的成分变化信息*/
-  public final Seq<AtmosphereSector> sectors = new Seq<>();
+  public final IntMap<AtmosphereSector> sectors = new IntMap<>();
   /**当前游戏所在的地区*/
   public Sector currentSector = null;
   /**当前区域的大气数据*/
@@ -42,17 +39,18 @@ public class Atmosphere{
   public Atmosphere(Planet planet){
     attach = planet;
     defaults = new DefaultAtmosphere(this);
+    
+    ingredients = defaults.ingredients;
   }
   
   public void setSector(){
     if(Vars.state.isCampaign()){
       currentSector = Vars.state.getSector();
-      AtmosphereSector temp = sectors.find(e -> e.subordinate == currentSector);
+      AtmosphereSector temp = sectors.get(currentSector.id);
       if(temp == null){
-        currAtmoSector = new AtmosphereSector();
-        sectors.add(currAtmoSector);
+        currAtmoSector = new AtmosphereSector(currentSector.id);
+        sectors.put(currentSector.id, currAtmoSector);
       }
-      else currAtmoSector = temp;
     }
   }
   
@@ -60,25 +58,27 @@ public class Atmosphere{
     if(currAtmoSector != null){
       currAtmoSector.update();
     }
-    
-    if(Vars.state.isCampaign()){
-      for(AtmosphereSector data : sectors){
-        //不计算当前区域
-        if(data == currAtmoSector) continue;
-        data.each((gas, amount) -> {
-          ingredients[gas.id] += amount;
-        });
-      }
-    }
-    
+  
     status = (byte)(total > defaults.baseTotal? 1: -1);
     
-    float recoverRateBase = Math.abs((defaults.baseTotal - total)/defaults.baseTotal);
-    for(int id=0; id<ingredients.length; id++){
-      float recoverRate = recoverRateBase*(defaults.ingredients[id] - ingredients[id]);
-      float delta = recoverRate*defaults.recoverCoeff[id];
-      ingredients[id] += delta;
-      total += delta;
+    if(timer.get(3600)){
+      if(Vars.state.isCampaign()){
+        for(IntMap.Entry<AtmosphereSector> data : sectors){
+          //不计算当前区域
+          if(data.value == currAtmoSector) continue;
+          data.value.each((gas, amount) -> {
+            ingredients[gas.id] += amount*3600;
+          });
+        }
+  
+        float recoverRateBase = Math.abs((defaults.baseTotal - total)/defaults.baseTotal);
+        for(int id = 0; id < ingredients.length; id++){
+          float recoverRate = recoverRateBase*(defaults.ingredients[id] - ingredients[id]);
+          float delta = recoverRate*defaults.recoverCoeff[id]*3600;
+          ingredients[id] += delta;
+          total += delta;
+        }
+      }
     }
   }
   
@@ -131,79 +131,34 @@ public class Atmosphere{
   
   public void read(Reads read){
     int count = read.i();
+    int sectorCount = read.i();
     
     for(int id=0; id<count; id++){
       float amount = read.f();
+      Log.info(Vars.content.getByID(SglContentType.gas.value, id) + ": " + amount);
       ingredients[id] = amount;
       total += amount;
     }
-    
-    if(currAtmoSector != null) currAtmoSector.read(read);
+  
+    for(int i = 0; i < sectorCount; i++){
+      AtmosphereSector sector = new AtmosphereSector(i);
+      int id = read.i();
+      sector.read(read);
+      sectors.put(id, sector);
+    }
   }
   
   public void write(Writes write){
     write.i(ingredients.length);
+    write.i(sectors.size);
     
     for(float gas : ingredients){
       write.f(gas);
     }
-    
-    if(currAtmoSector != null) currAtmoSector.write(write);
-  }
   
-  public static class AtmosphereSector{
-    private static final Interval flowTimer = new Interval();
-    private static final int meanRequire = 10;
-    
-    public float[] delta = new float[Vars.content.getBy(SglContentType.gas.value).size];
-    
-    private final float[] chance = new float[delta.length];
-    private final WindowedMean[] means = new WindowedMean[delta.length];
-    
-    public Sector subordinate;
-    
-    public void add(Gas gas, float amount){
-      chance[gas.id] += amount;
-    }
-    
-    public void update(){
-      if(flowTimer.get(120)){
-        for(int i=0; i<delta.length; i++){
-          if(chance[i] > 0){
-            if(means[i] == null){
-              means[i] = new WindowedMean(meanRequire);
-            }
-            else means[i].clear();
-            means[i].add(chance[i]);
-            chance[i] = 0;
-  
-            delta[i] = means[i].mean()*30;
-          }
-        }
-      }
-    }
-    
-    public void each(Cons2<Gas, Float> cons){
-      for(int id=0; id<delta.length; id++){
-        if(delta[id] != 0) cons.get(Vars.content.getByID(SglContentType.gas.value, id), delta[id]);
-      }
-    }
-  
-    public void read(Reads read){
-      int count = read.i();
-    
-      for(int id=0; id<count; id++){
-        float amount = read.f();
-        delta[id] = amount;
-      }
-    }
-  
-    public void write(Writes write){
-      write.i(delta.length);
-    
-      for(float gas : delta){
-        write.f(gas);
-      }
+    for(IntMap.Entry<AtmosphereSector> sector : sectors){
+      write.i(sector.value.subordinateId);
+      sector.value.write(write);
     }
   }
 }
