@@ -1,6 +1,9 @@
-package singularity;
+package singularity.core;
 
 import mindustry.ui.fragments.OverlayFragment;
+import singularity.Sgl;
+import singularity.Singularity;
+import singularity.core.ModConfig;
 import singularity.type.SglCategory;
 import singularity.ui.SglUI;
 import singularity.ui.fragments.SglBlockInventoryFragment;
@@ -31,7 +34,7 @@ public class Init{
     
     FieldHandler.setValue(OverlayFragment.class, "inv", Vars.control.input.frag, new SglBlockInventoryFragment());
     
-    if(ModConfig.loadInfo) Log.info("[Singularity] mod initialization is complete");
+    if(Sgl.config.loadInfo) Log.info("[Singularity] mod initialization is complete");
   }
   
   public static void handleBlockFrag(){

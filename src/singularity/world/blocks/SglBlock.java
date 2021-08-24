@@ -50,6 +50,7 @@ import universeCore.entityComps.blockComps.ConsumerBlockComp;
 import universeCore.entityComps.blockComps.ConsumerBuildComp;
 import universeCore.entityComps.blockComps.Dumpable;
 import universeCore.util.UncLiquidStack;
+import universeCore.util.handler.FieldHandler;
 import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeItems;
 import universeCore.world.consumers.UncConsumeLiquids;
@@ -250,6 +251,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       
       if(consumers.size() > 0 || optionalCons.size() > 0){
         consumer = new SglConsumeModule(this, consumers, optionalCons);
+        cons(consumer);
       }
       
       if(hasEnergy){
@@ -386,7 +388,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       super.updateTile();
       if(energy != null) energy.update();
       if(gases != null) gases.update();
-      updateConsume();
     }
     
     public void updateDisplayLiquid(){

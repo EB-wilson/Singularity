@@ -11,7 +11,6 @@ import arc.struct.Seq;
 import arc.util.Eachable;
 import mindustry.content.Blocks;
 import mindustry.entities.units.BuildPlan;
-import mindustry.gen.Building;
 import mindustry.graphics.Layer;
 import mindustry.input.Placement;
 import mindustry.world.Block;

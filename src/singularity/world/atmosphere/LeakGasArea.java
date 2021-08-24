@@ -25,7 +25,6 @@ import singularity.type.Gas;
 import singularity.type.Reaction;
 import singularity.type.SglContentType;
 import singularity.world.SglFx;
-import singularity.world.reaction.ReactionPoint;
 
 public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   public static final float maxGasCapacity = 100f;

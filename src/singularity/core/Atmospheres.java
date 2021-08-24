@@ -1,4 +1,4 @@
-package singularity.world.atmosphere;
+package singularity.core;
 
 import arc.files.Fi;
 import arc.struct.ObjectMap;
@@ -9,6 +9,7 @@ import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.type.Planet;
 import singularity.Sgl;
+import singularity.world.atmosphere.Atmosphere;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -70,7 +71,6 @@ public class Atmospheres{
     int length = byteOutput.size();
   
     try{
-      Log.info(byteOutput.getBytes());
       output.write(byteOutput.getBytes(), 0, length);
       output.close();
     }catch(IOException e){

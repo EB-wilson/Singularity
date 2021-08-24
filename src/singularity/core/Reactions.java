@@ -1,4 +1,4 @@
-package singularity.world.reaction;
+package singularity.core;
 
 import arc.struct.IntMap;
 import arc.struct.ObjectMap;

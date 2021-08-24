@@ -1,11 +1,9 @@
 package singularity;
 
-import arc.files.Fi;
-import arc.files.ZipFi;
 import arc.graphics.g2d.TextureRegion;
-import arc.util.serialization.Jval;
 import singularity.content.*;
 import singularity.content.override.OverrideBlocks;
+import singularity.core.Init;
 import singularity.type.SglContentType;
 import arc.Core;
 import arc.Events;
@@ -47,7 +45,7 @@ public class Singularity extends Mod{
   
   public Singularity(){
     //加载模组配置数据
-    ModConfig.load();
+    Sgl.config.load();
     
     Log.info("[Singularity] Singularity mod is loading!\nThanks for use this mod.\nauthor: EBwilson\nVisit the GitHub project about this mod: > " + Sgl.githubProject + " <");
     
@@ -104,7 +102,7 @@ public class Singularity extends Mod{
     Init.init();
     
     initialized = true;
-    if(ModConfig.loadInfo)Log.info("[Singularity] mod initialize finished");
+    if(Sgl.config.loadInfo)Log.info("[Singularity] mod initialize finished");
   }
   
   @Override
@@ -129,8 +127,8 @@ public class Singularity extends Mod{
       Log.err(e);
     }
   
-    if(ModConfig.debugMode) new DebugBlocks().load();
-    if(ModConfig.loadInfo) Log.info("[Singularity] mod content loaded");
+    if(Sgl.config.debugMode) new DebugBlocks().load();
+    if(Sgl.config.loadInfo) Log.info("[Singularity] mod content loaded");
   }
   
   public static TextureRegion getModAtlas(String name){

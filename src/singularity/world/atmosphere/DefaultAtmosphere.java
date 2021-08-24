@@ -2,12 +2,13 @@ package singularity.world.atmosphere;
 
 import arc.files.Fi;
 import arc.struct.ObjectMap;
-import arc.util.Log;
 import mindustry.Vars;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.SglContentType;
-import universeCore.util.Ini;
+import universeCore.util.ini.Ini;
+import universeCore.util.ini.IniFile;
+import universeCore.util.ini.IniTypes;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -20,7 +21,7 @@ public class DefaultAtmosphere{
     if(!atmosphereConfigFile.exists()){
       Sgl.internalConfigDir.child("atmosphere.ini").copyTo(atmosphereConfigFile);
     }
-    configure = new Ini(atmosphereConfigFile);
+    configure = new IniFile(atmosphereConfigFile).parseIni();
   }
   
   public static final DefaultAtmosphere defaults = new DefaultAtmosphere(null);
@@ -50,42 +51,30 @@ public class DefaultAtmosphere{
   
   public void loadData(String section){
     Pattern mark = Pattern.compile("\\[(\\w+\\*\\d+.*\\d*\\s*,?\\s*)+]");
-    ObjectMap<String, String> map = configure.getSection(section);
+    Ini.IniSection map = configure.getSection(section);
     if(map != null){
       if(section.equals("defaults")){
-        baseTotal = Float.parseFloat(map.get("baseTotal"));
-        basePressure = Float.parseFloat(map.get("basePressure"));
-        defaultRecoverCoeff = Float.parseFloat(map.get("defaultRecoverCoeff"));
+        baseTotal = ((IniTypes.IniNumber)map.get("baseTotal")).floatValue();
+        basePressure = ((IniTypes.IniNumber)map.get("basePressure")).floatValue();
+        defaultRecoverCoeff = ((IniTypes.IniNumber)map.get("defaultRecoverCoeff")).floatValue();
       }
       else{
-        baseTotal = map.get("baseTotal") != null? Float.parseFloat(map.get("baseTotal")): defaults.baseTotal;
-        basePressure = map.get("basePressure") != null? Float.parseFloat(map.get("basePressure")): defaults.basePressure;
-        defaultRecoverCoeff = map.get("defaultRecoverCoeff") != null? Float.parseFloat(map.get("defaultRecoverCoeff")): defaults.defaultRecoverCoeff;
+        baseTotal = map.get("baseTotal") != null? ((IniTypes.IniNumber)map.get("baseTotal")).floatValue(): defaults.baseTotal;
+        basePressure = map.get("basePressure") != null? ((IniTypes.IniNumber)map.get("basePressure")).floatValue(): defaults.basePressure;
+        defaultRecoverCoeff = map.get("defaultRecoverCoeff") != null? ((IniTypes.IniNumber)map.get("defaultRecoverCoeff")).floatValue(): defaults.defaultRecoverCoeff;
       }
       
-      String ingredientsStr = map.get("ingredients", "");
-      String recoverCoeffStr = map.get("recoverCoeff", "");
+      IniTypes.IniMap ingre = (IniTypes.IniMap) map.get("ingredients");
+      IniTypes.IniMap recov = (IniTypes.IniMap) map.get("recoverCoeff");
       
-      if(mark.matcher(ingredientsStr).matches()){
-        String[] ingStrs = ingredientsStr.replace("[", "").replace("]", "").split(",");
-        
-        for(String str : ingStrs){
-          String[] data = str.split("\\*");
-          if(data.length != 2) continue;
-          Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + data[0].strip());
-          ingredients[gas.id] = Float.parseFloat(data[1].strip())*baseTotal;
-        }
+      if(ingre != null) for(ObjectMap.Entry<String, IniTypes.IniObject> item : ingre){
+        Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + item.key);
+        ingredients[gas.id] = ((IniTypes.IniNumber)item.value).floatValue()*baseTotal;
       }
       
-      if(mark.matcher(recoverCoeffStr).matches()){
-        String[] recCoeffStrs = recoverCoeffStr.replace("[", "").replace("]", "").split(",");
-  
-        for(String str : recCoeffStrs){
-          String[] data = str.split("\\*");
-          if(data.length != 2) continue;
-          Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + data[0].strip());
-          recoverCoeff[gas.id] = Float.parseFloat(data[1].strip());
-        }
+      if(recov != null) for(ObjectMap.Entry<String, IniTypes.IniObject> item : recov){
+        Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + item.key);
+        recoverCoeff[gas.id] = ((IniTypes.IniNumber)item.value).floatValue();
       }
     }
     else{

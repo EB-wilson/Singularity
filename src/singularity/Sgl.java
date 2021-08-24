@@ -5,10 +5,11 @@ import arc.files.ZipFi;
 import arc.struct.Seq;
 import arc.util.serialization.Jval;
 import mindustry.gen.Building;
-import singularity.world.atmosphere.Atmospheres;
-import singularity.world.atmosphere.GasAreas;
+import singularity.core.Atmospheres;
+import singularity.core.GasAreas;
+import singularity.core.ModConfig;
+import singularity.core.Reactions;
 import singularity.world.reaction.ReactionPoints;
-import singularity.world.reaction.Reactions;
 
 import static arc.Core.settings;
 
@@ -43,6 +44,8 @@ public class Sgl{
   public static final String modDevelopGroup = "https://jq.qq.com/?_wv=1027&k=vjybgqDG";
   public static final String githubProject = "https://github.com/EB-wilson/Singularity";
   
+  /**模组配置存储器*/
+  public static ModConfig config = new ModConfig();
   /**所有大气的全局存储对象，提供了关于大气层的一些参数与操作*/
   public static Atmospheres atmospheres;
   /**气体云的全局存储对象，提供了气体散逸成云的功能和关于气体云的集中操作*/

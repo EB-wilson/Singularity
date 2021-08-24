@@ -1,9 +1,10 @@
-package singularity.world.atmosphere;
+package singularity.core;
 
 import arc.struct.IntMap;
 import arc.struct.Seq;
 import mindustry.world.Tile;
 import singularity.type.Gas;
+import singularity.world.atmosphere.LeakGasArea;
 
 public class GasAreas{
   public IntMap<Seq<LeakGasArea>> areas = new IntMap<>();
