@@ -1,5 +1,6 @@
 package singularity.world.atmosphere;
 
+import arc.func.Cons2;
 import arc.struct.IntMap;
 import arc.util.Interval;
 import arc.util.io.Reads;
@@ -9,6 +10,7 @@ import mindustry.type.Planet;
 import mindustry.type.Sector;
 import singularity.type.Gas;
 import singularity.type.GasStack;
+import singularity.type.SglContentType;
 
 public class Atmosphere{
   public static final Atmosphere defaultSettings = new Atmosphere(null);
@@ -38,7 +40,7 @@ public class Atmosphere{
     attach = planet;
     defaults = new DefaultAtmosphere(this);
     
-    ingredients = defaults.ingredients;
+    ingredients = defaults.ingredientsBase;
   }
   
   public void setSector(){
@@ -50,6 +52,20 @@ public class Atmosphere{
         sectors.put(currentSector.id, currAtmoSector);
       }
     }
+  }
+  
+  public void each(Cons2<Gas, Float> cons){
+    for(int id=0; id<ingredients.length; id++){
+      if(ingredients[id] > 0.001) cons.get(Vars.content.getByID(SglContentType.gas.value, id), ingredients[id]);
+    }
+  }
+  
+  public float getDelta(Gas gas){
+    float result = 0;
+    for(IntMap.Entry<AtmosphereSector> data : sectors){
+      result += data.value.delta[gas.id];
+    }
+    return result;
   }
   
   public void update(){
@@ -71,7 +87,7 @@ public class Atmosphere{
   
         float recoverRateBase = Math.abs((defaults.baseTotal - total)/defaults.baseTotal);
         for(int id = 0; id < ingredients.length; id++){
-          float recoverRate = recoverRateBase*(defaults.ingredients[id] - ingredients[id]);
+          float recoverRate = recoverRateBase*(defaults.ingredientsBase[id] - ingredients[id]);
           float delta = recoverRate*defaults.recoverCoeff[id]*3600;
           ingredients[id] += delta;
           total += delta;
@@ -82,6 +98,10 @@ public class Atmosphere{
   
   public float getCurrPressure(){
     return (total/defaults.baseTotal)*defaults.basePressure;
+  }
+  
+  public float getBasePressure(){
+    return defaults.basePressure;
   }
   
   public float total(){
@@ -124,7 +144,7 @@ public class Atmosphere{
   }
   
   public void reset(){
-    ingredients = defaults.ingredients;
+    ingredients = defaults.ingredientsBase;
   }
   
   public void read(Reads read){

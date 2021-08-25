@@ -37,7 +37,7 @@ public class ModConfig{
       IniTypes.IniObject temp = config.get(cfg.getName());
       results.append("  ").append(cfg.getName()).append(" = ").append(temp.get().toString()).append(";\n");
       try{
-        cfg.set(null, temp.get());
+        cfg.set(this, temp.get());
       }
       catch(IllegalArgumentException | IllegalAccessException e){
         Log.err(e);

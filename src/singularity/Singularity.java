@@ -24,7 +24,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 
 import static mindustry.game.EventType.*;
-import static singularity.ui.SglUI.*;
 
 public class Singularity extends Mod{
   public boolean initialized = false;
@@ -55,12 +54,12 @@ public class Singularity extends Mod{
     }
     
     Events.on(ClientLoadEvent.class, e -> {
-      mainMenu.show();
+      Sgl.ui.mainMenu.show();
       
       Vars.ui.menuGroup.fill(t -> {
         //所以我选择在游戏logo上盖个透明的按钮(反正也能按)
         Image button = new Image(Singularity.getModAtlas("transparent"));
-        button.clicked(mainMenu::show);
+        button.clicked(Sgl.ui.mainMenu::show);
         t.top().add(button).size(1080, 170);
       });
     });

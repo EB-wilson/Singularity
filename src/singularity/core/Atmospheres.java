@@ -24,7 +24,7 @@ public class Atmospheres{
   protected final ReusableByteOutStream byteOutput = new ReusableByteOutStream();
   protected final DataOutputStream dataBytes = new DataOutputStream(byteOutput);
   
-  public final ObjectMap<Planet, Atmosphere> bindMap = new ObjectMap<>();
+  protected final ObjectMap<Planet, Atmosphere> bindMap = new ObjectMap<>();
   
   public Atmosphere current = Atmosphere.defaultSettings;
   
@@ -34,6 +34,10 @@ public class Atmospheres{
       if(planet.accessible) bindMap.put(planet, new Atmosphere(planet));
     }
     read();
+  }
+  
+  public Atmosphere getByPlanet(Planet planet){
+    return bindMap.get(planet);
   }
   
   public void loadAtmo(){

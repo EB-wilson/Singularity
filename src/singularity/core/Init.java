@@ -30,8 +30,6 @@ import static mindustry.Vars.ui;
 /**改动游戏原内容重初始化，用于对游戏已定义的实例进行操作*/
 public class Init{
   public static void init(){
-    SglUI.init();
-    
     FieldHandler.setValue(OverlayFragment.class, "inv", Vars.control.input.frag, new SglBlockInventoryFragment());
     
     if(Sgl.config.loadInfo) Log.info("[Singularity] mod initialization is complete");

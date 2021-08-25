@@ -4,6 +4,7 @@ import arc.Core;
 import arc.scene.ui.layout.Table;
 import mindustry.gen.Tex;
 import mindustry.ui.dialogs.BaseDialog;
+import singularity.Sgl;
 
 import static singularity.ui.SglUI.*;
 
@@ -65,7 +66,7 @@ public class MainMenu extends BaseDialog {
   }
 
   private void show5(){
-    contact.show();
+    Sgl.ui.contact.show();
   }
 
   private void show6(){

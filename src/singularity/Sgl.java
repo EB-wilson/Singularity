@@ -9,6 +9,7 @@ import singularity.core.Atmospheres;
 import singularity.core.GasAreas;
 import singularity.core.ModConfig;
 import singularity.core.Reactions;
+import singularity.ui.SglUI;
 import singularity.world.reaction.ReactionPoints;
 
 import static arc.Core.settings;
@@ -46,6 +47,8 @@ public class Sgl{
   
   /**模组配置存储器*/
   public static ModConfig config = new ModConfig();
+  /**ui类存放对象*/
+  public static SglUI ui;
   /**所有大气的全局存储对象，提供了关于大气层的一些参数与操作*/
   public static Atmospheres atmospheres;
   /**气体云的全局存储对象，提供了气体散逸成云的功能和关于气体云的集中操作*/
@@ -56,11 +59,13 @@ public class Sgl{
   public static ReactionPoints reactionPoints;
   
   public static void init(){
+    ui = new SglUI();
     atmospheres = new Atmospheres();
     gasAreas = new GasAreas();
     reactions = new Reactions();
     reactionPoints = new ReactionPoints();
     
+    ui.init();
     atmospheres.init();
   }
   

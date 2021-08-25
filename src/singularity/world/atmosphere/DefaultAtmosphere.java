@@ -28,6 +28,7 @@ public class DefaultAtmosphere{
   
   public final Atmosphere parent;
   
+  public float[] ingredientsBase = new float[Vars.content.getBy(SglContentType.gas.value).size];
   public float[] ingredients = new float[Vars.content.getBy(SglContentType.gas.value).size];
   public float[] recoverCoeff = new float[Vars.content.getBy(SglContentType.gas.value).size];
   
@@ -37,7 +38,7 @@ public class DefaultAtmosphere{
   
   public DefaultAtmosphere(Atmosphere parent){
     this.parent = parent;
-    if(parent != null) Arrays.fill(ingredients, -1);
+    Arrays.fill(ingredientsBase, parent == null? 1: -1);
     Arrays.fill(recoverCoeff, -1);
     
     if(parent == null){
@@ -69,7 +70,7 @@ public class DefaultAtmosphere{
       
       if(ingre != null) for(ObjectMap.Entry<String, IniTypes.IniObject> item : ingre){
         Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + item.key);
-        ingredients[gas.id] = ((IniTypes.IniNumber)item.value).floatValue()*baseTotal;
+        ingredientsBase[gas.id] = ((IniTypes.IniNumber)item.value).floatValue();
       }
       
       if(recov != null) for(ObjectMap.Entry<String, IniTypes.IniObject> item : recov){
@@ -83,9 +84,18 @@ public class DefaultAtmosphere{
       defaultRecoverCoeff = defaults.defaultRecoverCoeff;
     }
   
-    if(!section.equals("defaults")) for(int i = 0; i < ingredients.length; i++){
-      if(ingredients[i] == -1) ingredients[i] = defaults.ingredients[i];
+    if(!section.equals("defaults")) for(int i = 0; i < ingredientsBase.length; i++){
+      if(ingredientsBase[i] == -1) ingredientsBase[i] = defaults.ingredientsBase[i];
       if(recoverCoeff[i] == -1) recoverCoeff[i] = defaults.recoverCoeff[i] == -1? defaultRecoverCoeff: defaults.recoverCoeff[i];
+    }
+    
+    float total = 0;
+    for(float base : ingredientsBase){
+      total += base;
+    }
+    
+    for(int i=0; i<ingredients.length; i++){
+      ingredients[i] = baseTotal*(ingredientsBase[i]/total);
     }
   }
   
@@ -94,7 +104,7 @@ public class DefaultAtmosphere{
     return "baseTotal: " + baseTotal + ", " +
       "basePressure: " + basePressure + ", " +
       "defaultRecoverCoeff: " + defaultRecoverCoeff + ", " +
-      "ingredients: " + Arrays.toString(ingredients) + ", " +
+      "ingredients: " + Arrays.toString(ingredientsBase) + ", " +
       "recoverCoeff: " + Arrays.toString(recoverCoeff);
   }
 }

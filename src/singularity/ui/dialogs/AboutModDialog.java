@@ -38,7 +38,7 @@ public class AboutModDialog extends BaseDialog {
         table.row();
         table.add("Mod " + Core.bundle.get("misc.author") + ":");
         table.add(Vars.mods.locateMod("singularity").meta.author);
-        table.button(Core.bundle.get("misc.contact"), contact::show);
+        table.button(Core.bundle.get("misc.contact"), Sgl.ui.contact::show);
         table.row();
         table.add("Mod " + Core.bundle.get("misc.version") + ":");
         table.add(Vars.mods.locateMod("singularity").meta.version);
