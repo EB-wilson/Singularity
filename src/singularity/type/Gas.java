@@ -16,41 +16,24 @@ import mindustry.graphics.MultiPacker.PageType;
 import mindustry.type.Item;
 
 public class Gas extends UnlockableContent{
-  public final Item compressItem;
-  public final Liquid compressLiquid;
-  public final boolean compressible;
   public final Color color;
-  public final float compressRequire;
+  
+  protected boolean compressible;
+  protected CompressItem compressItem;
+  protected CompressLiquid compressLiquid;
   
   public Item tank;
   public boolean hasTank = false;
   public float tankContains;
   
-  public float criticalPressure = 1.5f;
   public float heatCapacity = 0.3f;
   public float explosiveness = 1f;
   public float flammability = 1f;
   public float temperature = 0.4f;
   
-  private Gas(String name, Color color, Item cpItem, Liquid cpLiquid, float compressRequire){
-    super(name);
-    compressItem = cpItem;
-    compressLiquid = cpLiquid;
-    compressible = cpItem != null || cpLiquid != null;
-    this.color = color;
-    this.compressRequire = compressRequire;
-  }
-  
-  public Gas(String name, Color color, Item cpItem, float compressRequire){
-    this(name, color, cpItem, null, compressRequire);
-  }
-  
-  public Gas(String name, Color color, Liquid cpLiquid, float compressRequire){
-    this(name, color, null, cpLiquid, compressRequire);
-  }
-  
   public Gas(String name, Color color){
-    this(name, color, null, null, 0);
+    super(name);
+    this.color = color;
   }
   
   public Item creatTank(float consume){
@@ -60,12 +43,57 @@ public class Gas extends UnlockableContent{
     return tank;
   }
   
+  public CompressItem creatItem(float requireComp, float consume){
+    compressible = true;
+    return compressItem = new CompressItem(name + "_item", color, requireComp, consume);
+  }
+  
+  public CompressItem setCompressItem(Item item, float requireComp, float consume){
+    compressible = true;
+    return compressItem = new CompressItem(item, requireComp, consume);
+  }
+  
+  public CompressLiquid creatLiquid(float requireComp, float consume){
+    compressible = true;
+    return compressLiquid = new CompressLiquid(name + "_liquid", color, requireComp, consume);
+  }
+  
+  public CompressLiquid setCompressLiquid(Liquid liquid, float requireComp, float consume){
+    compressible = true;
+    return compressLiquid = new CompressLiquid(liquid, requireComp, consume);
+  }
+  
+  public CompressItem getCompressItem(){
+    return compressItem;
+  }
+  
+  public CompressLiquid getCompressLiquid(){
+    return compressLiquid;
+  }
+  
+  public boolean compressible(){
+    return compressible;
+  }
+  
   public boolean compItem(){
-    return compressible && compressItem != null;
+    return compressItem != null;
   }
   
   public boolean compLiquid(){
-    return compressible && compressLiquid != null;
+    return compressLiquid != null;
+  }
+  
+  public boolean multiComp(){
+    return compItem() && compLiquid();
+  }
+  
+  @Override
+  public void init(){
+    super.init();
+    if(compressLiquid != null && compressItem != null){
+      compressItem.liquid = compressLiquid.liquid;
+      compressItem.consumeLiquid = compressItem.consumeGas/compressLiquid.consumeGas;
+    }
   }
   
   @Override
@@ -76,15 +104,20 @@ public class Gas extends UnlockableContent{
       t.add(Core.bundle.get("stat.compressor") + ":");
       t.row();
       if(compressItem != null){
-        t.add(new ItemDisplay(compressItem, 0));
+        t.add(new ItemDisplay(compressItem.item, 0));
+        t.row();
+        t.add(Core.bundle.get("stat.compressRequire") + ":");
+        t.row();
+        t.add(new GasValue(this, compressItem.consumeGas, true, false));
       }
       else{
-        t.add(new LiquidDisplay(compressLiquid, 0, false));
+        t.add(new LiquidDisplay(compressLiquid.liquid, 0, false));
+        t.row();
+        t.add(Core.bundle.get("stat.compressRequire") + ":");
+        t.row();
+        t.add(new GasValue(this, compressLiquid.consumeGas, true, false));
       }
       t.row();
-      t.add(Core.bundle.get("stat.compressRequire") + ":");
-      t.row();
-      t.add(new GasValue(this, compressRequire, true, false));
     });
     stats.useCategories = true;
   }
@@ -102,5 +135,43 @@ public class Gas extends UnlockableContent{
   @Override
   public ContentType getContentType(){
     return SglContentType.gas.value;
+  }
+  
+  public static class CompressLiquid{
+    public Liquid liquid;
+    
+    public final float requirePressure;
+    public final float consumeGas;
+  
+    public CompressLiquid(String name, Color color, float require, float consume){
+      this(new Liquid(name, color), require, consume);
+    }
+    
+    public CompressLiquid(Liquid liquid, float require, float consume){
+      this.liquid = liquid;
+      requirePressure = require;
+      consumeGas = consume;
+    }
+  }
+  
+  public static class CompressItem{
+    public Item item;
+    
+    public float compTime = 60;
+    public final float requirePressure;
+    public final float consumeGas;
+    
+    public Liquid liquid;
+    public float consumeLiquid;
+  
+    public CompressItem(String name, Color color, float require, float consume){
+      this(new Item(name, color), require, consume);
+    }
+    
+    public CompressItem(Item item, float require, float consume){
+      this.item = item;
+      requirePressure = require;
+      consumeGas = consume;
+    }
   }
 }

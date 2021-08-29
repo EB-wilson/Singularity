@@ -29,29 +29,6 @@ public class GasCompressor extends NormalCrafter{
     return null;//方法已无效
   }
   
-  @Override
-  public void init(){
-    Field[] gases = Gases.class.getFields();
-    consumers.clear();
-    producers.clear();
-    for(Field gasF: gases){
-      try{
-        Gas gas = (Gas)gasF.get(null);
-        if(!gas.compressible && gas.tank == null) continue;
-        super.newConsume();
-        consume.gas(gas, (gas.tank != null? gas.tankContains: gas.compressRequire)/craftTime);
-        consume.time(craftTime);
-        consume.power(powerUse);
-        
-        super.newProduce();
-        produce.item(gas.tank != null? gas.tank: gas.compressItem, 1);
-      }
-      catch(IllegalArgumentException | IllegalAccessException e){
-        Log.err(e);
-      }
-    }
-    super.init();
-  }
   
   public class GasCompressorBuild extends NormalCrafterBuild{
   

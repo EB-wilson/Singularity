@@ -1,6 +1,7 @@
 package singularity.world.atmosphere;
 
 import arc.graphics.Color;
+import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Position;
 import arc.struct.Seq;
@@ -61,11 +62,13 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   @Override
   public void update(){
     gasAmount = Math.min(gasAmount + flowRate, maxGasCapacity);
-    gasAmount -= Sgl.atmospheres.current.getCurrPressure()*gasAmount/20;
+    float leakRate = Sgl.atmospheres.current.getCurrPressure()*gasAmount/20;
+    gasAmount -= leakRate;
+    if(Vars.state.isCampaign()) Sgl.atmospheres.current.currAtmoSector.add(gas, gasAmount);
     
     float amount = gasAmount/maxGasCapacity;
     radius = 5*amount;
-    float rate = Math.min(1, flowRate/3);
+    float rate = Math.min(0.7f, flowRate/5);
     
     double random = Math.random();
     if(random<rate){
@@ -87,7 +90,9 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
       }
     });
     
-    if(gasAmount <= 0) remove();
+    if(gasAmount <= 1) remove();
+    
+    flowRate /= 2;
   }
   
   @Override

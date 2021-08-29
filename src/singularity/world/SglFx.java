@@ -18,8 +18,8 @@ public class SglFx{
     
     Draw.z(Layer.bullet);
     
-    randLenVectors(e.id, 2, 2f + e.fin()*(param + 2), (x, y) -> {
-      Fill.circle(e.x + x, e.y + y, 0.2f+e.fslope()*1.5f);
+    randLenVectors(e.id, 1, 8f + e.fin()*(param + 3), (x, y) -> {
+      Fill.circle(e.x + x, e.y + y, 0.2f+e.fslope()*4.5f);
     });
   });
 }

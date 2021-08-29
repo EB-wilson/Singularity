@@ -24,6 +24,7 @@ public class GasSource extends SglBlock{
     solid = true;
     hasGases = true;
     gasCapacity = 100f;
+    maxGasPressure = 100f;
     configurable = true;
     outputGases = true;
     saveConfig = true;
@@ -37,7 +38,7 @@ public class GasSource extends SglBlock{
   public void setBars(){
     super.setBars();
     
-    bars.remove("liquid");
+    bars.remove("gasPressure");
   }
   
   @Override
@@ -53,15 +54,21 @@ public class GasSource extends SglBlock{
       if(source == null){
         gases.clear();
       }else{
-        gases.add(source, liquidCapacity);
+        gases.set(source, liquidCapacity);
         dumpGas(source);
       }
     }
-    
+  
+    @Override
+    public float pressure(){
+      return 100;
+    }
+  
     @Override
     public void draw(){
       super.draw();
       
+      Draw.rect(region, x, y);
       if(source == null){
         Draw.rect("cross", x, y);
       }else{

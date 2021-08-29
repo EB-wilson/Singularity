@@ -1,7 +1,9 @@
 package singularity.core;
 
+import arc.math.Mathf;
 import arc.struct.IntMap;
 import arc.struct.Seq;
+import arc.util.Log;
 import mindustry.world.Tile;
 import singularity.type.Gas;
 import singularity.world.atmosphere.LeakGasArea;
@@ -11,26 +13,22 @@ public class GasAreas{
   
   public void pour(Tile tile, Gas gas, float flow){
     Seq<LeakGasArea> area = areas.get(tile.pos());
+    
     if(area == null){
       area = new Seq<>();
-      LeakGasArea gasArea = LeakGasArea.create();
+      areas.put(tile.pos(), area);
+    }
+    
+    LeakGasArea gasArea = area.find(e -> e.gas == gas);
+    if(gasArea != null){
+      gasArea.flowRate = flow;
+    }
+    else{
+      gasArea = LeakGasArea.create();
       area.add(gasArea);
       gasArea.set(gas, flow, tile);
       areas.put(tile.pos(), area);
       gasArea.add();
-    }
-    else{
-      LeakGasArea gasArea = area.find(e -> e.gas == gas);
-      if(gasArea != null){
-        gasArea.flowRate = flow;
-      }
-      else{
-        gasArea = LeakGasArea.create();
-        area.add(gasArea);
-        gasArea.set(gas, flow, tile);
-        areas.put(tile.pos(), area);
-        gasArea.add();
-      }
     }
   }
   

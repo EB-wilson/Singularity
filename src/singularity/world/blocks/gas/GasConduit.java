@@ -2,6 +2,8 @@ package singularity.world.blocks.gas;
 
 import arc.Core;
 import arc.func.Boolf;
+import arc.graphics.Color;
+import arc.graphics.Colors;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
@@ -9,8 +11,11 @@ import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.struct.Seq;
 import arc.util.Eachable;
+import arc.util.Log;
+import arc.util.Nullable;
 import mindustry.content.Blocks;
 import mindustry.entities.units.BuildPlan;
+import mindustry.gen.Building;
 import mindustry.graphics.Layer;
 import mindustry.input.Placement;
 import mindustry.world.Block;
@@ -24,19 +29,19 @@ import singularity.world.blockComp.GasBlockComp;
 import singularity.world.blockComp.GasBuildComp;
 import singularity.world.blocks.SglBlock;
 
+import java.util.Arrays;
+
 import static mindustry.Vars.tilesize;
 
 public class GasConduit extends SglBlock implements Autotiler{
   public TextureRegion[] regions = new TextureRegion[5], tops = new TextureRegion[5];
-  
-  public float maxMoveRate = 40f;
   
   public boolean canLeak = true;
   
   public GasConduit(String name){
     super(name);
     hasGases = true;
-    outputGases = false;
+    outputGases = true;
     rotate = true;
     solid = false;
     floating = true;
@@ -84,57 +89,55 @@ public class GasConduit extends SglBlock implements Autotiler{
   
   @Override
   public boolean blends(Tile tile, int rotation, int otherx, int othery, int otherrot, Block otherblock){
+    if(!(otherblock instanceof GasBlockComp)) return false;
     GasBlockComp blockComp = (GasBlockComp)otherblock;
-    return blockComp.hasGases() && (blockComp.outputLiquids() || (lookingAt(tile, rotation, otherx, othery, otherblock))) && lookingAtEither(tile, rotation, otherx, othery, otherrot, otherblock);
+    return blockComp.hasGases() && (blockComp.outputGases() || (lookingAt(tile, rotation, otherx, othery, otherblock))) && lookingAtEither(tile, rotation, otherx, othery, otherrot, otherblock);
   }
   
   @Override
   public TextureRegion[] icons(){
-    return new TextureRegion[]{regions[0]};
+    return new TextureRegion[]{regions[0], tops[0]};
   }
   
   public class GasConduitBuild extends SglBuilding{
     int[] blendData;
+    Color gasColor;
   
     @Override
     public void onProximityUpdate(){
       super.onProximityUpdate();
-    
-      blendData = buildBlending(tile, rotation, null, true);
+      
+      int[] temp = buildBlending(tile, rotation, null, true);
+      blendData = Arrays.copyOf(temp, temp.length);
     }
   
     @Override
-    public void moveGas(GasBuildComp other, Gas gas){
-      float pressureDiff;
-      if(other != null){
-        if(!other.getGasBlock().hasGases()) return;
-        pressureDiff = Math.min(gases.getPressure() - other.gases().getPressure(), maxMoveRate*2);
-        if(pressureDiff < 0) return;
-        if(other.acceptGas(this, gas, pressureDiff/2)){
-          other.handleGas(this, gas, pressureDiff/2);
-          handleGas(other, gas, -pressureDiff/2);
-        }
-      }
+    public void handleGas(GasBuildComp source, Gas gas, float amount){
+      gases.add(gas, amount);
     }
   
     @Override
     public void updateTile(){
       super.updateTile();
+      
+      gasColor = Color.white.cpy();
       Tile next = this.tile.nearby(this.rotation);
-      if(next == null) return;
       if(next.build instanceof GasBuildComp){
         gases.each(stack -> {
+          gasColor.mul(stack.gas.color);
           moveGas((GasBuildComp) next.build, stack.gas);
         });
       }
       else if(next.build == null){
-        float pressureDiff = gases.getPressure() - Sgl.atmospheres.current.getCurrPressure();
-        if(pressureDiff < 0) return;
+        float pressureDiff = pressure() - Sgl.atmospheres.current.getCurrPressure();
+        if(pressureDiff <= 0.001) return;
         gases.each(stack -> {
+          gasColor.mul(stack.gas.color);
           handleGas(this, stack.gas, -pressureDiff);
           Sgl.gasAreas.pour(next, stack.gas, pressureDiff);
         });
       }
+      gasColor.a(pressure()/maxGasPressure*0.75f);
     }
   
     @Override
@@ -142,7 +145,6 @@ public class GasConduit extends SglBlock implements Autotiler{
       float rotation = rotdeg();
       int r = this.rotation;
     
-      //draw extra conduits facing this one for tiling purposes
       Draw.z(Layer.blockUnder);
       for(int i = 0; i < 4; i++){
         if((blendData[4] & (1 << i)) != 0){
@@ -161,7 +163,8 @@ public class GasConduit extends SglBlock implements Autotiler{
   
     protected void drawConduit(float x, float y, int bits, float rotation, SliceMode slice){
       Draw.rect(sliced(regions[bits], slice), x, y, rotation);
-    
+      
+      Draw.color(gasColor);
       Draw.rect(sliced(tops[bits], slice), x, y, rotation);
     }
   }

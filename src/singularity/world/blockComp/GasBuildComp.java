@@ -1,5 +1,9 @@
 package singularity.world.blockComp;
 
+import arc.math.Mathf;
+import arc.util.Log;
+import mindustry.gen.Building;
+import mindustry.world.Build;
 import singularity.type.Gas;
 import singularity.world.modules.GasesModule;
 import universeCore.entityComps.blockComps.BuildCompBase;
@@ -26,25 +30,30 @@ public interface GasBuildComp extends BuildCompBase, FieldGetter, Dumpable{
   }
   
   default void moveGas(GasBuildComp other, Gas gas){
-    if(!other.getGasBlock().hasGases()) return;
-    float pressureDiff = gases().getPressure() - other.gases().getPressure();
-    if(pressureDiff < 0) return;
-    if(other.acceptGas(this, gas, pressureDiff/2)){
-      other.handleGas(this, gas, pressureDiff/2);
-      handleGas(other, gas, -pressureDiff/2);
+    if(!other.getGasBlock().hasGases() || gases().get(gas) <= 0) return;
+    float ofract = other.pressure()/other.getGasBlock().maxGasPressure();
+    float fract = pressure()/getGasBlock().maxGasPressure();
+    float flowRate = Math.min(Mathf.clamp(fract - ofract)*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity(), gases().get(gas));
+    flowRate = Math.min(flowRate, other.getGasBlock().gasCapacity()*other.getGasBlock().maxGasPressure() - other.gases().get(gas));
+    if(flowRate > 0.0F && ofract <= fract && other.acceptGas(this, gas)){
+      other.handleGas(this, gas, flowRate);
+      gases().remove(gas, flowRate);
     }
+  }
+  
+  default float pressure(){
+    return gases().getPressure();
   }
   
   default void dumpGas(Gas gas){
     GasBuildComp other = (GasBuildComp) getDump(e -> {
       if(!(e instanceof GasBuildComp)) return false;
-      float pressureDiff = gases().getPressure() - ((GasBuildComp)e).gases().getPressure();
-      return ((GasBuildComp)e).getGasBlock().hasGases() && ((GasBuildComp)e).acceptGas(this, gas, pressureDiff/2);
+      return ((GasBuildComp)e).getGasBlock().hasGases() && ((GasBuildComp)e).acceptGas(this, gas);
     });
-    moveGas(other, gas);
+    if(other != null) moveGas(other, gas);
   }
   
-  default boolean acceptGas(GasBuildComp source, Gas gas, float amount){
-    return source.getBuilding().team == getBuilding().team && gases().getPressure() + amount/getGasBlock().gasCapacity() < getGasBlock().maxGasPressure();
+  default boolean acceptGas(GasBuildComp source, Gas gas){
+    return source.getBuilding().team == getBuilding().team && getGasBlock().hasGases() && pressure() < getGasBlock().maxGasPressure();
   }
 }

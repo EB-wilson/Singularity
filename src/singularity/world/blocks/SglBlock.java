@@ -1,6 +1,7 @@
 package singularity.world.blocks;
 
 import arc.util.Log;
+import arc.util.Strings;
 import arc.util.Time;
 import singularity.type.GasStack;
 import singularity.world.draw.*;
@@ -221,9 +222,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     if(hasGases) bars.add("gasPressure", e -> {
       GasBuildComp entity = (GasBuildComp) e;
       return new Bar(
-        () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + entity.gases().getPressure() + "HT-Pa",
+        () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.pressure(), 2) + "HT-Pa",
         () -> Pal.accent,
-        () -> Math.min(entity.gases().getPressure() / maxGasPressure, 1));
+        () -> Math.min(entity.pressure() / maxGasPressure, 1));
     });
   }
   
@@ -635,12 +636,12 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     
     @Override
     public boolean acceptItem(Building source, Item item){
-      return source.team == this.team && consumer.filter(SglConsumeType.item, item) && items.get(item) < block().itemCapacity && status == SglBlockStatus.proper;
+      return source.team == this.team && hasItems && consumer.filter(SglConsumeType.item, item) && items.get(item) < block().itemCapacity && status == SglBlockStatus.proper;
     }
 
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.team == this.team && consumer.filter(SglConsumeType.liquid, liquid) && liquids.get(liquid) <= block().liquidCapacity - 0.0001f && status == SglBlockStatus.proper;
+      return source.team == this.team && hasLiquids && consumer.filter(SglConsumeType.liquid, liquid) && liquids.get(liquid) <= block().liquidCapacity - 0.0001f && status == SglBlockStatus.proper;
     }
   
     @Override

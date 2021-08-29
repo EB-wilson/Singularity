@@ -15,8 +15,8 @@ public interface GasBlockComp extends FieldGetter{
     return getField(boolean.class, "hasGases");
   }
   
-  default boolean outputLiquids(){
-    return getField(boolean.class, "outputLiquids");
+  default boolean outputGases(){
+    return getField(boolean.class, "outputGases");
   }
   
   default float maxGasPressure(){

@@ -26,11 +26,13 @@ public class Gases implements ContentList{
       creatTank(24);
     }};
   
-    CO2 = new Gas("CO2", Color.valueOf("#C4C4C4"), SglItems.dry_ice, 24){{
+    CO2 = new Gas("CO2", Color.valueOf("#C4C4C4")){{
       heatCapacity = 0.8f;
       explosiveness = 0f;
       flammability = 0f;
       temperature = 0.4f;
+      
+      setCompressItem(SglItems.dry_ice, 1.8f,24);
     }};
   
     H2 = new Gas("H2", Color.valueOf("#71D3E2")){{

@@ -4,7 +4,11 @@ import arc.func.Cons;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
+import mindustry.ctype.MappableContent;
 import mindustry.entities.Puddles;
+import mindustry.gen.Building;
+import mindustry.type.Item;
+import mindustry.type.Liquid;
 import mindustry.world.modules.BlockModule;
 import singularity.type.Gas;
 import singularity.type.GasStack;
@@ -13,34 +17,69 @@ import singularity.world.blockComp.GasBuildComp;
 
 public class GasesModule extends BlockModule{
   protected final GasBuildComp entity;
+  protected final Building tile;
+  protected float[] itemComp = new float[Vars.content.items().size];
   protected float[] gases = new float[Vars.content.getBy(SglContentType.gas.value).size];
   protected float total = 0f;
   
   public GasesModule(GasBuildComp entity){
     this.entity = entity;
+    tile = entity.getBuilding();
   }
   
   public void update(){
     each(stack -> {
-      float pressure = getPressure();
+      float pressure = entity.pressure();
       Gas gas = stack.gas;
-      if(gas.compressible && pressure >= gas.criticalPressure){
-        gases[gas.id] -= gas.compressRequire;
-        if(gas.compItem()){
-          if(entity.getBuilding().block.hasItems && entity.getBuilding().items.get(gas.compressItem) < entity.getBuilding().block.itemCapacity){
-            entity.getBuilding().handleItem(entity.getBuilding(), gas.compressItem);
-          }
+      if(!gas.compressible()) return;
+      if(gas.compLiquid()){
+        Gas.CompressLiquid liquid = gas.getCompressLiquid();
+        if(pressure > liquid.requirePressure){
+          gases[gas.id] -= liquid.consumeGas;
+          
+          produce(liquid.liquid);
         }
-        else{
-          if(entity.getBuilding().block.hasLiquids && entity.getBuilding().liquids.get(gas.compressLiquid) < entity.getBuilding().block.liquidCapacity){
-            entity.getBuilding().handleLiquid(entity.getBuilding(), gas.compressLiquid, 1);
+      }
+      
+      if(gas.compItem()){
+        Gas.CompressItem item = gas.getCompressItem();
+        
+        if(pressure > item.requirePressure){
+          if(gas.multiComp() && tile.block.hasLiquids){
+            if(tile.liquids.get(item.liquid) > item.consumeLiquid/item.compTime){
+              tile.liquids.remove(item.liquid, item.consumeLiquid/item.compTime);
+              itemComp[item.item.id] += item.consumeLiquid/item.compTime;
+              
+              if(itemComp[item.item.id] >= item.consumeLiquid){
+                produce(item.item);
+                itemComp[item.item.id] = 0;
+              }
+            }
           }
           else{
-            Puddles.deposit(entity.getBuilding().tile, gas.compressLiquid, 1);
+            gases[gas.id] -= item.consumeGas;
+    
+            produce(item.item);
           }
         }
       }
     });
+  }
+  
+  public void produce(MappableContent object){
+    if(object instanceof Item){
+      if(tile.block.hasItems && tile.items.get((Item)object) < tile.block.itemCapacity){
+        tile.items.add((Item)object, 1);
+      }
+    }
+    else if(object instanceof Liquid){
+      if(tile.block.hasLiquids && tile.liquids.get((Liquid)object) < tile.block.liquidCapacity){
+        tile.liquids.add((Liquid)object, 1);
+      }
+      else{
+        Puddles.deposit(tile.tile, (Liquid)object, 1);
+      }
+    }
   }
   
   public void add(GasesModule module){
@@ -64,6 +103,11 @@ public class GasesModule extends BlockModule{
   public final void add(Gas gas, float amount){
     gases[gas.id] += amount;
     total += amount;
+  }
+  
+  public void set(Gas gas, float amount){
+    float delta = amount - gases[gas.id];
+    add(gas, delta);
   }
   
   public void remove(GasesModule module){
@@ -101,7 +145,7 @@ public class GasesModule extends BlockModule{
   }
   
   public float getPressure(){
-    return (total / entity.getGasBlock().gasCapacity());
+    return total / entity.getGasBlock().gasCapacity();
   }
   
   public void each(Cons<GasStack> cons){

@@ -35,31 +35,6 @@ public class Init{
     if(Sgl.config.loadInfo) Log.info("[Singularity] mod initialization is complete");
   }
   
-  public static void handleBlockFrag(){
-    try{
-      Field toggler = PlacementFragment.class.getDeclaredField("toggler");
-      toggler.setAccessible(true);
-      Table togglerTable = (Table)toggler.get(ui.hudfrag.blockfrag);
-    
-      Table frame = (Table)togglerTable.getChildren().get(0);
-      Table blockSelect = (Table)frame.getChildren().get(2);
-      Table categories = (Table)frame.getChildren().get(3);
-      
-      Cell<?> pane = blockSelect.getCells().get(0);
-      pane.height(240f);
-      
-      for(Category cat: SglCategory.values()){
-        ImageButton button = ((ImageButton)categories.getChildren().find(e -> ("category-" + cat.name()).equals(e.name)));
-        Drawable icon = new TextureRegionDrawable(Singularity.getModAtlas(cat.name()));
-        if(button == null) continue;
-        button.getStyle().imageUp = icon;
-        button.resizeImage(icon.imageSize());
-      }
-    }catch(NoSuchFieldException | IllegalAccessException e){
-      Log.err(e);
-    }
-  }
-  
   /**内容重载器，用于对已加载的内容做出变更(或者覆盖)*/
   public static void reloadContent(){
     //为液体装卸器保证不从(常规)导管中提取液体

@@ -38,8 +38,9 @@ public class Atmosphere{
   
   public Atmosphere(Planet planet){
     attach = planet;
-    defaults = new DefaultAtmosphere(this);
+    defaults = DefaultAtmosphere.defaults;
     
+    total = defaults.baseTotal;
     ingredients = defaults.ingredientsBase;
   }
   
@@ -54,16 +55,29 @@ public class Atmosphere{
     }
   }
   
+  public AtmosphereSector getSector(Sector sector){
+    AtmosphereSector result = sectors.get(sector.id);
+    if(result == null){
+      result = new AtmosphereSector(sector.id);
+      sectors.put(sector.id, result);
+    }
+    return result;
+  }
+  
   public void each(Cons2<Gas, Float> cons){
     for(int id=0; id<ingredients.length; id++){
       if(ingredients[id] > 0.001) cons.get(Vars.content.getByID(SglContentType.gas.value, id), ingredients[id]);
     }
   }
   
-  public float getDelta(Gas gas){
+  public boolean analyzed(Sector sector){
+    return getSector(sector).analyze();
+  }
+  
+  public float getAnalyzedDelta(Gas gas){
     float result = 0;
     for(IntMap.Entry<AtmosphereSector> data : sectors){
-      result += data.value.delta[gas.id];
+      result += data.value.getDisplay(gas);
     }
     return result;
   }
@@ -150,6 +164,7 @@ public class Atmosphere{
   public void read(Reads read){
     int count = read.i();
     int sectorCount = read.i();
+    total = 0;
     
     for(int id=0; id<count; id++){
       float amount = read.f();

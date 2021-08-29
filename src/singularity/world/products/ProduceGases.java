@@ -55,7 +55,7 @@ public class ProduceGases extends BaseProduce{
     for(GasStack stack: gases){
       amount += stack.amount;
     }
-    return entity.getBuilding(type()).gases().getPressure() + amount/entity.getBuilding(type()).getGasBlock().gasCapacity() < entity.getBuilding(type()).getGasBlock().maxGasPressure();
+    return entity.getBuilding(type()).pressure() + amount/entity.getBuilding(type()).getGasBlock().gasCapacity() < entity.getBuilding(type()).getGasBlock().maxGasPressure();
   }
   
   @Override

@@ -1,9 +1,11 @@
 package singularity;
 
 import arc.graphics.g2d.TextureRegion;
+import arc.scene.style.Drawable;
 import singularity.content.*;
 import singularity.content.override.OverrideBlocks;
 import singularity.core.Init;
+import singularity.type.SglCategory;
 import singularity.type.SglContentType;
 import arc.Core;
 import arc.Events;
@@ -34,6 +36,7 @@ public class Singularity extends Mod{
     new Gases(),//气体
     new NuclearBlocks(),//核能方块
     new FactoryBlocks(),//工厂方块
+    new GasBlocks(),//气体相关方块
     new TransportBlocks(),//物流方块
     new CollectBlocks(),//采集方块
   };
@@ -45,6 +48,8 @@ public class Singularity extends Mod{
   public Singularity(){
     //加载模组配置数据
     Sgl.config.load();
+    //加载方块类型
+    SglCategory.load();
     
     Log.info("[Singularity] Singularity mod is loading!\nThanks for use this mod.\nauthor: EBwilson\nVisit the GitHub project about this mod: > " + Sgl.githubProject + " <");
     
@@ -74,14 +79,7 @@ public class Singularity extends Mod{
     
     Time.run(0, () -> {
       Events.on(WorldLoadEvent.class, event -> {
-        Core.app.post(Init::handleBlockFrag);
         Sgl.atmospheres.loadAtmo();
-      });
-  
-      Events.on(UnlockEvent.class, event -> {
-        if(event.content instanceof Block){
-          Init.handleBlockFrag();
-        }
       });
     });
   }
