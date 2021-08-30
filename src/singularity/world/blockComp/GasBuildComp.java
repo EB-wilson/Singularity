@@ -31,11 +31,13 @@ public interface GasBuildComp extends BuildCompBase, FieldGetter, Dumpable{
   
   default void moveGas(GasBuildComp other, Gas gas){
     if(!other.getGasBlock().hasGases() || gases().get(gas) <= 0) return;
-    float ofract = other.pressure()/other.getGasBlock().maxGasPressure();
-    float fract = pressure()/getGasBlock().maxGasPressure();
-    float flowRate = Math.min(Mathf.clamp(fract - ofract)*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity(), gases().get(gas));
+    float present = gases().get(gas)/gases().total();
+    
+    float fract = (pressure() - other.pressure())/Math.max(getGasBlock().maxGasPressure(), other.getGasBlock().maxGasPressure());
+    float flowRate = Math.min(fract*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity()*present, gases().get(gas));
+    
     flowRate = Math.min(flowRate, other.getGasBlock().gasCapacity()*other.getGasBlock().maxGasPressure() - other.gases().get(gas));
-    if(flowRate > 0.0F && ofract <= fract && other.acceptGas(this, gas)){
+    if(flowRate > 0.0F && fract > 0 && other.acceptGas(this, gas)){
       other.handleGas(this, gas, flowRate);
       gases().remove(gas, flowRate);
     }

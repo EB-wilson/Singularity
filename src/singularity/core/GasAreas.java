@@ -21,7 +21,7 @@ public class GasAreas{
     
     LeakGasArea gasArea = area.find(e -> e.gas == gas);
     if(gasArea != null){
-      gasArea.flowRate = flow;
+      gasArea.flow(flow);
     }
     else{
       gasArea = LeakGasArea.create();

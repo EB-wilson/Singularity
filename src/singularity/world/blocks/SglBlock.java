@@ -85,8 +85,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public boolean hasGases;
   /**方块是否输出气体*/
   public boolean outputGases;
+  /**是否显示气体流量*/
+  public boolean showGasFlow;
   /**方块允许的最大气体压强*/
-  public float maxGasPressure = 5f;
+  public float maxGasPressure = 7.8f;
   /**气体容积*/
   public float gasCapacity = 40f;
   
@@ -388,7 +390,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public void updateTile(){
       super.updateTile();
       if(energy != null) energy.update();
-      if(gases != null) gases.update();
+      if(gases != null) gases.update(updateFlow);
     }
     
     public void updateDisplayLiquid(){
@@ -502,6 +504,23 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public void display(Table table){
       super.display(table);
       displayEnergy(table);
+  
+      if(gases != null && showGasFlow){
+        table.row();
+        table.table(l -> {
+          Runnable rebuild = () -> {
+            l.clearChildren();
+            l.left();
+            gases.eachFlow((gas,flow) -> {
+              l.image(() -> gas.uiIcon).padRight(3f);
+              l.label(() -> flow < 0 ? "..." : Strings.fixed(flow, 2) + Core.bundle.get("misc.preSecond")).color(Color.lightGray);
+              l.row();
+            });
+          };
+      
+          l.update(rebuild);
+        }).left();
+      }
     }
     
     @Override

@@ -32,7 +32,7 @@ public class Gases implements ContentList{
       flammability = 0f;
       temperature = 0.4f;
       
-      setCompressItem(SglItems.dry_ice, 1.8f,24);
+      setCompressItem(SglItems.dry_ice, 6.8f,24);
     }};
   
     H2 = new Gas("H2", Color.valueOf("#71D3E2")){{

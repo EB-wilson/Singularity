@@ -1,5 +1,6 @@
 package singularity.core;
 
+import arc.func.Boolf;
 import arc.struct.IntMap;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
@@ -16,6 +17,10 @@ public class Reactions{
   public final Seq<IntMap<Reaction<?, ?, ?>>[]> liquidReactMap = new Seq<>(Vars.content.liquids().size);
   public final Seq<IntMap<Reaction<?, ?, ?>>[]> gasReactMap = new Seq<>(Vars.content.getBy(SglContentType.gas.value).size);
   
+  protected final Seq<Item> allReactItem = new Seq<>();
+  protected final Seq<Liquid> allReactLiquid = new Seq<>();
+  protected final Seq<Gas> allReactGases = new Seq<>();
+  
   @SuppressWarnings("unchecked")
   public <RA extends MappableContent, RB extends MappableContent> Reaction<RA, RB, ?> match(RA a, RB b){
     RuntimeException exception = new RuntimeException("try use invalid type to get a reaction");
@@ -24,12 +29,15 @@ public class Reactions{
     
     IntMap<Reaction<?, ?, ?>> map;
     if(a instanceof Item){
+      if(!allReactItem.contains((Item)a)) return null;
       map = itemReactMap.get(a.id)[type];
     }
     else if(a instanceof Liquid){
+      if(!allReactLiquid.contains((Liquid)a)) return null;
       map = liquidReactMap.get(a.id)[type];
     }
     else if(a instanceof Gas){
+      if(!allReactGases.contains((Gas)a)) return null;
       map = gasReactMap.get(a.id)[type];
     }
     else throw exception;
@@ -56,6 +64,8 @@ public class Reactions{
       itemReactMap.get(item.id)[type] = map;
     }
     map.put(key.id, reaction);
+    
+    if(!allReactItem.contains(item)) allReactItem.add(item);
   }
   
   private void signupLiquid(Liquid liquid, MappableContent key, Reaction<?, ?, ?> reaction){
@@ -67,6 +77,8 @@ public class Reactions{
       liquidReactMap.get(liquid.id)[type] = map;
     }
     map.put(key.id, reaction);
+    
+    if(!allReactLiquid.contains(liquid)) allReactLiquid.add(liquid);
   }
   
   private void signupGas(Gas gas, MappableContent key, Reaction<?, ?, ?> reaction){
@@ -78,5 +90,7 @@ public class Reactions{
       gasReactMap.get(gas.id)[type] = map;
     }
     map.put(key.id, reaction);
+  
+    if(!allReactGases.contains(gas)) allReactGases.add(gas);
   }
 }

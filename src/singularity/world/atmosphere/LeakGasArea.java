@@ -35,12 +35,15 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   public float radius;
   public float gasAmount;
   public float flowRate;
+  public float tempRate;
   public Color color;
   public Gas gas;
   
   public transient int id = EntityGroup.nextId();
   public boolean added = false;
   public float x, y;
+  
+  public int timing;
   
   public static LeakGasArea create(){
     return new LeakGasArea();
@@ -50,7 +53,7 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
     this.tile = tile;
     this.gas = gas;
     this.color = gas.color;
-    this.flowRate = flowRate;
+    this.tempRate = flowRate;
     set(tile.drawx(), tile.drawy());
   }
   
@@ -61,6 +64,9 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   
   @Override
   public void update(){
+    flowRate = tempRate;
+    tempRate = 0;
+    
     gasAmount = Math.min(gasAmount + flowRate, maxGasCapacity);
     float leakRate = Sgl.atmospheres.current.getCurrPressure()*gasAmount/20;
     gasAmount -= leakRate;
@@ -81,6 +87,7 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
       Seq<LeakGasArea> others = Sgl.gasAreas.get(otherT);
       if(others == null) return;
       for(LeakGasArea other: others){
+        if(other.gas == gas) continue;
         if(Tmp.cr1.set(tile.x, tile.y, radius/Vars.tilesize).overlaps(Tmp.cr2.set(other.tile.x, other.tile.y, other.radius/Vars.tilesize))){
           Reaction<?, ?, ?> reaction = Sgl.reactions.match(gas, other.gas);
           Tile t = Vars.world.tile((tile.x + other.tile.x)/2, (tile.y + other.tile.y)/2);
@@ -90,9 +97,18 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
       }
     });
     
-    if(gasAmount <= 1) remove();
-    
-    flowRate /= 2;
+    if(timing>0){
+      timing--;
+    }
+    else{
+      flowRate /= 2;
+      if(gasAmount <= 1) remove();
+    }
+  }
+  
+  public void flow(float flow){
+    tempRate += flow;
+    timing = 3;
   }
   
   @Override

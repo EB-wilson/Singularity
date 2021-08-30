@@ -1,6 +1,8 @@
 package singularity.world.blocks.product;
 
+import arc.util.Log;
 import singularity.Singularity;
+import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.world.blockComp.GasBuildComp;
 import singularity.world.consumers.SglConsumeGases;
@@ -215,6 +217,12 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
       super.reset();
       progress = 0;
       productionEfficiency = 0;
+    }
+  
+    @Override
+    public void handleGas(GasBuildComp source, Gas gas, float amount){
+      super.handleGas(source, gas, amount);
+      Log.info("handling, "+ gas + ", " + source + ", " + amount);
     }
   
     @Override

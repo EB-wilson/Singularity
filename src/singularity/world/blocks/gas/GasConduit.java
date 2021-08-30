@@ -42,12 +42,16 @@ public class GasConduit extends SglBlock implements Autotiler{
     super(name);
     hasGases = true;
     outputGases = true;
+    showGasFlow = true;
     rotate = true;
     solid = false;
     floating = true;
     conveyorPlacement = true;
     noUpdateDisabled = true;
     update = true;
+    
+    gasCapacity = 22.25f;
+    maxGasPressure = 16;
   }
   
   @Override
@@ -129,12 +133,14 @@ public class GasConduit extends SglBlock implements Autotiler{
         });
       }
       else if(next.build == null){
-        float pressureDiff = pressure() - Sgl.atmospheres.current.getCurrPressure();
-        if(pressureDiff <= 0.001) return;
+        float fract = Math.max(0, pressure() - Sgl.atmospheres.current.getCurrPressure())/getGasBlock().maxGasPressure();
+        
+        if(fract <= 0) return;
         gases.each(stack -> {
           gasColor.mul(stack.gas.color);
-          handleGas(this, stack.gas, -pressureDiff);
-          Sgl.gasAreas.pour(next, stack.gas, pressureDiff);
+          float flowRate = Math.min(fract*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity()*(gases().get(stack.gas)/gases().total()), gases().get(stack.gas));
+          handleGas(this, stack.gas, -flowRate);
+          Sgl.gasAreas.pour(next, stack.gas, flowRate);
         });
       }
       gasColor.a(pressure()/maxGasPressure*0.75f);

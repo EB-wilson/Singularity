@@ -1,5 +1,8 @@
 package singularity.content;
 
+import arc.graphics.g2d.Bloom;
+import mindustry.core.Renderer;
+import mindustry.graphics.Layer;
 import singularity.Singularity;
 import singularity.world.draw.*;
 import singularity.world.blocks.product.GasCompressor;
@@ -111,9 +114,12 @@ public class FactoryBlocks implements ContentList{
           Draw.color();
           Draw.rect(region, entity.x, entity.y);
           Draw.alpha(warmup(entity));
+          Draw.z(Layer.effect);
           Draw.rect(laser, entity.x, entity.y, 90 + totalProgress(entity) * 1.5f);
+          Draw.z(Layer.block);
           Draw.color();
           Draw.rect(rotator, entity.x, entity.y, 90 + totalProgress(entity) * 1.5f);
+          Draw.z(Layer.effect+1);
           Draw.rect(top, entity.x, entity.y);
           Draw.color();
         }
@@ -168,7 +174,8 @@ public class FactoryBlocks implements ContentList{
       newConsume();
       consume.time(90f);
       consume.power(1.5f);
-      consume.items(ItemStack.with(Gases.O2.tank, 1, Items.pyratite, 2));
+      consume.items(ItemStack.with(Items.pyratite, 2));
+      consume.gas(Gases.CH4, 0.6f);
       consume.liquids(UncLiquidStack.with(SglLiquids.mixed_tar, 0.2f, Liquids.water, 0.4f));
       newProduce();
       produce.liquid(SglLiquids.mixed_chemical_gel, 0.4f);
