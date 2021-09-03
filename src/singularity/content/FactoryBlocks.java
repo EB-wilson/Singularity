@@ -51,7 +51,7 @@ public class FactoryBlocks implements ContentList{
     retort_column = new NormalCrafter("retort_column"){{
       displaySelectLiquid = true;
       requirements(Category.crafting, ItemStack.with(Items.titanium, 75, Items.lead, 40, Items.metaglass, 30, Items.graphite, 50));
-      size = 4;
+      size = 3;
       newConsume();
       consume.time(30f);
       consume.power(2f);
@@ -68,7 +68,7 @@ public class FactoryBlocks implements ContentList{
     petroleum_separator = new NormalCrafter("petroleum_separator"){{
       displaySelectLiquid = true;
       requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 100, Items.lead, 175, Items.metaglass, 130, Items.silicon, 150));
-      size = 3;
+      size = 4;
       newConsume();
       consume.time(30f);
       consume.power(1.5f);

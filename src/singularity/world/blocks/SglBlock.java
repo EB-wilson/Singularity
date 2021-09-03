@@ -224,7 +224,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     if(hasGases) bars.add("gasPressure", e -> {
       GasBuildComp entity = (GasBuildComp) e;
       return new Bar(
-        () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.pressure(), 2) + "HT-Pa",
+        () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.pressure()*100, 2) + "kPa",
         () -> Pal.accent,
         () -> Math.min(entity.pressure() / maxGasPressure, 1));
     });

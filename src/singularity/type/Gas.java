@@ -6,6 +6,7 @@ import mindustry.ui.LiquidDisplay;
 import singularity.Singularity;
 import singularity.ui.tables.GasValue;
 import singularity.world.meta.SglStat;
+import singularity.Sgl;
 import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.Pixmap;
@@ -37,7 +38,7 @@ public class Gas extends UnlockableContent{
   }
   
   public Item creatTank(float consume){
-    tank = new Item(name + "_tank", color);
+    tank = new Item(name.replace(Sgl.modName + "-", "") + "_tank", color);
     hasTank = true;
     tankContains = consume;
     return tank;
