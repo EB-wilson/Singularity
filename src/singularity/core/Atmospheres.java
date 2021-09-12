@@ -67,11 +67,11 @@ public class Atmospheres{
     Writes write = Writes.get(dataBytes);
     
     write.i(bindMap.size);
-    bindMap.forEach(e -> {
-      write.i(e.value.attach.id);
-      e.value.write(write);
-    });
-    
+    for(ObjectMap.Entry<Planet, Atmosphere> atmoEntry : bindMap){
+      write.i(atmoEntry.value.attach.id);
+      atmoEntry.value.write(write);
+    }
+  
     int length = byteOutput.size();
   
     try{

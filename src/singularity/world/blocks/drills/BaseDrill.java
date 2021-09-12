@@ -227,7 +227,14 @@ public class BaseDrill extends SglBlock{
     
     @Override
     public boolean shouldConsume(){
-      return super.shouldConsume() && !isFull();
+      return super.shouldConsume() && !isFull() && miningAny();
+    }
+    
+    public boolean miningAny(){
+      for(boolean bool: currentMines){
+        if(bool) return true;
+      }
+      return false;
     }
   
     @Override

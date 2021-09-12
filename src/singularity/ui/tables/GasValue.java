@@ -34,7 +34,9 @@ public class GasValue extends Table{
         add(t);
       }
     }}).size(iconMed).padRight(3  + (amount != 0 && Strings.autoFixed(amount, 2).length() > 2 ? 8 : 0));
-  
+    
+    add().width(8);
+    
     if(preSec){
       add(StatUnit.perSecond.localized()).padLeft(2).padRight(5).color(Color.lightGray).style(Styles.outlineLabel);
     }

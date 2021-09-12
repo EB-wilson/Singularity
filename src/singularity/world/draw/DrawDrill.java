@@ -1,5 +1,6 @@
 package singularity.world.draw;
 
+import mindustry.graphics.Drawf;
 import singularity.world.blocks.drills.BaseDrill.BaseDrillBuild;
 import arc.Core;
 import arc.graphics.Blending;
@@ -57,8 +58,8 @@ public class DrawDrill extends SglDrawBlock{
         Draw.blend();
         Draw.color();
       }
-      
-      Draw.rect(rotator, entity.x, entity.y, rotation(entity));
+  
+      Drawf.spinSprite(rotator, entity.x, entity.y, rotation(entity));
       Draw.blend();
       
       if(top != null){

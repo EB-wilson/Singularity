@@ -38,12 +38,18 @@ public class FactoryBlocks implements ContentList{
   public static Block retort_column,
   /**石油裂解厂*/
   petroleum_separator,
+  /**纯化分离机*/
+  purifier,
   /**激光解离机*/
   laser_resolver,
   /**气体压缩机*/
   gas_compressor,
+  /**洗矿机*/
+  ore_washer,
   /**混合凝胶工厂*/
   crystallizer,
+  /**热能离心机*/
+  thermal_centrifuge,
   /**结晶器*/
   gel_mixer;
 
@@ -62,7 +68,11 @@ public class FactoryBlocks implements ContentList{
         SglItems.coke, 1
       ));
       produce.liquid(SglLiquids.mixed_tar, 0.1f);
-      produce.gas(Gases.CH4, 0.2f);
+      produce.gas(Gases.O2, 0.2f);
+      
+      drawer = new SglDrawSmelter(){
+      
+      };
     }};
     
     petroleum_separator = new NormalCrafter("petroleum_separator"){{
@@ -78,6 +88,34 @@ public class FactoryBlocks implements ContentList{
         SglLiquids.mixed_tar, 0.2,
         SglLiquids.fuel_oil, 0.2
       ));
+    }};
+    
+    purifier = new NormalCrafter("purifier"){{
+      requirements(Category.crafting, ItemStack.with(SglItems.crystal_FEX, 120, Items.surgeAlloy, 90, Items.phaseFabric, 50));
+      newConsume();
+      consume.time(90f);
+      consume.item(SglItems.uranium_cake, 1);
+      consume.power(2.2f);
+      newProduce();
+      produce.item(SglItems.salt_uranium, 3);
+      
+      drawer = new DrawFrame(){
+        @Override
+        public int framesControl(int index, Building e){
+          if(index == 0){
+            return 0;
+          }
+          else return (int)(14*((NormalCrafterBuild)e).totalProgress);
+        }
+        
+        @Override
+        public float alphaControl(int index, Building e){
+          if(index == 0){
+            return 1;
+          }
+          else return ((NormalCrafterBuild)e).warmup;
+        }
+      };
     }};
     
     laser_resolver = new NormalCrafter("laser_resolver"){{
@@ -286,14 +324,14 @@ public class FactoryBlocks implements ContentList{
             Draw.color(Color.valueOf("FF756F"));
             Draw.alpha((alphas[dist] <= 1? alphas[dist]: alphas[dist] <= 1.5? 1: 0)*warmup);
             if(warmup > 0){
-              if(alphas[dist] < 0.4) alphas[dist] = 1;
+              if(alphas[dist] < 0.4) alphas[dist] += 0.6;
               for(int i=0; i<4; i++){
                 Draw.rect(wave,
                   x + dist*Geometry.d4(i).x*3 + 5*(Integer.compare(Geometry.d4(i).x, 0)),
                   y + dist*Geometry.d4(i).y*3 + 5*(Integer.compare(Geometry.d4(i).y, 0)),
                   (i+1)*90);
               }
-              alphas[dist] -= 0.02;
+              alphas[dist] -= 0.02*edelta();
             }
             else{
               alphas[dist] = 1.5f + 0.7f*(2-dist);

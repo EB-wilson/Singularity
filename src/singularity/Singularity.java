@@ -5,6 +5,7 @@ import arc.scene.style.Drawable;
 import singularity.content.*;
 import singularity.content.override.OverrideBlocks;
 import singularity.core.Init;
+import singularity.core.ProxyBuildings;
 import singularity.type.SglCategory;
 import singularity.type.SglContentType;
 import arc.Core;
@@ -21,6 +22,7 @@ import mindustry.world.Block;
 import universeCore.util.OverrideContentList;
 import universeCore.util.UncContentType;
 import universeCore.util.handler.ContentHandler;
+import universeCore.util.handler.ProxyHandler;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -50,6 +52,8 @@ public class Singularity extends Mod{
     Sgl.config.load();
     //加载方块类型
     SglCategory.load();
+    //载入所有新内容类型
+    SglContentType.load();
     
     Log.info("[Singularity] Singularity mod is loading!\nThanks for use this mod.\nauthor: EBwilson\nVisit the GitHub project about this mod: > " + Sgl.githubProject + " <");
     

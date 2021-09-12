@@ -51,7 +51,6 @@ public class DefaultAtmosphere{
   }
   
   public void loadData(String section){
-    Pattern mark = Pattern.compile("\\[(\\w+\\*\\d+.*\\d*\\s*,?\\s*)+]");
     Ini.IniSection map = configure.getSection(section);
     if(map != null){
       if(section.equals("defaults")){

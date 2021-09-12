@@ -23,12 +23,18 @@ public class DrawFrame extends SglDrawBlock{
     return 0f;
   }
   
+  /**帧控制器，重写该方法的返回值以控制某层的透明度
+   * @param index 层索引，为层的序数*/
+  public float alphaControl(int index, Building e){
+    return 1;
+  }
+  
   @Override
   public void load(Block block){
     int layer = 0, frame = 0;
-    while(Core.atlas.has(block.name + "_l_" + layer + "_f_" + frame)){
-      while(Core.atlas.has(block.name + "_l_" + layer + "_f_" + frame)){
-        frames[layer][frame] = Core.atlas.find(block.name + "_l_" + layer + "_f_" + frame);
+    while(Core.atlas.has(block.name + "_" + layer + "_" + frame)){
+      while(Core.atlas.has(block.name + "_" + layer + "_" + frame)){
+        frames[layer][frame] = Core.atlas.find(block.name + "_" + layer + "_" + frame);
         frame++;
       }
       layer++;

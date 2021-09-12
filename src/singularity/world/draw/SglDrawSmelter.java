@@ -27,7 +27,7 @@ public class SglDrawSmelter extends DrawFactory{
   
   @Override
   public void load(Block block){
-    top = Core.atlas.find(block.name + "-top");
+    top = Core.atlas.find(block.name + "_top");
     block.clipSize = Math.max(block.clipSize, (lightRadius + lightSinMag) * 2f * block.size);
   }
   

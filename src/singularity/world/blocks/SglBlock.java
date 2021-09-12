@@ -368,13 +368,13 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       int d = ((size % 2 == 0)? size: size + 1)/2 - 1;
       int rd = size % 2;
   
-      return switch(rotation){
-        case 0 -> nearby(size/2 + 1, distance - d);
-        case 1 -> nearby(distance - d, size/2 + 1);
-        case 2 -> nearby(-size/2 - rd, distance - d);
-        case 3 -> nearby(distance - d, -size/2 - rd);
-        default -> null;
-      };
+      switch(rotation){
+        case 0: return nearby(size/2 + 1, distance - d);
+        case 1: return nearby(distance - d, size/2 + 1);
+        case 2: return nearby(-size/2 - rd, distance - d);
+        case 3: return nearby(distance - d, -size/2 - rd);
+        default: return null;
+      }
     }
   
     public boolean updateValid(){

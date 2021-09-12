@@ -3,6 +3,7 @@ package singularity.world.atmosphere;
 import arc.func.Cons2;
 import arc.struct.IntMap;
 import arc.util.Interval;
+import arc.util.Log;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -41,7 +42,7 @@ public class Atmosphere{
     defaults = DefaultAtmosphere.defaults;
     
     total = defaults.baseTotal;
-    ingredients = defaults.ingredientsBase;
+    ingredients = defaults.ingredients;
   }
   
   public void setSector(){
@@ -165,11 +166,13 @@ public class Atmosphere{
     int count = read.i();
     int sectorCount = read.i();
     total = 0;
-    
+  
+    Log.info(attach.name);
     for(int id=0; id<count; id++){
       float amount = read.f();
       ingredients[id] = amount;
       total += amount;
+      Log.info(Vars.content.getByID(SglContentType.gas.value, id) + ", " + amount);
     }
   
     for(int i = 0; i < sectorCount; i++){

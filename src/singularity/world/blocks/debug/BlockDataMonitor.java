@@ -39,8 +39,7 @@ public class BlockDataMonitor extends Block{
       Tile tile = Vars.world.tile(p);
       if(tile == null || tile.build == null) return;
       Building other = tile.build;
-  
-      Log.info(other + ", " + other.block);
+      
       if(e.targets.contains(other)){
         if(other instanceof VarsContainerBuild){
           e.varsContainer = null;
@@ -49,7 +48,7 @@ public class BlockDataMonitor extends Block{
         else e.targets.remove(other);
       }
       else{
-        if(other instanceof VarsContainerBuild){
+        if(other.block instanceof VarsContainer){
           e.varsContainer = (VarsContainerBuild)other;
           e.dataDialog.setVars(e.varsContainer.vars);
         }

@@ -14,7 +14,7 @@ public class VarsContainer extends Block{
     hasPower = false;
   }
   
-  public class VarsContainerBuild extends Building{
+  public static class VarsContainerBuild extends Building{
     public ObjectMap<String, ObjectDataMonitor.VarStructure> vars = new ObjectMap<>();
   }
 }

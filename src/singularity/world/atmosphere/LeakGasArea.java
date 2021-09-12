@@ -27,6 +27,7 @@ import singularity.type.Reaction;
 import singularity.type.SglContentType;
 import singularity.world.SglFx;
 
+@SuppressWarnings("unchecked")
 public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   public static final float maxGasCapacity = 100f;
   

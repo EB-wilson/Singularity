@@ -25,10 +25,10 @@ public class CollectBlocks implements ContentList {
   
       newConsume();
       consume.power(1.8f);
-      newBooster(2.25f);
+      newBooster(2.1f);
       consume.time(60f);
       consume.item(SglItems.dry_ice, 1);
-      newBooster(2.0f);
+      newBooster(1.9f);
       consume.liquid(Liquids.cryofluid, 0.08f);
       newBooster(1.8f);
       consume.liquid(Liquids.water, 0.1f);
