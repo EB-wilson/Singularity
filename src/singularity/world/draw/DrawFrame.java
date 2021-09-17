@@ -3,6 +3,7 @@ package singularity.world.draw;
 import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
+import arc.struct.Seq;
 import mindustry.gen.Building;
 import mindustry.world.Block;
 
@@ -31,20 +32,13 @@ public class DrawFrame extends SglDrawBlock{
   
   @Override
   public void load(Block block){
-    int layer = 0, frame = 0;
-    while(Core.atlas.has(block.name + "_" + layer + "_" + frame)){
-      while(Core.atlas.has(block.name + "_" + layer + "_" + frame)){
-        frames[layer][frame] = Core.atlas.find(block.name + "_" + layer + "_" + frame);
-        frame++;
-      }
-      layer++;
-      frame = 0;
-    }
+  
   }
   
   @Override
   public void draw(Building entity){
     for(int layer=0; layer<frames.length; layer++){
+      Draw.alpha(alphaControl(layer, entity));
       Draw.rect(frames[layer][Math.min(frames[layer].length - 1, framesControl(layer, entity))], entity.x, entity.y, rotationControl(layer, entity));
     }
     Draw.blend();

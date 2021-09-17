@@ -1,15 +1,12 @@
 package singularity.world.products;
 
 import arc.Core;
-import arc.util.Log;
-import mindustry.ui.LiquidDisplay;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.Stats;
 import singularity.type.GasStack;
 import singularity.ui.tables.GasValue;
 import singularity.world.blockComp.GasBuildComp;
 import universeCore.entityComps.blockComps.ProducerBuildComp;
-import universeCore.util.UncLiquidStack;
 import universeCore.world.producers.BaseProduce;
 import universeCore.world.producers.ProduceType;
 
@@ -41,11 +38,13 @@ public class ProduceGases extends BaseProduce{
   public void display(Stats stats){
     stats.add(Stat.output, table -> {
       table.row();
-      table.defaults().left();
-      table.add(Core.bundle.get("misc.gas") + ":").left();
-      for(GasStack stack: gases){
-        table.add(new GasValue(stack.gas, stack.amount*60)).padRight(5);
-      }
+      table.table(t -> {
+        t.defaults().left().fill().padLeft(6);
+        t.add(Core.bundle.get("misc.gas") + ":").left();
+        for(GasStack stack: gases){
+          t.add(new GasValue(stack.gas, stack.amount*60));
+        }
+      }).left().padLeft(5);
     });
   }
   

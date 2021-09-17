@@ -1,4 +1,4 @@
-![image](assets/sprites-override/ui/logo.png)
+![image](assets/sprites/ui/logo.png)
 ---
 >mod目前尚处于开发阶段，内容不齐全，尽可能不要在发布前游玩此mod
 ## Singularity

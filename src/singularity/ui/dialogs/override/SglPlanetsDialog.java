@@ -5,8 +5,6 @@ import arc.func.Cons;
 import arc.graphics.Color;
 import arc.math.Mathf;
 import arc.scene.Element;
-import arc.scene.ui.Label;
-import arc.scene.ui.TextField;
 import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
@@ -26,7 +24,6 @@ import singularity.Sgl;
 import singularity.ui.tables.GasValue;
 import singularity.world.atmosphere.Atmosphere;
 import singularity.world.atmosphere.AtmosphereSector;
-import universeCore.util.handler.MethodHandler;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -51,7 +48,7 @@ public class SglPlanetsDialog extends PlanetDialog{
   float maxX = 500;
   float maxY = 390;
   
-  float maxSectorBarX = 232;
+  float maxSectorBarX = 235;
   
   float sectBarWidth = 0;
   
@@ -122,7 +119,7 @@ public class SglPlanetsDialog extends PlanetDialog{
             for(Sector sec : all){
               if(sec.hasBase() && (str.isEmpty() || sec.name().toLowerCase().contains(str.toLowerCase()))){
                 pane.button(t -> {
-                    t.add(sec.name()).width(160).left();
+                    t.add(sec.name()).width(157).left();
                     t.table(tip -> {
                       if(Sgl.atmospheres.getByPlanet(sec.planet).analyzed(sec)){
                         tip.image(Icon.ok).color(Color.green);
@@ -232,7 +229,7 @@ public class SglPlanetsDialog extends PlanetDialog{
                     s.add(updater);
                     s.removeChild(updater);
                     if(sectBarWidth < maxSectorBarX - 1){
-                      sectBarWidth = Mathf.lerp(sectBarWidth, maxSectorBarX, 0.15f);
+                      sectBarWidth = Mathf.lerpDelta(sectBarWidth, maxSectorBarX, 0.15f);
                       sectCe.width(sectBarWidth);
                     }
                     else if(trans[0]){
@@ -254,7 +251,7 @@ public class SglPlanetsDialog extends PlanetDialog{
                       s.add(updater);
                       s.removeChild(updater);
                       if(sectBarWidth > 1){
-                        sectBarWidth = Mathf.lerp(sectBarWidth, 0, 0.15f);
+                        sectBarWidth = Mathf.lerpDelta(sectBarWidth, 0, 0.15f);
                         sectCe.width(sectBarWidth);
                       }
                       else{
@@ -288,7 +285,7 @@ public class SglPlanetsDialog extends PlanetDialog{
           s.add(updater);
           s.removeChild(updater);
           if(sectBarWidth > 1){
-            sectBarWidth = Mathf.lerp(sectBarWidth, 0, 0.15f);
+            sectBarWidth = Mathf.lerpDelta(sectBarWidth, 0, 0.15f);
             sectCe.width(sectBarWidth);
           }
           else{
@@ -349,7 +346,7 @@ public class SglPlanetsDialog extends PlanetDialog{
                 s.add(updater);
                 s.removeChild(updater);
                 if(sectBarWidth > 1){
-                  sectBarWidth = Mathf.lerp(sectBarWidth, 0, 0.15f);
+                  sectBarWidth = Mathf.lerpDelta(sectBarWidth, 0, 0.15f);
                   sectCe.width(sectBarWidth);
                 }
                 else{
@@ -365,14 +362,15 @@ public class SglPlanetsDialog extends PlanetDialog{
               sectState = new boolean[]{false, false, false};
               currentSector = null;
               sectLast = null;
-            }).growX().margin(0).padRight(8).padLeft(8).height(40);
+            }).growX().margin(0).padRight(8).padLeft(8).height(40).padTop(0);
+            
             t.row();
             t.button(Core.bundle.get("misc.fold"), () -> {
               if(sectCe != null) sectCe.update(s -> {
                 s.add(updater);
                 s.removeChild(updater);
                 if(sectBarWidth > 1){
-                  sectBarWidth = Mathf.lerp(sectBarWidth, 0, 0.15f);
+                  sectBarWidth = Mathf.lerpDelta(sectBarWidth, 0, 0.15f);
                   sectCe.width(sectBarWidth);
                 }
                 else{
@@ -412,16 +410,16 @@ public class SglPlanetsDialog extends PlanetDialog{
           table.add(updater);
           table.removeChild(updater);
           if(!fold){
-            if(x < maxX) x = Mathf.lerp(x, maxX, 0.15f);
-            if(y < maxY) y = Mathf.lerp(y, maxY, 0.15f);
+            if(x < maxX) x = Mathf.lerpDelta(x, maxX, 0.15f);
+            if(y < maxY) y = Mathf.lerpDelta(y, maxY, 0.15f);
             if(x >= maxX - 1 && y >= maxY - 1){
               state = 3;
               table.add(infoTable).size(x, y);
             }
           }
           else{
-            if(x > minX) x = Mathf.lerp(x, minX, 0.15f);
-            if(y > minY) y = Mathf.lerp(y, minY, 0.15f);
+            if(x > minX) x = Mathf.lerpDelta(x, minX, 0.15f);
+            if(y > minY) y = Mathf.lerpDelta(y, minY, 0.15f);
             if(x <= minX + 1 && y <= minY + 1){
               state = 3;
               table.add(defaultTable).size(x, y);

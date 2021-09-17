@@ -156,7 +156,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
       }
       stats.add(SglStat.inputs, table -> {
         table.row();
-        table.table(tab -> recipe.init(tab));
+        table.add(recipe);
       });
     }
     else if(producers.size() == 1){

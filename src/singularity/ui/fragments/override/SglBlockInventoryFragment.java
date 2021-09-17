@@ -1,4 +1,4 @@
-package singularity.ui.fragments;
+package singularity.ui.fragments.override;
 
 import arc.util.Log;
 import mindustry.gen.Building;

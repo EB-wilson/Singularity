@@ -2,35 +2,25 @@ package singularity.core;
 
 import mindustry.ui.fragments.OverlayFragment;
 import singularity.Sgl;
-import singularity.Singularity;
-import singularity.core.ModConfig;
-import singularity.type.SglCategory;
-import singularity.ui.SglUI;
-import singularity.ui.fragments.SglBlockInventoryFragment;
+import singularity.ui.fragments.override.SglBlockInventoryFragment;
+import singularity.ui.fragments.override.SglMenuFrag;
 import singularity.world.meta.SglAttribute;
-import arc.scene.style.Drawable;
-import arc.scene.style.TextureRegionDrawable;
-import arc.scene.ui.ImageButton;
-import arc.scene.ui.layout.Cell;
-import arc.scene.ui.layout.Table;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.content.Blocks;
-import mindustry.type.Category;
-import mindustry.ui.fragments.PlacementFragment;
 import mindustry.world.Block;
 import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.liquid.Conduit;
 import universeCore.util.handler.FieldHandler;
 
-import java.lang.reflect.Field;
-
-import static mindustry.Vars.ui;
-
 /**改动游戏原内容重初始化，用于对游戏已定义的实例进行操作*/
 public class Init{
   public static void init(){
     FieldHandler.setValue(OverlayFragment.class, "inv", Vars.control.input.frag, new SglBlockInventoryFragment());
+  
+    Vars.ui.menufrag = new SglMenuFrag();
+    Vars.ui.menuGroup.clearChildren();
+    Vars.ui.menufrag.build(Vars.ui.menuGroup);
     
     if(Sgl.config.loadInfo) Log.info("[Singularity] mod initialization is complete");
   }

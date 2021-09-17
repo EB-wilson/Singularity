@@ -7,6 +7,7 @@ import arc.scene.ui.layout.Table;
 import arc.util.Strings;
 import mindustry.core.UI;
 import mindustry.ui.ItemDisplay;
+import mindustry.ui.LiquidDisplay;
 import mindustry.ui.Styles;
 import mindustry.world.meta.StatUnit;
 import singularity.type.Gas;
@@ -34,8 +35,6 @@ public class GasValue extends Table{
         add(t);
       }
     }}).size(iconMed).padRight(3  + (amount != 0 && Strings.autoFixed(amount, 2).length() > 2 ? 8 : 0));
-    
-    add().width(8);
     
     if(preSec){
       add(StatUnit.perSecond.localized()).padLeft(2).padRight(5).color(Color.lightGray).style(Styles.outlineLabel);

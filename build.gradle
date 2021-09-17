@@ -4,8 +4,8 @@ plugins {
 
 version 'alpha-0.1'
 
-sourceCompatibility = 11
-targetCompatibility = 11
+project.sourceCompatibility = 11
+project.targetCompatibility = 11
 
 sourceSets.main.java.srcDirs = ["src"]
 
@@ -16,7 +16,7 @@ repositories{
 
 ext{
     //the build number that this mod is made for
-    mindustryVersion = 'v130.1'
+    mindustryVersion = 'v131'
     //version of SDK you will be using
     sdkVersion = '30.0.3'
     //version of build-tools you installed
@@ -76,7 +76,7 @@ jar{
         include "icon.png"
     }
 
-    from("assets/"){
+    from("assets/") {
         include "**"
     }
 }

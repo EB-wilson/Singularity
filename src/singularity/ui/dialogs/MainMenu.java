@@ -1,12 +1,11 @@
 package singularity.ui.dialogs;
 
 import arc.Core;
+import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import mindustry.gen.Tex;
 import mindustry.ui.dialogs.BaseDialog;
 import singularity.Sgl;
-
-import static singularity.ui.SglUI.*;
 
 public class MainMenu extends BaseDialog {
   WorldOutlookDialog worldOutlook = new WorldOutlookDialog(Core.bundle.get("dialog.worldOutlook.title"));
@@ -16,12 +15,13 @@ public class MainMenu extends BaseDialog {
     super(Core.bundle.get("dialog.mainMenu.title"));
     build();
   }
-
+  Table table = new Table();
+  Cell<Table> cell1;
   public void build() {
     aboutMod.build();
     cont.clear();
 
-    Table table = new Table();
+    
     table.add(Core.bundle.get("dialog.mainMenu.text"));
     table.row();
     Table button = new Table(Tex.button);
@@ -40,7 +40,7 @@ public class MainMenu extends BaseDialog {
     button.add(layout1).size(650, 270);
     button.row();
     button.add("[gray]" + Core.bundle.get("dialog.mainMenu.tip_1")).padTop(30).padLeft(20);
-    table.add(button).size(650, 350);
+    cell1 = table.add(button).size(650, 350);
     table.row();
     table.add("[red]" + Core.bundle.get("dialog.mainMenu.warning")).left();
     table.row();
@@ -54,7 +54,6 @@ public class MainMenu extends BaseDialog {
   }
 
   private void show2(){
-
   }
 
   private void show3(){

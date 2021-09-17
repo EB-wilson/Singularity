@@ -1,8 +1,7 @@
 package singularity.ui.tables;
 
 import arc.Core;
-import arc.scene.ui.ImageButton;
-import arc.scene.ui.TextButton;
+import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.struct.OrderedMap;
 import arc.struct.Seq;
@@ -13,78 +12,96 @@ import mindustry.world.meta.StatCat;
 import mindustry.world.meta.StatValue;
 import mindustry.world.meta.Stats;
 import singularity.Singularity;
+import universeCore.UncCore;
+import universeCore.util.animLayout.CellAnimateGroup;
+import universeCore.util.animLayout.CellChangeColorAction;
+import universeCore.util.animLayout.CellResizeAction;
 
-public class RecipeTable{
+public class RecipeTable extends Table{
   public Stats[] stats;
   public int page = 0;
   
+  Cell<Table> mainCell = table(Tex.buttonTrans).size(80, 50);
+  Table main = mainCell.get();
+  Cell<Table> recipeTable;
+  Table animContainer = new Table();
+  Cell<Table> animCell = main.add(animContainer).grow();
+  
+  CellAnimateGroup mainAnim;
+  
+  Runnable rebuild = () -> {};
+  
   public RecipeTable(int length){
     this.stats = new Stats[length];
-  }
+    
+    rebuild = () -> {
+      animContainer.clearChildren();
+      
+      animContainer.button(Core.bundle.get("misc.unfold"), () -> {
+        if(mainAnim == null || !UncCore.cellActions.acting(mainAnim) || mainAnim.getCurrIndex() == 2){
+          mainAnim = new CellAnimateGroup(
+              new CellChangeColorAction(animCell, this, main.color.cpy().a(0), 20f),
+              new CellResizeAction(mainCell, main, 360, 280, 20f).gradient(0.15f),
+              (Runnable) () -> {
+                animContainer.clearChildren();
+        
+                animContainer.pane(t -> {
+                  recipeTable = t.table(table -> {
+                    table.defaults().left().grow();
+                    updateRecipe(table, page);
+                  });
+                }).size(340, 160).left();
+        
+                CellAnimateGroup pageAnim = new CellAnimateGroup(
+                    new CellChangeColorAction(recipeTable, animContainer, recipeTable.get().color.cpy().a(0), 20f),
+                    (Runnable) () -> updateRecipe(recipeTable.get(), page),
+                    new CellChangeColorAction(recipeTable, animContainer, recipeTable.get().color.cpy().a(1), 20f)
+                );
+        
+                animContainer.row();
+                animContainer.table(pages -> {
+                  pages.button(b -> b.image(Singularity.getModAtlas("arrow_left")), () -> {
+                    if(page > 0) page--;
+                    if(!UncCore.cellActions.acting(pageAnim)){
+                      UncCore.cellActions.add(pageAnim);
+                    }else if(pageAnim.getCurrIndex() == 1) pageAnim.restart();
+                  }).size(40).update(button -> button.setDisabled(page <= 0));
+          
+                  pages.table(t -> t.add("").update(label -> {
+                    label.setText(Core.bundle.format("misc.page", page+1, stats.length));
+                  })).size(100, 50);
+          
+                  pages.button(b -> b.image(Singularity.getModAtlas("arrow_right")), () -> {
+                    if(page < stats.length - 1) page++;
+                    if(! UncCore.cellActions.acting(pageAnim)){
+                      UncCore.cellActions.add(pageAnim);
+                    }else if(pageAnim.getCurrIndex() == 1) pageAnim.restart();
+                  }).size(40).update(button -> button.setDisabled(page >= stats.length - 1));
+                });
   
-  public void init(Table parent){
-    parent.clear();
-    if(stats.length == 1){
-      updateRecipe(parent, 0);
-      return;
-    }
-    Table main = new Table();
-    Table table = new Table(Tex.button);
-    Table pageDisplay = new Table(Tex.button);
-    Table pageChanger = new Table();
-    
-    updateRecipe(table, page);
-    
-    main.defaults().growX().marginLeft(0).marginRight(0);
-    main.add(table).width(320);
-    main.row();
-    
-    pageChanger.defaults().left();
-    pageChanger.add(new ImageButton(Singularity.getModAtlas("arrow_left")){{
-      clicked(() -> {
-        if (page > 0) {
-          page--;
-          updatePage(pageDisplay);
-          updateRecipe(table, page);
-        }
-      });
-    }}).size(65, 65);
-    pageChanger.add(pageDisplay).size(110, 70);
-    updatePage(pageDisplay);
-    pageChanger.add(new ImageButton(Singularity.getModAtlas("arrow_right")){{
-      clicked(() -> {
-        if (page < stats.length - 1) {
-          page++;
-          updatePage(pageDisplay);
-          updateRecipe(table, page);
-        }
-      });
-    }}).size(65, 65);
-    
-    Table t = new Table();
-    t.clear();
-    t.left();
-    TextButton b = new TextButton(Core.bundle.get("misc.open"));
-    b.clicked(() -> {
-      t.clear();
-      t.row();
-      t.add(main);
-    });
-    t.add(b);
-    
-    main.add(pageChanger).size(250, 70);
-    main.row();
-    main.button(Core.bundle.get("misc.close"), () -> {
-      t.clear();
-      t.add(b);
-    }).size(80, 50).padTop(5);
-    
-    parent.add(t);
-  }
+                animContainer.row();
+                animContainer.button(Core.bundle.get("misc.fold"), () -> {
+                  if(! UncCore.cellActions.acting(mainAnim) || mainAnim.getCurrIndex() == 2){
+                    mainAnim = new CellAnimateGroup(
+                        new CellChangeColorAction(animCell, this, main.color.cpy().a(0), 20f),
+                        new CellResizeAction(mainCell, main, 360, 280, 80, 50, 20f).gradient(0.15f),
+                        rebuild,
+                        new CellChangeColorAction(animCell, this, main.color.cpy().a(1), 20f)
+                    );
+                    UncCore.cellActions.add(
+                        mainAnim
+                    );
+                  }
+                }).size(80, 50);
+              },
+              new CellChangeColorAction(animCell, this, main.color.cpy().a(1), 20f)
+          );
   
-  public void updatePage(Table pageDisplay){
-    pageDisplay.clearChildren();
-    pageDisplay.add(Core.bundle.get("misc.page.a") + " " + (page + 1) + "/" + stats.length + " " + Core.bundle.get("misc.page.b"));
+          UncCore.cellActions.add(mainAnim);
+        }
+      }).size(80, 50).margin(0);
+    };
+    rebuild.run();
   }
   
   public void updateRecipe(Table table, int page){

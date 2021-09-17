@@ -4,12 +4,15 @@ import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import mindustry.gen.Building;
+import mindustry.graphics.Drawf;
 import mindustry.world.Block;
 import singularity.Singularity;
 import singularity.world.blocks.product.NormalCrafter.NormalCrafterBuild;
 
 public class DrawFactory extends SglDrawBlock{
   public TextureRegion rotator, top, bottom, liquid;
+  
+  public float rotationScl;
 
   public float progress(Building entity){
     if(!(entity instanceof NormalCrafterBuild)) return 0f;
@@ -39,7 +42,7 @@ public class DrawFactory extends SglDrawBlock{
   public void draw(Building entity){
     Draw.rect(bottom, entity.x, entity.y);
     Draw.rect(region, entity.x, entity.y, entity.block().rotate ? entity.rotdeg() : 0);
-    if(rotator != null) Draw.rect(rotator, entity.x, entity.y);
+    if(rotator != null) Drawf.spinSprite(rotator, entity.x, entity.y, totalProgress(entity)*rotationScl);
     if(top != null) Draw.rect(top, entity.x, entity.y);
     Draw.blend();
   }

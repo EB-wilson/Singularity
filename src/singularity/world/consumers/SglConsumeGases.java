@@ -1,19 +1,15 @@
 package singularity.world.consumers;
 
 import arc.Core;
-import mindustry.gen.Building;
-import mindustry.type.Liquid;
-import mindustry.ui.LiquidDisplay;
+import arc.scene.ui.layout.Table;
 import mindustry.ui.ReqImage;
 import mindustry.world.meta.Stat;
+import mindustry.world.meta.Stats;
 import singularity.type.Gas;
 import singularity.type.GasStack;
-import arc.scene.ui.layout.Table;
-import mindustry.world.meta.Stats;
 import singularity.ui.tables.GasValue;
 import singularity.world.blockComp.GasBuildComp;
 import universeCore.entityComps.blockComps.ConsumerBuildComp;
-import universeCore.util.UncLiquidStack;
 import universeCore.world.consumers.BaseConsume;
 import universeCore.world.consumers.UncConsumeType;
 
@@ -43,13 +39,15 @@ public class SglConsumeGases extends BaseConsume{
   
   @Override
   public void display(Stats stats){
-    stats.add(Stat.input, table -> {
+    stats.add(Stat.output, table -> {
       table.row();
-      table.defaults().left();
-      table.add(Core.bundle.get("misc.gas") + ":");
-      for(GasStack stack: gases){
-        table.add(new GasValue(stack.gas, stack.amount*60)).padRight(8);
-      }
+      table.table(t -> {
+        t.defaults().left().fill().padLeft(6);
+        t.add(Core.bundle.get("misc.gas") + ":").left();
+        for(GasStack stack: gases){
+          t.add(new GasValue(stack.gas, stack.amount*60));
+        }
+      }).left().padLeft(5);
     });
   }
   

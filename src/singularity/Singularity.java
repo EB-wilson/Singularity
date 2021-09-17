@@ -1,28 +1,23 @@
 package singularity;
 
-import arc.graphics.g2d.TextureRegion;
-import arc.scene.style.Drawable;
-import singularity.content.*;
-import singularity.content.override.OverrideBlocks;
-import singularity.core.Init;
-import singularity.core.ProxyBuildings;
-import singularity.type.SglCategory;
-import singularity.type.SglContentType;
 import arc.Core;
 import arc.Events;
-import arc.scene.ui.Image;
+import arc.graphics.g2d.TextureRegion;
 import arc.util.Log;
 import arc.util.Time;
 import mindustry.Vars;
 import mindustry.content.TechTree;
 import mindustry.core.ContentLoader;
-import mindustry.ctype.*;
+import mindustry.ctype.ContentList;
 import mindustry.mod.Mod;
-import mindustry.world.Block;
+import singularity.content.*;
+import singularity.content.override.OverrideBlocks;
+import singularity.core.Init;
+import singularity.type.SglCategory;
+import singularity.type.SglContentType;
 import universeCore.util.OverrideContentList;
 import universeCore.util.UncContentType;
 import universeCore.util.handler.ContentHandler;
-import universeCore.util.handler.ProxyHandler;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -33,7 +28,7 @@ public class Singularity extends Mod{
   public boolean initialized = false;
   
   private final ContentList[] modContents = new ContentList[]{
-    new SglItems(),//物品
+    new SglItems(),// 物品
     new SglLiquids(),//液体
     new Gases(),//气体
     new NuclearBlocks(),//核能方块
@@ -64,13 +59,6 @@ public class Singularity extends Mod{
     
     Events.on(ClientLoadEvent.class, e -> {
       Sgl.ui.mainMenu.show();
-      
-      Vars.ui.menuGroup.fill(t -> {
-        //所以我选择在游戏logo上盖个透明的按钮(反正也能按)
-        Image button = new Image(Singularity.getModAtlas("transparent"));
-        button.clicked(Sgl.ui.mainMenu::show);
-        t.top().add(button).size(1080, 170);
-      });
     });
     
     Events.on(ContentInitEvent.class, e -> {

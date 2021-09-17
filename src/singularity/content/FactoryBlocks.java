@@ -1,14 +1,5 @@
 package singularity.content;
 
-import arc.graphics.g2d.Bloom;
-import mindustry.core.Renderer;
-import mindustry.graphics.Layer;
-import singularity.Singularity;
-import singularity.world.draw.*;
-import singularity.world.blocks.product.GasCompressor;
-import singularity.world.blocks.product.NormalCrafter;
-import singularity.world.consumers.SglConsumeType;
-import singularity.world.products.SglProduceType;
 import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
@@ -22,13 +13,27 @@ import mindustry.content.Liquids;
 import mindustry.ctype.ContentList;
 import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Building;
+import mindustry.graphics.Drawf;
+import mindustry.graphics.Layer;
 import mindustry.type.Category;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.blocks.production.GenericCrafter;
+import singularity.Singularity;
+import singularity.type.Gas;
+import singularity.world.blocks.product.GasCompressor;
+import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.consumers.SglConsumeGases;
+import singularity.world.consumers.SglConsumeType;
+import singularity.world.consumers.SglConsumers;
+import singularity.world.draw.DrawFactory;
+import singularity.world.draw.DrawFrame;
+import singularity.world.draw.SglDrawSmelter;
+import singularity.world.products.SglProduceType;
 import universeCore.util.UncLiquidStack;
+import universeCore.world.consumers.BaseConsume;
 import universeCore.world.consumers.UncConsumeItems;
 import universeCore.world.consumers.UncConsumeLiquids;
 import universeCore.world.producers.ProduceLiquids;
@@ -68,11 +73,9 @@ public class FactoryBlocks implements ContentList{
         SglItems.coke, 1
       ));
       produce.liquid(SglLiquids.mixed_tar, 0.1f);
-      produce.gas(Gases.O2, 0.2f);
+      produce.gas(Gases.CH4, 0.2f);
       
-      drawer = new SglDrawSmelter(){
-      
-      };
+      drawer = new SglDrawSmelter();
     }};
     
     petroleum_separator = new NormalCrafter("petroleum_separator"){{
@@ -91,6 +94,7 @@ public class FactoryBlocks implements ContentList{
     }};
     
     purifier = new NormalCrafter("purifier"){{
+      size = 3;
       requirements(Category.crafting, ItemStack.with(SglItems.crystal_FEX, 120, Items.surgeAlloy, 90, Items.phaseFabric, 50));
       newConsume();
       consume.time(90f);
@@ -102,18 +106,35 @@ public class FactoryBlocks implements ContentList{
       drawer = new DrawFrame(){
         @Override
         public int framesControl(int index, Building e){
-          if(index == 0){
-            return 0;
+          if(index == 1){
+            return (int)(13*(((NormalCrafterBuild)e).progress%(13f/90))/(13f/90));
           }
-          else return (int)(14*((NormalCrafterBuild)e).totalProgress);
+          else return 0;
         }
         
         @Override
         public float alphaControl(int index, Building e){
-          if(index == 0){
-            return 1;
+          if(index == 1){
+            return ((NormalCrafterBuild)e).warmup;
           }
-          else return ((NormalCrafterBuild)e).warmup;
+          else return 1;
+        }
+  
+        @Override
+        public TextureRegion[] icons(Block block){
+          return new TextureRegion[]{frames[0][0]};
+        }
+  
+        @Override
+        public void load(Block block) {
+          TextureRegion[] leaser = new TextureRegion[13];
+          for(int i=0; i<13; i++){
+            leaser[i] = Singularity.getModAtlas("purifier_" + i);
+          }
+          frames = new TextureRegion[][]{
+              new TextureRegion[]{Singularity.getModAtlas("purifier")},
+              leaser
+          };
         }
       };
     }};
@@ -186,9 +207,9 @@ public class FactoryBlocks implements ContentList{
             rollers[i] = Singularity.getModAtlas("gas_compressor_roller_" + i);
           }
           frames = new TextureRegion[][]{
-            new TextureRegion[]{Singularity.getModAtlas("bottom_3")},
-            new TextureRegion[]{Singularity.getModAtlas("gas_compressor")},
-            rollers,
+              new TextureRegion[]{Singularity.getModAtlas("bottom_3")},
+              new TextureRegion[]{Singularity.getModAtlas("gas_compressor")},
+              rollers
           };
         }
   
@@ -204,6 +225,65 @@ public class FactoryBlocks implements ContentList{
       };
     }};
     
+    ore_washer = new NormalCrafter("ore_washer"){{
+      requirements(Category.crafting, ItemStack.with(Items.titanium, 60, Items.metaglass, 45, Items.silicon, 45));
+      size = 2;
+      itemCapacity = 20;
+      
+      newConsume();
+      consume.time(120f);
+      consume.liquids(UncLiquidStack.with(Liquids.water, 0.8f, SglLiquids.rock_bitumen, 0.6f));
+      consume.power(1.8f);
+      newProduce();
+      produce.liquid(SglLiquids.liquid_FEX, 0.2f);
+      produce.items(ItemStack.with(Items.sand, 6, SglItems.crush_uranium_ore, 1)).random();
+      
+      drawer = new DrawFactory(){
+        TextureRegion point;
+  
+        @Override
+        public void load(Block block){
+          super.load(block);
+          point = Singularity.getModAtlas("ore_washer_point");
+        }
+  
+        @Override
+        public void draw(Building entity){
+          Draw.rect(region, entity.x, entity.y);
+          Draw.color(Liquids.water.color);
+          Draw.alpha(entity.liquids.get(Liquids.water)/entity.block.liquidCapacity);
+          Draw.rect(liquid, entity.x, entity.y);
+          Draw.color();
+          Drawf.spinSprite(rotator, entity.x, entity.y, totalProgress(entity)*4.5f);
+          Draw.rect(top, entity.x, entity.y);
+          BaseConsume cons = ((SglConsumers)((NormalCrafterBuild)entity).consumer.current).first();
+          Color topColor;
+          float alpha = 0;
+          if(cons instanceof SglConsumeGases){
+            Gas gas = ((SglConsumeGases)cons).gases[0].gas;
+            topColor = gas.color;
+            alpha = ((NormalCrafterBuild)entity).gases.getPressure()/((NormalCrafterBuild)entity).getGasBlock().maxGasPressure();
+          }
+          else if(cons instanceof UncConsumeLiquids){
+            Liquid liquid = ((UncConsumeLiquids)cons).liquids[0].liquid;
+            if(liquid == Liquids.water) liquid = ((UncConsumeLiquids)cons).liquids[1].liquid;
+            topColor = liquid.color;
+            alpha = entity.liquids.get(liquid)/entity.block.liquidCapacity;
+          }
+          else if(cons instanceof UncConsumeItems){
+            Item item = ((UncConsumeItems)cons).items[0].item;
+            topColor = item.color;
+            alpha = (float)entity.items.get(item)/entity.block.itemCapacity;
+          }
+          else topColor = null;
+          
+          Draw.color(topColor != null? topColor: new Color(0, 0, 0, 0));
+          Draw.alpha(alpha);
+          Draw.rect(point, entity.x, entity.y);
+        }
+      };
+    }};
+    
     gel_mixer = new NormalCrafter("gel_mixer"){{
       requirements(Category.crafting, ItemStack.with(Items.titanium, 280, Items.lead, 250, Items.metaglass, 180, Items.silicon, 200, Items.graphite, 180));
       size = 4;
@@ -213,7 +293,7 @@ public class FactoryBlocks implements ContentList{
       consume.time(90f);
       consume.power(1.5f);
       consume.items(ItemStack.with(Items.pyratite, 2));
-      consume.gas(Gases.CH4, 0.6f);
+      consume.gas(Gases.O2, 0.6f);
       consume.liquids(UncLiquidStack.with(SglLiquids.mixed_tar, 0.2f, Liquids.water, 0.4f));
       newProduce();
       produce.liquid(SglLiquids.mixed_chemical_gel, 0.4f);
@@ -234,15 +314,16 @@ public class FactoryBlocks implements ContentList{
           if(entity.recipeCurrent == -1 || entity.consumer.current == null || ((NormalCrafterBuild)entity).producer.current == null) return;
           UncConsumeItems ci = entity.consumer.current.get(SglConsumeType.item);
           UncConsumeLiquids cl = entity.consumer.current.get(SglConsumeType.liquid);
+          SglConsumeGases cg = entity.consumer.current.get(SglConsumeType.gas);
           ProduceLiquids pl = ((NormalCrafterBuild)entity).producer.current.get(SglProduceType.liquid);
           Draw.rect(bottom, entity.x, entity.y);
           Draw.rect(region, entity.x, entity.y);
           Draw.rect(rotator, entity.x, entity.y, 90f + totalProgress(entity)*2);
           for(int dir=0; dir<4; dir++){
-            UnlockableContent o = dir < cl.liquids.length? cl.liquids[dir].liquid: dir % (cl.liquids.length) < ci.items.length? ci.items[dir % (cl.liquids.length)].item: null;
+            UnlockableContent o = dir < cg.gases.length? cg.gases[dir].gas: dir % cg.gases.length < cl.liquids.length? cl.liquids[dir % cg.gases.length].liquid: (dir % cg.gases.length) % (cl.liquids.length) < ci.items.length? ci.items[(dir % cg.gases.length) % (cl.liquids.length)].item: null;
             if(o == null) continue;
-            Draw.color(o instanceof Item ? ((Item)o).color: ((Liquid)o).color);
-            Draw.alpha(o instanceof Item ? (float)entity.items.get(o.id)/(float)entity.block().itemCapacity: entity.liquids.get((Liquid)o)/entity.block().liquidCapacity);
+            Draw.color(o instanceof Item ? ((Item)o).color: o instanceof Gas? ((Gas)o).color: ((Liquid)o).color);
+            Draw.alpha(o instanceof Item ? (float)entity.items.get(o.id)/(float)entity.block().itemCapacity: o instanceof Liquid? entity.liquids.get((Liquid)o)/entity.block().liquidCapacity: entity.pressure() / entity.getGasBlock().maxGasPressure());
             Draw.rect(liquidSide, entity.x, entity.y, dir*90f);
             Draw.color();
           }
@@ -260,6 +341,59 @@ public class FactoryBlocks implements ContentList{
             region,
             rotator,
             top,
+          };
+        }
+      };
+    }};
+    
+    thermal_centrifuge = new NormalCrafter("thermal_centrifuge"){{
+      requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 135, Items.copper, 100, Items.metaglass, 75, Items.silicon, 50));
+      size = 3;
+      itemCapacity = 28;
+      newConsume();
+      consume.time(180);
+      consume.item(SglItems.salt_uranium, 7);
+      consume.power(3.2f);
+      
+      newProduce();
+      produce.items(ItemStack.with(SglItems.uranium_238, 3, SglItems.uranium_235, 1));
+      
+      drawer = new DrawFactory(){
+        TextureRegion rim, topRotator;
+        
+        @Override
+        public void load(Block block){
+          super.load(block);
+          rim = Core.atlas.find(block.name + "_rim");
+          topRotator = Core.atlas.find(block.name + "_toprotator");
+        }
+  
+        @Override
+        public void draw(Building entity){
+          Draw.rect(bottom, entity.x, entity.y);
+          Draw.color(Liquids.slag.color);
+          Draw.alpha(warmup(entity));
+          Draw.rect(liquid, entity.x, entity.y);
+          Draw.color();
+          Drawf.spinSprite(rim, entity.x, entity.y, totalProgress(entity)*0.8f);
+          Draw.rect(region, entity.x, entity.y);
+          Drawf.spinSprite(rotator, entity.x, entity.y, totalProgress(entity)*1.8f);
+          Draw.rect(topRotator, entity.x, entity.y, -totalProgress(entity)*1.2f);
+          
+          Item item = ((NormalCrafterBuild)entity).consumer.current.get(SglConsumeType.item).items[0].item;
+          Draw.color(item.color);
+          Draw.alpha(entity.items.get(item) > 5? 1: 0);
+          Draw.rect(top, entity.x, entity.y, -totalProgress(entity)*1.2f);
+        }
+  
+        @Override
+        public TextureRegion[] icons(Block block){
+          return new TextureRegion[]{
+              bottom,
+              rim,
+              region,
+              rotator,
+              topRotator
           };
         }
       };
