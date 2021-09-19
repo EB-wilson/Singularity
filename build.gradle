@@ -22,7 +22,7 @@ ext{
     //version of build-tools you installed
     sdkRoot = System.getenv("ANDROID_HOME")
     
-    modOutputDir = '/home/EBwilson/sd/Android/data/io.anuke.mindustry/files/mods'
+    modOutputDir = null
 
     doExec = { cmd ->
         def proc = cmd.execute(null, new File("$buildDir/libs"))
@@ -30,7 +30,7 @@ ext{
     }
 }
 
-//java 14 backwards compatibility flag
+//java 11 backwards compatibility flag
 allprojects{
     tasks.withType(JavaCompile){
         if(JavaVersion.current() != JavaVersion.VERSION_11){
