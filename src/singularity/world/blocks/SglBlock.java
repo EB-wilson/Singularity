@@ -115,6 +115,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
   public SglBlock(String name) {
     super(name);
+    
     appliedConfig();
   }
   
@@ -298,6 +299,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         energyGroupAdded();
       }
     }
+    
+    public void dumpLiquid(){
+      liquids.each((l, n) -> dumpLiquid(l));
+    }
   
     public void energyGroupRemove(){
       EnergyGroup group = null;
@@ -385,10 +390,12 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     }
     
     @Override
-    public void updateTile(){
-      super.updateTile();
+    public void update(){
       if(energy != null) energy.update();
+      
       if(gases != null) gases.update(updateFlow);
+  
+      super.update();
     }
     
     public void updateDisplayLiquid(){

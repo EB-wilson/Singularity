@@ -23,7 +23,9 @@ import mindustry.world.modules.LiquidModule;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.Reaction;
+import singularity.world.blockComp.HeatBlockComp;
 import singularity.world.modules.GasesModule;
+import singularity.world.modules.ReactionModule;
 
 public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   public Reaction<?, ?, ?> reaction;
@@ -35,16 +37,27 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   
   public float time;
   public float lifetime = 60f;
+  public float heatCapacity;
   
   public float heat = 0;
   
-  public ItemModule inItems;
-  public LiquidModule inLiquids;
-  public GasesModule inGases;
+  public ReactionModule reacts;
+  public HeatBlockComp block = new HeatBlockComp(){
+    @Override
+    public float maxTemperature(){
+      return 10;
+    }
+  };
   
-  public ItemModule outItems;
-  public LiquidModule outLiquids;
-  public GasesModule outGases;
+  public ItemModule items;
+  public LiquidModule liquids;
+  public GasesModule gases;
+  
+  private ReactionPoint(){
+    reacts = new ReactionModule(this);
+    
+    setModules();
+  }
   
   public static ReactionPoint create(){
     return new ReactionPoint();
@@ -57,10 +70,11 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   }
   
   public void addMaterial(MappableContent input, float amount){
-    if(!reaction.accept(input)) return;
-    if(input instanceof Item) inItems.add((Item)input, (int)amount);
-    if(input instanceof Liquid) inLiquids.add((Liquid)input, amount);
-    if(input instanceof Gas) inGases.add((Gas)input, amount);
+    if(input instanceof Item) items.add((Item)input, (int)amount);
+    if(input instanceof Liquid) liquids.add((Liquid)input, amount);
+    if(input instanceof Gas) gases.add((Gas)input, amount);
+    
+    heat += getHeat(input)*amount;
   }
   
   @Override
@@ -83,54 +97,30 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   }
   
   @Override
-  public ItemModule inItems(){
-    return inItems;
-  }
-  
-  @Override
-  public LiquidModule inLiquids(){
-    return inLiquids;
-  }
-  
-  @Override
-  public GasesModule inGases(){
-    return inGases;
-  }
-  
-  @Override
-  public ItemModule outItems(){
-    return outItems;
-  }
-  
-  @Override
-  public LiquidModule outLiquids(){
-    return outLiquids;
-  }
-  
-  @Override
-  public GasesModule outGases(){
-    return outGases;
+  public float pressure(){
+    return Sgl.atmospheres.current.getCurrPressure();
   }
   
   @Override
   public void update(){
-    reaction.doReact(this);
+    reacts.update();
     
-    if(outLiquids.total() > 0.001){
-      outLiquids.each((liquid, amount) -> {
-        Puddles.deposit(tile, liquid, amount);
-        outLiquids.remove(liquid, amount);
+    if(liquids.total() > 0.001){
+      liquids.each((liquid, amount) -> {
+        Puddles.deposit(tile, liquid, amount/2);
+        liquids.remove(liquid, amount/2);
       });
     }
     
-    if(outGases.total() > 0.001){
-      outGases.each(stack -> {
-        Sgl.gasAreas.pour(tile, stack.gas, stack.amount);
+    if(gases.total() > 0.001){
+      gases.each(stack -> {
+        Sgl.gasAreas.pour(tile, stack.gas, stack.amount/2);
+        gases.remove(stack.gas, stack.amount/2);
       });
     }
     
     time = Math.min(time + Time.delta, lifetime);
-    if(time >= lifetime && inItems.empty() && inLiquids.total() <= 0.001 && inGases.total() <= 0.001){
+    if(!reacts.any() && time >= lifetime && items.empty() && liquids.total() <= 0.001 && gases.total() <= 0.001){
       remove();
     }
   }
@@ -180,12 +170,9 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
     time = 0;
     lifetime = 0;
     heat = 0;
-    inItems = null;
-    inLiquids = null;
-    inGases = null;
-    outItems = null;
-    outLiquids = null;
-    outGases = null;
+    items = null;
+    liquids = null;
+    gases = null;
   }
   
   @Override

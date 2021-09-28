@@ -33,6 +33,8 @@ ios/robovm.properties
 packr-out/
 *.gif
 
+build.gradle
+
 version.properties
 
 .attach_*

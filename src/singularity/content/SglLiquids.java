@@ -10,6 +10,8 @@ public class SglLiquids implements ContentList{
   public static Liquid liquid_FEX,
   /**混合化工凝胶*/
   mixed_chemical_gel,
+  /**富铱凝胶*/
+  iridium_gel,
   /**润滑剂*/
   lubricant,
   /**岩层沥青*/
@@ -33,7 +35,15 @@ public class SglLiquids implements ContentList{
       explosiveness = 1f;
       flammability = 1f;
       temperature = 0.8f;
-      viscosity = 0f;
+      viscosity = 1f;
+    }};
+    
+    iridium_gel = new Liquid("iridium_gel", Color.valueOf("#DAF3F3")){{
+      heatCapacity = 0.42f;
+      explosiveness = 0;
+      flammability = 0.07f;
+      temperature = 1.2f;
+      viscosity = 1f;
     }};
     
     lubricant = new Liquid("lubricant", Color.valueOf("#FFD662")){{

@@ -10,7 +10,7 @@ import singularity.core.GasAreas;
 import singularity.core.ModConfig;
 import singularity.core.Reactions;
 import singularity.ui.SglUI;
-import singularity.world.reaction.ReactionPoints;
+import singularity.core.ReactionPoints;
 
 import static arc.Core.settings;
 

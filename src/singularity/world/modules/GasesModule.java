@@ -3,11 +3,8 @@ package singularity.world.modules;
 import arc.func.Cons;
 import arc.func.Cons2;
 import arc.math.WindowedMean;
-import arc.struct.Bits;
 import arc.struct.IntSet;
-import arc.struct.ObjectSet;
 import arc.util.Interval;
-import arc.util.Log;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -17,13 +14,10 @@ import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.modules.BlockModule;
-import mindustry.world.modules.LiquidModule;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglContentType;
 import singularity.world.blockComp.GasBuildComp;
-
-import java.util.Arrays;
 
 public class GasesModule extends BlockModule{
   private static final int windowSize = 3, updateInterval = 60;
@@ -156,7 +150,7 @@ public class GasesModule extends BlockModule{
     add(stack.gas, stack.amount);
   }
   
-  public final void add(Gas gas, float amount){
+  public void add(Gas gas, float amount){
     gases[gas.id] += amount;
     total += amount;
     cacheFlow[gas.id] += Math.max(amount, 0);

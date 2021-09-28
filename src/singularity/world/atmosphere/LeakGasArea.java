@@ -1,7 +1,6 @@
 package singularity.world.atmosphere;
 
 import arc.graphics.Color;
-import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Position;
 import arc.struct.Seq;
@@ -93,7 +92,7 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
           Reaction<?, ?, ?> reaction = Sgl.reactions.match(gas, other.gas);
           Tile t = Vars.world.tile((tile.x + other.tile.x)/2, (tile.y + other.tile.y)/2);
           
-          if(reaction != null) Sgl.reactionPoints.transfer(t, reaction, gas, 0.4f);
+          if(reaction != null) Sgl.reactionPoints.transfer(t, gas, 0.4f);
         }
       }
     });

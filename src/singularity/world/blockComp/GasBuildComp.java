@@ -1,9 +1,5 @@
 package singularity.world.blockComp;
 
-import arc.math.Mathf;
-import arc.util.Log;
-import mindustry.gen.Building;
-import mindustry.world.Build;
 import singularity.type.Gas;
 import singularity.world.modules.GasesModule;
 import universeCore.entityComps.blockComps.BuildCompBase;
@@ -53,6 +49,10 @@ public interface GasBuildComp extends BuildCompBase, FieldGetter, Dumpable{
       return ((GasBuildComp)e).getGasBlock().hasGases() && ((GasBuildComp)e).acceptGas(this, gas);
     });
     if(other != null) moveGas(other, gas);
+  }
+  
+  default void dumpGas(){
+    gases().each(stack -> dumpGas(stack.gas));
   }
   
   default boolean acceptGas(GasBuildComp source, Gas gas){

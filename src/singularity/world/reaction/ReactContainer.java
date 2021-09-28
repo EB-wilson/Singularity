@@ -5,20 +5,42 @@ import mindustry.gen.Posc;
 import mindustry.world.Tile;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
+import singularity.world.blockComp.GasBuildComp;
+import singularity.world.blockComp.HeatBuildComp;
 import singularity.world.modules.GasesModule;
-import universeCore.entityComps.blockComps.FieldGetter;
+import singularity.world.modules.ReactionModule;
 
-public interface ReactContainer extends Posc, FieldGetter{
-  ItemModule inItems();
-  LiquidModule inLiquids();
-  GasesModule inGases();
+public interface ReactContainer extends Posc, HeatBuildComp, GasBuildComp{
+  default ReactionModule reacts(){
+    return getField(ReactionModule.class, "reacts");
+  }
   
-  ItemModule outItems();
-  LiquidModule outLiquids();
-  GasesModule outGases();
+  default ItemModule items(){
+    return getField(ItemModule.class, "items");
+  }
+  
+  default LiquidModule liquids(){
+    return getField(LiquidModule.class, "liquids");
+  }
+  
+  default GasesModule gases(){
+    return getField(GasesModule.class, "gases");
+  }
   
   default float heat(){
     return getField(float.class, "heat");
+  }
+  
+  float pressure();
+  
+  @Override
+  default int tileY() {
+    return World.toTile(y());
+  }
+  
+  @Override
+  default float getX(){
+    return getField(int.class, "x");
   }
   
   void heat(float heat);
@@ -31,17 +53,6 @@ public interface ReactContainer extends Posc, FieldGetter{
   default int tileX() {
     return World.toTile(x());
   }
-  
-  @Override
-  default int tileY() {
-    return World.toTile(y());
-  }
-  
-  @Override
-  default float getX(){
-    return getField(int.class, "x");
-  }
-  
   @Override
   default float getY(){
     return getField(int.class, "y");

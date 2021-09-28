@@ -1,58 +1,38 @@
 package singularity.type;
 
-import arc.func.Boolf;
 import arc.func.Cons;
+import arc.func.Func2;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.MappableContent;
+import mindustry.ctype.UnlockableContent;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import singularity.Sgl;
 import singularity.world.reaction.ReactContainer;
 
-public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P extends MappableContent> extends MappableContent{
+public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P extends MappableContent> extends UnlockableContent{
   public Participant<R1> reactantA;
   public Participant<R2> reactantB;
   public Participant<P> product;
   
   public float deltaHeat;
+  public float requireTemperature;
+  public float requirePressure;
+  
+  public float reactTime;
+  public Cons<ReactContainer> reacting = e -> {};
+  public Cons<ReactContainer> finished = e -> {};
+  
+  public Func2<Float, Float, Float> rateScl = (pressure, temperature) -> {
+    int pressureSclBase = getGas().length - (product.isGas? 1: 0);
+    int heatSclBase = deltaHeat > 0? 1: -1;
+    
+    return (pressure*pressureSclBase/2)*(temperature*heatSclBase/2);
+  };
   
   public boolean itemReaction = false;
   public boolean liquidReaction = false;
   public boolean gasReaction = false;
-  
-  public Boolf<ReactContainer> reactRequireDef = entity -> {
-    Reaction.Participant<Item>[] rItems = getItem();
-    Reaction.Participant<Liquid>[] rLiquid = getLiquid();
-    Reaction.Participant<Gas>[] rGas = getGas();
-    for(Reaction.Participant<Item> part: rItems){
-      if(entity.inItems().get(part.reactant) < part.amount) return false;
-    }
-    for(Reaction.Participant<Liquid> part: rLiquid){
-      if(entity.inLiquids().get(part.reactant) < part.amount) return false;
-    }
-    for(Reaction.Participant<Gas> part: rGas){
-      if(entity.inGases().get(part.reactant) < part.amount) return false;
-    }
-    return true;
-  };
-  
-  public Cons<ReactContainer> onReactionDef = entity -> {
-    Reaction.Participant<Item>[] rItems = getItem();
-    Reaction.Participant<Liquid>[] rLiquid = getLiquid();
-    Reaction.Participant<Gas>[] rGas = getGas();
-    for(Reaction.Participant<Item> part: rItems){
-      entity.inItems().remove(part.reactant, (int)part.amount);
-    }
-    for(Reaction.Participant<Liquid> part: rLiquid){
-      entity.inLiquids().remove(part.reactant, (int)part.amount);
-    }
-    for(Reaction.Participant<Gas> part: rGas){
-      entity.inGases().remove(part.reactant, (int)part.amount);
-    }
-    if(product.isItem) entity.outItems().add((Item)product.reactant, (int)product.amount);
-    if(product.isLiquid) entity.outLiquids().add((Liquid)product.reactant, product.amount);
-    if(product.isGas) entity.outGases().add((Gas)product.reactant, product.amount);
-  };
   
   private byte iReactionCount = -1;
   private byte lReactionCount = -1;
@@ -63,10 +43,29 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
     reactantA = a;
     reactantB = b;
     product = out;
+    
+    float consHeat = 0;
+    
+    consHeat += getHeat(a.get());
+    consHeat += getHeat(b.get());
+    
+    deltaHeat = getHeat(out.get()) - consHeat;
   }
   
   public Reaction(R1 a, float b, R2 c, float d, P e, float f){
     this(new Participant<>(a, b), new Participant<>(c, d), new Participant<>(e, f));
+  }
+  
+  private static float getHeat(MappableContent target){
+    if(target instanceof Liquid){
+      return ((Liquid) target).temperature*((Liquid) target).heatCapacity;
+    }
+  
+    if(target instanceof Gas){
+      return ((Gas) target).temperature*((Gas) target).heatCapacity;
+    }
+  
+    return 0;
   }
   
   /**自定义项目*/
@@ -86,14 +85,9 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
     if(reactantB.reactant instanceof Gas) if(++gReactionCount >= 1) gasReaction = true;
   }
   
-  public void doReact(ReactContainer entity, Boolf<ReactContainer> reactRequire, Cons<ReactContainer> onReaction){
-    if(reactRequire.get(entity)){
-      onReaction.get(entity);
-    }
-  }
-  
-  public void doReact(ReactContainer entity){
-    doReact(entity, reactRequireDef, onReactionDef);
+  @Override
+  public void loadIcon(){
+    super.loadIcon();
   }
   
   public Participant<?>[] getAllPart(){
@@ -171,6 +165,18 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
     
     public Type get(){
       return reactant;
+    }
+    
+    public Item getItem(){
+      return isItem? (Item)get(): null;
+    }
+    
+    public Liquid getLiquid(){
+      return isLiquid? (Liquid)get(): null;
+    }
+    
+    public Gas getGas(){
+      return isGas? (Gas)get(): null;
     }
   
     @Override

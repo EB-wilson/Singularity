@@ -15,6 +15,7 @@ import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
+import mindustry.graphics.Pal;
 import mindustry.type.Category;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
@@ -23,13 +24,16 @@ import mindustry.world.Block;
 import mindustry.world.blocks.production.GenericCrafter;
 import singularity.Singularity;
 import singularity.type.Gas;
-import singularity.world.blocks.product.GasCompressor;
+import singularity.world.blocks.function.GasCompressor;
 import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.blocks.product.NormalCrafter.NormalCrafterBuild;
+import singularity.world.blocks.product.ReactionKettle;
 import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.DrawFactory;
 import singularity.world.draw.DrawFrame;
+import singularity.world.draw.SglDrawBlock;
 import singularity.world.draw.SglDrawSmelter;
 import singularity.world.products.SglProduceType;
 import universeCore.util.UncLiquidStack;
@@ -56,7 +60,9 @@ public class FactoryBlocks implements ContentList{
   /**热能离心机*/
   thermal_centrifuge,
   /**结晶器*/
-  gel_mixer;
+  gel_mixer,
+  /**反应釜*/
+  reaction_kettle;
 
   public void load(){
     retort_column = new NormalCrafter("retort_column"){{
@@ -474,5 +480,38 @@ public class FactoryBlocks implements ContentList{
         }
       }
     };
+    
+    reaction_kettle = new ReactionKettle("reaction_kettle"){{
+      requirements(Category.crafting, ItemStack.with(Items.scrap, 60, Items.graphite, 45, Items.metaglass, 45));
+      size = 2;
+      
+      itemCapacity = 40;
+      liquidCapacity = 40;
+      gasCapacity = 20;
+      
+      maxGasPressure = 25;
+      
+      drawer = new SglDrawBlock(){
+        TextureRegion top;
+  
+        @Override
+        public void load(Block block){
+          super.load(block);
+          top = Core.atlas.find(block.name + "_top");
+        }
+  
+        @Override
+        public void draw(Building entity){
+          ReactionKettleBuild ent = (ReactionKettleBuild)entity;
+          
+          Draw.rect(region, entity.x, entity.y);
+          Draw.color(Pal.accent);
+          Draw.alpha(ent.pressure()/ent.getGasBlock().maxGasPressure());
+          Draw.rect(top, entity.x, entity.y);
+          Draw.alpha(ent.temperature()/((ReactionKettle)ent.block).maxTemperature);
+          Draw.rect(top, entity.x, entity.y, 90);
+        }
+      };
+    }};
   }
 }
