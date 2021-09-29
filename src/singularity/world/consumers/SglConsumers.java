@@ -1,10 +1,11 @@
 package singularity.world.consumers;
 
-import mindustry.ctype.MappableContent;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import universeCore.world.consumers.BaseConsume;
 import universeCore.world.consumers.BaseConsumers;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SglConsumers extends BaseConsumers{
   public SglConsumers(boolean optional){
@@ -20,9 +21,13 @@ public class SglConsumers extends BaseConsumers{
   }
   
   public BaseConsume first(){
-    for(BaseConsume c: cons){
-      if(c != null) return c;
-    }
-    return null;
+    AtomicReference<BaseConsume> result = new AtomicReference<>();
+    cons.forEach((t, c) -> {
+      if(result.get() == null && c != null){
+        result.set(c);
+      }
+    });
+    
+    return result.get();
   }
 }
