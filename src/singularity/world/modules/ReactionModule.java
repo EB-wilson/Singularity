@@ -32,29 +32,35 @@ public class ReactionModule extends BlockModule{
     entity.items().each((i, n) -> {
       if(n > 0 && i != target){
         Reaction<?, ?, ?> r = Sgl.reactions.match(target, i);
-        if(r != null && !reactions.containsKey(r)) reactions.put(r, new float[]{0});
+        if(r != null && !reactions.containsKey(r)){
+          reactions.put(r, new float[]{0});
+        }
       }
     });
     
     entity.liquids().each((l, n) -> {
       if(n > 0 && l != target){
         Reaction<?, ?, ?> r = Sgl.reactions.match(target, l);
-        if(r != null && !reactions.containsKey(r)) reactions.put(r, new float[]{0});
+        if(r != null && !reactions.containsKey(r)){
+          reactions.put(r, new float[]{0});
+        }
       }
     });
     
     entity.gases().each(stack -> {
       if(stack.amount > 0 && stack.gas != target){
         Reaction<?, ?, ?> r = Sgl.reactions.match(target, stack.gas);
-        if(r != null && !reactions.containsKey(r)) reactions.put(r, new float[]{0});
+        if(r != null && !reactions.containsKey(r)){
+          reactions.put(r, new float[]{0});
+        }
       }
     });
   }
   
   public void update(){
     for(ObjectMap.Entry<Reaction<?, ?, ?>, float[]> react: reactions){
-      if(requireValid(react.key, entity)){
-        float efficiencyScl = react.key.rateScl.get(entity.pressure(), entity.temperature())*Time.delta;
+      if(metalValid(react.key, entity) && requireValid(react.key, entity)){
+        float efficiencyScl = Math.max(1 + react.key.rateScl.get(entity.pressure(), entity.temperature())*Time.delta, 0);
         float reactTime = react.key.reactTime;
         
         Reaction.Participant<Liquid>[] rLiquid = react.key.getLiquid();
@@ -74,7 +80,7 @@ public class ReactionModule extends BlockModule{
           entity.gases().add((Gas)react.key.product.reactant, react.key.product.amount/reactTime*efficiencyScl);
         }
   
-        entity.handleHeat(react.key.deltaHeat/reactTime*efficiencyScl);
+        entity.handleHeat(-react.key.deltaHeat/reactTime*efficiencyScl);
         
         react.key.reacting.get(entity);
         
@@ -94,10 +100,11 @@ public class ReactionModule extends BlockModule{
           react.value[0] = 0;
         }
       }
-      else if(react.value[0] > 0.0001){
-        react.value[0] -= react.value[0]*0.0001;
+      else{
+        if(react.value[0] > 0.0001) react.value[0] -= react.value[0]*0.0001;
       }
-      else if(react.value[0] <= 0.0001){
+      
+      if(!metalValid(react.key, entity) && react.value[0] <= 0.0001){
         reactions.remove(react.key);
         matched.remove(react.key.reactantA.get());
         matched.remove(react.key.reactantB.get());
@@ -106,13 +113,17 @@ public class ReactionModule extends BlockModule{
   }
   
   public boolean requireValid(Reaction<?, ?, ?> react, ReactContainer entity){
+    return entity.temperature() >= react.requireTemperature && entity.pressure() >= react.requirePressure;
+  }
+  
+  public boolean metalValid(Reaction<?, ?, ?> react, ReactContainer entity){
     float efficiencyScl = react.rateScl.get(entity.pressure(), entity.temperature())*Time.delta;
     float reactTime = react.reactTime;
-    
+  
     Reaction.Participant<Item>[] rItems = react.getItem();
     Reaction.Participant<Liquid>[] rLiquid = react.getLiquid();
     Reaction.Participant<Gas>[] rGas = react.getGas();
-    
+  
     for(Reaction.Participant<Item> part: rItems){
       if(entity.items().get(part.reactant) < part.amount) return false;
     }
@@ -122,7 +133,8 @@ public class ReactionModule extends BlockModule{
     for(Reaction.Participant<Gas> part: rGas){
       if(entity.gases().get(part.reactant) < part.amount/reactTime*efficiencyScl) return false;
     }
-    return entity.temperature() >= react.requireTemperature && entity.pressure() >= react.requirePressure;
+    
+    return true;
   }
   
   public boolean any(){

@@ -1,20 +1,30 @@
 package singularity.world.blocks.product;
 
+import arc.Core;
+import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectSet;
 import arc.util.Strings;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
+import mindustry.core.UI;
 import mindustry.ctype.MappableContent;
 import mindustry.entities.Puddles;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
+import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
+import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.consumers.ConsumePower;
+import mindustry.world.consumers.ConsumeType;
 import singularity.Sgl;
+import singularity.Singularity;
 import singularity.type.Gas;
+import singularity.ui.SglStyles;
 import singularity.world.blockComp.GasBuildComp;
 import singularity.world.blockComp.HeatBlockComp;
 import singularity.world.blocks.SglBlock;
@@ -22,27 +32,53 @@ import singularity.world.modules.ReactionModule;
 import singularity.world.reaction.ReactContainer;
 
 public class ReactionKettle extends SglBlock implements HeatBlockComp{
+  public float totalItemCapacity = 60;
+  public float totalLiquidCapacity = 60;
   public float maxTemperature = 4;
-  public float productHeat = 0.02f;
+  public float productHeat = 0.04f;
   
   public ReactionKettle(String name){
     super(name);
     hasPower = true;
+    consumesPower = true;
+    
     hasItems = true;
     hasLiquids = true;
     outputsLiquid = false;
     hasGases = true;
     outputGases = false;
     
-    update = true;
+    configurable = true;
     
-    consumes.add(new ConsumePower(1, powerCapacity, false){
+    update = true;
+  }
+  
+  @Override
+  public void initPower(float powerCapacity){
+    consumes.add(new ConsumePower(0, powerCapacity, false){
       @Override
       public float requestedPower(Building e){
         ReactionKettleBuild entity = (ReactionKettleBuild) e;
-        return Math.max(0, productHeat*5*entity.heatScl);
+        return Math.max(0, productHeat*500*entity.heatScl);
       }
     });
+  }
+  
+  @Override
+  public void setBars(){
+    super.setBars();
+    ConsumePower cons = consumes.getPower();
+    boolean buffered = cons.buffered;
+    float capacity = cons.capacity;
+  
+    bars.add("power", entity -> new Bar(() -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : UI.formatAmount((int)(entity.power.status * capacity))) :
+        Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
+  
+    bars.add("temperature", (ReactionKettleBuild ent) -> new Bar(
+        () -> Core.bundle.get("misc.temperature") + ":" + Strings.autoFixed(ent.temperature()*100, 2) + "% -" + Core.bundle.get("misc.heat") + ":" + ent.heat,
+        () -> Pal.bar,
+        () -> ent.temperature()/maxTemperature
+    ));
   }
   
   public class ReactionKettleBuild extends SglBuilding implements ReactContainer{
@@ -65,11 +101,21 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
     }
   
     @Override
+    public float efficiency(){
+      if(!this.enabled){
+        return 0;
+      }
+      else{
+        return this.power != null && this.block.consumes.has(ConsumeType.power) && !this.block.consumes.getPower().buffered ? this.power.status : 1;
+      }
+    }
+  
+    @Override
     public void updateTile(){
-      heatScl = 1 - temperature()/internalTemperature*edelta();
-      
+      heatScl = internalTemperature > 0? Math.max(0, 1 - temperature()/internalTemperature): 0;
+  
       if(heatScl > 0){
-        heat += heatScl*productHeat;
+        heat += heatScl*productHeat*edelta();
       }
       
       reacts.update();
@@ -85,7 +131,6 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
           if(liquids.get((Liquid) react.product.get()) > liquidCapacity){
             Liquid liquid = (Liquid) react.product.get();
             float leak = liquids.get(liquid) - liquidCapacity;
-      
             liquids.remove(liquid, leak);
             Puddles.deposit(tile, liquid, leak);
           }
@@ -107,36 +152,30 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   
     @Override
     public void buildConfiguration(Table table){
-      table.table(Styles.black8, t -> {
+      table.table(Styles.black6, t -> {
         t.defaults().pad(0).margin(0);
-        t.table(Tex.buttonTrans).size(50);
-        t.slider(0, maxTemperature, 0.01f, f -> internalTemperature = f).size(200, 50).padLeft(8).padRight(8).get();
-        t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(internalTemperature, 2) + "%"));
+        t.table(Tex.buttonTrans, i -> i.image(Singularity.getModAtlas("icon_temperature")).size(40)).size(50);
+        t.slider(0, maxTemperature, 0.01f, internalTemperature, f -> internalTemperature = f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+        t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(internalTemperature*100, 2) + "%"));
       });
     }
   
     @Override
     public void handleItem(Building source, Item item){
       super.handleItem(source, item);
-      if(added.add(item)){
-        reacts.matchAll(item);
-      }
+      reacts.matchAll(item);
     }
     
     @Override
     public void handleLiquid(Building source, Liquid liquid, float amount){
       super.handleLiquid(source, liquid, amount);
-      if(added.add(liquid)){
-        reacts.matchAll(liquid);
-      }
+      reacts.matchAll(liquid);
     }
     
     @Override
     public void handleGas(GasBuildComp source, Gas gas, float amount){
       super.handleGas(source, gas, amount);
-      if(added.add(gas)){
-        reacts.matchAll(gas);
-      }
+      reacts.matchAll(gas);
     }
   
     @Override
@@ -147,6 +186,37 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
     @Override
     public float pressure(){
       return super.pressure();
+    }
+  
+    @Override
+    public boolean acceptItem(Building source, Item item){
+      return hasItems && items.get(item) < itemCapacity && items.total() < totalItemCapacity;
+    }
+  
+    @Override
+    public boolean acceptLiquid(Building source, Liquid liquid){
+      return hasLiquids && liquids.get(liquid) < liquidCapacity && liquids.total() < totalLiquidCapacity;
+    }
+  
+    @Override
+    public boolean acceptGas(GasBuildComp source, Gas gas){
+      return hasGases && pressure() < maxGasPressure;
+    }
+  
+    @Override
+    public void write(Writes write){
+      super.write(write);
+      reacts.write(write);
+      write.f(internalTemperature);
+    }
+  
+    @Override
+    public void read(Reads read){
+      super.read(read);
+      reacts.read(read);
+      internalTemperature = read.f();
+      
+      heatCapacity = accurateHeatCapacity();
     }
   }
 }

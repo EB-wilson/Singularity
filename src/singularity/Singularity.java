@@ -36,6 +36,7 @@ public class Singularity extends Mod{
     new GasBlocks(),//气体相关方块
     new TransportBlocks(),//物流方块
     new CollectBlocks(),//采集方块
+    new Reactions(),//化学反应
   };
   
   private final OverrideContentList[] overrideContents = new OverrideContentList[]{

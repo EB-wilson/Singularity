@@ -1,74 +1,110 @@
 package singularity.ui.dialogs;
 
 import arc.Core;
-import arc.scene.ui.layout.Cell;
-import arc.scene.ui.layout.Table;
+import arc.func.Prov;
+import arc.graphics.Color;
+import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.TextureRegion;
+import arc.scene.Element;
+import mindustry.content.Liquids;
 import mindustry.gen.Tex;
+import mindustry.graphics.Pal;
+import mindustry.ui.WarningBar;
 import mindustry.ui.dialogs.BaseDialog;
 import singularity.Sgl;
+import singularity.Singularity;
+import singularity.ui.SglStyles;
 
 public class MainMenu extends BaseDialog {
-  WorldOutlookDialog worldOutlook = new WorldOutlookDialog(Core.bundle.get("dialog.worldOutlook.title"));
+  protected boolean launch = true;
+  
   AboutModDialog aboutMod = new AboutModDialog(Core.bundle.get("dialog.aboutMod.title"));
+  
+  ButtonEntry[] buttonEntries = new ButtonEntry[]{
+      new ButtonEntry(Singularity.getModAtlas("icon_start"), () -> Core.bundle.get(launch? "misc.startGame": "misc.backToGame"), () -> Color.white, () -> {hide(); launch = false;}),
+      new ButtonEntry(Singularity.getModAtlas("icon_database"), Core.bundle.get("misc.modDatabase"), Pal.accent, () -> {}),
+      new ButtonEntry(Singularity.getModAtlas("icon_configure"), Core.bundle.get("misc.modConfigure"), Color.lightGray, () -> {}),
+      new ButtonEntry(Singularity.getModAtlas("icon_publicInfo"), () -> Core.bundle.get("misc.publicInfo"), () -> Liquids.cryofluid.color, () -> {
+        Sgl.ui.publicInfo.show();
+      }),
+      new ButtonEntry(Singularity.getModAtlas("icon_about"), Core.bundle.get("misc.aboutMod"), Color.violet, () -> {}),
+      new ButtonEntry(Singularity.getModAtlas("icon_contribute"), Core.bundle.get("misc.contribute"), Color.yellow, () -> {}),
+  };
   
   public MainMenu() {
     super(Core.bundle.get("dialog.mainMenu.title"));
     build();
+    
   }
-  Table table = new Table();
-  Cell<Table> cell1;
+  
   public void build() {
     aboutMod.build();
-    cont.clear();
-
     
-    table.add(Core.bundle.get("dialog.mainMenu.text"));
-    table.row();
-    Table button = new Table(Tex.button);
-    Table layout1 = new Table();
-    layout1.top().button(Core.bundle.get("dialog.mainMenu.worldOutlook"), this::show1).size(215, 90);
-    layout1.top().button(Core.bundle.get("dialog.mainMenu.dataBase"), this::show2).size(215, 90);
-    layout1.top().button(Core.bundle.get("dialog.mainMenu.setting"), this::show3).size(215, 90);
-    layout1.row();
-    layout1.add("--------------------");
-    layout1.image(Core.atlas.find("singularity-mod_icon")).size(215, 80);
-    layout1.add("--------------------");
-    layout1.row();
-    layout1.button(Core.bundle.get("dialog.mainMenu.aboutMod"), this::show4).size(215, 90);
-    layout1.button(Core.bundle.get("dialog.mainMenu.contact"), this::show5).size(215, 90);
-    layout1.button(Core.bundle.get("dialog.mainMenu.contribute"), this::show6).size(215, 90);
-    button.add(layout1).size(650, 270);
-    button.row();
-    button.add("[gray]" + Core.bundle.get("dialog.mainMenu.tip_1")).padTop(30).padLeft(20);
-    cell1 = table.add(button).size(650, 350);
-    table.row();
-    table.add("[red]" + Core.bundle.get("dialog.mainMenu.warning")).left();
-    table.row();
-    table.button(Core.bundle.get("misc.close"), this::hide).size(100, 60);
-
-    cont.add(table);
+    cont.top().table(main -> {
+      main.image(Singularity.getModAtlas("launch_logo")).size(256, 128).padTop(30);
+      main.row();
+      main.image().color(Pal.accent).growX().height(3).pad(0).padTop(4).padBottom(4);
+      main.row();
+      main.add(new WarningBar()).growX().height(16).color(Color.lightGray).padBottom(30);
+      main.row();
+      main.add("S  I  N  G  U  L  A  R  I  T  Y").get().setFontScale(2);
+      main.row();
+      main.add(new WarningBar()).growX().height(16).color(Color.lightGray).padTop(30);
+      main.row();
+      main.image().color(Pal.accent).growX().height(3).pad(0).padTop(4);
+      main.row();
+      main.table(menu -> {
+        menu.defaults().pad(0).padTop(6).margin(0).width(680).height(80).top();
+        for(ButtonEntry entry : buttonEntries){
+          menu.button(b -> {
+            b.table(Tex.buttonEdge3, i -> i.image(entry.region).size(64)).size(80);
+            b.add("").width(510).padLeft(10).update(l -> l.setText(entry.text.get()));
+            b.add(new Element(){
+              @Override
+              public void draw(){
+                Draw.color(entry.color.get().cpy().lerp(Color.black, 0.3f));
+                Draw.alpha(parentAlpha);
+                Fill.square(x + width/2, y + height/2 - 6, 12, 45);
+                Draw.color(entry.color.get());
+                Draw.alpha(parentAlpha);
+                Fill.square(x + width/2, y + height/2, 12, 45);
+              }
+            }).size(80);
+          }, SglStyles.underline, entry.clicked);
+          menu.row();
+        }
+      }).width(680).fillY();
+    }).growX().top().pad(0).margin(0);
+    
+    row();
+    image().color(Color.white).growX().height(2).pad(0).padTop(4);
+    row();
+    table(t -> {
+      t.add("Singularity OS v." + Core.bundle.get("mod.version")).left().padLeft(3);
+      t.image().color(Color.white).growY().width(2).pad(0).margin(0).padLeft(4).colspan(4);
+      t.add().growX();
+      t.image().color(Color.white).width(2).growY().pad(0).margin(0).padRight(4).colspan(4);
+      t.add("run with UniverseCore").right().padRight(3);
+    }).growX();
   }
-
-  private void show1(){
-    worldOutlook.showDialog();
-  }
-
-  private void show2(){
-  }
-
-  private void show3(){
-
-  }
-
-  private void show4(){
-    aboutMod.show();
-  }
-
-  private void show5(){
-    Sgl.ui.contact.show();
-  }
-
-  private void show6(){
-
+  
+  private static class ButtonEntry{
+    TextureRegion region;
+    Prov<String> text;
+    Prov<Color> color;
+    
+    Runnable clicked;
+    
+    public ButtonEntry(TextureRegion region, Prov<String> text, Prov<Color> color, Runnable clicked){
+      this.region = region;
+      this.text = text;
+      this.color = color;
+      this.clicked = clicked;
+    }
+    
+    public ButtonEntry(TextureRegion region, String text, Color color, Runnable clicked){
+      this(region, () -> text, () -> color, clicked);
+    }
   }
 }

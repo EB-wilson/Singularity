@@ -3,7 +3,6 @@ package singularity.world.blocks.gas;
 import arc.Core;
 import arc.func.Boolf;
 import arc.graphics.Color;
-import arc.graphics.Colors;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
@@ -11,11 +10,8 @@ import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.struct.Seq;
 import arc.util.Eachable;
-import arc.util.Log;
-import arc.util.Nullable;
 import mindustry.content.Blocks;
 import mindustry.entities.units.BuildPlan;
-import mindustry.gen.Building;
 import mindustry.graphics.Layer;
 import mindustry.input.Placement;
 import mindustry.world.Block;
@@ -106,6 +102,7 @@ public class GasConduit extends SglBlock implements Autotiler{
   public class GasConduitBuild extends SglBuilding{
     int[] blendData;
     Color gasColor;
+    Color smoothColor = Color.white.cpy();
   
     @Override
     public void onProximityUpdate(){
@@ -121,29 +118,36 @@ public class GasConduit extends SglBlock implements Autotiler{
     }
   
     @Override
+    public boolean acceptGas(GasBuildComp source, Gas gas){
+      return source.getBuilding().team == getBuilding().team && getGasBlock().hasGases() && pressure() < getGasBlock().maxGasPressure();
+    }
+  
+    @Override
     public void updateTile(){
       super.updateTile();
       
-      gasColor = Color.white.cpy();
+      gasColor = Color.black.cpy();
       Tile next = this.tile.nearby(this.rotation);
       if(next.build instanceof GasBuildComp){
         gases.each(stack -> {
-          gasColor.mul(stack.gas.color);
-          moveGas((GasBuildComp) next.build, stack.gas);
+          gasColor.add(stack.gas.color.cpy().mul(stack.amount/gases.total()));
         });
+        moveGas((GasBuildComp) next.build);
       }
       else if(next.build == null){
         float fract = Math.max(0, pressure() - Sgl.atmospheres.current.getCurrPressure())/getGasBlock().maxGasPressure();
         
         if(fract <= 0) return;
         gases.each(stack -> {
-          gasColor.mul(stack.gas.color);
+          gasColor.add(stack.gas.color.cpy().mul(stack.amount/gases.total()));
           float flowRate = Math.min(fract*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity()*(gases().get(stack.gas)/gases().total()), gases().get(stack.gas));
           handleGas(this, stack.gas, -flowRate);
           Sgl.gasAreas.pour(next, stack.gas, flowRate);
         });
       }
       gasColor.a(pressure()/maxGasPressure*0.75f);
+      
+      smoothColor.lerp(gasColor, 0.015f);
     }
   
     @Override
@@ -170,7 +174,7 @@ public class GasConduit extends SglBlock implements Autotiler{
     protected void drawConduit(float x, float y, int bits, float rotation, SliceMode slice){
       Draw.rect(sliced(regions[bits], slice), x, y, rotation);
       
-      Draw.color(gasColor);
+      Draw.color(smoothColor);
       Draw.rect(sliced(tops[bits], slice), x, y, rotation);
     }
   }

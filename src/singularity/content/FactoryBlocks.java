@@ -63,7 +63,7 @@ public class FactoryBlocks implements ContentList{
   gel_mixer,
   /**反应釜*/
   reaction_kettle;
-
+  
   public void load(){
     retort_column = new NormalCrafter("retort_column"){{
       displaySelectLiquid = true;
@@ -75,8 +75,8 @@ public class FactoryBlocks implements ContentList{
       consume.item(Items.coal, 3);
       newProduce();
       produce.items(ItemStack.with(
-        Items.pyratite, 1,
-        SglItems.coke, 1
+          Items.pyratite, 1,
+          SglItems.coke, 1
       ));
       produce.liquid(SglLiquids.mixed_tar, 0.1f);
       produce.gas(Gases.CH4, 0.2f);
@@ -94,8 +94,8 @@ public class FactoryBlocks implements ContentList{
       consume.liquid(Liquids.oil, 0.3f);
       newProduce();
       produce.liquids(UncLiquidStack.with(
-        SglLiquids.mixed_tar, 0.2,
-        SglLiquids.fuel_oil, 0.2
+          SglLiquids.mixed_tar, 0.2,
+          SglLiquids.fuel_oil, 0.2
       ));
     }};
     
@@ -125,12 +125,12 @@ public class FactoryBlocks implements ContentList{
           }
           else return 1;
         }
-  
+        
         @Override
         public TextureRegion[] icons(Block block){
           return new TextureRegion[]{frames[0][0]};
         }
-  
+        
         @Override
         public void load(Block block) {
           TextureRegion[] leaser = new TextureRegion[13];
@@ -155,11 +155,11 @@ public class FactoryBlocks implements ContentList{
       consume.item(SglItems.nuclear_waste, 2);
       newProduce();
       produce.items(
-        ItemStack.with(
-          SglItems.salt_iridium, 1,
-          Items.lead, 7,
-          Items.thorium, 3
-        )
+          ItemStack.with(
+              SglItems.salt_iridium, 1,
+              Items.lead, 7,
+              Items.thorium, 3
+          )
       ).random();
       
       drawer = new DrawFactory(){
@@ -192,9 +192,9 @@ public class FactoryBlocks implements ContentList{
         @Override
         public TextureRegion[] icons(Block block){
           return new TextureRegion[]{
-            bottom,
-            region,
-            top,
+              bottom,
+              region,
+              top,
           };
         }
       };
@@ -218,7 +218,7 @@ public class FactoryBlocks implements ContentList{
               rollers
           };
         }
-  
+        
         @Override
         public int framesControl(int index, Building e) {
           if(!(e instanceof NormalCrafterBuild)) return 0;
@@ -246,13 +246,13 @@ public class FactoryBlocks implements ContentList{
       
       drawer = new DrawFactory(){
         TextureRegion point;
-  
+        
         @Override
         public void load(Block block){
           super.load(block);
           point = Singularity.getModAtlas("ore_washer_point");
         }
-  
+        
         @Override
         public void draw(Building entity){
           Draw.rect(region, entity.x, entity.y);
@@ -339,14 +339,14 @@ public class FactoryBlocks implements ContentList{
           Draw.color();
           Draw.rect(top, entity.x, entity.y);
         }
-  
+        
         @Override
         public TextureRegion[] icons(Block block) {
           return new TextureRegion[]{
-            bottom,
-            region,
-            rotator,
-            top,
+              bottom,
+              region,
+              rotator,
+              top,
           };
         }
       };
@@ -373,7 +373,7 @@ public class FactoryBlocks implements ContentList{
           rim = Core.atlas.find(block.name + "_rim");
           topRotator = Core.atlas.find(block.name + "_toprotator");
         }
-  
+        
         @Override
         public void draw(Building entity){
           Draw.rect(bottom, entity.x, entity.y);
@@ -391,7 +391,7 @@ public class FactoryBlocks implements ContentList{
           Draw.alpha(entity.items.get(item) > 5? 1: 0);
           Draw.rect(top, entity.x, entity.y, -totalProgress(entity)*1.2f);
         }
-  
+        
         @Override
         public TextureRegion[] icons(Block block){
           return new TextureRegion[]{
@@ -417,7 +417,7 @@ public class FactoryBlocks implements ContentList{
         
         buildType = CrystallizerBuild::new;
       }
-  
+      
       public TextureRegion bottom, framework, crystal, wave;
       
       @Override
@@ -428,12 +428,12 @@ public class FactoryBlocks implements ContentList{
         framework = Singularity.getModAtlas("crystallizer_framework");
         crystal = Singularity.getModAtlas("crystallizer_crystal");
       }
-  
+      
       @Override
       public TextureRegion[] icons(){
         return new TextureRegion[]{
-          bottom,
-          region
+            bottom,
+            region
         };
       }
       
@@ -443,18 +443,18 @@ public class FactoryBlocks implements ContentList{
         @Override
         public void draw(){
           Draw.rect(bottom, x, y);
-  
+          
           if(progress > 0.3 || items.has(SglItems.strengthening_alloy)) Draw.rect(framework, x, y);
-  
+          
           Draw.alpha(progress);
           Draw.rect(crystal, x, y);
-  
+          
           Draw.alpha(warmup);
           Lines.lineAngleCenter(
-            x + Mathf.sin(totalProgress, 6, (float) Vars.tilesize/3*block.size),
-            y,
-            90,
-            (float) block.size*Vars.tilesize/2
+              x + Mathf.sin(totalProgress, 6, (float) Vars.tilesize/3*block.size),
+              y,
+              90,
+              (float) block.size*Vars.tilesize/2
           );
           Draw.color();
           Draw.rect(region, x, y);
@@ -467,9 +467,9 @@ public class FactoryBlocks implements ContentList{
               if(alphas[dist] < 0.4) alphas[dist] += 0.6;
               for(int i=0; i<4; i++){
                 Draw.rect(wave,
-                  x + dist*Geometry.d4(i).x*3 + 5*(Integer.compare(Geometry.d4(i).x, 0)),
-                  y + dist*Geometry.d4(i).y*3 + 5*(Integer.compare(Geometry.d4(i).y, 0)),
-                  (i+1)*90);
+                    x + dist*Geometry.d4(i).x*3 + 5*(Integer.compare(Geometry.d4(i).x, 0)),
+                    y + dist*Geometry.d4(i).y*3 + 5*(Integer.compare(Geometry.d4(i).y, 0)),
+                    (i+1)*90);
               }
               alphas[dist] -= 0.02*edelta();
             }
@@ -485,21 +485,21 @@ public class FactoryBlocks implements ContentList{
       requirements(Category.crafting, ItemStack.with(Items.scrap, 60, Items.graphite, 45, Items.metaglass, 45));
       size = 2;
       
-      itemCapacity = 40;
-      liquidCapacity = 40;
+      itemCapacity = 20;
+      liquidCapacity = 20;
       gasCapacity = 20;
       
       maxGasPressure = 25;
       
       drawer = new SglDrawBlock(){
         TextureRegion top;
-  
+        
         @Override
         public void load(Block block){
           super.load(block);
           top = Core.atlas.find(block.name + "_top");
         }
-  
+        
         @Override
         public void draw(Building entity){
           ReactionKettleBuild ent = (ReactionKettleBuild)entity;

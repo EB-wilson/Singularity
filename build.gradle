@@ -20,9 +20,9 @@ ext{
     //version of SDK you will be using
     sdkVersion = '30.0.3'
     //version of build-tools you installed
-    sdkRoot = System.getenv("ANDROID_HOME")
+    sdkRoot = '/home/EBwilson/android-sdk'
     
-    modOutputDir = null
+    modOutputDir = '/home/EBwilson/sd/Android/data/io.anuke.mindustry/files/mods'
 
     doExec = { cmd ->
         def proc = cmd.execute(null, new File("$buildDir/libs"))

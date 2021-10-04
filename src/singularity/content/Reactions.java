@@ -18,9 +18,9 @@ public class Reactions implements ContentList{
         SglItems.coke, 1,
         Items.silicon, 3
     ){{
+      deltaHeat = 2.35f;
       requireTemperature = 2.03f;
       requirePressure = 10.27f;
-      deltaHeat = -0.71f;
     }};
     
     uranCrush_chemGel_uranCake = new Reaction<>(
@@ -28,9 +28,9 @@ public class Reactions implements ContentList{
         SglLiquids.mixed_chemical_gel, 12,
         SglItems.uranium_cake, 2
     ){{
+      deltaHeat = 1.32f;
       requireTemperature = 2.18f;
       requirePressure = 7.52f;
-      deltaHeat = -0.96f;
     }};
     
     iridSalt_chemGel_iridium = new Reaction<>(
@@ -38,9 +38,9 @@ public class Reactions implements ContentList{
         SglLiquids.mixed_chemical_gel, 12,
         SglLiquids.iridium_gel, 12
     ){{
+      deltaHeat = 3.01f;
       requireTemperature = 2.8f;
       requirePressure = 12.28f;
-      deltaHeat = -0.85f;
     }};
   }
 }

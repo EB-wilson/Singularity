@@ -1,18 +1,18 @@
 package singularity.content;
 
-import singularity.world.blocks.drills.BaseDrill;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.ctype.ContentList;
 import mindustry.type.Category;
 import mindustry.world.Block;
+import singularity.world.blocks.drills.BaseDrill;
 
 import static mindustry.type.ItemStack.with;
 
 public class CollectBlocks implements ContentList {
   /**高速钻头*/
   public static Block high_speed_drill;
-  
+
   @Override
   public void load() {
     high_speed_drill = new BaseDrill("high_speed_drill"){{

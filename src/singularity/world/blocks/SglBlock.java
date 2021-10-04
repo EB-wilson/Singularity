@@ -1,22 +1,5 @@
 package singularity.world.blocks;
 
-import arc.util.Strings;
-import arc.util.Time;
-import singularity.type.GasStack;
-import singularity.world.draw.*;
-import singularity.type.SglLiquidStack;
-import singularity.ui.fragments.override.SglBlockInventoryFragment;
-import singularity.ui.tables.RecipeTable;
-import singularity.world.blockComp.*;
-import singularity.world.consumers.*;
-import singularity.world.meta.SglBlockStatus;
-import singularity.world.meta.SglStat;
-import singularity.world.modules.GasesModule;
-import singularity.world.modules.SglConsumeModule;
-import singularity.world.modules.NuclearEnergyModule;
-import singularity.world.nuclearEnergy.EnergyGroup;
-import singularity.world.nuclearEnergy.EnergyGroup.Path;
-import singularity.world.nuclearEnergy.EnergyLevel;
 import arc.Core;
 import arc.func.Cons2;
 import arc.func.Func;
@@ -28,6 +11,7 @@ import arc.math.Mathf;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
+import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -46,6 +30,27 @@ import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 import mindustry.world.meta.StatValues;
 import mindustry.world.meta.Stats;
+import singularity.type.Gas;
+import singularity.type.GasStack;
+import singularity.type.SglLiquidStack;
+import singularity.ui.tables.RecipeTable;
+import singularity.world.blockComp.GasBlockComp;
+import singularity.world.blockComp.GasBuildComp;
+import singularity.world.blockComp.NuclearEnergyBlockComp;
+import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.consumers.SglConsumeEnergy;
+import singularity.world.consumers.SglConsumeGases;
+import singularity.world.consumers.SglConsumeType;
+import singularity.world.consumers.SglConsumers;
+import singularity.world.draw.SglDrawBlock;
+import singularity.world.meta.SglBlockStatus;
+import singularity.world.meta.SglStat;
+import singularity.world.modules.GasesModule;
+import singularity.world.modules.NuclearEnergyModule;
+import singularity.world.modules.SglConsumeModule;
+import singularity.world.nuclearEnergy.EnergyGroup;
+import singularity.world.nuclearEnergy.EnergyGroup.Path;
+import singularity.world.nuclearEnergy.EnergyLevel;
 import universeCore.entityComps.blockComps.ConsumerBlockComp;
 import universeCore.entityComps.blockComps.ConsumerBuildComp;
 import universeCore.entityComps.blockComps.Dumpable;
@@ -145,8 +150,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   @Override
   public void init() {
-    consumesPower = false;
     if(consumers.size() > 1)configurable = true;
+    
     ArrayList<ArrayList<BaseConsumers>> consume = new ArrayList<>();
     if(consumers.size() > 0) consume.add(consumers);
     if(optionalCons.size() > 0) consume.add(optionalCons);
@@ -251,10 +256,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       super.create(block, team);
       if(consumers.size() == 1) recipeCurrent = 0;
       
-      if(consumers.size() > 0 || optionalCons.size() > 0){
-        consumer = new SglConsumeModule(this, consumers, optionalCons);
-        cons(consumer);
-      }
+      consumer = new SglConsumeModule(this, consumers, optionalCons);
+      cons(consumer);
       
       if(hasEnergy){
         energy = new NuclearEnergyModule(this, basicPotentialEnergy, energyBuffered);
@@ -274,7 +277,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public float efficiency(){
       //无配方要求时返回1
-      if(!consumer.hasConsume()) return 1f;
+      if(!consumer.hasConsume()) return super.efficiency();
       //未选择配方时返回0
       if(recipeCurrent == -1) return 0f;
       SglConsumeEnergy ce = consumer.current.get(SglConsumeType.energy);
@@ -414,7 +417,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     
     public void setBars(Table table){
       //显示流体存储量
-      updateDisplayLiquid();
+      if(hasLiquids) updateDisplayLiquid();
       if (!displayLiquids.isEmpty()){
         table.table(Tex.buttonTrans, t -> {
           t.defaults().growX().height(18f).pad(4);
@@ -517,6 +520,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
             l.clearChildren();
             l.left();
             gases.eachFlow((gas,flow) -> {
+              if(flow < 0.01f) return;
               l.image(() -> gas.uiIcon).padRight(3f);
               l.label(() -> flow < 0 ? "..." : Strings.fixed(flow, 2) + Core.bundle.get("misc.preSecond")).color(Color.lightGray);
               l.row();
@@ -602,21 +606,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public Seq<Liquid> outputLiquids(){
       return null;
     }
-  
-    @Override
-    public boolean onConfigureTileTapped(Building other){
-      if(this == other){
-        if(configurable){
-          SglBlockInventoryFragment inv = (SglBlockInventoryFragment) Vars.control.input.frag.inv;
-          boolean isShown = inv.isShown();
-          Time.run(0, () -> {
-            if(!isShown) inv.showFor(other);
-          });
-        }
-        return false;
-      }
-      return true;
-    }
     
     @Override
     public void buildConfiguration(Table table){
@@ -672,6 +661,11 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public boolean acceptEnergy(NuclearEnergyBuildComp source){
       return source.getBuilding().team == team && energy.getIncluded() < getNuclearBlock().energyCapacity() &&
         source.getPotentialEnergy(this) > Math.max(basicPotentialEnergy, getPotentialEnergy(source));
+    }
+  
+    @Override
+    public boolean acceptGas(GasBuildComp source, Gas gas){
+      return GasBuildComp.super.acceptGas(source, gas) && consumer.filter(SglConsumeType.gas, gas);
     }
   
     @Override

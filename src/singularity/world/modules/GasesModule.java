@@ -14,9 +14,11 @@ import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.modules.BlockModule;
+import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglContentType;
+import singularity.world.atmosphere.Atmosphere;
 import singularity.world.blockComp.GasBuildComp;
 
 public class GasesModule extends BlockModule{
@@ -27,6 +29,8 @@ public class GasesModule extends BlockModule{
   
   protected final GasBuildComp entity;
   protected final Building tile;
+  protected boolean initContains;
+  
   protected float[] itemComp = new float[Vars.content.items().size];
   protected float[] gases = new float[gasesLength];
   protected float total = 0f;
@@ -36,9 +40,16 @@ public class GasesModule extends BlockModule{
   protected float[] flowRate = new float[gasesLength];
   protected IntSet flows = new IntSet();
   
-  public GasesModule(GasBuildComp entity){
+  public GasesModule(GasBuildComp entity, boolean initContains){
     this.entity = entity;
     tile = entity.getBuilding();
+    this.initContains = initContains;
+    
+    if(initContains) distributeAtmo();
+  }
+  
+  public GasesModule(GasBuildComp entity){
+    this(entity, true);
   }
   
   public void update(boolean showFlow){
@@ -71,7 +82,7 @@ public class GasesModule extends BlockModule{
               }
             }
             else{
-              remove(item.consumeGas/item.compTime);
+              remove(gas, item.consumeGas/item.compTime);
               itemComp[item.item.id] += item.consumeLiquid/item.compTime;
         
               if(itemComp[item.item.id] >= item.consumeGas){
@@ -205,12 +216,26 @@ public class GasesModule extends BlockModule{
     }
   }
   
+  protected void distributeAtmo(){
+    Atmosphere curr = Sgl.atmospheres.current;
+    float t = curr.total();
+    float p = curr.getCurrPressure();
+    float capacity = entity.getGasBlock().gasCapacity();
+    float totalGradient = p*capacity;
+    
+    curr.each((gas, amount) -> {
+      float gradient = (amount/t)*totalGradient;
+      gases[gas.id] = gradient;
+      total += gradient;
+    });
+  }
+  
   @Override
   public void read(Reads read){
     super.read(read);
     int count = read.i();
-    
-    for(int id=0; id<count; id++){
+  
+    for(int id = 0; id < count; id++){
       float amount = read.f();
       gases[id] = amount;
       total += amount;

@@ -5,12 +5,9 @@ import arc.files.ZipFi;
 import arc.struct.Seq;
 import arc.util.serialization.Jval;
 import mindustry.gen.Building;
-import singularity.core.Atmospheres;
-import singularity.core.GasAreas;
-import singularity.core.ModConfig;
-import singularity.core.Reactions;
+import singularity.core.*;
+import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
-import singularity.core.ReactionPoints;
 
 import static arc.Core.settings;
 
@@ -44,6 +41,8 @@ public class Sgl{
   public static final String telegramGroup = "";
   public static final String modDevelopGroup = "https://jq.qq.com/?_wv=1027&k=vjybgqDG";
   public static final String githubProject = "https://github.com/EB-wilson/Singularity";
+  public static final String githubRawMaster = "https://raw.githubusercontent.com/EB-wilson/Singularity/master/";
+  public static final String publicInfo = githubRawMaster + "publicInfo/";
   
   /**模组配置存储器*/
   public static ModConfig config = new ModConfig();
@@ -59,6 +58,9 @@ public class Sgl{
   public static ReactionPoints reactionPoints;
   
   public static void init(){
+    //载入布局风格
+    SglStyles.load();
+    
     ui = new SglUI();
     atmospheres = new Atmospheres();
     gasAreas = new GasAreas();

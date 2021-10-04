@@ -89,7 +89,7 @@ public interface HeatBuildComp extends BuildCompBase{
   }
   
   default float temperature(){
-    return heat()/heatCapacity();
+    return heatCapacity() > 0? heat()/heatCapacity(): 0;
   }
   
   default void setLiquidModule(Field liquids){
@@ -107,7 +107,7 @@ public interface HeatBuildComp extends BuildCompBase{
   
   default void setGasesModule(Field gases){
     if(!(this instanceof GasBuildComp)) throw new RuntimeException("cannot set GasesModule on a Non-GasBuild building");
-    if(!LiquidModule.class.isAssignableFrom(gases.getType())) throw new RuntimeException("error of set module to a non-GasesModule var");
+    if(!GasesModule.class.isAssignableFrom(gases.getType())) throw new RuntimeException("error of set module to a non-GasesModule var");
   
     FieldHandler.setValue(gases, this, new GasesModule((GasBuildComp) this){
       @Override
@@ -133,6 +133,22 @@ public interface HeatBuildComp extends BuildCompBase{
       @Override
       public void add(ItemModule items){
         items.each(this::add);
+      }
+  
+      @Override
+      public void remove(Item item, int amount){
+        super.remove(item, amount);
+        handleHeat(-amount);
+        updateHeatCapacity(item, -amount);
+      }
+  
+      @Override
+      public void set(Item item, int amount){
+        total += (amount - items[item.id]);
+        items[item.id] = amount;
+        
+        handleHeat(total);
+        updateHeatCapacity(item, total);
       }
     });
   }

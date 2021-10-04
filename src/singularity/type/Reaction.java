@@ -2,6 +2,7 @@ package singularity.type;
 
 import arc.func.Cons;
 import arc.func.Func2;
+import arc.util.Time;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.MappableContent;
 import mindustry.ctype.UnlockableContent;
@@ -19,7 +20,7 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
   public float requireTemperature;
   public float requirePressure;
   
-  public float reactTime;
+  public float reactTime = 60;
   public Cons<ReactContainer> reacting = e -> {};
   public Cons<ReactContainer> finished = e -> {};
   
@@ -27,7 +28,7 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
     int pressureSclBase = getGas().length - (product.isGas? 1: 0);
     int heatSclBase = deltaHeat > 0? 1: -1;
     
-    return (pressure*pressureSclBase/2)*(temperature*heatSclBase/2);
+    return (pressure*pressureSclBase/2)+(temperature*heatSclBase/2);
   };
   
   public boolean itemReaction = false;
@@ -39,7 +40,7 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
   private byte gReactionCount = -1;
   
   public Reaction(Participant<R1> a, Participant<R2> b, Participant<P> out){
-    super(a.toString() + " + " + b.toString() + " = " + out.toString());
+    super(a.toString() + " + " + b.toString() + " -> " + out.toString());
     reactantA = a;
     reactantB = b;
     product = out;
@@ -76,7 +77,7 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
   @Override
   public void init(){
     super.init();
-    Sgl.reactions.signupReaction(this);
+    Time.run(0, () -> Sgl.reactions.signupReaction(this));
     if(reactantA.reactant instanceof Item) iReactionCount++;
     if(reactantB.reactant instanceof Item) if(++iReactionCount >= 1) itemReaction = true;
     if(reactantA.reactant instanceof Liquid) lReactionCount++;
@@ -139,6 +140,11 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
     return SglContentType.reaction.value;
   }
   
+  @Override
+  public String toString(){
+    return "reaction:" + id + " - " + reactantA + " + " + reactantB + "->" + product + "], requires:[ temperature:" + requireTemperature + ", pressure:" + requirePressure + "]";
+  }
+  
   public static class Participant<Type extends MappableContent>{
     public final Type reactant;
     public final Class<Type> clazz;
@@ -181,7 +187,7 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
   
     @Override
     public String toString(){
-      return amount + reactant.name;
+      return "[" + reactant.getContentType().name() + "]" + reactant.name + "*" + (isItem? (int)amount: amount);
     }
   }
 }

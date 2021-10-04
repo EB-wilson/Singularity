@@ -1,23 +1,18 @@
 package singularity.core;
 
-import mindustry.ui.fragments.OverlayFragment;
-import singularity.Sgl;
-import singularity.ui.fragments.override.SglBlockInventoryFragment;
-import singularity.ui.fragments.override.SglMenuFrag;
-import singularity.world.meta.SglAttribute;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.world.Block;
 import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.liquid.Conduit;
-import universeCore.util.handler.FieldHandler;
+import singularity.Sgl;
+import singularity.ui.fragments.override.SglMenuFrag;
+import singularity.world.meta.SglAttribute;
 
 /**改动游戏原内容重初始化，用于对游戏已定义的实例进行操作*/
 public class Init{
   public static void init(){
-    FieldHandler.setValue(OverlayFragment.class, "inv", Vars.control.input.frag, new SglBlockInventoryFragment());
-  
     Vars.ui.menufrag = new SglMenuFrag();
     Vars.ui.menuGroup.clearChildren();
     Vars.ui.menufrag.build(Vars.ui.menuGroup);

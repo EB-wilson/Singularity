@@ -1,21 +1,19 @@
 package singularity.core;
 
-import arc.func.Boolf;
 import arc.struct.IntMap;
-import arc.struct.ObjectMap;
 import arc.struct.Seq;
-import mindustry.Vars;
+import arc.util.Log;
 import mindustry.ctype.MappableContent;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import singularity.type.Gas;
 import singularity.type.Reaction;
-import singularity.type.SglContentType;
 
+/**化学反应组管理类*/
 public class Reactions{
-  public final Seq<IntMap<Reaction<?, ?, ?>>[]> itemReactMap = new Seq<>(Vars.content.items().size);
-  public final Seq<IntMap<Reaction<?, ?, ?>>[]> liquidReactMap = new Seq<>(Vars.content.liquids().size);
-  public final Seq<IntMap<Reaction<?, ?, ?>>[]> gasReactMap = new Seq<>(Vars.content.getBy(SglContentType.gas.value).size);
+  public final IntMap<IntMap<Reaction<?, ?, ?>>[]> itemReactMap = new IntMap<>();
+  public final IntMap<IntMap<Reaction<?, ?, ?>>[]> liquidReactMap = new IntMap<>();
+  public final IntMap<IntMap<Reaction<?, ?, ?>>[]> gasReactMap = new IntMap<>();
   
   protected final Seq<Item> allReactItem = new Seq<>();
   protected final Seq<Liquid> allReactLiquid = new Seq<>();
@@ -47,49 +45,47 @@ public class Reactions{
   }
   
   public void signupReaction(Reaction<?, ?, ?> reaction){
+    Log.info("singing: " + reaction);
     if(reaction.reactantA.reactant instanceof Item) signupItem((Item)reaction.reactantA.reactant, reaction.reactantB.reactant, reaction);
-    if(reaction.reactantB.reactant instanceof Item) signupItem((Item)reaction.reactantA.reactant, reaction.reactantB.reactant, reaction);
+    if(reaction.reactantB.reactant instanceof Item) signupItem((Item)reaction.reactantB.reactant, reaction.reactantA.reactant, reaction);
     if(reaction.reactantA.reactant instanceof Liquid) signupLiquid((Liquid)reaction.reactantA.reactant, reaction.reactantB.reactant, reaction);
-    if(reaction.reactantB.reactant instanceof Liquid) signupLiquid((Liquid)reaction.reactantA.reactant, reaction.reactantB.reactant, reaction);
+    if(reaction.reactantB.reactant instanceof Liquid) signupLiquid((Liquid)reaction.reactantB.reactant, reaction.reactantA.reactant, reaction);
     if(reaction.reactantA.reactant instanceof Gas) signupGas((Gas)reaction.reactantA.reactant, reaction.reactantB.reactant, reaction);
-    if(reaction.reactantB.reactant instanceof Gas) signupGas((Gas)reaction.reactantA.reactant, reaction.reactantB.reactant, reaction);
+    if(reaction.reactantB.reactant instanceof Gas) signupGas((Gas)reaction.reactantB.reactant, reaction.reactantA.reactant, reaction);
   }
   
+  @SuppressWarnings("unchecked")
   private void signupItem(Item item, MappableContent key, Reaction<?, ?, ?> reaction){
     int type = key instanceof Item? 0: key instanceof Liquid? 1: key instanceof Gas? 2: -1;
     if(type == -1) throw new RuntimeException("try use invalid type to get a reaction");
-    IntMap<Reaction<? ,? ,?>> map = itemReactMap.get(item.id)[type];
-    if(map == null){
-      map = new IntMap<>();
-      itemReactMap.get(item.id)[type] = map;
-    }
-    map.put(key.id, reaction);
+    IntMap<Reaction<? ,? ,?>>[] arr = itemReactMap.get(item.id, new IntMap[]{new IntMap<>(), new IntMap<>(), new IntMap<>()});
+    if(!itemReactMap.containsValue(arr, true)) itemReactMap.put(item.id, arr);
+    
+    arr[type].put(key.id, reaction);
     
     if(!allReactItem.contains(item)) allReactItem.add(item);
   }
   
+  @SuppressWarnings("unchecked")
   private void signupLiquid(Liquid liquid, MappableContent key, Reaction<?, ?, ?> reaction){
     int type = key instanceof Item? 0: key instanceof Liquid? 1: key instanceof Gas? 2: -1;
     if(type == -1) throw new RuntimeException("try use invalid type to get a reaction");
-    IntMap<Reaction<? ,? ,?>> map = liquidReactMap.get(liquid.id)[type];
-    if(map == null){
-      map = new IntMap<>();
-      liquidReactMap.get(liquid.id)[type] = map;
-    }
-    map.put(key.id, reaction);
+    IntMap<Reaction<? ,? ,?>>[] arr = liquidReactMap.get(liquid.id, new IntMap[]{new IntMap<>(), new IntMap<>(), new IntMap<>()});
+    if(!liquidReactMap.containsValue(arr, true)) liquidReactMap.put(liquid.id, arr);
+    
+    arr[type].put(key.id, reaction);
     
     if(!allReactLiquid.contains(liquid)) allReactLiquid.add(liquid);
   }
   
+  @SuppressWarnings("unchecked")
   private void signupGas(Gas gas, MappableContent key, Reaction<?, ?, ?> reaction){
     int type = key instanceof Item? 0: key instanceof Liquid? 1: key instanceof Gas? 2: -1;
     if(type == -1) throw new RuntimeException("try use invalid type to get a reaction");
-    IntMap<Reaction<? ,? ,?>> map = gasReactMap.get(gas.id)[type];
-    if(map == null){
-      map = new IntMap<>();
-      gasReactMap.get(gas.id)[type] = map;
-    }
-    map.put(key.id, reaction);
+    IntMap<Reaction<? ,? ,?>>[] arr = gasReactMap.get(gas.id, new IntMap[]{new IntMap<>(), new IntMap<>(), new IntMap<>()});
+    if(!gasReactMap.containsValue(arr, true)) gasReactMap.put(gas.id, arr);
+    
+    arr[type].put(key.id, reaction);
   
     if(!allReactGases.contains(gas)) allReactGases.add(gas);
   }
