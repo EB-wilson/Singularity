@@ -13,7 +13,7 @@ import universeCore.util.animLayout.CellAnimateGroup;
 import universeCore.util.animLayout.CellChangeColorAction;
 
 public class BaseListDialog extends BaseDialog{
-  public float width = 650, height = 420;
+  public float width = 750, height = 520;
   public float itemBoardWidth = 180, itemHeight = 65;
   public float pad = 4, margin = 8;
   

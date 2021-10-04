@@ -1,7 +1,6 @@
 package singularity.world.atmosphere;
 
 import arc.files.Fi;
-import arc.struct.ObjectMap;
 import mindustry.Vars;
 import singularity.Sgl;
 import singularity.type.Gas;
@@ -11,7 +10,6 @@ import universeCore.util.ini.IniFile;
 import universeCore.util.ini.IniTypes;
 
 import java.util.Arrays;
-import java.util.regex.Pattern;
 
 public class DefaultAtmosphere{
   public final static Ini configure;
@@ -66,16 +64,16 @@ public class DefaultAtmosphere{
       
       IniTypes.IniMap ingre = (IniTypes.IniMap) map.get("ingredients");
       IniTypes.IniMap recov = (IniTypes.IniMap) map.get("recoverCoeff");
+  
+      ingre.get().forEach((k, v) -> {
+        Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + k);
+        ingredientsBase[gas.id] = ((IniTypes.IniNumber)v).floatValue();
+      });
       
-      if(ingre != null) for(ObjectMap.Entry<String, IniTypes.IniObject> item : ingre){
-        Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + item.key);
-        ingredientsBase[gas.id] = ((IniTypes.IniNumber)item.value).floatValue();
-      }
-      
-      if(recov != null) for(ObjectMap.Entry<String, IniTypes.IniObject> item : recov){
-        Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + item.key);
-        recoverCoeff[gas.id] = ((IniTypes.IniNumber)item.value).floatValue();
-      }
+      recov.get().forEach((k, v) -> {
+        Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + k);
+        recoverCoeff[gas.id] = ((IniTypes.IniNumber)v).floatValue();
+      });
     }
     else{
       baseTotal = defaults.baseTotal;

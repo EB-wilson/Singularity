@@ -36,6 +36,8 @@ public class PublicInfoDialog extends BaseListDialog{
   }
   
   public void build(){
+    Log.info("loading");
+    
     String directory = Sgl.publicInfo + "directory.ini";
     Seq<ItemEntry> itemEntrySeq = new Seq<>();
     
@@ -43,36 +45,34 @@ public class PublicInfoDialog extends BaseListDialog{
       Ini dire = new Ini();
       dire.parse(request.getResultAsString());
       
-      dire.eachAll((name, sect) -> {
+      dire.eachSection((name, sect) -> {
         Seq<Element> elements = new Seq<>();
         ObjectMap<String, TextureRegion> atlas = new ObjectMap<>();
         String[] title = {""};
   
         IniMap assets = (IniMap)sect.get("assets");
         assets.each((n, image) -> {
-          if(((String)image.get()).contains("https://")){
-            Http.get(image.get(), result -> {
-              if(!atlas.containsKey(n)){
-                atlas.put(n, Core.atlas.find("nomap"));
-                Http.get(image.get(), res -> {
-                  Pixmap pix = new Pixmap(res.getResult());
-                  Core.app.post(() -> {
-                    try{
-                      Texture tex = new Texture(pix);
-                      tex.setFilter(Texture.TextureFilter.linear);
-                      atlas.put(n, new TextureRegion(tex));
-                      pix.dispose();
-                    }catch(Exception e){
-                      Log.err(e);
-                    }
-                  });
-                }, err -> {});
-              }
-            }, e -> {});
+          if(!((String)image.get()).startsWith(">modAtlas<")){
+            if(!atlas.containsKey(n)){
+              atlas.put(n, Core.atlas.find("nomap"));
+              Http.get("https://" + image.get(), res -> {
+                Pixmap pix = new Pixmap(res.getResult());
+                Core.app.post(() -> {
+                  try{
+                    Texture tex = new Texture(pix);
+                    tex.setFilter(Texture.TextureFilter.linear);
+                    atlas.put(n, new TextureRegion(tex));
+                    pix.dispose();
+                  }catch(Exception e){
+                    Log.err(e);
+                  }
+                });
+              }, Log::err);
+            }
           }
-          else atlas.put(n, Core.atlas.find(image.get()));
+          else atlas.put(n, Core.atlas.find(((String) image.get()).replace(">modAtlas<", "").trim()));
         });
-        
+        Log.info(2);
         IniArray arr = ((IniArray)sect.get("languages"));
         ObjectSet<String> languages = new ObjectSet<>();
         
@@ -114,8 +114,8 @@ public class PublicInfoDialog extends BaseListDialog{
             
             height[0] += pad;
           }
-        }, e -> {});
-        
+        }, Log::err);
+        Log.info(3);
         itemEntrySeq.add(new ItemEntry(table -> table.add(title[0]), table -> {
           Interval timer = new Interval();
           table.setHeight(height[0]);
@@ -141,7 +141,7 @@ public class PublicInfoDialog extends BaseListDialog{
           }
         }));
       });
-    }, e -> {});
+    }, Log::err);
     
     rebuild();
   }
