@@ -49,29 +49,34 @@ public class BaseListDialog extends BaseDialog{
       left.table(Tex.buttonTrans, itemTable -> {
         itemTable.pane(pane -> {
           for(ItemEntry item: items){
-            pane.button(t -> item.itemDisplay.get(t), Styles.underlineb, () -> {
+            pane.button(t -> {
+              t.defaults().grow().margin(0);
+              item.itemDisplay.get(t);
+            }, Styles.underlineb, () -> {
               UncCore.cellActions.add(new CellAnimateGroup(
-                  new CellChangeColorAction(infoCell, infoTable, infoTable.color.cpy().a(0), 20f),
+                  new CellChangeColorAction(infoCell, infoTable, infoTable.color.cpy().a(0), 6f),
                   (Runnable) () -> {
                     infoTable.clearChildren();
                     item.infoDisplay.get(infoTable);
                     current = item;
                   },
-                  new CellChangeColorAction(infoCell, infoTable, infoTable.color.cpy().a(1), 20f)
+                  new CellChangeColorAction(infoCell, infoTable, infoTable.color.cpy().a(1), 6f)
               ));
-            }).update(b -> b.setChecked(current == item)).height(itemHeight);
+            }).update(b -> b.setChecked(current == item)).height(itemHeight).growX();
           }
-        }).grow();
-      }).grow();
+        }).grow().margin(0);
+      }).grow().margin(0);
       left.row();
       left.button(Core.bundle.get("misc.back"), this::hide).padTop(pad).growX().height(84);
     }).size(itemBoardWidth, height);
     
     cont.table(Tex.buttonTrans, t -> {
-      infoCell = t.table(info -> {
-        info.add(Core.bundle.get("misc.noInfo"));
-      });
-      infoTable = infoCell.get();
+      t.pane(pane -> {
+        infoCell = t.table(info -> {
+          info.add(Core.bundle.get("misc.noInfo"));
+        }).grow().margin(0);
+        infoTable = infoCell.get();
+      }).grow();
     }).size(infoBoardWidth, height).padLeft(pad);
   }
   
