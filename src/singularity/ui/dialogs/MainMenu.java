@@ -7,6 +7,7 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.Element;
+import arc.scene.ui.Label;
 import mindustry.content.Liquids;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -34,8 +35,8 @@ public class MainMenu extends BaseDialog {
   
   public MainMenu() {
     super(Core.bundle.get("dialog.mainMenu.title"));
-    build();
     
+    build();
   }
   
   public void build() {
@@ -59,7 +60,9 @@ public class MainMenu extends BaseDialog {
         for(ButtonEntry entry : buttonEntries){
           menu.button(b -> {
             b.table(Tex.buttonEdge3, i -> i.image(entry.region).size(64)).size(80);
-            b.add("").width(510).padLeft(10).update(l -> l.setText(entry.text.get()));
+            Label l = b.add("").width(510).padLeft(10).get();
+            shown(() -> l.setText(entry.text.get()));
+            
             b.add(new Element(){
               @Override
               public void draw(){

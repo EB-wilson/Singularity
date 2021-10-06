@@ -17,6 +17,10 @@ public class BaseListDialog extends BaseDialog{
   public float itemBoardWidth = 180, itemHeight = 65;
   public float pad = 4, margin = 8;
   
+  public Cons<Table> defaultInfo = info -> {
+    info.add(Core.bundle.get("misc.noInfo"));
+  };
+  
   Seq<ItemEntry> items = new Seq<>();
   
   Table infoTable;
@@ -63,6 +67,7 @@ public class BaseListDialog extends BaseDialog{
                   new CellChangeColorAction(infoCell, infoTable, infoTable.color.cpy().a(1), 6f)
               ));
             }).update(b -> b.setChecked(current == item)).height(itemHeight).growX();
+            pane.row();
           }
         }).grow().margin(0);
       }).grow().margin(0);
@@ -72,11 +77,10 @@ public class BaseListDialog extends BaseDialog{
     
     cont.table(Tex.buttonTrans, t -> {
       t.pane(pane -> {
-        infoCell = t.table(info -> {
-          info.add(Core.bundle.get("misc.noInfo"));
-        }).grow().margin(0);
+        pane.margin(margin);
+        infoCell = pane.table(defaultInfo).grow().margin(0);
         infoTable = infoCell.get();
-      }).grow();
+      }).width(infoBoardWidth).growY();
     }).size(infoBoardWidth, height).padLeft(pad);
   }
   
