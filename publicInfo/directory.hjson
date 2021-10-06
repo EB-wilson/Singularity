@@ -6,7 +6,7 @@ pages: [
       image1: {
         location: url
         address: https://raw.githubusercontent.com/EB-wilson/Singularity/master/publicInfo/preview.png
-        size: [500, 500]
+        size: [300, 300]
       }
     }
   }

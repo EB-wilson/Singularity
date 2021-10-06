@@ -2,6 +2,7 @@ package singularity.ui.dialogs;
 
 import arc.Core;
 import arc.func.Cons;
+import arc.scene.event.Touchable;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
@@ -48,6 +49,7 @@ public class BaseListDialog extends BaseDialog{
     cont.clearChildren();
     
     float infoBoardWidth = width - itemBoardWidth - 4;
+    current = null;
     
     cont.table(left -> {
       left.table(Tex.buttonTrans, itemTable -> {
@@ -66,7 +68,10 @@ public class BaseListDialog extends BaseDialog{
                   },
                   new CellChangeColorAction(infoCell, infoTable, infoTable.color.cpy().a(1), 6f)
               ));
-            }).update(b -> b.setChecked(current == item)).height(itemHeight).growX();
+            }).update(b -> {
+              b.setChecked(current == item);
+              b.touchable(() -> b.isChecked()? Touchable.disabled: Touchable.enabled);
+            }).height(itemHeight).growX();
             pane.row();
           }
         }).grow().margin(0);

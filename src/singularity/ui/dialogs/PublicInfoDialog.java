@@ -1,7 +1,6 @@
 package singularity.ui.dialogs;
 
 import arc.Core;
-import arc.func.Cons;
 import arc.func.Prov;
 import arc.graphics.Pixmap;
 import arc.graphics.Texture;
@@ -21,14 +20,12 @@ import universeCore.UncCore;
 import universeCore.util.animLayout.CellAction;
 import universeCore.util.animLayout.CellChangeColorAction;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 public class PublicInfoDialog extends BaseListDialog{
   private static final String langRegex = "#locale#";
   private static final Pattern imagePattern = Pattern.compile("<image *=.*>");
   
-  Cons<Integer> buildInfo;
   Seq<ItemEntry> itemEntrySeq;
   boolean connected = false;
   float timer = 0;
@@ -69,7 +66,7 @@ public class PublicInfoDialog extends BaseListDialog{
     
     connected = false;
     timer = 0;
-    String directory = Sgl.publicInfo + "directory.ini";
+    String directory = Sgl.publicInfo + "directory.hjson";
     itemEntrySeq = new Seq<>();
   
     Http.get(directory, request -> {
@@ -77,8 +74,10 @@ public class PublicInfoDialog extends BaseListDialog{
       Log.info(direResult);
       
       Jval dire = Jval.read(direResult);
-      dire.get("pages").asArray().forEach(this::buildChild);
-      
+      for(Jval jval : dire.get("pages").asArray()){
+        buildChild(jval);
+      }
+  
       items = itemEntrySeq;
       rebuild();
       
@@ -102,35 +101,43 @@ public class PublicInfoDialog extends BaseListDialog{
     Log.info(name + ", " + sect.toString());
     
     Table infoContainer = new Table();
+    infoContainer.defaults().grow().margin(margin).pad(pad);
     ObjectMap<String, TextureRegion> atlas = new ObjectMap<>();
+    ObjectMap<String, float[]> atlasSize = new ObjectMap<>();
     String[] title = {""};
     
     Jval.JsonMap assets = sect.get("assets").asObject();
     Log.info(assets.toString());
-    assets.forEach(image -> {
-      if(!atlas.containsKey(image.key)){
-        Jval.JsonArray size = image.value.get("size").asArray();
-        if(image.value.get("location").asString().equals("url")){
+    
+    for(ObjectMap.Entry<String, Jval> asset : assets){
+      if(!atlas.containsKey(asset.key)){
+        Jval.JsonArray size = asset.value.get("size").asArray();
+        atlasSize.put(asset.key, new float[]{size.get(0).asFloat(), size.get(1).asFloat()});
+        
+        if(asset.value.get("location").asString().equals("url")){
+          atlas.put(asset.key, Core.atlas.find("nomap"));
           
-          atlas.put(image.key, new TextureRegion(Core.atlas.find("nomap").texture, size.get(0).asInt(), size.get(1).asInt()));
-          Http.get(image.value.get("address").asString(), res -> {
+          Runnable[] r = new Runnable[]{() -> {}};
+          r[0] = () -> Http.get(asset.value.get("address").asString(), res -> {
             Pixmap pix = new Pixmap(res.getResult());
             Core.app.post(() -> {
               try{
                 Texture tex = new Texture(pix);
                 tex.setFilter(Texture.TextureFilter.linear);
-                atlas.put(image.key, new TextureRegion(tex));
+                atlas.put(asset.key, new TextureRegion(tex));
                 pix.dispose();
               }catch(Exception e){
                 Log.err(e);
               }
             });
-          }, Log::err);
+          }, e -> r[0].run());
+          
+          r[0].run();
         }
-        else atlas.put(image.key,  new TextureRegion(Core.atlas.find(image.value.get("address").asString()).texture, size.get(0).asInt(), size.get(1).asInt()));
+        else atlas.put(asset.key, Core.atlas.find(asset.value.get("address").asString()));
       }
-    });
-    Log.info(2);
+    }
+    
     Jval.JsonArray arr = sect.get("languages").asArray();
     ObjectSet<String> languages = new ObjectSet<>();
     
@@ -143,52 +150,57 @@ public class PublicInfoDialog extends BaseListDialog{
     String language = !currLang.equals("en") && languages.contains(currLang)? currLang: "";
     String url = sect.get("info").asString().replace(langRegex, language);
     
-    Http.get(url, result -> {
+    Http.get(url).error(e -> {
+      infoTable.clearChildren();
+      infoTable.add(Core.bundle.get("warn.publicInfo.connectFailed"));
+      infoTable.row();
+      infoTable.button(Core.bundle.get("misc.refresh"), this::refresh).size(140, 60);
+  
+      Log.err(e);
+    }).block(result -> {
       String[] strs = result.getResultAsString().split("\n");
       title[0] = strs[0];
+      Log.info(title[0]);
       
       for(int i=1; i<strs.length; i++){
         if(imagePattern.matcher(strs[i]).matches()){
           String image = strs[i].replaceAll("<image *=", "").replace(">", "").replace(" ", "");
           TextureRegion region = atlas.get(image);
+          float[] size = atlasSize.get(image);
           
-          float iWidth = Math.min(width - margin - itemBoardWidth, region.width);
-          float scl = iWidth/region.width;
+          float iWidth = Math.min(width - margin*2 - pad - itemBoardWidth, size[0]);
+          float scl = iWidth/size[0];
           
-          infoContainer.image().size(region.width*scl, region.width*scl);
+          infoContainer.image(region).size(size[0]*scl, size[1]*scl);
         }
         else{
           infoContainer.add(strs[i]).growX().fillY();
         }
+        infoContainer.row();
       }
-    }, e -> {
-      infoTable.clearChildren();
-      infoTable.add(Core.bundle.get("warn.publicInfo.connectFailed"));
-      infoTable.row();
-      infoTable.button(Core.bundle.get("misc.refresh"), this::refresh).size(140, 60);
-      
-      Log.err(e);
     });
+    
     Log.info(3);
     
-    itemEntrySeq.add(new ItemEntry(table -> table.add(title[0]), table -> {
-      AtomicInteger i = new AtomicInteger();
-      
-      Cell<Table> cell = table.add(infoContainer).width(width - itemBoardWidth - pad - margin*2).growY().padTop(pad + 40).color(infoContainer.color.cpy().a(0));
+    itemEntrySeq.add(new ItemEntry(table -> {
+      table.add(title[0]);
+      Log.info(title[0]);
+    }, table -> {
+      Cell<Table> cell = table.add(infoContainer).width(width - itemBoardWidth - pad - margin*2).growY().padTop(pad + 40).padBottom(pad).color(infoContainer.color.cpy().a(0));
       UncCore.cellActions.add(new CellChangeColorAction(cell, table, infoContainer.color.cpy().a(1), 30));
       UncCore.cellActions.add(new CellAction(cell, table, 30){
         float p = pad + 40;
         float to = pad;
-        float curr = pad + 40;
+        float curr = pad + 40, currP = pad;
 
         @Override
         public void action(){
           curr = p + (to - p)*progress;
+          currP = p + (to - p)*(1-progress);
           cell.padTop(curr);
+          cell.padBottom(currP);
         }
       }.gradient(0.2f));
-      
-      buildInfo.get(i.getAndIncrement());
     }));
   }
 }

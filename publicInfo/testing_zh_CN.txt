@@ -1,4 +1,6 @@
 title 标题
 
 公告测试
+是编码问题吗?
+testings
 <image=image1>
