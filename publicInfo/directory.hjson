@@ -5,7 +5,7 @@ pages: [
     assets: {
       image1: {
         location: url
-        address: https://raw.githubusercontent.com/EB-wilson/Singularity/master/publicInfo/preview.png
+        address: https://raw.githubusercontent.com/EB-wilson/Singularity/master/publicInfo/icon.png
         size: [300, 300]
       }
     }
