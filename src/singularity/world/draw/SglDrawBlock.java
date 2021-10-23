@@ -3,23 +3,45 @@ package singularity.world.draw;
 import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
-import mindustry.gen.Building;
 import mindustry.world.Block;
+import singularity.world.blockComp.DrawableComp;
 
-public class SglDrawBlock{
+public class SglDrawBlock<Target extends DrawableComp> extends SglDrawBase<Target>{
+  public Block block;
+  
+  public SglDrawBlock(Block block){
+    this.block = block;
+  }
+  
   public TextureRegion region;
   
-  public void load(Block block){
+  @Override
+  public void load(){
+    loadType();
+    
     region = Core.atlas.find(block.name);
   }
   
-  public void draw(Building entity){
-    Draw.rect(region, entity.x, entity.y);
-  }
-  
-  public TextureRegion[] icons(Block block){
+  @Override
+  public TextureRegion[] icons(){
     return new TextureRegion[]{region};
   }
   
-  public void drawLight(Building entity){}
+  public class SglDrawBlockDrawer extends SglBaseDrawer<Target>{
+    public SglDrawBlockDrawer(Target entity){
+      super(entity);
+    }
+  
+    @Override
+    public void doDraw(){
+      if(drawDef == null){
+        draw();
+      }
+      else drawDef.get(entity);
+    }
+  
+    public void draw(){
+      Draw.rect(region, entity.x(), entity.y());
+    }
+  }
 }

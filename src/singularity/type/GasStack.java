@@ -1,6 +1,6 @@
 package singularity.type;
 
-import singularity.content.Gases;
+import singularity.contents.Gases;
 
 public class GasStack implements Comparable<GasStack>{
   public static final GasStack[] empty = {};

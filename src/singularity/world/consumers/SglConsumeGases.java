@@ -9,11 +9,10 @@ import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.ui.tables.GasValue;
 import singularity.world.blockComp.GasBuildComp;
-import universeCore.entityComps.blockComps.ConsumerBuildComp;
 import universeCore.world.consumers.BaseConsume;
 import universeCore.world.consumers.UncConsumeType;
 
-public class SglConsumeGases extends BaseConsume{
+public class SglConsumeGases extends BaseConsume<GasBuildComp>{
   public GasStack[] gases;
   
   public SglConsumeGases(GasStack[] stack){
@@ -21,19 +20,19 @@ public class SglConsumeGases extends BaseConsume{
   }
   
   @Override
-  public UncConsumeType<SglConsumeGases, GasBuildComp> type(){
+  public UncConsumeType<SglConsumeGases> type(){
     return SglConsumeType.gas;
   }
   
   @Override
-  public void consume(ConsumerBuildComp entity){
+  public void consume(GasBuildComp entity){
     //无触发器，update消耗
   }
   
   @Override
-  public void update(ConsumerBuildComp entity){
+  public void update(GasBuildComp entity){
     for(GasStack stack: gases){
-      entity.getBuilding(type()).gases().remove(stack.gas, stack.amount*entity.getBuilding().edelta());
+      entity.gases().remove(stack.gas, stack.amount*entity.getBuilding().edelta());
     }
   }
   
@@ -52,17 +51,16 @@ public class SglConsumeGases extends BaseConsume{
   }
   
   @Override
-  public void build(ConsumerBuildComp entity, Table table){
+  public void build(GasBuildComp entity, Table table){
     for(GasStack stack : gases){
       table.add(new ReqImage(stack.gas.uiIcon,
-        () -> entity.getBuilding(type()).gases() != null && entity.getBuilding(type()).gases().get(stack.gas) > stack.amount*entity.getBuilding().edelta() + 0.0001f)).padRight(8);
+        () -> entity.gases() != null && entity.gases().get(stack.gas) > stack.amount*entity.getBuilding().edelta() + 0.0001f)).padRight(8);
     }
     table.row();
   }
   
   @Override
-  public boolean valid(ConsumerBuildComp buildComp){
-    GasBuildComp entity = buildComp.getBuilding(type());
+  public boolean valid(GasBuildComp entity){
   
     for(GasStack stack: gases){
       if(entity.gases() == null || entity.gases().get(stack.gas) < stack.amount*(entity.getBlock().hasPower && entity.getBuilding().power.status != 0?
@@ -72,7 +70,7 @@ public class SglConsumeGases extends BaseConsume{
   }
   
   @Override
-  public Object[] filter(ConsumerBuildComp entity){
+  public Object[] filter(GasBuildComp entity){
     int i = 0;
     Gas[] acceptGases = new Gas[gases.length];
     for(GasStack stack: gases){

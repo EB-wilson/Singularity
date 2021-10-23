@@ -20,8 +20,6 @@ import singularity.ui.SglStyles;
 public class MainMenu extends BaseDialog {
   protected boolean launch = true;
   
-  AboutModDialog aboutMod = new AboutModDialog(Core.bundle.get("dialog.aboutMod.title"));
-  
   ButtonEntry[] buttonEntries = new ButtonEntry[]{
       new ButtonEntry(Singularity.getModAtlas("icon_start"), () -> Core.bundle.get(launch? "misc.startGame": "misc.backToGame"), () -> Color.white, () -> {hide(); launch = false;}),
       new ButtonEntry(Singularity.getModAtlas("icon_database"), Core.bundle.get("misc.modDatabase"), Pal.accent, () -> {}),
@@ -29,19 +27,15 @@ public class MainMenu extends BaseDialog {
       new ButtonEntry(Singularity.getModAtlas("icon_publicInfo"), () -> Core.bundle.get("misc.publicInfo"), () -> Liquids.cryofluid.color, () -> {
         Sgl.ui.publicInfo.show();
       }),
-      new ButtonEntry(Singularity.getModAtlas("icon_about"), Core.bundle.get("misc.aboutMod"), Color.violet, () -> {}),
+      new ButtonEntry(Singularity.getModAtlas("icon_about"), Core.bundle.get("misc.aboutMod"), Color.violet, () -> Sgl.ui.aboutDialog.show()),
       new ButtonEntry(Singularity.getModAtlas("icon_contribute"), Core.bundle.get("misc.contribute"), Color.yellow, () -> {}),
   };
   
   public MainMenu() {
     super(Core.bundle.get("dialog.mainMenu.title"));
-    
-    build();
   }
   
   public void build() {
-    aboutMod.build();
-    
     cont.top().table(main -> {
       main.image(Singularity.getModAtlas("launch_logo")).size(256, 128).padTop(30);
       main.row();

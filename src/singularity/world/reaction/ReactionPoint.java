@@ -192,7 +192,7 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   
   @Override
   public int classId(){
-    return 30;
+    return 101;
   }
   
   @Override

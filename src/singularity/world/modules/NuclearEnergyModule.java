@@ -1,71 +1,83 @@
 package singularity.world.modules;
 
-import singularity.world.blocks.SglBlock.SglBuilding;
-import singularity.world.blockComp.NuclearEnergyBuildComp;
-import singularity.world.nuclearEnergy.EnergyGroup;
-import singularity.world.nuclearEnergy.EnergyLevel;
 import arc.Core;
 import arc.func.Func;
 import arc.graphics.Color;
-import arc.math.Mathf;
 import arc.math.WindowedMean;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
 import arc.util.Interval;
-import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
 import mindustry.ui.Bar;
 import mindustry.world.modules.BlockModule;
+import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.blocks.SglBlock.SglBuilding;
+import singularity.world.blocks.nuclear.NuclearEnergyNet;
 
 public class NuclearEnergyModule extends BlockModule {
   public final NuclearEnergyBuildComp entity;
-  public final float basePotential;
+  public final float baseAcceptPres;
   public final boolean buffered;
   public final IntSeq linked = new IntSeq();
+  
+  public NuclearEnergyNet energyNet;
   
   private float added;
   private final WindowedMean moveMean = new WindowedMean(6);
   private static final Interval flowTimer = new Interval(2);
   
-  /**目前具有的核能量大小
-  * 关于核势能的计算： N = (E / 20)^2 ，N为核势能，E为容纳的能量*/
-  private float included = 0f;
+  /**目前具有的核能量大小*/
+  private float energy = 0f;
   
   public float displayMoving = 0f;
   
-  public EnergyGroup group;
-  
   public NuclearEnergyModule(NuclearEnergyBuildComp entity, float base, boolean buffered){
     this.entity = entity;
-    this.basePotential = base;
+    this.baseAcceptPres = base;
     this.buffered = buffered;
-    this.group = entity.getNuclearBlock().hasEnergyGroup()? new EnergyGroup(): null;
   }
   
-  public void update(){
-    if(flowTimer.get(1, 20f)){
-      moveMean.add(added);
-      added = 0;
-      displayMoving = moveMean.hasEnoughData()? moveMean.mean() / 20 : -1;
+  public void update(boolean showFlow){
+    if(showFlow){
+      if(flowTimer.get(1, 20f)){
+        moveMean.add(added);
+        added = 0;
+        displayMoving = moveMean.hasEnoughData() ? moveMean.mean()/20 : - 1;
+      }
     }
+    else moveMean.clear();
+    
+    energyNet.update();
   }
   
-  public float getIncluded(){
-    return included;
+  public void setNet(){
+    setNet(null);
+  }
+  
+  public void setNet(NuclearEnergyNet net){
+    if(net == null){
+      energyNet = new NuclearEnergyNet();
+      energyNet.add(entity);
+    }
+    else energyNet = net;
+  }
+  
+  public float getEnergy(){
+    return energy;
   }
   
   public void handle(float value){
-    included += value;
+    energy += value;
     if(value > 0){
       added += value;
     }
   }
   
   public void set(float value){
-    included = value;
+    energy = value;
   }
   
   public void display(Table table){
@@ -79,7 +91,7 @@ public class NuclearEnergyModule extends BlockModule {
         return new Bar(
           () -> "energy",
           () -> Color.white,
-          () -> e.energy.included/e.block().energyCapacity
+          () -> e.energy.energy/e.block().energyCapacity
         );
       });
   
@@ -88,34 +100,21 @@ public class NuclearEnergyModule extends BlockModule {
       energyBoard.table(info -> {
         info.defaults().left().padLeft(5);
         info.left();
-        info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearContain", included)));
+        info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearContain", energy)));
         info.row();
         info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearMoving", displayMoving >= 0? displayMoving: "--")));
         info.row();
-        float potentialEnergy = getPotentialEnergy();
-        
-        info.add("--").update(warn -> {
-          if(potentialEnergy >= EnergyLevel.warning.potentialEnergy){
-            warn.setText(Core.bundle.get("warn.nuclearPressure.highest"));
-            warn.color.set(Color.orange).lerp(Color.scarlet, Mathf.absin(Time.time, 2f, 1f));
-          }
-          else warn.setText(Core.bundle.format("fragment.bars.nuclearPressure", EnergyLevel.getLevel(potentialEnergy).level));
-        });
       });
     }).fillX().growY();
   }
   
-  public final float getPotentialEnergy(){
-    return buffered? basePotential: (included/20)*(included/20);
-  }
-  
   @Override
   public void write(Writes write){
-    write.f(included);
+    write.f(energy);
   }
 
   @Override
   public void read(Reads read){
-    included = read.f();
+    energy = read.f();
   }
 }

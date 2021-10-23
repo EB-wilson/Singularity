@@ -14,12 +14,12 @@ public class SglFx{
     float param = ((Number)e.data()).floatValue();
     
     Draw.color(e.color, Color.lightGray, e.fin());
-    Draw.alpha(param*e.fout());
+    Draw.alpha(0.75f*param*e.fout());
     
     Draw.z(Layer.bullet);
     
     randLenVectors(e.id, 1, 8f + e.fin()*(param + 3), (x, y) -> {
-      Fill.circle(e.x + x, e.y + y, 0.2f+e.fslope()*4.5f);
+      Fill.circle(e.x + x, e.y + y, 0.55f+e.fslope()*4.5f);
     });
   });
 }

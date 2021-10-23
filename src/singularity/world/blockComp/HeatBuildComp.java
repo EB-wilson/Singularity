@@ -1,11 +1,13 @@
 package singularity.world.blockComp;
 
+import arc.math.Mathf;
 import arc.util.Log;
 import mindustry.ctype.MappableContent;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
+import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.world.modules.GasesModule;
 import universeCore.entityComps.blockComps.BuildCompBase;
@@ -20,6 +22,13 @@ public interface HeatBuildComp extends BuildCompBase{
   
   default void handleHeat(float delta){
     FieldHandler.setValue(this.getClass(), "heat", this, heat() + delta);
+  }
+  
+  default void swapHeat(){
+    float atmoTemp = Sgl.atmospheres.current.getTemperature();
+    float rate = (temperature()-atmoTemp)/Math.max(temperature(), atmoTemp);
+    
+    handleHeat(heat()*Mathf.clamp(1 - getHeatBlock().heatResistance())*rate);
   }
   
   default HeatBuildComp getHeatBuild(){

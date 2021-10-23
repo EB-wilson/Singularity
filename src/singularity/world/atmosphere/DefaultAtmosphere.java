@@ -1,10 +1,9 @@
 package singularity.world.atmosphere;
 
 import arc.files.Fi;
-import mindustry.Vars;
 import singularity.Sgl;
 import singularity.type.Gas;
-import singularity.type.SglContentType;
+import singularity.type.SglContents;
 import universeCore.util.ini.Ini;
 import universeCore.util.ini.IniFile;
 import universeCore.util.ini.IniTypes;
@@ -26,9 +25,9 @@ public class DefaultAtmosphere{
   
   public final Atmosphere parent;
   
-  public float[] ingredientsBase = new float[Vars.content.getBy(SglContentType.gas.value).size];
-  public float[] ingredients = new float[Vars.content.getBy(SglContentType.gas.value).size];
-  public float[] recoverCoeff = new float[Vars.content.getBy(SglContentType.gas.value).size];
+  public float[] ingredientsBase = new float[SglContents.gases().size];
+  public float[] ingredients = new float[SglContents.gases().size];
+  public float[] recoverCoeff = new float[SglContents.gases().size];
   
   public float baseTotal;
   public float basePressure;
@@ -66,12 +65,12 @@ public class DefaultAtmosphere{
       IniTypes.IniMap recov = (IniTypes.IniMap) map.get("recoverCoeff");
   
       ingre.get().forEach((k, v) -> {
-        Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + k);
+        Gas gas = SglContents.gas(Sgl.modName + "-" + k);
         ingredientsBase[gas.id] = ((IniTypes.IniNumber)v).floatValue();
       });
       
       recov.get().forEach((k, v) -> {
-        Gas gas = Vars.content.getByName(SglContentType.gas.value, Sgl.modName + "-" + k);
+        Gas gas = SglContents.gas(Sgl.modName + "-" + k);
         recoverCoeff[gas.id] = ((IniTypes.IniNumber)v).floatValue();
       });
     }

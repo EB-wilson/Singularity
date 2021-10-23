@@ -87,6 +87,11 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
   }
   
   @Override
+  public void setStats(){
+  
+  }
+  
+  @Override
   public void loadIcon(){
     super.loadIcon();
   }
@@ -137,7 +142,7 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
   
   @Override
   public ContentType getContentType(){
-    return SglContentType.reaction.value;
+    return SglContents.reaction;
   }
   
   @Override

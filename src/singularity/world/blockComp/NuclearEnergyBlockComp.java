@@ -6,7 +6,6 @@ import universeCore.entityComps.blockComps.FieldGetter;
  * 必须创建的变量：
  * <pre>{@code
  *   boolean [hasEnergy]
- *   boolean [hasEnergyGroup]
  *   boolean [outputEnergy]
  *   boolean [consumeEnergy]
  *   boolean [energyBuffered]
@@ -19,10 +18,6 @@ import universeCore.entityComps.blockComps.FieldGetter;
 public interface NuclearEnergyBlockComp extends FieldGetter{
   default boolean hasEnergy(){
     return getField(boolean.class, "hasEnergy");
-  }
-  
-  default boolean hasEnergyGroup(){
-    return getField(boolean.class, "hasEnergyGroup");
   }
   
   default float resident(){

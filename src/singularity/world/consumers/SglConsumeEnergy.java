@@ -1,15 +1,14 @@
 package singularity.world.consumers;
 
-import singularity.world.blockComp.NuclearEnergyBuildComp;
 import arc.Core;
 import arc.scene.ui.layout.Table;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.Stats;
-import universeCore.entityComps.blockComps.ConsumerBuildComp;
+import singularity.world.blockComp.NuclearEnergyBuildComp;
 import universeCore.world.consumers.BaseConsume;
 import universeCore.world.consumers.UncConsumeType;
 
-public class SglConsumeEnergy extends BaseConsume{
+public class SglConsumeEnergy extends BaseConsume<NuclearEnergyBuildComp>{
   public boolean buffer = false;
   public final float usage;
 
@@ -22,19 +21,19 @@ public class SglConsumeEnergy extends BaseConsume{
   }
   
   @Override
-  public UncConsumeType<SglConsumeEnergy, NuclearEnergyBuildComp> type(){
+  public UncConsumeType<SglConsumeEnergy> type(){
     return SglConsumeType.energy;
   }
   
   @Override
-  public void consume(ConsumerBuildComp entity){
-    if(buffer) entity.getBuilding(type()).handleEnergy(-usage*60);
+  public void consume(NuclearEnergyBuildComp entity){
+    if(buffer) entity.handleEnergy(-usage*60);
   }
 
   @Override
-  public void update(ConsumerBuildComp entity) {
+  public void update(NuclearEnergyBuildComp entity) {
     if(!buffer){
-      entity.getBuilding(type()).handleEnergy(-usage*entity.getBuilding().edelta());
+      entity.handleEnergy(-usage*entity.getBuilding().edelta());
     }
   }
 
@@ -48,21 +47,20 @@ public class SglConsumeEnergy extends BaseConsume{
   }
 
   @Override
-  public void build(ConsumerBuildComp entity, Table table) {
-    
+  public void build(NuclearEnergyBuildComp entity, Table table) {
     table.row();
   }
 
   @Override
-  public boolean valid(ConsumerBuildComp entity){
+  public boolean valid(NuclearEnergyBuildComp entity){
     if(buffer){
-      return entity.getBuilding(type()).energy().getIncluded() >= usage*60*entity.getBuilding().edelta();
+      return entity.energy().getEnergy() >= usage*60*entity.getBuilding().edelta();
     }
-    return entity.getBuilding(type()).energy().getIncluded() >= usage;
+    return entity.energy().getEnergy() >= usage;
   }
   
   @Override
-  public Object[] filter(ConsumerBuildComp entity) {
+  public Object[] filter(NuclearEnergyBuildComp entity) {
     return null;
   }
 }

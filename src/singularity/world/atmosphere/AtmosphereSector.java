@@ -5,17 +5,15 @@ import arc.math.WindowedMean;
 import arc.util.Interval;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
-import mindustry.Vars;
-import mindustry.type.Sector;
 import singularity.type.Gas;
-import singularity.type.SglContentType;
+import singularity.type.SglContents;
 
 public class AtmosphereSector{
   private static final Interval flowTimer = new Interval();
   private static final int meanRequire = 10;
   
-  public float[] delta = new float[Vars.content.getBy(SglContentType.gas.value).size];
-  public float[] displayDelta = new float[Vars.content.getBy(SglContentType.gas.value).size];
+  public float[] delta = new float[SglContents.gases().size];
+  public float[] displayDelta = new float[SglContents.gases().size];
   
   private final float[] chance = new float[delta.length];
   private final WindowedMean[] means = new WindowedMean[delta.length];
@@ -87,14 +85,14 @@ public class AtmosphereSector{
   public void each(Cons2<Gas, Float> cons){
     if(initialized) return;
     for(int id = 0; id < delta.length; id++){
-      if(delta[id] < -0.001 || delta[id] > 0.001) cons.get(Vars.content.getByID(SglContentType.gas.value, id), delta[id]);
+      if(delta[id] < -0.001 || delta[id] > 0.001) cons.get(SglContents.gas(id), delta[id]);
     }
   }
   
   public void eachDisplay(Cons2<Gas, Float> cons){
     if(!analyzed) return;
     for(int id = 0; id < displayDelta.length; id++){
-      if(displayDelta[id] < -0.001 || displayDelta[id] > 0.001) cons.get(Vars.content.getByID(SglContentType.gas.value, id), displayDelta[id]);
+      if(displayDelta[id] < -0.001 || displayDelta[id] > 0.001) cons.get(SglContents.gas(id), displayDelta[id]);
     }
   }
   

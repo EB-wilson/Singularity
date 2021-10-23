@@ -10,8 +10,8 @@ import mindustry.content.TechTree;
 import mindustry.core.ContentLoader;
 import mindustry.ctype.ContentList;
 import mindustry.mod.Mod;
-import singularity.content.*;
-import singularity.content.override.OverrideBlocks;
+import singularity.contents.*;
+import singularity.contents.override.OverrideBlocks;
 import singularity.core.Init;
 import singularity.type.SglCategory;
 import singularity.type.SglContentType;
@@ -28,15 +28,16 @@ public class Singularity extends Mod{
   public boolean initialized = false;
   
   private final ContentList[] modContents = new ContentList[]{
-    new SglItems(),// 物品
-    new SglLiquids(),//液体
-    new Gases(),//气体
-    new NuclearBlocks(),//核能方块
-    new FactoryBlocks(),//工厂方块
-    new GasBlocks(),//气体相关方块
-    new TransportBlocks(),//物流方块
-    new CollectBlocks(),//采集方块
-    new Reactions(),//化学反应
+      new SglItems(),// 物品
+      new SglLiquids(),//液体
+      new Gases(),//气体
+      new Environments(),//环境块
+      new NuclearBlocks(),//核能方块
+      new FactoryBlocks(),//工厂方块
+      new GasBlocks(),//气体相关方块
+      new TransportBlocks(),//物流方块
+      new CollectBlocks(),//采集方块
+      new Reactions(),//化学反应
   };
   
   private final OverrideContentList[] overrideContents = new OverrideContentList[]{
@@ -67,7 +68,7 @@ public class Singularity extends Mod{
     });
     
     Events.run(Trigger.update, () -> {
-      if(initialized) Sgl.atmospheres.update();
+      if(initialized) Sgl.update();
     });
     
     Time.run(0, () -> {

@@ -26,4 +26,8 @@ public interface GasBlockComp extends FieldGetter{
   default float gasCapacity(){
     return getField(float.class, "gasCapacity");
   }
+  
+  default boolean classicDumpGas(){
+    return getField(boolean.class, "classicDumpGas");
+  }
 }

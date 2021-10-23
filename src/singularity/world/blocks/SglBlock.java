@@ -14,10 +14,11 @@ import arc.struct.Seq;
 import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
-import mindustry.Vars;
+import mindustry.core.Renderer;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
+import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
@@ -34,23 +35,20 @@ import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglLiquidStack;
 import singularity.ui.tables.RecipeTable;
-import singularity.world.blockComp.GasBlockComp;
-import singularity.world.blockComp.GasBuildComp;
-import singularity.world.blockComp.NuclearEnergyBlockComp;
-import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.blockComp.*;
+import singularity.world.blocks.nuclear.NuclearPipeNode;
 import singularity.world.consumers.SglConsumeEnergy;
 import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
+import singularity.world.draw.SglBaseDrawer;
 import singularity.world.draw.SglDrawBlock;
 import singularity.world.meta.SglBlockStatus;
 import singularity.world.meta.SglStat;
+import singularity.world.meta.SglStatUnit;
 import singularity.world.modules.GasesModule;
 import singularity.world.modules.NuclearEnergyModule;
 import singularity.world.modules.SglConsumeModule;
-import singularity.world.nuclearEnergy.EnergyGroup;
-import singularity.world.nuclearEnergy.EnergyGroup.Path;
-import singularity.world.nuclearEnergy.EnergyLevel;
 import universeCore.entityComps.blockComps.ConsumerBlockComp;
 import universeCore.entityComps.blockComps.ConsumerBuildComp;
 import universeCore.entityComps.blockComps.Dumpable;
@@ -60,6 +58,10 @@ import universeCore.world.consumers.UncConsumeItems;
 import universeCore.world.consumers.UncConsumeLiquids;
 
 import java.util.ArrayList;
+
+import static mindustry.Vars.*;
+
+;
 
 /**此mod的基础方块类型，对block添加了完善的consume系统，并拥有核能的基础模块*/
 public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyBlockComp, GasBlockComp{
@@ -81,24 +83,24 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   /**方块是否为核能设备*/
   public boolean hasEnergy;
-  /**方块是否加入核能组网，除传导类方块外，一般不加入组网，这是为了优化*/
-  public boolean hasEnergyGroup = false;
   
   /**方块是否具有气体*/
   public boolean hasGases;
   /**方块是否输出气体*/
   public boolean outputGases;
+  /***/
+  public boolean classicDumpGas;
   /**是否显示气体流量*/
   public boolean showGasFlow;
   /**方块允许的最大气体压强*/
   public float maxGasPressure = 7.8f;
   /**气体容积*/
-  public float gasCapacity = 40f;
+  public float gasCapacity = 20f;
   
   /**是否显示当前选择的配方*/
   public boolean displaySelectPrescripts = false;
   /**方块的图形绘制方法对象，用于控制方块的draw*/
-  public SglDrawBlock drawer = new SglDrawBlock();
+  public SglDrawBlock<? extends SglBuilding> draw = new SglDrawBlock<>(this);
   
   /**核能阻值，在运送核能时运输速度会除以这个数值（最大情况为瞬间达到平衡）*/
   public float resident = 0.1f;
@@ -111,7 +113,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   /**基准核势能，当能压小于此值时不接受核能传入*/
   public float basicPotentialEnergy = 0f;
   /**核能容量。此变量将决定方块的最大核势能*/
-  public float energyCapacity = EnergyLevel.medium.energyContent;
+  public float energyCapacity = 256;
   /**此方块接受的最大势能差，可设为-1将根据容量自动设置*/
   public float maxEnergyPressure = -1;
 
@@ -125,7 +127,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   }
   
   public void appliedConfig(){
-    config(Number.class, (SglBuilding tile, Number current) -> tile.recipeCurrent = current.intValue());
+    config(Integer.class, (SglBuilding tile, Integer current) -> tile.recipeCurrent = current);
     configClear((SglBuilding tile) -> tile.recipeCurrent = -1);
   }
   
@@ -137,10 +139,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   }
   
   @Override
-  public BaseConsumers newOptionalConsume(Cons2<Building, BaseConsumers> validDef, Cons2<Stats, BaseConsumers> displayDef){
+  public BaseConsumers newOptionalConsume(Cons2<ConsumerBuildComp, BaseConsumers> validDef, Cons2<Stats, BaseConsumers> displayDef){
     consume = new SglConsumers(true) {
       {
-        this.method = validDef;
+        this.optionalDef = validDef;
         this.display = displayDef;
       }
     };
@@ -171,9 +173,28 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     if(hasPower){
       initPower(powerCapacity);
     }
-    if(hasEnergy && maxEnergyPressure == -1) maxEnergyPressure = EnergyLevel.getLevelByNF(energyCapacity).potentialEnergy;
+    if(hasEnergy && maxEnergyPressure == -1) maxEnergyPressure = energyCapacity*energyCapacity*0.5f;
   
     super.init();
+  }
+  
+  @Override
+  public void drawPotentialLinks(int x, int y){
+    super.drawPotentialLinks(x, y);
+    
+    if((consumeEnergy || outputEnergy) && hasEnergy){
+      Tile tile = world.tile(x, y);
+      if(tile != null){
+        NuclearPipeNode.getNodeLinks(tile, this, player.team()).each(e -> {
+          if(!(e.getBlock() instanceof NuclearPipeNode)) return;
+          NuclearPipeNode node = (NuclearPipeNode)e.getBlock();
+          
+          Draw.color(node.linkColor, Renderer.laserOpacity * 0.5f);
+          node.drawLink(tile, size, e.getBuilding().tile, e.getBlock().size);
+          Drawf.square(e.getBuilding().x, e.getBuilding().y, e.getBlock().size * tilesize / 2f + 2f, Pal.place);
+        });
+      }
+    }
   }
   
   @Override
@@ -182,7 +203,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     brokenRegion = Core.atlas.has(name + "_broken")? Core.atlas.find(name + "_broken"): region;
     if(displaySelectPrescripts && prescriptSelector == null) prescriptSelector = Core.atlas.has(name + "_prescriptSelector")?
       Core.atlas.find(name + "_prescriptSelector"): Core.atlas.find("ane-prescriptSelector" + size);
-    drawer.load(this);
+    draw.load();
   }
   
   @Override
@@ -196,6 +217,11 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
     if(instantTransfer){
       stats.add(Stat.maxConsecutive, 2, StatUnit.none);
+    }
+    
+    if(hasGases){
+      stats.add(SglStat.gasCapacity, gasCapacity, StatUnit.none);
+      stats.add(SglStat.maxGasPressure, maxGasPressure*100, SglStatUnit.kPascal);
     }
     
     if(consumers.size() > 1){
@@ -225,35 +251,38 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   @Override
   public void setBars(){
     bars.add("health", entity -> new Bar("stat.health", Pal.health, entity::healthf).blink(Color.white));
-    if(hasGases) bars.add("gasPressure", e -> {
-      GasBuildComp entity = (GasBuildComp) e;
-      return new Bar(
-        () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.pressure()*100, 2) + "kPa",
-        () -> Pal.accent,
-        () -> Math.min(entity.pressure() / maxGasPressure, 1));
-    });
+    if(hasGases) bars.add("gasPressure", (SglBuilding entity) -> new Bar(
+      () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.smoothPressure*100, 2) + "kPa",
+      () -> Pal.accent,
+      () -> Math.min(entity.smoothPressure / maxGasPressure, 1)));
   }
   
   @Override
   public TextureRegion[] icons(){
-    return drawer.icons(this);
+    return draw.icons();
   }
   
-  public class SglBuilding extends Building implements ConsumerBuildComp, GasBuildComp, NuclearEnergyBuildComp, Dumpable{
+  public class SglBuilding extends Building implements ConsumerBuildComp, GasBuildComp, NuclearEnergyBuildComp, DrawableComp, Dumpable{
     public SglConsumeModule consumer;
     public NuclearEnergyModule energy;
     public GasesModule gases;
+    
+    public float smoothPressure = 0;
+    
+    public SglBaseDrawer<? extends SglBuilding> drawer;
     
     public SglBlockStatus status = SglBlockStatus.proper;
   
     protected final Seq<SglLiquidStack> displayLiquids = new Seq<>();
     
+    public Seq<NuclearEnergyBuildComp> energyLinked = new Seq<>();
+    
     public int recipeCurrent = -1;
-    public int energyGroupCdump = 0;
-
+    
     @Override
     public Building create(Block block, Team team) {
       super.create(block, team);
+      
       if(consumers.size() == 1) recipeCurrent = 0;
       
       consumer = new SglConsumeModule(this, consumers, optionalCons);
@@ -261,11 +290,50 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       
       if(hasEnergy){
         energy = new NuclearEnergyModule(this, basicPotentialEnergy, energyBuffered);
-        if(hasEnergyGroup) new EnergyGroup().add(this);
+        
+        energy.setNet();
       }
       
       if(hasGases) gases = new GasesModule(this);
+  
+      drawer = draw.get(this);
       return this;
+    }
+  
+    @Override
+    public void placed(){
+      super.placed();
+      if(net.client()) return;
+  
+      if((consumeEnergy || outputEnergy) && hasEnergy){
+        NuclearPipeNode.getNodeLinks(tile, block(), player.team()).each(e -> {
+          if(!(e.getBlock() instanceof NuclearPipeNode)) return;
+          
+          if(!e.energy().linked.contains(pos())) e.getBuilding().configureAny(pos());
+        });
+      }
+    }
+  
+    @Override
+    public void onProximityUpdate(){
+      super.onProximityUpdate();
+      if(energy != null) updateLinked();
+    }
+  
+    @Override
+    public void onProximityAdded(){
+      super.onProximityAdded();
+      if(energy != null){
+        onEnergyNetworkUpdated();
+      }
+    }
+    
+    @Override
+    public void onProximityRemoved(){
+      super.onProximityAdded();
+      if(energy != null){
+        onEnergyNetworkRemoved();
+      }
     }
   
     @Override
@@ -283,49 +351,12 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       SglConsumeEnergy ce = consumer.current.get(SglConsumeType.energy);
       float powerE = super.efficiency();
       if(!hasEnergy) return powerE;
-      float energyE = ce == null? 1f: ce.buffer? 1f: Math.min(1f, energy.getIncluded() / (ce.usage * 60f * delta()));
+      float energyE = ce == null? 1f: ce.buffer? 1f: Math.min(1f, energy.getEnergy() / (ce.usage * 60f * delta()));
       return powerE * energyE;
-    }
-  
-    @Override
-    public void onProximityRemoved(){
-      super.onProximityRemoved();
-      if(energy != null){
-        energyGroupRemove();
-      }
-    }
-  
-    @Override
-    public void onProximityAdded(){
-      super.onProximityAdded();
-      if(energy != null){
-        energyGroupAdded();
-      }
     }
     
     public void dumpLiquid(){
       liquids.each((l, n) -> dumpLiquid(l));
-    }
-  
-    public void energyGroupRemove(){
-      EnergyGroup group = null;
-      for(int i=0; i<energy.linked.size; i++){
-        Tile tile = Vars.world.tile(energy.linked.get(i));
-        if(tile == null || !(tile.build instanceof NuclearEnergyBuildComp) || !((NuclearEnergyBuildComp)tile.build).getNuclearBlock().hasEnergy()) continue;
-        ((NuclearEnergyBuildComp)tile.build).energy().linked.removeValue(pos());
-        if(((NuclearEnergyBlockComp)tile.build.block).hasEnergyGroup())group = ((NuclearEnergyBuildComp)tile.build).energy().group;
-      }
-      group = (hasEnergyGroup? energy.group: group);
-      if(group != null)group.remove(this);
-      energy.linked.clear();
-    }
-    
-    public void energyGroupAdded(){
-      for(NuclearEnergyBuildComp other: getEnergyLinked()){
-        if(other != this && other.getNuclearBlock().hasEnergy() && other.getNuclearBlock().hasEnergyGroup()){
-          other.energy().group.addGroup(energy.group);
-        }
-      }
     }
   
     @Override
@@ -394,9 +425,12 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     
     @Override
     public void update(){
-      if(energy != null) energy.update();
+      if(hasEnergy && energy != null) energy.update(updateFlow);
       
-      if(gases != null) gases.update(updateFlow);
+      if(hasGases && gases != null){
+        gases.update(updateFlow);
+        smoothPressure = Mathf.lerpDelta(smoothPressure, pressure(), 0.2f);
+      }
   
       super.update();
     }
@@ -545,51 +579,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         super.displayBars(table);
       }
     }
-    
-    public EnergyGroup getNearGroup(){
-      if(hasEnergyGroup){
-        return energy.group;
-      }
-      else{
-        Seq<NuclearEnergyBuildComp> dumping = getEnergyLinked();
-        for(int i = 0; i < dumping.size; i++){
-          energyGroupCdump++;
-          if(!dumping.get((i + energyGroupCdump) % dumping.size).getNuclearBlock().hasEnergyGroup()) continue;
-          return dumping.get((i + energyGroupCdump) % dumping.size).energy().group;
-        }
-      }
-      return null;
-    }
-  
-    @Override
-    public void dumpEnergy(){
-      EnergyGroup group = getNearGroup();
-      if(group == null) return;
-      Seq<Path> paths;
-      paths = group.getPaths(this);
-      Seq<Building> destinations = proximity.copy();
-      if(paths != null) destinations.addAll(paths.map(path -> (Building)path.destination));
-      
-      Building destination = getDump(entity -> {
-        if(!(entity instanceof NuclearEnergyBuildComp))return false;
-        NuclearEnergyBuildComp other = (NuclearEnergyBuildComp)entity;
-        return other.getNuclearBlock().hasEnergy() || !other.acceptEnergy(this);
-      }, destinations);
-      
-      moveEnergy((NuclearEnergyBuildComp)destination);
-    }
   
     @Override
     public float getMoveResident(NuclearEnergyBuildComp destination){
-      EnergyGroup group = getNearGroup();
-      
-      if(group == null || group.getPaths(this) == null){
-        return getResident() + destination.getResident();
-      }
-      else{
-        Path path = group.getPaths(this).find(e -> e.destination == destination);
-        return path.resident;
-      }
+      return 0;
     }
   
     @Override
@@ -659,8 +652,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
     @Override
     public boolean acceptEnergy(NuclearEnergyBuildComp source){
-      return source.getBuilding().team == team && energy.getIncluded() < getNuclearBlock().energyCapacity() &&
-        source.getPotentialEnergy(this) > Math.max(basicPotentialEnergy, getPotentialEnergy(source));
+      return source.getBuilding().team == team && energy.getEnergy() < getNuclearBlock().energyCapacity() &&
+        source.getEnergyPressure(this) > Math.max(basicPotentialEnergy, getEnergy());
     }
   
     @Override
@@ -671,7 +664,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public void draw(){
       if(status == SglBlockStatus.proper){
-        drawer.draw(this);
+        drawer.doDraw();
       }
       else{
         Draw.rect(brokenRegion, x, y);
@@ -682,7 +675,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public void drawLight(){
       super.drawLight();
-      drawer.drawLight(this);
+      drawer.drawLight();
     }
     
     @Override
@@ -696,14 +689,16 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       write.i(recipeCurrent);
       if(consumer != null) consumer.write(write);
       if(energy != null) energy.write(write);
+      if(gases != null) gases.write(write);
     }
   
     @Override
-    public void read(Reads read){
-      super.read(read);
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
       recipeCurrent = read.i();
       if(consumer != null) consumer.read(read);
       if(energy != null) energy.read(read);
+      if(gases != null) gases.read(read);
     }
   }
 }

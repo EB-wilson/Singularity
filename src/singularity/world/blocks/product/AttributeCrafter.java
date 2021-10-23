@@ -44,7 +44,7 @@ public class AttributeCrafter extends NormalCrafter{
       for(Floor block : Vars.content.blocks()
         .select(block -> block instanceof Floor && ((Floor)block).attributes.get(attr) != 0 && !((Floor)block).isLiquid)
         .<Floor>as().with(s -> s.sort(f -> f.attributes.get(attr)))){
-        StatValues.floorEfficiency(block, block.attributes.get(attr)*attributeBoosters[attr.id], false).display(boost);
+        StatValues.blockEfficiency(block, block.attributes.get(attr)*attributeBoosters[attr.id], false).display(boost);
       }
       boost.row();
     }

@@ -3,12 +3,10 @@ package singularity.world.blocks.product;
 import arc.Core;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectSet;
 import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.core.UI;
-import mindustry.ctype.MappableContent;
 import mindustry.entities.Puddles;
 import mindustry.game.Team;
 import mindustry.gen.Building;
@@ -33,9 +31,10 @@ import singularity.world.reaction.ReactContainer;
 
 public class ReactionKettle extends SglBlock implements HeatBlockComp{
   public float totalItemCapacity = 60;
+  public float heatResistance = 0.98f;
   public float totalLiquidCapacity = 60;
   public float maxTemperature = 4;
-  public float productHeat = 0.04f;
+  public float productHeat = 0.1f;
   
   public ReactionKettle(String name){
     super(name);
@@ -51,6 +50,12 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
     configurable = true;
     
     update = true;
+  }
+  
+  @Override
+  public void appliedConfig(){
+    config(Float.class, (ReactionKettleBuild e, Float f) -> e.internalTemperature = f);
+    configClear((ReactionKettleBuild e) -> e.internalTemperature = 0);
   }
   
   @Override
@@ -75,7 +80,7 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
         Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
   
     bars.add("temperature", (ReactionKettleBuild ent) -> new Bar(
-        () -> Core.bundle.get("misc.temperature") + ":" + Strings.autoFixed(ent.temperature()*100, 2) + "% -" + Core.bundle.get("misc.heat") + ":" + ent.heat,
+        () -> Core.bundle.get("misc.temperature") + ":" + Strings.autoFixed(ent.temperature()*100, 2) + "% -" + Core.bundle.get("misc.heat") + ":" + Strings.autoFixed(ent.heat, 2),
         () -> Pal.bar,
         () -> ent.temperature()/maxTemperature
     ));
@@ -88,8 +93,6 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
     public ReactionModule reacts;
     public float heatScl;
     public float heatCapacity;
-    
-    public ObjectSet<MappableContent> added = new ObjectSet<>();
   
     @Override
     public Building create(Block block, Team team){
@@ -148,6 +151,8 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
           }
         }
       });
+      
+      dumpGas();
     }
   
     @Override
@@ -155,9 +160,14 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
       table.table(Styles.black6, t -> {
         t.defaults().pad(0).margin(0);
         t.table(Tex.buttonTrans, i -> i.image(Singularity.getModAtlas("icon_temperature")).size(40)).size(50);
-        t.slider(0, maxTemperature, 0.01f, internalTemperature, f -> internalTemperature = f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+        t.slider(0, maxTemperature, 0.01f, internalTemperature, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
         t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(internalTemperature*100, 2) + "%"));
       });
+    }
+  
+    @Override
+    public Object config(){
+      return internalTemperature;
     }
   
     @Override
@@ -200,20 +210,23 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
-      return hasGases && pressure() < maxGasPressure;
+      return hasGases && source.getBuilding().team == this.team && pressure() < maxGasPressure;
     }
   
     @Override
     public void write(Writes write){
       super.write(write);
       reacts.write(write);
+      
+      write.f(heat);
       write.f(internalTemperature);
     }
   
     @Override
-    public void read(Reads read){
-      super.read(read);
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
       reacts.read(read);
+      heat = read.f();
       internalTemperature = read.f();
       
       heatCapacity = accurateHeatCapacity();

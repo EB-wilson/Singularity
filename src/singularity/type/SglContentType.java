@@ -2,16 +2,26 @@ package singularity.type;
 
 import universeCore.util.UncContentType;
 
-public class SglContentType{
-  public static UncContentType gas;
-  public static UncContentType reaction;
+public class SglContentType extends UncContentType{
+  public static SglContentType gas;
+  public static SglContentType ability;
+  public static SglContentType reaction;
   
-  public static UncContentType[] allSglContentType;
+  public static SglContentType[] allSglContentType;
+  
+  public SglContentType(String name, int ordinal){
+    super(name, ordinal);
+  }
+  
+  public SglContentType(String name){
+    super(name);
+  }
   
   public static void load(){
-    gas = new UncContentType("gas", 4);
-    reaction = new UncContentType("reaction");
+    gas = new SglContentType("gas", 4);
+    ability = new SglContentType("ability");
+    reaction = new SglContentType("reaction");
     
-    allSglContentType = new UncContentType[]{gas, reaction};
+    allSglContentType = new SglContentType[]{gas, ability, reaction};
   }
 }

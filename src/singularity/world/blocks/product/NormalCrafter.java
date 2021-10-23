@@ -1,22 +1,5 @@
 package singularity.world.blocks.product;
 
-import arc.util.Log;
-import singularity.Singularity;
-import singularity.type.Gas;
-import singularity.type.GasStack;
-import singularity.world.blockComp.GasBuildComp;
-import singularity.world.consumers.SglConsumeGases;
-import singularity.world.draw.DrawFactory;
-import singularity.type.SglLiquidStack;
-import singularity.ui.dialogs.LiquidSelecting;
-import singularity.world.blocks.SglBlock;
-import singularity.world.consumers.SglConsumeType;
-import singularity.world.meta.SglBlockStatus;
-import singularity.world.meta.SglStat;
-import singularity.world.modules.SglProductModule;
-import singularity.world.power.BaseGenerator;
-import singularity.world.power.GeneratorType;
-import singularity.world.products.*;
 import arc.Core;
 import arc.func.Func;
 import arc.graphics.Color;
@@ -46,11 +29,32 @@ import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.meta.BlockFlag;
+import singularity.Singularity;
+import singularity.type.Gas;
+import singularity.type.GasStack;
+import singularity.type.SglLiquidStack;
+import singularity.ui.dialogs.LiquidSelecting;
+import singularity.world.blockComp.GasBuildComp;
+import singularity.world.blocks.SglBlock;
+import singularity.world.consumers.SglConsumeGases;
+import singularity.world.consumers.SglConsumeType;
+import singularity.world.draw.DrawFactory;
+import singularity.world.meta.SglBlockStatus;
+import singularity.world.meta.SglStat;
+import singularity.world.modules.SglProductModule;
+import singularity.world.power.BaseGenerator;
+import singularity.world.power.GeneratorType;
+import singularity.world.products.ProduceGases;
+import singularity.world.products.Producers;
+import singularity.world.products.SglProduceType;
 import universeCore.entityComps.blockComps.ProducerBlockComp;
 import universeCore.entityComps.blockComps.ProducerBuildComp;
 import universeCore.util.UncLiquidStack;
 import universeCore.world.consumers.UncConsumeLiquids;
-import universeCore.world.producers.*;
+import universeCore.world.producers.BaseProduce;
+import universeCore.world.producers.BaseProducers;
+import universeCore.world.producers.ProduceItems;
+import universeCore.world.producers.ProduceLiquids;
 
 import java.util.ArrayList;
 
@@ -63,6 +67,8 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   public float updateEffectChance = 0.6f;
   public Effect updateEffect = Fx.none;
   public Effect craftEffect = Fx.none;
+  
+  public boolean autoSelect;
   
   /**同样的，这也是一个指针，指向当前编辑的produce*/
   public Producers produce;
@@ -83,7 +89,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     sync = true;
     ambientSound = Sounds.machine;
     ambientSoundVolume = 0.03f;
-    drawer = new DrawFactory();
+    draw = new DrawFactory<>(this);
     flags = EnumSet.of(BlockFlag.factory);
   }
   
@@ -150,7 +156,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     super.setStats();
     if(producers.size() > 1){
       for(int i=0; i<consumers.size(); i++){
-        for(BaseProduce p: producers.get(i).all()){
+        for(BaseProduce<?> p: producers.get(i).all()){
           p.display(recipe.stats[i]);
         }
       }
@@ -160,7 +166,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
       });
     }
     else if(producers.size() == 1){
-      for(BaseProduce prod: producers.get(0).all()){
+      for(BaseProduce<?> prod: producers.get(0).all()){
         prod.display(stats);
       }
     }
@@ -169,7 +175,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
 
   @Override
   public TextureRegion[] icons(){
-    return drawer.icons(this);
+    return draw.icons();
   }
 
   public class NormalCrafterBuild extends SglBuilding implements ProducerBuildComp{
@@ -222,7 +228,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     @Override
     public void handleGas(GasBuildComp source, Gas gas, float amount){
       super.handleGas(source, gas, amount);
-      Log.info("handling, "+ gas + ", " + source + ", " + amount);
+      //Log.info("handling, "+ gas + ", " + source + ", " + amount);
     }
   
     @Override
@@ -329,6 +335,15 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
 
     @Override
     public void updateTile() {
+      if(autoSelect && consumer.hasConsume()){
+        for(int i=0; i<consumers.size(); i++){
+          if(consumer.valid(i)){
+            recipeCurrent = i;
+            break;
+          }
+        }
+      }
+      
       //Log.info("updating,data: recipeCurrent:" + recipeCurrent + ", cons valid:" + consValid() + ", prod valid:" + producer.valid);
       /*当未选择配方时不进行更新*/
       if(recipeCurrent == -1) return;
@@ -489,8 +504,8 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     }
   
     @Override
-    public void read(Reads read){
-      super.read(read);
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
       progress = read.f();
       totalProgress = read.f();
       warmup = read.f();

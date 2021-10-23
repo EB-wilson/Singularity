@@ -3,35 +3,23 @@ package singularity.world.draw;
 import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
-import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.world.Block;
 import singularity.Singularity;
-import singularity.world.blocks.product.NormalCrafter.NormalCrafterBuild;
+import singularity.world.blocks.product.NormalCrafter;
 
-public class DrawFactory extends SglDrawBlock{
+public class DrawFactory<Target extends NormalCrafter.NormalCrafterBuild> extends SglDrawBlock<Target>{
   public TextureRegion rotator, top, bottom, liquid;
   
   public float rotationScl;
-
-  public float progress(Building entity){
-    if(!(entity instanceof NormalCrafterBuild)) return 0f;
-    return ((NormalCrafterBuild)entity).progress;
-  }
   
-  public float totalProgress(Building entity){
-    if(!(entity instanceof NormalCrafterBuild)) return 0f;
-    return ((NormalCrafterBuild)entity).totalProgress;
-  }
-  
-  public float warmup(Building entity){
-    if(!(entity instanceof NormalCrafterBuild)) return 0f;
-    return ((NormalCrafterBuild)entity).warmup;
+  public DrawFactory(Block block){
+    super(block);
   }
 
   @Override
-  public void load(Block block){
-    super.load(block);
+  public void load(){
+    super.load();
     rotator = Core.atlas.has(block.name + "_rotator")? Core.atlas.find(block.name + "_rotator"): null;
     top = Core.atlas.has(block.name + "_top")? Core.atlas.find(block.name + "_top"): null;
     bottom = Core.atlas.has(block.name + "_bottom")? Core.atlas.find(block.name + "_bottom"): Singularity.getModAtlas("bottom_" + block.size);
@@ -39,16 +27,7 @@ public class DrawFactory extends SglDrawBlock{
   }
   
   @Override
-  public void draw(Building entity){
-    Draw.rect(bottom, entity.x, entity.y);
-    Draw.rect(region, entity.x, entity.y, entity.block().rotate ? entity.rotdeg() : 0);
-    if(rotator != null) Drawf.spinSprite(rotator, entity.x, entity.y, totalProgress(entity)*rotationScl);
-    if(top != null) Draw.rect(top, entity.x, entity.y);
-    Draw.blend();
-  }
-  
-  @Override
-  public TextureRegion[] icons(Block block){
+  public TextureRegion[] icons(){
     return top != null? new TextureRegion[]{
       bottom,
       region,
@@ -57,5 +36,20 @@ public class DrawFactory extends SglDrawBlock{
       bottom,
       region
     };
+  }
+  
+  public class DrawFactoryDrawer extends SglDrawBlockDrawer{
+    public DrawFactoryDrawer(Target entity){
+      super(entity);
+    }
+  
+    @Override
+    public void draw(){
+      Draw.rect(bottom, entity.x(), entity.y());
+      Draw.rect(region, entity.x(), entity.y(), block.rotate ? entity.rotation()*90 : 0);
+      if(rotator != null) Drawf.spinSprite(rotator, entity.x(), entity.y(), entity.totalProgress*rotationScl);
+      if(top != null) Draw.rect(top, entity.x(), entity.y());
+      Draw.blend();
+    }
   }
 }

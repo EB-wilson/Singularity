@@ -10,7 +10,6 @@ import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.struct.Seq;
 import arc.util.Eachable;
-import mindustry.content.Blocks;
 import mindustry.entities.units.BuildPlan;
 import mindustry.graphics.Layer;
 import mindustry.input.Placement;
@@ -18,25 +17,23 @@ import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.Autotiler;
 import mindustry.world.blocks.distribution.ItemBridge;
-import mindustry.world.blocks.liquid.LiquidJunction;
 import singularity.Sgl;
+import singularity.contents.GasBlocks;
 import singularity.type.Gas;
 import singularity.world.blockComp.GasBlockComp;
 import singularity.world.blockComp.GasBuildComp;
-import singularity.world.blocks.SglBlock;
 
 import java.util.Arrays;
 
 import static mindustry.Vars.tilesize;
 
-public class GasConduit extends SglBlock implements Autotiler{
+public class GasConduit extends GasBlock implements Autotiler{
   public TextureRegion[] regions = new TextureRegion[5], tops = new TextureRegion[5];
   
   public boolean canLeak = true;
   
   public GasConduit(String name){
     super(name);
-    hasGases = true;
     outputGases = true;
     showGasFlow = true;
     rotate = true;
@@ -44,7 +41,6 @@ public class GasConduit extends SglBlock implements Autotiler{
     floating = true;
     conveyorPlacement = true;
     noUpdateDisabled = true;
-    update = true;
     
     gasCapacity = 22.25f;
     maxGasPressure = 16;
@@ -74,17 +70,17 @@ public class GasConduit extends SglBlock implements Autotiler{
   
   @Override
   public Block getReplacement(BuildPlan req, Seq<BuildPlan> requests){
-    Boolf<Point2> cont = p -> requests.contains(o -> o.x == req.x + p.x && o.y == req.y + p.y && o.rotation == req.rotation && (req.block instanceof GasConduit || req.block instanceof LiquidJunction));
+    Boolf<Point2> cont = p -> requests.contains(o -> o.x == req.x + p.x && o.y == req.y + p.y && o.rotation == req.rotation && (req.block instanceof GasConduit || req.block instanceof GasJunction));
     return cont.get(Geometry.d4(req.rotation)) &&
       cont.get(Geometry.d4(req.rotation - 2)) &&
       req.tile() != null &&
       req.tile().block() instanceof GasConduit &&
-      Mathf.mod(req.build().rotation - req.rotation, 2) == 1 ? Blocks.liquidJunction : this;
+      Mathf.mod(req.build().rotation - req.rotation, 2) == 1 ? GasBlocks.gas_junction : this;
   }
   
   @Override
   public void handlePlacementLine(Seq<BuildPlan> plans){
-    Placement.calculateBridges(plans, (ItemBridge)Blocks.bridgeConduit);
+    Placement.calculateBridges(plans, (ItemBridge)GasBlocks.gas_bridge_conduit);
   }
   
   @Override

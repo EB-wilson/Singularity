@@ -18,11 +18,14 @@ public class SglStat{
     }
   };
   
-  public static final Stat compressible = handler.addEnumItemTail("compressible", SglStatCat.compress),
-  compressor = handler.addEnumItemTail("compressor", SglStatCat.compress),
-  generatorType = handler.addEnumItemTail("generator", SglStatCat.generator),
+  public static final Stat compressible = handler.addEnumItemTail("compressible", SglStatCat.gas),
+      compressor = handler.addEnumItemTail("compressor", SglStatCat.gas),
+      gasCapacity = handler.addEnumItemTail("gasCapacity", SglStatCat.gas),
+      maxGasPressure = handler.addEnumItemTail("maxGasPressure", SglStatCat.gas),
   
-  optionalInputs  = handler.addEnumItemTail("optionalInputs", StatCat.optional),
-  inputs = handler.addEnumItemTail("inputs", StatCat.crafting),
-  floorBoosting = handler.addEnumItemTail("floorBoosting", StatCat.optional);
+      generatorType = handler.addEnumItemTail("generator", SglStatCat.generator),
+  
+      optionalInputs  = handler.addEnumItemTail("optionalInputs", StatCat.optional),
+      inputs = handler.addEnumItemTail("inputs", StatCat.crafting),
+      floorBoosting = handler.addEnumItemTail("floorBoosting", StatCat.optional);
 }

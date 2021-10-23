@@ -18,6 +18,7 @@ import arc.util.Time;
 import arc.util.serialization.Jval;
 import singularity.Sgl;
 import universeCore.UncCore;
+import universeCore.util.animLayout.CellAction;
 import universeCore.util.animLayout.CellChangeColorAction;
 import universeCore.util.handler.FieldHandler;
 
@@ -30,6 +31,7 @@ public class PublicInfoDialog extends BaseListDialog{
   private static final Pattern imagePattern = Pattern.compile("<image *=.*>");
   
   volatile boolean initialized, titleLoaded;
+  Throwable titleStatus;
   Jval titles;
   
   ObjectMap<String, Table> pages = new ObjectMap<>();
@@ -41,6 +43,7 @@ public class PublicInfoDialog extends BaseListDialog{
     super(Core.bundle.get("misc.publicInfo"));
     
     defaultInfo = table -> {
+      table.clearChildren();
       if(!initialized){
         itemsLoading = table.add(new LoadTable(this::refresh)).get();
       }
@@ -48,6 +51,8 @@ public class PublicInfoDialog extends BaseListDialog{
         table.add(Core.bundle.get("dialog.PublicInfo.empty"));
       }
     };
+  
+    build();
     
     shown(this::refresh);
   }
@@ -60,15 +65,14 @@ public class PublicInfoDialog extends BaseListDialog{
     exec.shutdown();
     Http.setMaxConcurrent(8);
     
+    titleLoaded = false;
     Http.get(titlesUrl, req -> {
       titleLoaded = true;
+      titleStatus = null;
       titles = Jval.read(req.getResultAsString());
     }, e -> {
-      titleLoaded = false;
-      infoTable.clearChildren();
-      infoTable.add(Core.bundle.get("warn.publicInfo.connectFailed"));
-      infoTable.row();
-      infoTable.button(Core.bundle.get("misc.refresh"), this::refresh).size(140, 60);
+      titleLoaded = true;
+      titleStatus = e;
   
       Log.err(e);
     });
@@ -81,6 +85,15 @@ public class PublicInfoDialog extends BaseListDialog{
   
     Http.get(directory, request -> {
       while(!titleLoaded){
+      }
+      if(titleStatus != null){
+        infoTable.clearChildren();
+        infoTable.add(Core.bundle.get("warn.publicInfo.connectFailed"));
+        infoTable.row();
+        infoTable.button(Core.bundle.get("misc.refresh"), this::refresh).size(140, 60);
+        
+        Log.err(titleStatus);
+        return;
       }
       
       itemsLoading.finish();
@@ -159,11 +172,30 @@ public class PublicInfoDialog extends BaseListDialog{
     String language = !currLang.equals("en") && languages.contains(currLang)? currLang: "";
     String url = sect.get("info").asString().replace(langRegex, language);
     
+    String title = titles.get(sect.get("title").asString()).get(currLang).asString();
+    
     loadPage = () -> {
       infoTable.clearChildren();
       
       if(pages.containsKey(url)){
-        infoTable.add(pages.get(url)).grow();
+        Cell<Table> cell = infoTable.add(pages.get(url)).grow().padTop(pad + 60).padBottom(pad);
+        cell.color(cell.get().color.cpy().a(0));
+        
+        UncCore.cellActions.add(new CellChangeColorAction(cell, infoTable, cell.get().color.cpy().a(1), 30));
+        UncCore.cellActions.add(new CellAction(cell, infoTable, 30){
+          float p = pad + 60;
+          float to = pad;
+          float curr = pad + 60;
+          float currP = pad;
+    
+          @Override
+          public void action(){
+            curr = p + (to - p)*progress;
+            currP = p + (to - p)*(1 - progress);
+            cell.padTop(curr);
+            cell.padBottom(currP);
+          }
+        }.gradient(0.2f));
       }
       else{
         LoadTable loading = infoTable.add(new LoadTable(loadPage)).get();

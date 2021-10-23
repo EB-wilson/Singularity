@@ -1,12 +1,5 @@
 package singularity.type;
 
-import mindustry.type.Liquid;
-import mindustry.ui.ItemDisplay;
-import mindustry.ui.LiquidDisplay;
-import singularity.Singularity;
-import singularity.ui.tables.GasValue;
-import singularity.world.meta.SglStat;
-import singularity.Sgl;
 import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.Pixmap;
@@ -14,7 +7,14 @@ import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.graphics.MultiPacker;
 import mindustry.graphics.MultiPacker.PageType;
+import mindustry.graphics.Pal;
 import mindustry.type.Item;
+import mindustry.type.Liquid;
+import mindustry.world.meta.Stat;
+import singularity.Sgl;
+import singularity.Singularity;
+import singularity.world.meta.SglStat;
+import singularity.world.meta.SglStatValues;
 
 public class Gas extends UnlockableContent{
   public final Color color;
@@ -100,26 +100,35 @@ public class Gas extends UnlockableContent{
   @Override
   public void setStats(){
     super.setStats();
+    stats.addPercent(Stat.explosiveness, explosiveness);
+    stats.addPercent(Stat.flammability, flammability);
+    stats.addPercent(Stat.temperature, temperature);
+    stats.addPercent(Stat.heatCapacity, heatCapacity);
+    
     stats.add(SglStat.compressible, Core.bundle.get("gas.compressible." + compressible));
-    if(compressible) stats.add(SglStat.compressor, t -> {
-      t.add(Core.bundle.get("stat.compressor") + ":");
-      t.row();
-      if(compressItem != null){
-        t.add(new ItemDisplay(compressItem.item, 0));
-        t.row();
-        t.add(Core.bundle.get("stat.compressRequire") + ":");
-        t.row();
-        t.add(new GasValue(this, compressItem.consumeGas, true, false));
-      }
-      else{
-        t.add(new LiquidDisplay(compressLiquid.liquid, 0, false));
-        t.row();
-        t.add(Core.bundle.get("stat.compressRequire") + ":");
-        t.row();
-        t.add(new GasValue(this, compressLiquid.consumeGas, true, false));
-      }
-      t.row();
-    });
+  
+    if(compItem() && compLiquid()){
+      stats.add(SglStat.compressor, table -> {
+        table.defaults().left();
+        table.table(t -> {
+          t.add(Core.bundle.get("misc.compFirst") + ":").color(Pal.accent);
+          t.row();
+          SglStatValues.gasCompValue(compressLiquid).display(t);
+  
+          t.row();
+          t.add(Core.bundle.get("misc.compSecond") + ":").color(Pal.accent);
+          t.row();
+          SglStatValues.gasCompValue(compressItem).display(t);
+        });
+      });
+    }
+    else if(compLiquid()){
+      stats.add(SglStat.compressor, SglStatValues.gasCompValue(compressLiquid));
+    }
+    else if(compItem()){
+      stats.add(SglStat.compressor, SglStatValues.gasCompValue(compressItem));
+    }
+    
     stats.useCategories = true;
   }
   
@@ -135,7 +144,7 @@ public class Gas extends UnlockableContent{
   
   @Override
   public ContentType getContentType(){
-    return SglContentType.gas.value;
+    return SglContents.gas;
   }
   
   public static class CompressLiquid{

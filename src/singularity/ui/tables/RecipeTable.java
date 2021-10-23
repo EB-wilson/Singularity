@@ -40,7 +40,7 @@ public class RecipeTable extends Table{
       animContainer.button(Core.bundle.get("misc.unfold"), () -> {
         if(mainAnim == null || !UncCore.cellActions.acting(mainAnim) || mainAnim.getCurrIndex() == 2){
           mainAnim = new CellAnimateGroup(
-              new CellChangeColorAction(animCell, this, main.color.cpy().a(0), 20f),
+              new CellChangeColorAction(animCell, this, main.color.cpy().a(1), main.color.cpy().a(0), 20f),
               new CellResizeAction(mainCell, main, 360, 280, 20f).gradient(0.15f),
               (Runnable) () -> {
                 animContainer.clearChildren();
@@ -53,9 +53,9 @@ public class RecipeTable extends Table{
                 }).size(340, 160).left();
         
                 CellAnimateGroup pageAnim = new CellAnimateGroup(
-                    new CellChangeColorAction(recipeTable, animContainer, recipeTable.get().color.cpy().a(0), 20f),
+                    new CellChangeColorAction(recipeTable, animContainer, recipeTable.get().color.cpy().a(1) ,recipeTable.get().color.cpy().a(0), 20f),
                     (Runnable) () -> updateRecipe(recipeTable.get(), page),
-                    new CellChangeColorAction(recipeTable, animContainer, recipeTable.get().color.cpy().a(1), 20f)
+                    new CellChangeColorAction(recipeTable, animContainer, recipeTable.get().color.cpy().a(0), recipeTable.get().color.cpy().a(1), 20f)
                 );
         
                 animContainer.row();
@@ -83,10 +83,10 @@ public class RecipeTable extends Table{
                 animContainer.button(Core.bundle.get("misc.fold"), () -> {
                   if(! UncCore.cellActions.acting(mainAnim) || mainAnim.getCurrIndex() == 2){
                     mainAnim = new CellAnimateGroup(
-                        new CellChangeColorAction(animCell, this, main.color.cpy().a(0), 20f),
+                        new CellChangeColorAction(animCell, this, main.color.cpy().a(1), main.color.cpy().a(0), 20f),
                         new CellResizeAction(mainCell, main, 360, 280, 80, 50, 20f).gradient(0.15f),
                         rebuild,
-                        new CellChangeColorAction(animCell, this, main.color.cpy().a(1), 20f)
+                        new CellChangeColorAction(animCell, this, main.color.cpy().a(0), main.color.cpy().a(1), 20f)
                     );
                     UncCore.cellActions.add(
                         mainAnim
@@ -94,7 +94,7 @@ public class RecipeTable extends Table{
                   }
                 }).size(80, 50);
               },
-              new CellChangeColorAction(animCell, this, main.color.cpy().a(1), 20f)
+              new CellChangeColorAction(animCell, this, main.color.cpy().a(0), main.color.cpy().a(1), 20f)
           );
   
           UncCore.cellActions.add(mainAnim);

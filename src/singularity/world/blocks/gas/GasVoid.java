@@ -1,16 +1,12 @@
 package singularity.world.blocks.gas;
 
-import mindustry.world.meta.BlockGroup;
 import singularity.type.Gas;
 import singularity.world.blockComp.GasBuildComp;
-import singularity.world.blocks.SglBlock;
 
-public class GasVoid extends SglBlock{
+public class GasVoid extends GasBlock{
   public GasVoid(String name){
     super(name);
-    hasGases = true;
     solid = true;
-    update = true;
   }
   
   @Override

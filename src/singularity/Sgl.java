@@ -4,6 +4,7 @@ import arc.files.Fi;
 import arc.files.ZipFi;
 import arc.struct.Seq;
 import arc.util.serialization.Jval;
+import mindustry.Vars;
 import mindustry.gen.Building;
 import singularity.core.*;
 import singularity.ui.SglStyles;
@@ -36,11 +37,12 @@ public class Sgl{
   public static final String qq = "https://qm.qq.com/cgi-bin/qm/qr?k=wLs-Tki9wGMJtJs2mWSc46fUusYk-oO1&noverify=0";
   public static final String telegram = "https://t.me/EB_wilson";
   public static final String facebook = "https://www.facebook.com/profile.php?id=100024490163405";
-  public static final String qqGroup1 = "";
+  public static final String qqGroup1 = "https://jq.qq.com/?_wv=1027&k=BTHaN7gd";
   public static final String qqGroup2 = "";
   public static final String telegramGroup = "";
   public static final String modDevelopGroup = "https://jq.qq.com/?_wv=1027&k=vjybgqDG";
   public static final String githubProject = "https://github.com/EB-wilson/Singularity";
+  public static final String discord = "";
   public static final String githubRawMaster = "https://raw.githubusercontent.com/EB-wilson/Singularity/master/";
   public static final String publicInfo = githubRawMaster + "publicInfo/";
   
@@ -57,8 +59,10 @@ public class Sgl{
   /**所有反应点的全局存储对象，用于保存和统一操作反应点*/
   public static ReactionPoints reactionPoints;
   
+  public static UpdateTiles updateTiles;
+  
   public static void init(){
-    //载入布局风格
+    //载入风格
     SglStyles.load();
     
     ui = new SglUI();
@@ -67,8 +71,17 @@ public class Sgl{
     reactions = new Reactions();
     reactionPoints = new ReactionPoints();
     
+    updateTiles = new UpdateTiles();
+    
     ui.init();
     atmospheres.init();
+  }
+  
+  public static void update(){
+    if(Vars.state.isPaused()) return;
+    
+    atmospheres.update();
+    if(Vars.state.isGame()) updateTiles.update();
   }
   
   public static Fi getModFile(String modName){

@@ -6,7 +6,6 @@ import arc.struct.ObjectSet;
 import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
-import mindustry.Vars;
 import mindustry.ctype.MappableContent;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
@@ -14,7 +13,7 @@ import mindustry.world.modules.BlockModule;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.Reaction;
-import singularity.type.SglContentType;
+import singularity.type.SglContents;
 import singularity.world.reaction.ReactContainer;
 
 public class ReactionModule extends BlockModule{
@@ -150,7 +149,7 @@ public class ReactionModule extends BlockModule{
     int length = read.i();
   
     for(int i = 0; i < length; i++){
-      reactions.put(Vars.content.getByID(SglContentType.reaction.value, read.i()), new float[]{read.f()});
+      reactions.put(SglContents.reaction(read.i()), new float[]{read.f()});
     }
   }
   

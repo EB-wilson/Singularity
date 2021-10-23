@@ -11,7 +11,7 @@ import mindustry.type.Planet;
 import mindustry.type.Sector;
 import singularity.type.Gas;
 import singularity.type.GasStack;
-import singularity.type.SglContentType;
+import singularity.type.SglContents;
 
 public class Atmosphere{
   public static final Atmosphere defaultSettings = new Atmosphere(null);
@@ -36,6 +36,9 @@ public class Atmosphere{
   protected float total;
   /**大气压状态，大于默认压强时为1，小于时为-1*/
   protected byte status;
+  
+  protected float heat;
+  protected float heatCapacity;
   
   public Atmosphere(Planet planet){
     attach = planet;
@@ -67,7 +70,14 @@ public class Atmosphere{
   
   public void each(Cons2<Gas, Float> cons){
     for(int id=0; id<ingredients.length; id++){
-      if(ingredients[id] > 0.001) cons.get(Vars.content.getByID(SglContentType.gas.value, id), ingredients[id]);
+      if(ingredients[id] > 0.001) cons.get(SglContents.gas(id), ingredients[id]);
+    }
+  }
+  
+  public void eachPresent(Cons2<Gas, Float> cons){
+    float total = this.total;
+    for(int id=0; id<ingredients.length; id++){
+      if(ingredients[id] > 0.001) cons.get(SglContents.gas(id), ingredients[id]/total);
     }
   }
   
@@ -97,6 +107,7 @@ public class Atmosphere{
           if(data.value == currAtmoSector) continue;
           data.value.each((gas, amount) -> {
             ingredients[gas.id] += amount*3600;
+            total += amount*3600;
           });
         }
   
@@ -119,6 +130,10 @@ public class Atmosphere{
     return defaults.basePressure;
   }
   
+  public float getTemperature(){
+    return heat/heatCapacity;
+  }
+  
   public float total(){
     return total;
   }
@@ -136,6 +151,9 @@ public class Atmosphere{
   public final void add(Gas gas, float amount){
     ingredients[gas.id] += amount;
     total += amount;
+  
+    heat += gas.temperature*gas.heatCapacity*amount;
+    heatCapacity += gas.heatCapacity*amount;
     
     if(currAtmoSector != null) currAtmoSector.add(gas, amount);
   }
@@ -158,6 +176,10 @@ public class Atmosphere{
     return ingredients[gas.id];
   }
   
+  public float getPresent(Gas gas){
+    return ingredients[gas.id] / total;
+  }
+  
   public void reset(){
     ingredients = defaults.ingredientsBase;
   }
@@ -165,6 +187,7 @@ public class Atmosphere{
   public void read(Reads read){
     int count = read.i();
     int sectorCount = read.i();
+    heat = read.f();
     total = 0;
   
     Log.info(attach.name);
@@ -172,7 +195,7 @@ public class Atmosphere{
       float amount = read.f();
       ingredients[id] = amount;
       total += amount;
-      Log.info(Vars.content.getByID(SglContentType.gas.value, id) + ", " + amount);
+      Log.info(SglContents.gas(id) + ", " + amount);
     }
   
     for(int i = 0; i < sectorCount; i++){
@@ -181,11 +204,17 @@ public class Atmosphere{
       sector.read(read);
       sectors.put(id, sector);
     }
+    
+    heatCapacity = 0;
+    each((gas, amount) -> {
+      heatCapacity += gas.heatCapacity*amount;
+    });
   }
   
   public void write(Writes write){
     write.i(ingredients.length);
     write.i(sectors.size);
+    write.f(heat);
     
     for(float gas : ingredients){
       write.f(gas);

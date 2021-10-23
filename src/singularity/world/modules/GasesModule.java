@@ -17,13 +17,15 @@ import mindustry.world.modules.BlockModule;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.GasStack;
-import singularity.type.SglContentType;
+import singularity.type.SglContents;
 import singularity.world.atmosphere.Atmosphere;
 import singularity.world.blockComp.GasBuildComp;
 
+import java.util.Arrays;
+
 public class GasesModule extends BlockModule{
   private static final int windowSize = 3, updateInterval = 60;
-  private static final int gasesLength = Vars.content.getBy(SglContentType.gas.value).size;
+  private static final int gasesLength = SglContents.gases().size;
   private static final Interval flowTimer = new Interval(2);
   private static final float pollScl = 20f;
   
@@ -139,7 +141,7 @@ public class GasesModule extends BlockModule{
   
   public void eachFlow(Cons2<Gas, Float> cons){
     for(int i=0; i<gases.length; i++){
-      if(flows.contains(i)) cons.get(Vars.content.getByID(SglContentType.gas.value, i), flowRate[i]);
+      if(flows.contains(i)) cons.get(SglContents.gas(i), flowRate[i]);
     }
   }
   
@@ -199,7 +201,7 @@ public class GasesModule extends BlockModule{
   }
   
   public void clear(){
-    gases = new float[Vars.content.getBy(SglContentType.gas.value).size];
+    gases = new float[SglContents.gases().size];
   }
   
   public float total(){
@@ -212,7 +214,7 @@ public class GasesModule extends BlockModule{
   
   public void each(Cons<GasStack> cons){
     for(int id = 0; id<gases.length; id++){
-      if(gases[id] > 0.001) cons.get(new GasStack(Vars.content.getByID(SglContentType.gas.value, id), gases[id]));
+      if(gases[id] > 0.001) cons.get(new GasStack(SglContents.gas(id), gases[id]));
     }
   }
   
@@ -225,29 +227,37 @@ public class GasesModule extends BlockModule{
     
     curr.each((gas, amount) -> {
       float gradient = (amount/t)*totalGradient;
-      gases[gas.id] = gradient;
-      total += gradient;
+      add(gas, gradient);
     });
   }
   
   @Override
   public void read(Reads read){
-    super.read(read);
-    int count = read.i();
+    Arrays.fill(gases, 0);
+    total = 0f;
+    int count = read.s();
   
-    for(int id = 0; id < count; id++){
+    for(int j = 0; j < count; j++){
+      Gas gas = SglContents.gas(read.s());
       float amount = read.f();
-      gases[id] = amount;
-      total += amount;
+      add(gas, amount);
     }
   }
   
   @Override
   public void write(Writes write){
-    write.i(gases.length);
+    int amount = 0;
+    for(float gas: gases){
+      if(gas > 0) amount++;
+    }
   
-    for(float gas : gases){
-      write.f(gas);
+    write.s(amount);
+  
+    for(int i = 0; i < gases.length; i++){
+      if(gases[i] > 0){
+        write.s(i);
+        write.f(gases[i]);
+      }
     }
   }
 }

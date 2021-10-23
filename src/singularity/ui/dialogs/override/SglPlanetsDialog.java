@@ -52,7 +52,7 @@ public class SglPlanetsDialog extends PlanetDialog{
   
   float sectBarWidth = 0;
   
-  int state;
+  int pageState;
   
   Cell<Table> sectCe;
   
@@ -115,7 +115,7 @@ public class SglPlanetsDialog extends PlanetDialog{
         table.pane(pane -> {
           search = str -> {
             pane.clearChildren();
-            Seq<Sector> all = planets.planet.sectors.select(Sector::hasBase);
+            Seq<Sector> all = state.planet.sectors.select(Sector::hasBase);
             for(Sector sec : all){
               if(sec.hasBase() && (str.isEmpty() || sec.name().toLowerCase().contains(str.toLowerCase()))){
                 pane.button(t -> {
@@ -183,7 +183,7 @@ public class SglPlanetsDialog extends PlanetDialog{
       Table defaultTable = new Table();
       defaultTable.button(Core.bundle.get("fragment.atmosphere.infoButton"), () -> {
         fold = false;
-        state = 1;
+        pageState = 1;
       }).grow();
   
       Table infoTable = new Table();
@@ -296,7 +296,7 @@ public class SglPlanetsDialog extends PlanetDialog{
           s.setColor(s.color.a(sectBarWidth/maxSectorBarX));
         });
         fold = true;
-        state = 1;
+        pageState = 1;
       }).size(100, 42).center().bottom().padBottom(0).padTop(6);
       
       rebuildAnimateCont = sector -> {
@@ -356,7 +356,7 @@ public class SglPlanetsDialog extends PlanetDialog{
                 }
                 s.setColor(s.color.a(sectBarWidth/maxSectorBarX));
               });
-              state = 1;
+              pageState = 1;
               fold = false;
               
               sectState = new boolean[]{false, false, false};
@@ -381,7 +381,7 @@ public class SglPlanetsDialog extends PlanetDialog{
                 s.setColor(s.color.a(sectBarWidth/maxSectorBarX));
               });
               fold = true;
-              state = 1;
+              pageState = 1;
   
               sectState = new boolean[]{false, false, false};
               currentSector = null;
@@ -397,23 +397,23 @@ public class SglPlanetsDialog extends PlanetDialog{
       Cell<Table> sectorsCell = main.add(sectorsBar).padLeft(0).width(0);
   
       animateCell.update(table -> {
-        if(state == 1){
+        if(pageState == 1){
           if(alpha > 0){
             alpha -= 0.06;
           }
           else{
-            state = 2;
+            pageState = 2;
             table.clearChildren();
           }
         }
-        else if(state == 2){
+        else if(pageState == 2){
           table.add(updater);
           table.removeChild(updater);
           if(!fold){
             if(x < maxX) x = Mathf.lerpDelta(x, maxX, 0.15f);
             if(y < maxY) y = Mathf.lerpDelta(y, maxY, 0.15f);
             if(x >= maxX - 1 && y >= maxY - 1){
-              state = 3;
+              pageState = 3;
               table.add(infoTable).size(x, y);
             }
           }
@@ -421,17 +421,17 @@ public class SglPlanetsDialog extends PlanetDialog{
             if(x > minX) x = Mathf.lerpDelta(x, minX, 0.15f);
             if(y > minY) y = Mathf.lerpDelta(y, minY, 0.15f);
             if(x <= minX + 1 && y <= minY + 1){
-              state = 3;
+              pageState = 3;
               table.add(defaultTable).size(x, y);
             }
           }
           sectorsCell.size(0, y);
         }
-        else if(state == 3){
+        else if(pageState == 3){
           if(alpha < 1){
             alpha += 0.06;
           }
-          else state = 0;
+          else pageState = 0;
         }
     
         animateCont.setColor(defaultTable.color.a(alpha));

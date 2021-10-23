@@ -1,22 +1,25 @@
 package singularity.world.blockComp;
 
-import arc.func.Boolf;
+import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.gen.Building;
 import mindustry.world.Tile;
+import singularity.world.blocks.nuclear.NuclearEnergyNet;
 import singularity.world.modules.NuclearEnergyModule;
 import universeCore.entityComps.blockComps.BuildCompBase;
+import universeCore.entityComps.blockComps.Dumpable;
 import universeCore.entityComps.blockComps.FieldGetter;
 
 /**这个接口表明此Building是具有核能的方块，需要在create当中初始化一个NuclearEnergyModule
  * 必须创建的变量：
  * <pre>{@code
  *   NuclearEnergyModule [energy]
+ *   Seq<NuclearEnergyBuildComp> [energyLinked]
  * }<pre/>
  * 若使用非默认命名则需要重写调用方法*/
-public interface NuclearEnergyBuildComp extends BuildCompBase, FieldGetter{
+public interface NuclearEnergyBuildComp extends BuildCompBase, FieldGetter, Dumpable{
   /**获得该块的NuclearEnergyBlock*/
   default NuclearEnergyBlockComp getNuclearBlock(){
     return getBlock(NuclearEnergyBlockComp.class);
@@ -25,6 +28,11 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, FieldGetter{
   /**用于获得该方块的核能模块*/
   default NuclearEnergyModule energy(){
     return getField(NuclearEnergyModule.class, "energy");
+  }
+  
+  @SuppressWarnings("unchecked")
+  default Seq<NuclearEnergyBuildComp> energyLinked(){
+    return getField(Seq.class, "energyLinked");
   }
   
   /**将核能面板显示出来，或者显示别的什么东西*/
@@ -41,38 +49,107 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, FieldGetter{
   default float moveEnergy(NuclearEnergyBuildComp next){
     if(!(next instanceof Building)) return 0;
     if(!next.getNuclearBlock().hasEnergy() || !next.acceptEnergy(this)) return 0;
-    float rate = Math.min(energy().getIncluded(), Math.min(next.getNuclearBlock().energyCapacity() - next.energy().getIncluded(), getEnergyMoveRate(next)));
-    if(rate < 0) return 0;
+    float rate = getEnergyMoveRate(next);
+    onMoveEnergy(next, rate);
     handleEnergy(-rate);
     next.handleEnergy(rate);
     return rate;
   }
   
-  /**获取该块对目标块的核能传输速度*/
-  default float getEnergyMoveRate(NuclearEnergyBuildComp next){
-    if(!next.getNuclearBlock().hasEnergy() || !next.acceptEnergy(this) || getPotentialEnergy(next) < next.energy().basePotential) return 0;
-    float potenDiff = getPotentialEnergy(next) - next.getPotentialEnergy(this);
-    if(potenDiff > next.getNuclearBlock().maxEnergyPressure()) next.onOverpressure(potenDiff);
-    return potenDiff > 0.05? (float)(potenDiff*0.1)/getMoveResident(next): 0;
+  default float getEnergyPressure(NuclearEnergyBuildComp other){
+    if(!other.getNuclearBlock().hasEnergy()) return 0;
+    return getEnergy() - other.getEnergy();
   }
   
-  default Seq<NuclearEnergyBuildComp> getEnergyLinked(){
-    Seq<NuclearEnergyBuildComp> temp = new Seq<>();
-    if(energy() == null) return temp;
+  default NuclearEnergyNet getEnergyNetwork(){
+    return energy().energyNet;
+  }
+  
+  default void deLink(NuclearEnergyBuildComp other){
+    other.energy().linked.removeValue(getBuilding().pos());
+    other.updateLinked();
+    energy().linked.removeValue(other.getBuilding().pos());
+    updateLinked();
+  }
+  
+  default void link(NuclearEnergyBuildComp other){
+    other.energy().linked.add(getBuilding().pos());
+    other.updateLinked();
+    energy().linked.add(other.getBuilding().pos());
+    updateLinked();
+  }
+  
+  default void onEnergyNetworkRemoved(){
+    if(energy() == null) return;
+    getEnergyNetwork().remove(this);
     
+    for(int i=0; i<energy().linked.size; i++){
+      Tile tile = Vars.world.tile(energy().linked.get(i));
+      if(!(tile.build instanceof NuclearEnergyBuildComp)) return;
+      NuclearEnergyBuildComp other = (NuclearEnergyBuildComp)tile.build;
+      deLink(other);
+    }
+    energy().linked.clear();
+    updateLinked();
+  }
+  
+  default void onEnergyNetworkUpdated(){
+    updateLinked();
+    for(NuclearEnergyBuildComp other : energyLinked()){
+      if(other.energy() != null){
+        other.getEnergyNetwork().addNet(getEnergyNetwork());
+      }
+    }
+  }
+  
+  /**获取该块对目标块的核能传输速度*/
+  default float getEnergyMoveRate(NuclearEnergyBuildComp next){
+    if(!next.getNuclearBlock().hasEnergy() || !next.acceptEnergy(this) || getEnergy() < next.getEnergy()) return 0;
+    float avg = (getEnergy()+ next.getEnergy())/2;
+    
+    float energyDiff = Mathf.maxZero(getEnergyPressure(next));
+    float flowRate = Math.min(energyDiff*energyDiff/60*getBuilding().delta(), getEnergy() - avg);
+    flowRate = Math.min(Math.min(flowRate, avg - next.getEnergy()), next.getNuclearBlock().energyCapacity() - next.getEnergy());
+    
+    return Math.max(flowRate, 0)-getMoveResident(next)*getBuilding().delta();
+  }
+  
+  default void updateLinked(){
+    Seq<NuclearEnergyBuildComp> linked = energyLinked();
+    linked.clear();
     for(Building entity: getBuilding().proximity){
       if(!(entity instanceof NuclearEnergyBuildComp)) continue;
       NuclearEnergyBuildComp other = (NuclearEnergyBuildComp)entity;
-      if(other.energy() != null && (other.getNuclearBlock().outputEnergy() || other.getNuclearBlock().consumeEnergy())) temp.add(other);
+      if(entity.team == getBuilding().team && other.getNuclearBlock().hasEnergy()
+          && !(getNuclearBlock().consumeEnergy() && other.getNuclearBlock().consumeEnergy()
+          && !getNuclearBlock().outputEnergy() && !other.getNuclearBlock().outputEnergy())) linked.add(other);
     }
-    
+  
     for(int i=0; i<energy().linked.size; i++){
       Tile entity = Vars.world.tile(energy().linked.get(i));
       if(entity == null || !(entity.build instanceof NuclearEnergyBuildComp) || ((NuclearEnergyBuildComp)entity.build).energy() == null) continue;
-      if(!temp.contains((NuclearEnergyBuildComp)entity.build)) temp.add((NuclearEnergyBuildComp)entity.build);
+      if(! linked.contains((NuclearEnergyBuildComp)entity.build)) linked.add((NuclearEnergyBuildComp)entity.build);
     }
-    
-    return temp;
+  }
+  
+  default Seq<Building> getEnergyDumpBuild(){
+    Seq<Building> result = new Seq<>();
+    for(NuclearEnergyBuildComp entity: getEnergyNetwork().consumer){
+      result.add(entity.getBuilding());
+    }
+    return result;
+  }
+  
+  default void onMoveEnergy(NuclearEnergyBuildComp dest, float rate){
+    Seq<NuclearEnergyBuildComp> path = getEnergyNetwork().getPath(this, dest);
+    for(NuclearEnergyBuildComp child: path) child.onMovePathChild(rate);
+  }
+  
+  default void onMovePathChild(float flow){
+  }
+  
+  default float getEnergy(){
+    return energy().getEnergy();
   }
   
   default float getResident(){
@@ -81,24 +158,31 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, FieldGetter{
   
   /**获取这个块到目标方块间的核能阻值*/
   default float getMoveResident(NuclearEnergyBuildComp destination){
-    return getResident() + destination.getResident();
-  }
-  
-  /**获取该方块的核势能值，传入获取者的实体，之后的类里会有用*/
-  default float getPotentialEnergy(NuclearEnergyBuildComp getter){
-    return energy().getPotentialEnergy();
+    float resident = 0;
+    for(NuclearEnergyBuildComp entity: getEnergyNetwork().getPath(this, destination)){
+      resident += entity.getResident();
+    }
+    return resident;
   }
   
   /**返回该块是否接受核能输入*/
   default boolean acceptEnergy(NuclearEnergyBuildComp source){
-    return false;
+    return getNuclearBlock().hasEnergy();
   }
   
-  /**向周围的方块输出核能量，如果那个方块接受的话*/
-  void dumpEnergy();
+  /**向连接的方块输出核能量，如果那个方块接受的话*/
+  default void dumpEnergy(){
+    NuclearEnergyBuildComp dump = (NuclearEnergyBuildComp)getDump(e -> {
+      if(!(e instanceof NuclearEnergyBuildComp) || e == this) return false;
+      return ((NuclearEnergyBuildComp) e).acceptEnergy(this);
+    }, getEnergyDumpBuild());
+    if(dump != null){
+      moveEnergy(dump);
+    }
+  }
   
   /**当能压过载以后触发的方法
-   * @param potentialEnergy 此时的方块间核势能差值
+   * @param energyPressure 此时的方块间核势能差值
    */
-  void onOverpressure(float potentialEnergy);
+  void onOverpressure(float energyPressure);
 }

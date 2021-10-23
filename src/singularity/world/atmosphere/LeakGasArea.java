@@ -1,9 +1,11 @@
 package singularity.world.atmosphere;
 
 import arc.graphics.Color;
+import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Position;
 import arc.struct.Seq;
+import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -23,19 +25,17 @@ import mindustry.world.blocks.environment.Floor;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.Reaction;
-import singularity.type.SglContentType;
+import singularity.type.SglContents;
 import singularity.world.SglFx;
 
 @SuppressWarnings("unchecked")
 public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
-  public static final float maxGasCapacity = 100f;
+  public static final float maxGasCapacity = 100;
   
   public Tile tile;
   
   public float radius;
   public float gasAmount;
-  public float flowRate;
-  public float tempRate;
   public Color color;
   public Gas gas;
   
@@ -49,11 +49,11 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
     return new LeakGasArea();
   }
   
-  public void set(Gas gas, float flowRate, Tile tile){
+  public void set(Gas gas, float flow, Tile tile){
     this.tile = tile;
+    this.gasAmount += flow;
     this.gas = gas;
     this.color = gas.color;
-    this.tempRate = flowRate;
     set(tile.drawx(), tile.drawy());
   }
   
@@ -64,17 +64,15 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   
   @Override
   public void update(){
-    flowRate = tempRate;
-    tempRate = 0;
+    float leak = Mathf.maxZero(gasAmount - maxGasCapacity);
     
-    gasAmount = Math.min(gasAmount + flowRate, maxGasCapacity);
     float leakRate = Sgl.atmospheres.current.getCurrPressure()*gasAmount/20;
     gasAmount -= leakRate;
-    if(Vars.state.isCampaign()) Sgl.atmospheres.current.currAtmoSector.add(gas, gasAmount);
+    if(Vars.state.isCampaign()) Sgl.atmospheres.current.currAtmoSector.add(gas, gasAmount + leak);
     
     float amount = gasAmount/maxGasCapacity;
     radius = 5*amount;
-    float rate = Math.min(0.7f, flowRate/5);
+    float rate = Math.min(0.7f, gasAmount/10)*Time.delta;
     
     double random = Math.random();
     if(random<rate){
@@ -83,7 +81,7 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   
     Geometry.circle(tile.x, tile.y, 5, (x, y) -> {
       Tile otherT = Vars.world.tile(x, y);
-      if(otherT == tile) return;
+      if(otherT == tile || otherT == null) return;
       Seq<LeakGasArea> others = Sgl.gasAreas.get(otherT);
       if(others == null) return;
       for(LeakGasArea other: others){
@@ -101,13 +99,12 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
       timing--;
     }
     else{
-      flowRate /= 2;
       if(gasAmount <= 1) remove();
     }
   }
   
   public void flow(float flow){
-    tempRate += flow;
+    gasAmount += flow;
     timing = 3;
   }
   
@@ -117,12 +114,22 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   }
   
   @Override
-  public void read(Reads reads){
-    tile = TypeIO.readTile(reads);
-    gas = Vars.content.getByID(SglContentType.gas.value, reads.i());
+  public void read(Reads read){
+    short REV = read.s();
+    if (REV == 0) {
+      gas = SglContents.gas(read.i());
+      read.i();
+    } else {
+      if (REV != 1) throw new IllegalArgumentException("Unknown revision '" + REV + "' for entity type 'PuddleComp'");
+      gas = SglContents.gas(read.i());
+    }
     color = gas.color;
-    flowRate = reads.f();
-    gasAmount = reads.f();
+    gasAmount = read.f();
+    tile = TypeIO.readTile(read);
+    x = read.f();
+    y = read.f();
+    
+    this.afterRead();
   }
   
   @Override
@@ -132,16 +139,17 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   
   @Override
   public void write(Writes writes){
-    TypeIO.writeTile(writes, tile);
+    writes.s(1);
     writes.i(gas.id);
-    writes.f(flowRate);
     writes.f(gasAmount);
+    TypeIO.writeTile(writes, tile);
+    writes.f(x);
+    writes.f(y);
   }
   
   @Override
   public void reset(){
     gasAmount = 0;
-    flowRate = 0;
     color = null;
     gas = null;
   
@@ -208,7 +216,7 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   
   @Override
   public int classId(){
-    return 30;
+    return 100;
   }
   
   @Override

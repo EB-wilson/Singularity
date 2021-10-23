@@ -1,7 +1,5 @@
 package singularity.world.blocks.drills;
 
-import singularity.world.draw.DrawDrill;
-import singularity.world.blocks.SglBlock;
 import arc.Core;
 import arc.func.Func;
 import arc.graphics.Color;
@@ -30,6 +28,8 @@ import mindustry.world.meta.BlockGroup;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 import mindustry.world.meta.StatValues;
+import singularity.world.blocks.SglBlock;
+import singularity.world.draw.DrawDrill;
 import universeCore.world.consumers.BaseConsumers;
 
 import java.util.Arrays;
@@ -49,6 +49,7 @@ public class BaseDrill extends SglBlock{
   
   /**轮缘(_rim后缀的贴图)的着色*/
   public Color heatColor = Color.valueOf("ff5512");
+  public Color liquidColor = Color.valueOf("ff5512");
   
   /**每次采掘时触发的特效*/
   public Effect drillEffect = Fx.mine;
@@ -71,7 +72,7 @@ public class BaseDrill extends SglBlock{
     oneOfOptionCons = true;
     group = BlockGroup.drills;
     ambientSound = Sounds.drill;
-    drawer = new DrawDrill();
+    draw = new DrawDrill<>(this);
     ambientSoundVolume = 0.018f;
   }
   
@@ -341,8 +342,8 @@ public class BaseDrill extends SglBlock{
     }
   
     @Override
-    public void read(Reads read){
-      super.read(read);
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
       consumeProgress = read.f();
       warmup = read.f();
       int length = read.i();

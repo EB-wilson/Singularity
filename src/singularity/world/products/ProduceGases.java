@@ -6,11 +6,10 @@ import mindustry.world.meta.Stats;
 import singularity.type.GasStack;
 import singularity.ui.tables.GasValue;
 import singularity.world.blockComp.GasBuildComp;
-import universeCore.entityComps.blockComps.ProducerBuildComp;
 import universeCore.world.producers.BaseProduce;
 import universeCore.world.producers.ProduceType;
 
-public class ProduceGases extends BaseProduce{
+public class ProduceGases extends BaseProduce<GasBuildComp>{
   public GasStack[] gases;
   
   public ProduceGases(GasStack[] stacks){
@@ -18,19 +17,19 @@ public class ProduceGases extends BaseProduce{
   }
   
   @Override
-  public ProduceType<ProduceGases, GasBuildComp> type(){
+  public ProduceType<ProduceGases> type(){
     return SglProduceType.gas;
   }
   
   @Override
-  public void produce(ProducerBuildComp entity){
+  public void produce(GasBuildComp entity){
     //无触发器，update进行更新
   }
   
   @Override
-  public void update(ProducerBuildComp entity){
+  public void update(GasBuildComp entity){
     for(GasStack stack: gases){
-      entity.getBuilding(type()).gases().add(stack.gas, stack.amount*entity.getBuilding().edelta());
+      entity.gases().add(stack.gas, stack.amount*entity.getBuilding().edelta());
     }
   }
   
@@ -49,18 +48,21 @@ public class ProduceGases extends BaseProduce{
   }
   
   @Override
-  public boolean valid(ProducerBuildComp entity){
+  public boolean valid(GasBuildComp entity){
     float amount = 0;
     for(GasStack stack: gases){
       amount += stack.amount;
     }
-    return entity.getBuilding(type()).pressure() + amount/entity.getBuilding(type()).getGasBlock().gasCapacity() < entity.getBuilding(type()).getGasBlock().maxGasPressure();
+    return entity.pressure() + amount/entity.getGasBlock().gasCapacity() < entity.getGasBlock().maxGasPressure();
   }
   
   @Override
-  public void dump(ProducerBuildComp entity){
-    for(GasStack stack: gases){
-      entity.getBuilding(type()).dumpGas(stack.gas);
+  public void dump(GasBuildComp entity){
+    if(entity.getGasBlock().classicDumpGas()){
+      for(GasStack stack: gases){
+        entity.dumpGas(stack.gas);
+      }
     }
+    else entity.dumpGas();
   }
 }

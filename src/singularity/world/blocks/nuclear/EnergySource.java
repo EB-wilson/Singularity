@@ -1,40 +1,40 @@
 package singularity.world.blocks.nuclear;
 
-import singularity.Singularity;
-import singularity.world.blocks.SglBlock;
-import singularity.world.blockComp.NuclearEnergyBuildComp;
-import singularity.world.nuclearEnergy.EnergyLevel;
 import arc.Core;
 import arc.graphics.g2d.Draw;
-import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Table;
+import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.gen.Tex;
+import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
-import mindustry.world.meta.BlockGroup;
+import mindustry.ui.Styles;
 import mindustry.world.meta.Env;
+import singularity.Singularity;
+import singularity.ui.SglStyles;
+import singularity.world.blockComp.NuclearEnergyBuildComp;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import static mindustry.Vars.tilesize;
 
-public class EnergySource extends SglBlock{
+public class EnergySource extends NuclearBlock{
   public EnergySource(String name){
     super(name);
-    hasEnergy = true;
-    energyCapacity = EnergyLevel.warning.energyContent;
+    energyCapacity = 1024;
     outputEnergy = true;
+    consumeEnergy = true;
     energyBuffered = true;
     configurable = true;
     saveConfig = true;
-    group = BlockGroup.transportation;
-    update = true;
-    solid = true;
     noUpdateDisabled = true;
     envEnabled = Env.any;
+  }
   
-    config(Number.class, (EnergySourceBuild tile, Number value) -> tile.potentialEnergy = value.floatValue());
-    configClear((EnergySourceBuild tile) -> tile.potentialEnergy = 0);
+  @Override
+  public void appliedConfig(){
+    config(Float.class, (EnergySourceBuild tile, Float value) -> tile.outputEnergy = value);
+    configClear((EnergySourceBuild tile) -> tile.outputEnergy = 0);
   }
   
   @Override
@@ -43,20 +43,18 @@ public class EnergySource extends SglBlock{
     bars.add("energy", e -> new Bar(
       () -> Core.bundle.get("fragment.bars.potentialNuclearEnergy"),
       () -> Pal.bar,
-      () -> ((NuclearEnergyBuildComp)e).getPotentialEnergy((NuclearEnergyBuildComp)e) / EnergyLevel.warning.potentialEnergy
+      () -> ((NuclearEnergyBuildComp)e).getEnergy() / energyCapacity
     ));
   }
   
   public class EnergySourceBuild extends SglBuilding{
-    protected float potentialEnergy = 0;
+    protected float outputEnergy = 0;
   
     @Override
     public void updateTile(){
-      energy.set(energyCapacity()/2);
+      energy.set(outputEnergy);
       
       dumpEnergy();
-      
-      energy.set(0);
     }
     
     @Override
@@ -65,64 +63,33 @@ public class EnergySource extends SglBlock{
     }
   
     @Override
-    public float getPotentialEnergy(NuclearEnergyBuildComp getter){
-      return potentialEnergy;
-    }
-  
-    @Override
     public Object config(){
-      return potentialEnergy;
+      return outputEnergy;
     }
     
     @Override
     public void buildConfiguration(Table table){
-      table.table(Tex.buttonTrans, config -> {
-        config.add("--").padLeft(5).padTop(5).padBottom(5).update(e -> e.setText(Core.bundle.format("fragment.buttons.nuclearOut", potentialEnergy)));
-        config.row();
-        
-        config.table(buttons -> {
-          buttons.defaults().size(35, 35);
-          for(int i=3; i>=-3; i--){
-            final int[] data = {i, 0, 60};
-            float delta = (float)Math.min(EnergyLevel.warning.potentialEnergy - potentialEnergy, Math.pow(data[0] > 0? 10: -10, Math.abs(data[0])));
-            
-            if(i == 0){
-              ImageButton button = new ImageButton(Singularity.getModAtlas("reset"));
-              button.clicked(() -> potentialEnergy = 0);
-              buttons.add(button).size(50, 50);
-              continue;
-            }
-            
-            AtomicBoolean isClick = new AtomicBoolean(false);
-            ImageButton button = new ImageButton(Singularity.getModAtlas("energy_source_potent_" + (i>0? "up": "down") + "_" + (Math.abs(i) - 1)));
-            button.tapped(() -> {
-              isClick.set(true);
-              potentialEnergy += delta;
-            });
-            button.released(() -> isClick.set(false));
-            button.update(() -> {
-              boolean click = isClick.get();
-              if(click){
-                data[1]++;
-                if(data[2] > 1 && data[1]%2 == 0) data[2]--;
-                if(data[1]%data[2] == 0){
-                  potentialEnergy += delta;
-                }
-              }
-              else{
-                data[1] = 0;
-                data[2] = 60;
-              }
-            });
-            buttons.add(button);
-          }
-        });
-      }).grow();
+      table.table(Styles.black6, t -> {
+        t.defaults().pad(0).margin(0);
+        t.table(Tex.buttonTrans, i -> i.image(Singularity.getModAtlas("nuclear")).size(40)).size(50);
+        t.slider(-energyCapacity, energyCapacity, 0.01f, outputEnergy, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+        t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(outputEnergy, 2) + "NF"));
+      });
+    }
+  
+    @Override
+    public void drawConfigure(){
+      super.drawConfigure();
+      for(NuclearEnergyBuildComp entity: energy.energyNet.consumer){
+        for(NuclearEnergyBuildComp e: energy.energyNet.getPath(this, entity)){
+          Drawf.square(e.getBuilding().x, e.getBuilding().y, e.getBuilding().block.size * tilesize / 2f + 1f, Pal.accent);
+        }
+      }
     }
   
     @Override
     public boolean acceptEnergy(NuclearEnergyBuildComp source){
-      return false;
+      return source.getEnergy() > getEnergy();
     }
     
     @Override
@@ -133,13 +100,13 @@ public class EnergySource extends SglBlock{
     @Override
     public void write(Writes write){
       super.write(write);
-      write.f(potentialEnergy);
+      write.f(outputEnergy);
     }
     
     @Override
-    public void read(Reads read){
-      super.read(read);
-      potentialEnergy = read.f();
+    public void read(Reads read, byte b){
+      super.read(read, b);
+      outputEnergy = read.f();
     }
   }
 }

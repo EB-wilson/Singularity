@@ -1,23 +1,22 @@
 package singularity.world.blocks.debug;
 
-import arc.graphics.g2d.Lines;
-import mindustry.graphics.Pal;
-import singularity.Singularity;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.Lines;
 import arc.math.Mathf;
 import arc.math.geom.Intersector;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
-import arc.util.Log;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
+import mindustry.graphics.Pal;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import singularity.Singularity;
 import singularity.ui.dialogs.BlockDataDialog;
 import singularity.world.blocks.debug.VarsContainer.VarsContainerBuild;
 
@@ -58,7 +57,7 @@ public class BlockDataMonitor extends Block{
   }
   
   public boolean inRange(Tile origin, Tile other, float range){
-    return Intersector.overlaps(Tmp.cr1.set(origin.x, origin.y, range), other.getHitbox(Tmp.r1));
+    return Intersector.overlaps(Tmp.cr1.set(origin.drawx(), origin.drawy(), range), other.getHitbox(Tmp.r1));
   }
   
   public boolean inRange(Building origin, Building other, float range){
@@ -88,7 +87,7 @@ public class BlockDataMonitor extends Block{
         targets.clear();
         return false;
       }
-      else if(other != null){
+      else if(other != null && inRange(this, other, range*tilesize)){
         configure(other.tile.pos());
         return false;
       }
