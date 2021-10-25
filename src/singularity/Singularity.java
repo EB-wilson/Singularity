@@ -28,12 +28,12 @@ public class Singularity extends Mod{
   public boolean initialized = false;
   
   private final ContentList[] modContents = new ContentList[]{
-      new SglItems(),// 物品
+      new SglItems(),//物品
       new SglLiquids(),//液体
       new Gases(),//气体
       new Environments(),//环境块
       new NuclearBlocks(),//核能方块
-      new FactoryBlocks(),//工厂方块
+      new CrafterBlocks(),//工厂方块
       new GasBlocks(),//气体相关方块
       new TransportBlocks(),//物流方块
       new CollectBlocks(),//采集方块
@@ -47,6 +47,7 @@ public class Singularity extends Mod{
   public Singularity(){
     //加载模组配置数据
     Sgl.config.load();
+    
     //加载方块类型
     SglCategory.load();
     //载入所有新内容类型

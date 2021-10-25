@@ -38,7 +38,7 @@ public class SglConsumeGases extends BaseConsume<GasBuildComp>{
   
   @Override
   public void display(Stats stats){
-    stats.add(Stat.output, table -> {
+    stats.add(Stat.input, table -> {
       table.row();
       table.table(t -> {
         t.defaults().left().fill().padLeft(6);

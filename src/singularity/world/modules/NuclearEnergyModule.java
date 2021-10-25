@@ -102,7 +102,7 @@ public class NuclearEnergyModule extends BlockModule {
         info.left();
         info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearContain", energy)));
         info.row();
-        info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearMoving", displayMoving >= 0? displayMoving: "--")));
+        info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearMoving", displayMoving >= 0? displayMoving*60: "--")));
         info.row();
       });
     }).fillX().growY();
@@ -111,10 +111,18 @@ public class NuclearEnergyModule extends BlockModule {
   @Override
   public void write(Writes write){
     write.f(energy);
+    write.i(linked.size);
+    for(int i=0; i<linked.size; i++){
+      write.i(linked.get(i));
+    }
   }
 
   @Override
   public void read(Reads read){
     energy = read.f();
+    int length = read.i();
+    for(int i=0; i<length; i++){
+      linked.add(read.i());
+    }
   }
 }

@@ -38,6 +38,8 @@ public class SglDrawBlock<Target extends DrawableComp> extends SglDrawBase<Targe
         draw();
       }
       else drawDef.get(entity);
+      
+      Draw.reset();
     }
   
     public void draw(){

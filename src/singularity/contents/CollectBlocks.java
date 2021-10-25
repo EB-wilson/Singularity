@@ -1,5 +1,6 @@
 package singularity.contents;
 
+import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.ctype.ContentList;
@@ -23,6 +24,9 @@ public class CollectBlocks implements ContentList {
       rotatorSpeed = 3.8f;
       size = 4;
   
+      updateEffect = Fx.pulverizeRed;
+      drillEffect = Fx.mineHuge;
+      
       newConsume();
       consume.power(1.8f);
       newBooster(2.1f);

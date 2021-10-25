@@ -14,11 +14,11 @@ import arc.math.geom.Point2;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
-import arc.util.*;
-import arc.util.io.Reads;
-import arc.util.io.Writes;
+import arc.util.Eachable;
+import arc.util.Structs;
+import arc.util.Time;
+import arc.util.Tmp;
 import mindustry.Vars;
-import mindustry.core.Renderer;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
@@ -34,6 +34,7 @@ import singularity.world.blockComp.NuclearEnergyBlockComp;
 import singularity.world.blockComp.NuclearEnergyBuildComp;
 
 import static mindustry.Vars.*;
+import static mindustry.core.Renderer.laserOpacity;
 
 public class NuclearPipeNode extends NuclearBlock{
   protected static final Seq<NuclearEnergyBuildComp> tempNuclearEntity = new Seq<>();
@@ -133,6 +134,7 @@ public class NuclearPipeNode extends NuclearBlock{
   }
   
   public void drawLink(Tile origin, int size1, Tile other, int size2){
+    Draw.alpha(laserOpacity);
     Draw.z(Layer.power);
     float angle1 = Angles.angle(origin.drawx(), origin.drawy(), other.drawx(), other.drawy());
     float vx = Mathf.cosDeg(angle1);
@@ -147,8 +149,8 @@ public class NuclearPipeNode extends NuclearBlock{
     float rot = Mathf.angle(x2 - x1, y2 - y1);
     float vectX = Mathf.cosDeg(rot), vectY = Mathf.sinDeg(rot);
     
-    Draw.rect(linkStart != null? linkStart: linkEnd, origin.drawx(), origin.drawy(), rot + 180);
-    Draw.rect(linkEnd, other.drawx(), other.drawy(), rot);
+    Draw.rect(linkStart != null? linkStart: linkEnd, x1, y1, rot + 180);
+    Draw.rect(linkEnd, x2, y2, rot);
   
     Lines.stroke(8f);
     Lines.line(linkDraw, x1 + vectX, y1 + vectY, x2 - vectX, y2 - vectY, false);
@@ -171,7 +173,7 @@ public class NuclearPipeNode extends NuclearBlock{
     Drawf.circles(x * tilesize + offset, y * tilesize + offset, linkRange * tilesize);
     
     getPotentialLink(tile, player.team()).each(other -> {
-      Draw.color(linkColor, Renderer.laserOpacity * 0.5f);
+      Draw.color(linkColor, laserOpacity * 0.5f);
       drawLink(tile, size, other.getBuilding().tile, other.getBlock().size);
       
       Drawf.square(other.getBuilding().x, other.getBuilding().y, other.getBlock().size * tilesize / 2f + 2f, Pal.place);
@@ -315,7 +317,8 @@ public class NuclearPipeNode extends NuclearBlock{
     public float flowing;
     public float smoothAlpha;
     public int flowTimer;
-    
+    private float chanceFlow;
+  
     @Override
     public NuclearPipeNode block(){
       return (NuclearPipeNode)super.block();
@@ -364,6 +367,8 @@ public class NuclearPipeNode extends NuclearBlock{
     @Override
     public void updateTile(){
       super.updateTile();
+      flowing = chanceFlow;
+      chanceFlow = 0;
       if(flowTimer > 0){
         flowTimer--;
       }
@@ -373,7 +378,7 @@ public class NuclearPipeNode extends NuclearBlock{
     @Override
     public void onMovePathChild(float flow){
       super.onMovePathChild(flow);
-      flowing = flow;
+      chanceFlow += flow;
       flowTimer = 3;
     }
   
@@ -397,12 +402,12 @@ public class NuclearPipeNode extends NuclearBlock{
         if(entity.block instanceof NuclearPipeNode && entity.id() >= id) continue;
         if(entity instanceof NuclearPipeNodeBuild) alpha = (alpha + Mathf.clamp(((NuclearPipeNodeBuild)entity).flowing/((NuclearPipeNodeBuild)entity).block().energyCapacity))/2;
         smoothAlpha = Mathf.lerpDelta(smoothAlpha, alpha, 0.02f);
-        
-        Draw.alpha(smoothAlpha);
-        Tmp.v1.set(x, y).sub(entity.tile.worldx(), entity.tile.worldy()).setLength(tilesize/2f).scl(-1f);
+        Draw.alpha(smoothAlpha * laserOpacity);
+        Tmp.v1.set(x, y).sub(entity.tile.worldx(), entity.tile.worldy()).setLength(size*tilesize/2f - 1.5f).scl(-1);
+        Tmp.v2.set(entity.x, entity.y).sub(tile.worldx(), tile.worldy()).setLength(entity.block.size*tilesize/2f - 1.5f).scl(-1);
         Drawf.laser(team, linkLeaser, linkLeaser,
             x + Tmp.v1.x, y + Tmp.v1.y,
-            entity.x() - Tmp.v1.x, entity.y() - Tmp.v1.y,
+            entity.x() + Tmp.v2.x, entity.y() + Tmp.v2.y,
             0.45f);
       }
       Draw.reset();
@@ -445,24 +450,6 @@ public class NuclearPipeNode extends NuclearBlock{
       Draw.color(Pal.accent);
       Drawf.circles(x, y, linkRange * tilesize);
       Draw.reset();
-    }
-  
-    @Override
-    public void write(Writes write){
-      super.write(write);
-      write.i(energy.linked.size);
-      for(int i=0; i<energy.linked.size; i++){
-        write.i(energy.linked.get(i));
-      }
-    }
-  
-    @Override
-    public void read(Reads read, byte revision){
-      super.read(read, revision);
-      int length = read.i();
-      for(int i=0; i<length; i++){
-        configure(read.i());
-      }
     }
   }
 }

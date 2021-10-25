@@ -64,7 +64,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   
   /**方块的能量生产策略*/
   public GeneratorType generatorType = GeneratorType.normalGenerator;
-  public float updateEffectChance = 0.6f;
+  public float updateEffectChance = 0.05f;
   public Effect updateEffect = Fx.none;
   public Effect craftEffect = Fx.none;
   
@@ -72,9 +72,6 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   
   /**同样的，这也是一个指针，指向当前编辑的produce*/
   public Producers produce;
-  
-  /**方块是否显示多液体输出配置*/
-  public boolean displaySelectLiquid = false;
   
   public final NormalCrafter self = this;
   
@@ -124,7 +121,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
       hasLiquids |= outputsLiquid |= prod.get(SglProduceType.liquid) != null;
       hasPower |= outputsPower |= prod.get(SglProduceType.power) != null && prod.get(SglProduceType.power).powerProduction != 0;
       hasGases |= outputGases |= prod.get(SglProduceType.gas) != null;
-      configurable |=  prod.get(SglProduceType.liquid) != null &&  prod.get(SglProduceType.liquid).liquids.length > 1;
+      configurable |=  prod.get(SglProduceType.liquid) != null && prod.get(SglProduceType.liquid).liquids.length > 1;
     }
     int b = producers.size();
     int a = consumers.size();
@@ -147,8 +144,6 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     super.load();
     if(displaySelectPrescripts) prescriptSelector = Core.atlas.has(name + "_prescriptSelector")?
     Core.atlas.find(name + "_prescriptSelector"): Singularity.getModAtlas("prescriptSelector" + size);
-    if(displaySelectLiquid) liquidSelector = Core.atlas.has(name + "_liquid_selector")?
-    Core.atlas.find(name + "_liquidSelector"): Singularity.getModAtlas("liquidSelector_" + size);
   }
 
   @Override
@@ -364,7 +359,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
       }
       
       if(progress >= 1){
-        craftEffect.at(getX() + Mathf.range(size * 4f), getY() + Mathf.range(size * 4));
+        craftEffect.at(getX(), getY());
         progress = 0;
         consume();
         produce();
@@ -458,21 +453,9 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     public void draw(){
       super.draw();
       if(generator != null)generator.draw();
-      drawSelectLiquid(this);
       drawSelectRecipe(this);
       drawStatus();
       Draw.blend();
-    }
-    
-    public void drawSelectLiquid(NormalCrafterBuild entity){
-      for(int i = 0; i < 4; i++){
-        if(entity.block().displaySelectLiquid && entity.selectLiquid != null && entity.selectLiquid[i] != null){
-          Liquid liquid = entity.selectLiquid[i];
-          Draw.color(liquid.color);
-          Draw.rect(entity.block().liquidSelector, entity.x, entity.y, 180 + i*90);
-          Draw.color();
-        }
-      }
     }
     
     public void drawSelectRecipe(NormalCrafterBuild entity){

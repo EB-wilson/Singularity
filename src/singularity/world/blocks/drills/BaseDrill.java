@@ -300,7 +300,7 @@ public class BaseDrill extends SglBlock{
         if(progress[index] >= delay){
           items.add(ore.item, 1);
           progress[index] = 0f;
-          drillEffect.at(getX() + Mathf.range(size), getY() + Mathf.range(size));
+          drillEffect.at(getX() + Mathf.range(size), getY() + Mathf.range(size), outputItems.get(index).item.color);
         }
         
         dump(outputItems.get(index).item);

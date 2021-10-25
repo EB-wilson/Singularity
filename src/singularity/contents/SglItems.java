@@ -98,35 +98,35 @@ public class SglItems implements ContentList{
     }};
     
     
-    uranium_238 = new Item("uranium_238", Color.valueOf("#348908")){{
+    uranium_238 = new Item("uranium_238", Color.valueOf("#7CA73D")){{
       hardness = 2;
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0.3f;
     }};
     
-    uranium_235 = new Item("uranium_235", Color.valueOf("#45A806")){{
+    uranium_235 = new Item("uranium_235", Color.valueOf("#B5D980")){{
       hardness = 2;
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0.8f;
     }};
     
-    plutonium_239 = new Item("plutonium_239", Color.valueOf("#E3E37A")){{
+    plutonium_239 = new Item("plutonium_239", Color.valueOf("#D1D19F")){{
       hardness = 2;
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0.8f;
     }};
     
-    concentration_uranium_235 = new Item("concentration_uranium_235", Color.valueOf("#44A705")){{
+    concentration_uranium_235 = new Item("concentration_uranium_235", Color.valueOf("#95B564")){{
       hardness = 4;
       explosiveness = 1f;
       flammability = 0f;
       radioactivity = 1f;
     }};
     
-    concentration_plutonium_239 = new Item("concentration_plutonium_239", Color.valueOf("#E4E279")){{
+    concentration_plutonium_239 = new Item("concentration_plutonium_239", Color.valueOf("#B0B074")){{
       hardness = 4;
       explosiveness = 1f;
       flammability = 0f;

@@ -20,6 +20,10 @@ public class SglConsumers extends BaseConsumers{
     return add(new SglConsumeGases(stack));
   }
   
+  public SglConsumeEnergy energy(float usage){
+    return add(new SglConsumeEnergy(usage));
+  }
+  
   public BaseConsume<?> first(){
     AtomicReference<BaseConsume<?>> result = new AtomicReference<>();
     cons.forEach((t, c) -> {

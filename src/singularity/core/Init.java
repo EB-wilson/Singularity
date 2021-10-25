@@ -2,13 +2,10 @@ package singularity.core;
 
 import arc.util.Log;
 import mindustry.Vars;
-import mindustry.content.Blocks;
 import mindustry.world.Block;
-import mindustry.world.blocks.environment.Floor;
 import mindustry.world.blocks.liquid.Conduit;
 import singularity.Sgl;
 import singularity.ui.fragments.override.SglMenuFrag;
-import singularity.world.meta.SglAttribute;
 
 /**改动游戏原内容重初始化，用于对游戏已定义的实例进行操作*/
 public class Init{
@@ -26,8 +23,5 @@ public class Init{
     for(Block target: Vars.content.blocks()){
       if(target instanceof Conduit) target.unloadable = false;
     }
-    
-    //为某些地板添加属性
-    ((Floor)Blocks.basalt).attributes.set(SglAttribute.bitumen, 0.28f);
   }
 }

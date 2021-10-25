@@ -10,6 +10,7 @@ import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Table;
+import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Strings;
 import arc.util.io.Reads;
@@ -122,7 +123,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
   public SglBlock(String name) {
     super(name);
-    
+    consumesPower = false;
     appliedConfig();
   }
   
@@ -164,7 +165,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
           if(cons.craftTime == 0) cons.time(90f);
         }
         hasLiquids |= cons.get(SglConsumeType.liquid) != null;
-        hasPower |= consumesPower |= cons.get(SglConsumeType.power) != null || powerCapacity > 0;
+        hasPower |= consumesPower |= cons.get(SglConsumeType.power) != null;
         hasEnergy |= consumeEnergy |= cons.get(SglConsumeType.energy) != null;
         hasGases |= cons.get(SglConsumeType.gas) != null;
       }
@@ -235,7 +236,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       consumers.get(0).display(stats);
     }
   
-    if(optionalCons.size() > 0){
+    if(optionalCons.size() > 1){
       RecipeTable optionalRecipe = new RecipeTable(optionalCons.size());
       for(int i=0; i<optionalCons.size(); i++){
         optionalRecipe.stats[i] = new Stats();
@@ -277,6 +278,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     
     public Seq<NuclearEnergyBuildComp> energyLinked = new Seq<>();
     
+    public final ObjectMap<Class<?>, Object> consData = new ObjectMap<>();
     public int recipeCurrent = -1;
     
     @Override
@@ -376,7 +378,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         Draw.z(71.0F);
         Draw.color(Pal.gray);
         Fill.square(brcx, brcy, 2.5F, 45.0F);
-        Draw.color(status == SglBlockStatus.proper? this.consumer.status().color: Color.valueOf("#000000"));
+        Draw.color(status == SglBlockStatus.proper? status().color: Color.valueOf("#000000"));
         Fill.square(brcx, brcy, 1.5F, 45.0F);
         Draw.color();
       }
