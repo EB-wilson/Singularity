@@ -35,7 +35,6 @@ import mindustry.world.meta.Stats;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglLiquidStack;
-import singularity.ui.tables.RecipeTable;
 import singularity.world.blockComp.*;
 import singularity.world.blocks.nuclear.NuclearPipeNode;
 import singularity.world.consumers.SglConsumeEnergy;
@@ -45,14 +44,13 @@ import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.SglBaseDrawer;
 import singularity.world.draw.SglDrawBlock;
 import singularity.world.meta.SglBlockStatus;
-import singularity.world.meta.SglStat;
-import singularity.world.meta.SglStatUnit;
 import singularity.world.modules.GasesModule;
 import singularity.world.modules.NuclearEnergyModule;
 import singularity.world.modules.SglConsumeModule;
 import universeCore.entityComps.blockComps.ConsumerBlockComp;
 import universeCore.entityComps.blockComps.ConsumerBuildComp;
 import universeCore.entityComps.blockComps.Dumpable;
+import universeCore.ui.table.RecipeTable;
 import universeCore.util.UncLiquidStack;
 import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeItems;
@@ -67,7 +65,10 @@ import static mindustry.Vars.*;
 /**此mod的基础方块类型，对block添加了完善的consume系统，并拥有核能的基础模块*/
 public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyBlockComp, GasBlockComp{
   private final SglBlock self = this;
-  public RecipeTable recipe;
+  
+  public RecipeTable recipeTable;
+  public RecipeTable optionalRecipeTable;
+  
   /**方块处于损坏状态时的贴图*/
   public TextureRegion brokenRegion;
   /**方块可储存的电力，注意当此变量大于0时启用能量容量，此时选择配方的电力控制将被覆盖*/
@@ -120,7 +121,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
   /**方块的合成配方选择器贴图，可自由指定，或者自动初始化*/
   public TextureRegion prescriptSelector;
-
+  
+  public String otherLiquidStr = Core.bundle.get("fragment.bars.otherLiquids");
+  
   public SglBlock(String name) {
     super(name);
     consumesPower = false;
@@ -153,7 +156,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   @Override
   public void init() {
-    if(consumers.size() > 1)configurable = true;
+    if(consumers.size() > 1) configurable = true;
     
     ArrayList<ArrayList<BaseConsumers>> consume = new ArrayList<>();
     if(consumers.size() > 0) consume.add(consumers);
@@ -191,7 +194,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
           NuclearPipeNode node = (NuclearPipeNode)e.getBlock();
           
           Draw.color(node.linkColor, Renderer.laserOpacity * 0.5f);
-          node.drawLink(tile, size, e.getBuilding().tile, e.getBlock().size);
+          node.drawLink(tile.worldx() + offset, tile.worldy() + offset, size, e.getBuilding().tile.drawx(), e.getBuilding().tile.drawy(), e.getBlock().size);
           Drawf.square(e.getBuilding().x, e.getBuilding().y, e.getBlock().size * tilesize / 2f + 2f, Pal.place);
         });
       }
@@ -220,33 +223,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       stats.add(Stat.maxConsecutive, 2, StatUnit.none);
     }
     
-    if(hasGases){
-      stats.add(SglStat.gasCapacity, gasCapacity, StatUnit.none);
-      stats.add(SglStat.maxGasPressure, maxGasPressure*100, SglStatUnit.kPascal);
-    }
+    if(hasGases) setGasStats(stats);
     
-    if(consumers.size() > 1){
-      recipe = new RecipeTable(consumers.size());
-      for(int i=0; i<consumers.size(); i++){
-        recipe.stats[i] = new Stats();
-        consumers.get(i).display(recipe.stats[i]);
-      }
-    }
-    else if(consumers.size() == 1){
-      consumers.get(0).display(stats);
-    }
-  
-    if(optionalCons.size() > 1){
-      RecipeTable optionalRecipe = new RecipeTable(optionalCons.size());
-      for(int i=0; i<optionalCons.size(); i++){
-        optionalRecipe.stats[i] = new Stats();
-        optionalCons.get(i).display(optionalRecipe.stats[i]);
-      }
-      stats.add(SglStat.optionalInputs, table -> {
-        table.row();
-        table.add(optionalRecipe);
-      });
-    }
+    setConsumeStats(stats);
   }
   
   @Override
@@ -267,6 +246,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public SglConsumeModule consumer;
     public NuclearEnergyModule energy;
     public GasesModule gases;
+    
+    public boolean showGasClassic;
     
     public float smoothPressure = 0;
     
@@ -350,7 +331,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       if(!consumer.hasConsume()) return super.efficiency();
       //未选择配方时返回0
       if(recipeCurrent == -1) return 0f;
-      SglConsumeEnergy ce = consumer.current.get(SglConsumeType.energy);
+      SglConsumeEnergy<?> ce = consumer.current.get(SglConsumeType.energy);
       float powerE = super.efficiency();
       if(!hasEnergy) return powerE;
       float energyE = ce == null? 1f: ce.buffer? 1f: Math.min(1f, energy.getEnergy() / (ce.usage * 60f * delta()));
@@ -435,6 +416,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       }
   
       super.update();
+      
+      showGasClassic = false;
     }
     
     public void updateDisplayLiquid(){
@@ -457,7 +440,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       if (!displayLiquids.isEmpty()){
         table.table(Tex.buttonTrans, t -> {
           t.defaults().growX().height(18f).pad(4);
-          t.top().add(Core.bundle.get("fragment.bars.otherLiquids")).padTop(0);
+          t.top().add(otherLiquidStr).padTop(0);
           t.row();
           for (SglLiquidStack stack : displayLiquids) {
             Func<Building, Bar> bar = entity -> new Bar(
@@ -484,8 +467,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         table.row();
       }
       
-      UncConsumeLiquids cl = consumer.current.get(SglConsumeType.liquid);
-      SglConsumeGases cg = consumer.current.get(SglConsumeType.gas);
+      UncConsumeLiquids<?> cl = consumer.current.get(SglConsumeType.liquid);
+      SglConsumeGases<?> cg = consumer.current.get(SglConsumeType.gas);
       if(cl != null || cg != null){
         table.table(Tex.buttonEdge1, t -> t.left().add(Core.bundle.get("fragment.bars.consume")).pad(4)).pad(0).height(38).padTop(4);
         table.row();
@@ -555,12 +538,22 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
           Runnable rebuild = () -> {
             l.clearChildren();
             l.left();
-            gases.eachFlow((gas,flow) -> {
-              if(flow < 0.01f) return;
-              l.image(() -> gas.uiIcon).padRight(3f);
-              l.label(() -> flow < 0 ? "..." : Strings.fixed(flow, 2) + Core.bundle.get("misc.preSecond")).color(Color.lightGray);
-              l.row();
-            });
+            if(showGasClassic){
+              gases.eachFlow((gas, flow) -> {
+                if(flow < 0.01f) return;
+                l.image(() -> gas.uiIcon).padRight(3f);
+                l.label(() -> flow < 0 ? "..." : Strings.fixed(flow, 2) + Core.bundle.get("misc.preSecond")).color(Color.lightGray);
+                l.row();
+              });
+            }
+            else{
+              float[] flowing = {0};
+              gases.eachFlow((gas,flow) -> {
+                if(flow < 0.01f) return;
+                flowing[0] += flow;
+              });
+              l.add(Core.bundle.get("misc.gasFlowRate") + ": " + flowing[0] + Core.bundle.get("misc.preSecond"));
+            }
           };
       
           l.update(rebuild);
@@ -616,8 +609,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         for(int i=0; i<consumers.size(); i++){
           int s = i;
           BaseConsumers c = consumers.get(i);
-          UncConsumeItems consumeItems = c.get(SglConsumeType.item);
-          UncConsumeLiquids consumeLiquids = c.get(SglConsumeType.liquid);
+          UncConsumeItems<?> consumeItems = c.get(SglConsumeType.item);
+          UncConsumeLiquids<?> consumeLiquids = c.get(SglConsumeType.liquid);
           
           icon = c.icon != null? c.icon: consumeItems != null && consumeItems.items != null?
           consumeItems.items[0].item.uiIcon: consumeLiquids != null && consumeLiquids.liquids != null?

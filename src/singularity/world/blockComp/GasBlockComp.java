@@ -1,5 +1,9 @@
 package singularity.world.blockComp;
 
+import mindustry.world.meta.StatUnit;
+import mindustry.world.meta.Stats;
+import singularity.world.meta.SglStat;
+import singularity.world.meta.SglStatUnit;
 import universeCore.entityComps.blockComps.FieldGetter;
 
 /**Gases组件，表明此方块可以拥有气体
@@ -29,5 +33,10 @@ public interface GasBlockComp extends FieldGetter{
   
   default boolean classicDumpGas(){
     return getField(boolean.class, "classicDumpGas");
+  }
+  
+  default void setGasStats(Stats stats){
+    stats.add(SglStat.gasCapacity, gasCapacity(), StatUnit.none);
+    stats.add(SglStat.maxGasPressure, maxGasPressure()*100, SglStatUnit.kPascal);
   }
 }

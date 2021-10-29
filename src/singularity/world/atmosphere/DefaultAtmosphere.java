@@ -32,6 +32,8 @@ public class DefaultAtmosphere{
   public float baseTotal;
   public float basePressure;
   public float defaultRecoverCoeff;
+  public float heatCapacity;
+  public float baseTemperature;
   
   public DefaultAtmosphere(Atmosphere parent){
     this.parent = parent;
@@ -41,35 +43,35 @@ public class DefaultAtmosphere{
     if(parent == null){
       loadData("defaults");
     }
-    else if(parent.attach == null){
-      parent.defaults = defaults;
-    }
     else loadData(parent.attach.name);
   }
   
   public void loadData(String section){
     Ini.IniSection map = configure.getSection(section);
+    
     if(map != null){
       if(section.equals("defaults")){
         baseTotal = ((IniTypes.IniNumber)map.get("baseTotal")).floatValue();
         basePressure = ((IniTypes.IniNumber)map.get("basePressure")).floatValue();
         defaultRecoverCoeff = ((IniTypes.IniNumber)map.get("defaultRecoverCoeff")).floatValue();
+        baseTemperature = ((IniTypes.IniNumber)map.get("baseTemperature")).floatValue();
       }
       else{
         baseTotal = map.get("baseTotal") != null? ((IniTypes.IniNumber)map.get("baseTotal")).floatValue(): defaults.baseTotal;
         basePressure = map.get("basePressure") != null? ((IniTypes.IniNumber)map.get("basePressure")).floatValue(): defaults.basePressure;
         defaultRecoverCoeff = map.get("defaultRecoverCoeff") != null? ((IniTypes.IniNumber)map.get("defaultRecoverCoeff")).floatValue(): defaults.defaultRecoverCoeff;
+        baseTemperature = map.get("baseTemperature") != null? ((IniTypes.IniNumber)map.get("baseTemperature")).floatValue(): defaults.baseTemperature;
       }
       
       IniTypes.IniMap ingre = (IniTypes.IniMap) map.get("ingredients");
       IniTypes.IniMap recov = (IniTypes.IniMap) map.get("recoverCoeff");
   
-      ingre.get().forEach((k, v) -> {
+      if(ingre != null) ingre.get().forEach((k, v) -> {
         Gas gas = SglContents.gas(Sgl.modName + "-" + k);
         ingredientsBase[gas.id] = ((IniTypes.IniNumber)v).floatValue();
       });
       
-      recov.get().forEach((k, v) -> {
+      if(recov != null) recov.get().forEach((k, v) -> {
         Gas gas = SglContents.gas(Sgl.modName + "-" + k);
         recoverCoeff[gas.id] = ((IniTypes.IniNumber)v).floatValue();
       });
@@ -78,6 +80,7 @@ public class DefaultAtmosphere{
       baseTotal = defaults.baseTotal;
       basePressure = defaults.basePressure;
       defaultRecoverCoeff = defaults.defaultRecoverCoeff;
+      baseTemperature = defaults.baseTemperature;
     }
   
     if(!section.equals("defaults")) for(int i = 0; i < ingredientsBase.length; i++){
@@ -92,6 +95,7 @@ public class DefaultAtmosphere{
     
     for(int i=0; i<ingredients.length; i++){
       ingredients[i] = baseTotal*(ingredientsBase[i]/total);
+      heatCapacity += SglContents.gas(i).heatCapacity*ingredients[i];
     }
   }
   

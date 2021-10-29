@@ -1,15 +1,17 @@
 package singularity.world.products;
 
 import arc.Core;
+import mindustry.gen.Building;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.Stats;
 import singularity.type.GasStack;
 import singularity.ui.tables.GasValue;
 import singularity.world.blockComp.GasBuildComp;
+import universeCore.entityComps.blockComps.ProducerBuildComp;
 import universeCore.world.producers.BaseProduce;
 import universeCore.world.producers.ProduceType;
 
-public class ProduceGases extends BaseProduce<GasBuildComp>{
+public class ProduceGases<T extends Building & GasBuildComp & ProducerBuildComp> extends BaseProduce<T>{
   public GasStack[] gases;
   
   public ProduceGases(GasStack[] stacks){
@@ -17,19 +19,19 @@ public class ProduceGases extends BaseProduce<GasBuildComp>{
   }
   
   @Override
-  public ProduceType<ProduceGases> type(){
+  public ProduceType<ProduceGases<?>> type(){
     return SglProduceType.gas;
   }
   
   @Override
-  public void produce(GasBuildComp entity){
+  public void produce(T entity){
     //无触发器，update进行更新
   }
   
   @Override
-  public void update(GasBuildComp entity){
+  public void update(T entity){
     for(GasStack stack: gases){
-      entity.gases().add(stack.gas, stack.amount*entity.getBuilding().edelta());
+      entity.gases().add(stack.gas, stack.amount*entity.consDelta(parent)*entity.productMultiplier(this));
     }
   }
   
@@ -48,7 +50,7 @@ public class ProduceGases extends BaseProduce<GasBuildComp>{
   }
   
   @Override
-  public boolean valid(GasBuildComp entity){
+  public boolean valid(T entity){
     float amount = 0;
     for(GasStack stack: gases){
       amount += stack.amount;
@@ -57,7 +59,7 @@ public class ProduceGases extends BaseProduce<GasBuildComp>{
   }
   
   @Override
-  public void dump(GasBuildComp entity){
+  public void dump(T entity){
     if(entity.getGasBlock().classicDumpGas()){
       for(GasStack stack: gases){
         entity.dumpGas(stack.gas);

@@ -18,8 +18,13 @@ public class SglStatUnit{
   };
   
   public static final StatUnit neutronFlux = handler.addEnumItemTail("neutronFlux"),
-      neutronFlow = handler.addEnumItemTail("neutronFlow"),
+      neutronFluxSecond = handler.addEnumItemTail("neutronFluxSecond"),
       pascal = handler.addEnumItemTail("pascal"),
+      heat = handler.addEnumItemTail("heat"),
+      absTemperature = handler.addEnumItemTail("absTemperature"),
+      kHeat = handler.addEnumItemTail("kHeat"),
+      temperature = handler.addEnumItemTail("temperature"),
+      heatCapacity = handler.addEnumItemTail("heatCapacity"),
       kPascal = handler.addEnumItemTail("kPascal"),
       MPascal = handler.addEnumItemTail("MPascal");
 }

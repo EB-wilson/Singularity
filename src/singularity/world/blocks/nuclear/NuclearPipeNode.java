@@ -6,18 +6,15 @@ import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
-import arc.math.Angles;
 import arc.math.Mathf;
+import arc.math.WindowedMean;
 import arc.math.geom.Geometry;
 import arc.math.geom.Intersector;
 import arc.math.geom.Point2;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
-import arc.util.Eachable;
-import arc.util.Structs;
-import arc.util.Time;
-import arc.util.Tmp;
+import arc.util.*;
 import mindustry.Vars;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
@@ -30,6 +27,7 @@ import mindustry.world.Block;
 import mindustry.world.Edges;
 import mindustry.world.Tile;
 import mindustry.world.meta.Env;
+import singularity.contents.NuclearBlocks;
 import singularity.world.blockComp.NuclearEnergyBlockComp;
 import singularity.world.blockComp.NuclearEnergyBuildComp;
 
@@ -100,10 +98,10 @@ public class NuclearPipeNode extends NuclearBlock{
   @Override
   public void load(){
     super.load();
-    linkDraw = Core.atlas.find(name + "_link");
-    linkLeaser = Core.atlas.find(name + "_leaser");
+    linkDraw = Core.atlas.find(name + "_link", ((NuclearPipeNode)NuclearBlocks.nuclear_pipe_node).linkDraw);
+    linkLeaser = Core.atlas.find(name + "_leaser", ((NuclearPipeNode)NuclearBlocks.nuclear_pipe_node).linkLeaser);
     linkStart = Core.atlas.find(name + "_start", (TextureRegion)null);
-    linkEnd = Core.atlas.find(name + "_end");
+    linkEnd = Core.atlas.find(name + "_end", ((NuclearPipeNode)NuclearBlocks.nuclear_pipe_node).linkEnd);
   }
   
   @Override
@@ -123,37 +121,31 @@ public class NuclearPipeNode extends NuclearBlock{
         
         if(otherReq == null || otherReq.block == null) continue;
         
-        drawLink(req.tile(), size, otherReq.tile(), otherReq.block.size);
+        drawLink(req.drawx(), req.drawy(), size, otherReq.drawx(), otherReq.drawy(), otherReq.block.size);
       }
       Draw.color();
     }
   }
   
   public void drawLink(NuclearEnergyBuildComp entity, NuclearEnergyBuildComp other){
-    drawLink(entity.getBuilding().tile, size, other.getBuilding().tile, other.getBlock().size);
+    drawLink(entity.getBuilding().x, entity.getBuilding().y, size, other.getBuilding().x, other.getBuilding().y, other.getBlock().size);
   }
   
-  public void drawLink(Tile origin, int size1, Tile other, int size2){
+  public void drawLink(float x1, float y1, int size1, float x2, float y2, int size2){
     Draw.alpha(laserOpacity);
     Draw.z(Layer.power);
-    float angle1 = Angles.angle(origin.drawx(), origin.drawy(), other.drawx(), other.drawy());
-    float vx = Mathf.cosDeg(angle1);
-    float vy = Mathf.sinDeg(angle1);
-    float len1 = size1 * tilesize / 2f - 1.5f, len2 = size2 * tilesize / 2f - 1.5f;
   
-    float x1 = origin.drawx() + vx*len1,
-    y1 = origin.drawy() + vy*len1,
-    x2 = other.drawx() - vx*len2,
-    y2 = other.drawy() - vy*len2;
+    Tmp.v1.set(x1, y1).sub(x2, y2).setLength(size1*tilesize/2f - 1.5f).scl(-1);
+    Tmp.v2.set(x2, y2).sub(x1, y1).setLength(size2*tilesize/2f - 1.5f).scl(-1);
+  
+    float xs = x1 + Tmp.v1.x, ys = y1 + Tmp.v1.y;
+    float xo = x2 + Tmp.v2.x, yo = y2 + Tmp.v2.y;
     
-    float rot = Mathf.angle(x2 - x1, y2 - y1);
-    float vectX = Mathf.cosDeg(rot), vectY = Mathf.sinDeg(rot);
-    
-    Draw.rect(linkStart != null? linkStart: linkEnd, x1, y1, rot + 180);
-    Draw.rect(linkEnd, x2, y2, rot);
+    Draw.rect(linkStart != null? linkStart: linkEnd, xs, ys, Tmp.v2.angle());
+    Draw.rect(linkEnd, xo, yo, Tmp.v1.angle());
   
     Lines.stroke(8f);
-    Lines.line(linkDraw, x1 + vectX, y1 + vectY, x2 - vectX, y2 - vectY, false);
+    Lines.line(linkDraw, xs, ys, xo, yo, false);
     Lines.stroke(1f);
   }
   
@@ -174,7 +166,7 @@ public class NuclearPipeNode extends NuclearBlock{
     
     getPotentialLink(tile, player.team()).each(other -> {
       Draw.color(linkColor, laserOpacity * 0.5f);
-      drawLink(tile, size, other.getBuilding().tile, other.getBlock().size);
+      drawLink(tile.worldx() + offset, tile.worldy() + offset, size, other.getBuilding().x, other.getBuilding().y, other.getBlock().size);
       
       Drawf.square(other.getBuilding().x, other.getBuilding().y, other.getBlock().size * tilesize / 2f + 2f, Pal.place);
     });
@@ -316,8 +308,9 @@ public class NuclearPipeNode extends NuclearBlock{
   public class NuclearPipeNodeBuild extends SglBuilding{
     public float flowing;
     public float smoothAlpha;
-    public int flowTimer;
     private float chanceFlow;
+    private final Interval flowTimer = new Interval();
+    private final WindowedMean flowMean = new WindowedMean(5);
   
     @Override
     public NuclearPipeNode block(){
@@ -367,19 +360,17 @@ public class NuclearPipeNode extends NuclearBlock{
     @Override
     public void updateTile(){
       super.updateTile();
-      flowing = chanceFlow;
-      chanceFlow = 0;
-      if(flowTimer > 0){
-        flowTimer--;
+      if(flowTimer.get(10)){
+        flowMean.add(chanceFlow/10*delta());
+        chanceFlow = 0;
+        flowing = flowMean.mean();
       }
-      else flowing = 0;
     }
   
     @Override
     public void onMovePathChild(float flow){
       super.onMovePathChild(flow);
       chanceFlow += flow;
-      flowTimer = 3;
     }
   
     @Override

@@ -13,7 +13,9 @@ import mindustry.type.Liquid;
 import mindustry.world.meta.Stat;
 import singularity.Sgl;
 import singularity.Singularity;
+import singularity.world.blockComp.HeatBuildComp;
 import singularity.world.meta.SglStat;
+import singularity.world.meta.SglStatUnit;
 import singularity.world.meta.SglStatValues;
 
 public class Gas extends UnlockableContent{
@@ -27,10 +29,10 @@ public class Gas extends UnlockableContent{
   public boolean hasTank = false;
   public float tankContains;
   
-  public float heatCapacity = 0.3f;
-  public float explosiveness = 1f;
-  public float flammability = 1f;
-  public float temperature = 0.4f;
+  public float heatCapacity = 1000f;
+  public float flammability = 0f;
+  public float explodeRate = 0f;
+  public float temperature = 292f;
   
   public Gas(String name, Color color){
     super(name);
@@ -100,10 +102,10 @@ public class Gas extends UnlockableContent{
   @Override
   public void setStats(){
     super.setStats();
-    stats.addPercent(Stat.explosiveness, explosiveness);
+    stats.add(Stat.explosiveness, explodeRate == 0? "": "");
     stats.addPercent(Stat.flammability, flammability);
-    stats.addPercent(Stat.temperature, temperature);
-    stats.addPercent(Stat.heatCapacity, heatCapacity);
+    stats.add(Stat.temperature, HeatBuildComp.getTemperature(temperature), SglStatUnit.temperature);
+    stats.add(Stat.heatCapacity, heatCapacity/1000, SglStatUnit.heatCapacity);
     
     stats.add(SglStat.compressible, Core.bundle.get("gas.compressible." + compressible));
   

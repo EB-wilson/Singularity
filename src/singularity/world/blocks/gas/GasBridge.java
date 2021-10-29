@@ -1,13 +1,12 @@
 package singularity.world.blocks.gas;
 
 import arc.Core;
-import arc.graphics.Color;
 import arc.scene.ui.layout.Table;
-import arc.util.Strings;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.world.Block;
 import mindustry.world.blocks.distribution.ItemBridge;
+import mindustry.world.meta.StatUnit;
 import singularity.world.blockComp.GasBlockComp;
 import singularity.world.blockComp.GasBuildComp;
 import singularity.world.meta.SglBlockGroup;
@@ -78,12 +77,12 @@ public class GasBridge extends ItemBridge implements GasBlockComp{
           Runnable rebuild = () -> {
             l.clearChildren();
             l.left();
+            float[] flowing = {0};
             gases.eachFlow((gas,flow) -> {
               if(flow < 0.01f) return;
-              l.image(() -> gas.uiIcon).padRight(3f);
-              l.label(() -> flow < 0 ? "..." : Strings.fixed(flow, 2) + Core.bundle.get("misc.preSecond")).color(Color.lightGray);
-              l.row();
+              flowing[0] += flow;
             });
+            l.add(Core.bundle.get("misc.gasFlowRate") + ": " + flowing[0] + StatUnit.seconds.localized());
           };
         
           l.update(rebuild);

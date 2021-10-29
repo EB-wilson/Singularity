@@ -7,7 +7,9 @@ import mindustry.type.Liquid;
 @SuppressWarnings("SpellCheckingInspection")
 public class SglLiquids implements ContentList{
   /**FEX流体*/
-  public static Liquid liquid_FEX,
+  public static Liquid FEX_liquid,
+  /***/
+  phase_FEX_liquid,
   /**混合化工凝胶*/
   mixed_chemical_gel,
   /**富铱凝胶*/
@@ -22,7 +24,15 @@ public class SglLiquids implements ContentList{
   fuel_oil;
 
   public void load(){
-    liquid_FEX = new Liquid("liquid_FEX", Color.valueOf("#E34248")){{
+    FEX_liquid = new Liquid("FEX_liquid", Color.valueOf("#E34248")){{
+      heatCapacity = 0.7f;
+      explosiveness = 0f;
+      flammability = 0f;
+      temperature = 1f;
+      viscosity = 0f;
+    }};
+    
+    phase_FEX_liquid = new Liquid("phase_FEX_liquid", Color.valueOf("#E34248")){{
       heatCapacity = 0.7f;
       explosiveness = 0f;
       flammability = 0f;

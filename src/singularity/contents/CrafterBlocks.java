@@ -24,10 +24,8 @@ import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
-import mindustry.world.blocks.production.GenericCrafter;
 import mindustry.world.meta.Attribute;
 import mindustry.world.meta.BlockStatus;
-import mindustry.world.meta.Stat;
 import singularity.type.Gas;
 import singularity.world.SglFx;
 import singularity.world.blocks.product.NormalCrafter;
@@ -37,6 +35,7 @@ import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.*;
+import singularity.world.meta.SglStat;
 import singularity.world.products.SglProduceType;
 import universeCore.util.UncLiquidStack;
 import universeCore.world.consumers.BaseConsume;
@@ -62,6 +61,10 @@ public class CrafterBlocks implements ContentList{
   reaction_kettle,
   /**洗矿机*/
   ore_washer,
+  /**结晶器*/
+  crystallizer,
+  /***/
+  FEX_phase_mixer,
   /**燃料封装机*/
   fuel_packager,
   /**强化合金冶炼厂*/
@@ -72,8 +75,8 @@ public class CrafterBlocks implements ContentList{
   purifier,
   /**热能离心机*/
   thermal_centrifuge,
-  /**结晶器*/
-  crystallizer,
+  /***/
+  lattice_constructor,
   /**FEX充能座*/
   FEX_crystal_charger,
   /**矩阵切割机*/
@@ -101,8 +104,8 @@ public class CrafterBlocks implements ContentList{
         newOptionalConsume((e, c) -> {
           e.consData(2);
         }, (s, c) -> {
-          s.add(Stat.instructions, t -> t.add(Core.bundle.get("misc.doConsValid")));
-        });
+          s.add(SglStat.effect, t -> t.add(Core.bundle.get("misc.doConsValid")));
+        }).acceptOverdrive = false;
         consume.item(item, 1);
         consume.time(180);
         consume.power(0.4f);
@@ -259,7 +262,7 @@ public class CrafterBlocks implements ContentList{
     
       itemCapacity = 20;
       liquidCapacity = 20;
-      gasCapacity = 20;
+      gasCapacity = 10;
     
       maxGasPressure = 25;
     
@@ -278,7 +281,7 @@ public class CrafterBlocks implements ContentList{
             Draw.color(Pal.accent);
             Draw.alpha(ent.pressure()/ent.getGasBlock().maxGasPressure());
             Draw.rect(top, ent.x(), ent.y());
-            Draw.alpha(ent.temperature()/((ReactionKettle)ent.block).maxTemperature);
+            Draw.alpha(ent.absTemperature()/((ReactionKettle)ent.block).maxTemperature);
             Draw.rect(top, ent.x(), ent.y(), 90);
           };
         }
@@ -295,7 +298,7 @@ public class CrafterBlocks implements ContentList{
       consume.liquids(UncLiquidStack.with(Liquids.water, 0.8f, SglLiquids.rock_bitumen, 0.6f));
       consume.power(1.8f);
       newProduce();
-      produce.liquid(SglLiquids.liquid_FEX, 0.2f);
+      produce.liquid(SglLiquids.FEX_liquid, 0.2f);
       produce.items(ItemStack.with(Items.sand, 6, SglItems.crush_uranium_ore, 1)).random();
       
       craftEffect = Fx.pulverizeMedium;
@@ -344,9 +347,53 @@ public class CrafterBlocks implements ContentList{
       };
     }};
   
+    crystallizer = new NormalCrafter("crystallizer"){{
+      requirements(Category.crafting, ItemStack.with());
+      size = 2;
+      
+      newConsume();
+      consume.time(240f);
+      consume.item(SglItems.strengthening_alloy, 1);
+      consume.liquid(SglLiquids.FEX_liquid, 0.2f);
+      consume.power(3f);
+      newProduce();
+      produce.item(SglItems.crystal_FEX, 1);
+
+      draw = new SglDrawCultivator<>(this){{
+        plantColor = Color.valueOf("#C73A3A");
+        plantColorLight = Color.valueOf("#E57D7D");
+      }};
+    }};
+  
+    FEX_phase_mixer = new NormalCrafter("FEX_phase_mixer"){{
+      requirements(Category.crafting, ItemStack.with());
+      size = 2;
+      
+      newConsume();
+      consume.time(90);
+      consume.item(Items.phaseFabric, 2);
+      consume.liquid(SglLiquids.FEX_liquid, 0.2f);
+      consume.power(2);
+      newProduce();
+      produce.liquid(SglLiquids.phase_FEX_liquid, 0.2f);
+      
+      draw = new DrawFactory<>(this){{
+        drawDef = e -> {
+          Draw.rect(bottom, e.x, e.y);
+          Draw.color(SglLiquids.FEX_liquid.color, SglLiquids.phase_FEX_liquid.color, e.liquids.get(SglLiquids.phase_FEX_liquid)/liquidCapacity);
+          Draw.alpha(Math.max(e.liquids.get(SglLiquids.FEX_liquid), e.liquids.get(SglLiquids.phase_FEX_liquid)));
+          Draw.rect(liquid, e.x, e.y);
+          Draw.color();
+          Draw.rect(region, e.x, e.y);
+          Draw.rect(top, e.x, e.y);
+        };
+      }};
+    }};
+  
     fuel_packager = new NormalCrafter("fuel_packager"){{
       requirements(Category.crafting, ItemStack.with());
       size = 2;
+      autoSelect = true;
       
       newConsume();
       consume.time(90);
@@ -473,13 +520,13 @@ public class CrafterBlocks implements ContentList{
         {
           drawDef = entity -> {
             if(entity.recipeCurrent == -1 || entity.consumer.current == null || entity.producer.current == null) return;
-            UncConsumeItems ci = entity.consumer.current.get(SglConsumeType.item);
-            UncConsumeLiquids cl = entity.consumer.current.get(SglConsumeType.liquid);
-            SglConsumeGases cg = entity.consumer.current.get(SglConsumeType.gas);
-            ProduceLiquids pl = entity.producer.current.get(SglProduceType.liquid);
+            UncConsumeItems<?> ci = entity.consumer.current.get(SglConsumeType.item);
+            UncConsumeLiquids<?> cl = entity.consumer.current.get(SglConsumeType.liquid);
+            SglConsumeGases<?> cg = entity.consumer.current.get(SglConsumeType.gas);
+            ProduceLiquids<?> pl = entity.producer.current.get(SglProduceType.liquid);
             Draw.rect(bottom, entity.x(), entity.y());
             Draw.rect(region, entity.x(), entity.y());
-            Draw.rect(rotator, entity.x(), entity.y(), 90f + entity.totalProgress*2);
+            Drawf.spinSprite(rotator, entity.x(), entity.y(), 90f + entity.totalProgress*2);
             for(int dir=0; dir<4; dir++){
               UnlockableContent o = dir < ci.items.length? ci.items[dir].item:
                   dir-ci.items.length < cl.liquids.length? cl.liquids[dir-ci.items.length].liquid:
@@ -607,84 +654,78 @@ public class CrafterBlocks implements ContentList{
         }
       };
     }};
+  
+    lattice_constructor = new NormalCrafter("lattice_constructor"){{
+      requirements(Category.crafting, ItemStack.with());
+      size = 3;
+      
+      newConsume();
+      consume.time(90);
+      consume.liquid(SglLiquids.phase_FEX_liquid, 0.4f);
+      consume.item(SglItems.strengthening_alloy, 1);
+      consume.energy(1.25f);
+      newProduce();
+      produce.item(SglItems.crystal_FEX, 2);
+  
+      craftEffect = SglFx.FEXsmoke;
+  
+      draw = new DrawFactory<>(this){
+        public TextureRegion framework, crystal, wave;
     
-    crystallizer = new GenericCrafter("crystallizer"){
-      {
-        requirements(Category.crafting, ItemStack.with());
-        size = 3;
-        craftTime = 240f;
-        outputItem = new ItemStack(SglItems.crystal_FEX, 2);
-        consumes.item(SglItems.strengthening_alloy, 1);
-        consumes.liquid(SglLiquids.liquid_FEX, 0.2f);
-        consumes.power(3f);
-        
-        craftEffect = Fx.formsmoke;
-        
-        buildType = CrystallizerBuild::new;
-      }
-      
-      public TextureRegion bottom, framework, crystal, wave;
-      
-      @Override
-      public void load(){
-        super.load();
-        wave = getModAtlas("crystallizer_wave");
-        bottom = getModAtlas("bottom_" + size);
-        framework = getModAtlas("crystallizer_framework");
-        crystal = getModAtlas("FEX_crystal");
-      }
-      
-      @Override
-      public TextureRegion[] icons(){
-        return new TextureRegion[]{
-            bottom,
-            region
-        };
-      }
-      
-      class CrystallizerBuild extends GenericCrafterBuild{
-        final float[] alphas = {2.9f, 2.2f, 1.5f};
-        
         @Override
-        public void draw(){
-          Draw.rect(bottom, x, y);
-          
-          if(progress > 0.3 || items.has(SglItems.strengthening_alloy)) Draw.rect(framework, x, y);
-          
-          Draw.alpha(progress);
-          Draw.rect(crystal, x, y);
-          
-          Draw.alpha(warmup);
-          Lines.lineAngleCenter(
-              x + Mathf.sin(totalProgress, 6, (float) Vars.tilesize/3*block.size),
-              y,
-              90,
-              (float) block.size*Vars.tilesize/2
-          );
-          Draw.color();
-          Draw.rect(region, x, y);
-          
-          Draw.z(Layer.effect);
-          for(int dist=2; dist>=0; dist--){
-            Draw.color(Color.valueOf("FF756F"));
-            Draw.alpha((alphas[dist] <= 1? alphas[dist]: alphas[dist] <= 1.5? 1: 0)*warmup);
-            if(warmup > 0){
-              if(alphas[dist] < 0.4) alphas[dist] += 0.6;
-              for(int i=0; i<4; i++){
-                Draw.rect(wave,
-                    x + dist*Geometry.d4(i).x*3 + 5*(Integer.compare(Geometry.d4(i).x, 0)),
-                    y + dist*Geometry.d4(i).y*3 + 5*(Integer.compare(Geometry.d4(i).y, 0)),
-                    (i+1)*90);
-              }
-              alphas[dist] -= 0.02*edelta();
-            }
-            else{
-              alphas[dist] = 1.5f + 0.7f*(2-dist);
-            }
-          }
+        public void load(){
+          super.load();
+          wave = Core.atlas.find(name + "_wave");
+          framework = Core.atlas.find(name + "_framework");
+          crystal = getModAtlas("FEX_crystal");
         }
-      }
-    };
+    
+        {
+          drawerType = e -> new DrawFactoryDrawer(e){
+            final float[] alphas = {2.9f, 2.2f, 1.5f};
+        
+            @Override
+            public void draw(){
+              Draw.rect(bottom, e.x, e.y);
+          
+              if(e.progress > 0.3 || e.items.has(SglItems.strengthening_alloy)) Draw.rect(framework, e.x, e.y);
+          
+              Draw.alpha(e.progress);
+              Draw.rect(crystal, e.x, e.y);
+          
+              Draw.alpha(e.warmup);
+              Lines.lineAngleCenter(
+                  e.x + Mathf.sin(e.totalProgress, 6, (float) Vars.tilesize/3*block.size),
+                  e.y,
+                  90,
+                  (float) block.size*Vars.tilesize/2
+              );
+              Draw.color();
+              Draw.rect(region, e.x, e.y);
+          
+              Draw.z(Layer.effect);
+              for(int dist=2; dist>=0; dist--){
+                Draw.color(Color.valueOf("FF756F"));
+                Draw.alpha((alphas[dist] <= 1? alphas[dist]: alphas[dist] <= 1.5? 1: 0)*e.warmup);
+                if(e.warmup > 0){
+                  if(alphas[dist] < 0.4) alphas[dist] += 0.6;
+                  for(int i=0; i<4; i++){
+                    Draw.rect(wave,
+                        e.x + dist*Geometry.d4(i).x*3 + 5*(Integer.compare(Geometry.d4(i).x, 0)),
+                        e.y + dist*Geometry.d4(i).y*3 + 5*(Integer.compare(Geometry.d4(i).y, 0)),
+                        (i+1)*90);
+                  }
+                  alphas[dist] -= 0.02*e.edelta();
+                }
+                else{
+                  alphas[dist] = 1.5f + 0.7f*(2-dist);
+                }
+              }
+            }
+          };
+        }
+      };
+    }};
   
     FEX_crystal_charger = new NormalCrafter("FEX_crystal_charger"){{
       requirements(Category.crafting, ItemStack.with());
@@ -747,7 +788,7 @@ public class CrafterBlocks implements ContentList{
       consume.time(120);
       consume.energy(4.85f);
       consume.items(ItemStack.with(SglItems.crystal_FEX_power, 2, SglItems.strengthening_alloy, 3));
-      consume.liquid(SglLiquids.liquid_FEX, 0.55f);
+      consume.liquid(SglLiquids.FEX_liquid, 0.55f);
       newProduce();
       produce.item(SglItems.matrix_alloy, 1);
       

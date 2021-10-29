@@ -1,14 +1,16 @@
 package singularity.world.consumers;
 
-import arc.Core;
 import arc.scene.ui.layout.Table;
-import mindustry.world.meta.Stat;
+import mindustry.gen.Building;
 import mindustry.world.meta.Stats;
 import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.meta.SglStat;
+import singularity.world.meta.SglStatUnit;
+import universeCore.entityComps.blockComps.ConsumerBuildComp;
 import universeCore.world.consumers.BaseConsume;
 import universeCore.world.consumers.UncConsumeType;
 
-public class SglConsumeEnergy extends BaseConsume<NuclearEnergyBuildComp>{
+public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & ConsumerBuildComp> extends BaseConsume<T>{
   public boolean buffer = false;
   public final float usage;
 
@@ -21,38 +23,34 @@ public class SglConsumeEnergy extends BaseConsume<NuclearEnergyBuildComp>{
   }
   
   @Override
-  public UncConsumeType<SglConsumeEnergy> type(){
+  public UncConsumeType<SglConsumeEnergy<?>> type(){
     return SglConsumeType.energy;
   }
   
   @Override
-  public void consume(NuclearEnergyBuildComp entity){
-    if(buffer) entity.handleEnergy(-usage*60);
+  public void consume(T entity){
+    if(buffer) entity.handleEnergy(-usage*60*entity.consumeMultiplier(this));
   }
 
   @Override
-  public void update(NuclearEnergyBuildComp entity) {
+  public void update(T entity) {
     if(!buffer){
-      entity.handleEnergy(-usage*entity.getBuilding().edelta());
+      entity.handleEnergy(-usage*entity.consDelta(parent)*entity.consumeMultiplier(this));
     }
   }
 
   @Override
   public void display(Stats stats) {
-    stats.add(Stat.input, table -> {
-      table.row();
-      table.defaults().left();
-      table.add(Core.bundle.get("misc.nuclearEnergy") + ":");
-    });
+    stats.add(SglStat.consumeEnergy, usage*60, SglStatUnit.neutronFluxSecond);
   }
 
   @Override
-  public void build(NuclearEnergyBuildComp entity, Table table) {
+  public void build(T entity, Table table) {
     table.row();
   }
 
   @Override
-  public boolean valid(NuclearEnergyBuildComp entity){
+  public boolean valid(T entity){
     if(buffer){
       return entity.energy().getEnergy() >= usage*60*entity.getBuilding().edelta();
     }
@@ -60,7 +58,7 @@ public class SglConsumeEnergy extends BaseConsume<NuclearEnergyBuildComp>{
   }
   
   @Override
-  public Object[] filter(NuclearEnergyBuildComp entity) {
+  public Object[] filter(T entity) {
     return null;
   }
 }

@@ -23,9 +23,15 @@ public class SglStat{
       gasCapacity = handler.addEnumItemTail("gasCapacity", SglStatCat.gas),
       maxGasPressure = handler.addEnumItemTail("maxGasPressure", SglStatCat.gas),
   
+      consumeEnergy = handler.addEnumItemTail("consumeEnergy", SglStatCat.nuclear),
+      productEnergy = handler.addEnumItemTail("productEnergy", SglStatCat.nuclear),
+  
+      heatProduct = handler.addEnumItemTail("heatProduct", SglStatCat.heat),
+      baseHeatCapacity = handler.addEnumItemTail("baseHeatCapacity", SglStatCat.heat),
+      maxTemperature = handler.addEnumItemTail("maxTemperature", SglStatCat.heat),
+      heatCoefficient = handler.addEnumItemTail("heatCoefficient", SglStatCat.heat),
+  
       generatorType = handler.addEnumItemTail("generator", SglStatCat.generator),
   
-      optionalInputs  = handler.addEnumItemTail("optionalInputs", StatCat.optional),
-      inputs = handler.addEnumItemTail("inputs", StatCat.crafting),
-      floorBoosting = handler.addEnumItemTail("floorBoosting", StatCat.optional);
+      effect = handler.addEnumItemTail("effect", StatCat.function);
 }

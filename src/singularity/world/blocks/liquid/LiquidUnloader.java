@@ -7,12 +7,14 @@ import arc.util.Nullable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.entities.units.BuildPlan;
+import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.blocks.ItemSelection;
 import mindustry.world.meta.BlockGroup;
+import universeCore.entityComps.blockComps.Dumpable;
 
 import java.util.ArrayList;
 
@@ -34,15 +36,15 @@ public class LiquidUnloader extends Block{
     solid = true;
     unloadable = false;
     hasLiquids = true;
-    liquidCapacity = 0f;
+    liquidCapacity = 10f;
     configurable = true;
     outputsLiquid = true;
     saveConfig = true;
     displayFlow = false;
     group = BlockGroup.liquids;
 
-    config(Liquid.class, (LiquidUnloaderBuild tile, Liquid l) -> tile.current = l);
-    configClear((LiquidUnloaderBuild tile) -> tile.current = null);
+    config(Liquid.class, (LiquidUnloadedBuild tile, Liquid l) -> tile.current = l);
+    configClear((LiquidUnloadedBuild tile) -> tile.current = null);
   }
 
   @Override
@@ -56,49 +58,37 @@ public class LiquidUnloader extends Block{
     drawRequestConfigCenter(req, req.config, "center");
   }
 
-  public class LiquidUnloaderBuild extends Building{
+  public class LiquidUnloadedBuild extends Building implements Dumpable{
     public @Nullable Liquid current = null;
-    public int from = 0, to = 0;
-
+  
+    @Override
+    public Building create(Block block, Team team){
+      super.create(block, team);
+      liquids = null;
+      return this;
+    }
+  
     @Override
     public void updateTile(){
-      if(current != null){
-        unloading.clear();
-        outputs.clear();
-        
-        for(int i=0; i<proximity.size; i++){
-          Building curr = proximity.get(i);
-          if(curr.team == this.team && curr.block.unloadable && curr.block.hasLiquids){
-            unloading.add(curr);
-          }
-          if(curr.team == this.team && curr.block.hasLiquids && curr.acceptLiquid(this, current)){
-            outputs.add(curr);
-          }
-        }
-        
-        if(unloading.size() == 0 || outputs.size() == 0) return;
-        from %= unloading.size();
-        to %= outputs.size();
-        if(unloading.get(from) == outputs.get(to)){
-          to++;
-          return;
-        }
-        
-        Building liFrom = unloading.get(from);
-        Building liTo = outputs.get(to);
-        
-        float trans = Math.min(liTo.block.liquidCapacity - liTo.liquids.get(current), Math.min(speed, liFrom.liquids.get(current)));
-        liFrom.liquids.remove(current, trans);
-        liTo.liquids.add(current, trans);
-        
-        from++;
-        to++;
+      Building next = getDump(e -> e.block.hasLiquids && e.canUnload());
+      if(next != null){
+        liquids = next.liquids;
       }
-      else{
-        from = to = 0;
+      else liquids = null;
+      
+      if(liquids != null){
+        if(current != null){
+          dumpLiquid(current);
+        }
+        else liquids.each((l, a) -> dumpLiquid(l));
       }
     }
-
+  
+    @Override
+    public boolean canDumpLiquid(Building to, Liquid liquid){
+      return super.canDumpLiquid(to, liquid) && to.liquids != liquids;
+    }
+  
     @Override
     public void draw(){
       Draw.rect(region, x, y);

@@ -12,6 +12,7 @@ import mindustry.type.Sector;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglContents;
+import singularity.world.blockComp.HeatBuildComp;
 
 public class Atmosphere{
   public static final Atmosphere defaultSettings = new Atmosphere(null);
@@ -42,10 +43,14 @@ public class Atmosphere{
   
   public Atmosphere(Planet planet){
     attach = planet;
-    defaults = DefaultAtmosphere.defaults;
+    defaults = planet == null? DefaultAtmosphere.defaults: new DefaultAtmosphere(this);
+    Log.info(planet + ": " +defaults.toString());
     
     total = defaults.baseTotal;
     ingredients = defaults.ingredients;
+    heatCapacity = defaults.heatCapacity;
+    
+    heat = defaults.baseTemperature*heatCapacity;
   }
   
   public void setSector(){
@@ -131,6 +136,10 @@ public class Atmosphere{
   }
   
   public float getTemperature(){
+    return HeatBuildComp.getTemperature(getAbsTemperature());
+  }
+  
+  public float getAbsTemperature(){
     return heat/heatCapacity;
   }
   
@@ -190,7 +199,6 @@ public class Atmosphere{
     heat = read.f();
     total = 0;
   
-    Log.info(attach.name);
     for(int id=0; id<count; id++){
       float amount = read.f();
       ingredients[id] = amount;

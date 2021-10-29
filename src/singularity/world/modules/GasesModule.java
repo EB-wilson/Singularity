@@ -209,7 +209,7 @@ public class GasesModule extends BlockModule{
   }
   
   public float getPressure(){
-    return total / entity.getGasBlock().gasCapacity();
+    return total/entity.getGasBlock().gasCapacity();
   }
   
   public void each(Cons<GasStack> cons){

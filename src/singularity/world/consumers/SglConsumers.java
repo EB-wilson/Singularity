@@ -12,16 +12,16 @@ public class SglConsumers extends BaseConsumers{
     super(optional);
   }
   
-  public SglConsumeGases gas(Gas gas, float amount){
-    return add(new SglConsumeGases(new GasStack[]{new GasStack(gas, amount)}));
+  public SglConsumeGases<?> gas(Gas gas, float amount){
+    return add(new SglConsumeGases<>(new GasStack[]{new GasStack(gas, amount)}));
   }
   
-  public SglConsumeGases gases(GasStack[] stack){
-    return add(new SglConsumeGases(stack));
+  public SglConsumeGases<?> gases(GasStack[] stack){
+    return add(new SglConsumeGases<>(stack));
   }
   
-  public SglConsumeEnergy energy(float usage){
-    return add(new SglConsumeEnergy(usage));
+  public SglConsumeEnergy<?> energy(float usage){
+    return add(new SglConsumeEnergy<>(usage));
   }
   
   public BaseConsume<?> first(){

@@ -3,29 +3,32 @@ package singularity.world.blocks.product;
 import arc.Core;
 import arc.func.Cons2;
 import arc.func.Floatf;
+import arc.math.Mathf;
 import arc.scene.ui.Image;
-import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Scaling;
+import arc.util.Strings;
 import mindustry.Vars;
 import mindustry.game.Team;
+import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.maps.Map;
+import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.environment.Floor;
 import mindustry.world.meta.Attribute;
+import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
-import singularity.world.meta.SglStat;
 import universeCore.util.Functions;
 
 import static mindustry.Vars.indexer;
 import static mindustry.Vars.state;
 
-/**一个由其下方地板具有的属性计算效率的工厂*/
+/**一w个由其下方地板具有的属性计算效率的工厂*/
 public class SglAttributeCrafter extends NormalCrafter{
   protected ObjectMap<Attribute, Floatf<Float>> attributeBoosters = new ObjectMap<>();
   protected ObjectMap<Attribute, Cons2<Table, Seq<? extends Block>>> boostDisplay = new ObjectMap<>();
@@ -110,6 +113,16 @@ public class SglAttributeCrafter extends NormalCrafter{
   }
   
   @Override
+  public void setBars(){
+    super.setBars();
+    bars.add("efficiency", (SglAttributeCrafterBuild e) -> new Bar(
+        () -> Core.bundle.get("misc.efficiency") + ": " + Strings.autoFixed(e.efficiency()*100, 0) + "%",
+        () -> Pal.accent,
+        () -> Mathf.clamp(e.efficiency())
+    ));
+  }
+  
+  @Override
   public void setStats(){
     super.setStats();
     //因为地板类型可能种类繁多，所以这里采用可展开和关闭的布局方式以保证显示简洁
@@ -117,7 +130,7 @@ public class SglAttributeCrafter extends NormalCrafter{
       boost.clearChildren();
       boost.defaults().left();
       if(state.isGame()){
-        for(Attribute attr : Attribute.all){
+        for(Attribute attr: Attribute.all){
           if(attributeBoosters.get(attr) == null) continue;
           boost.add(attr.name + ":");
           Seq<Floor> blocks = Vars.content.blocks()
@@ -132,21 +145,8 @@ public class SglAttributeCrafter extends NormalCrafter{
       }else boost.add(Core.bundle.get("stat.showinmap"));
     };
     build.run();
-    
-    Table displayBoost = new Table();
-    displayBoost.left();
-    TextButton b = new TextButton(Core.bundle.get("misc.unfold"));
-    b.clicked(() -> {
-      displayBoost.clear();
-      displayBoost.add(boost);
-      displayBoost.row();
-      displayBoost.button(Core.bundle.get("misc.fold"), () -> {
-        displayBoost.clear();
-        displayBoost.add(b);
-      });
-    });
   
-    displayBoost.update(() -> {
+    boost.update(() -> {
       Map current = state.isGame() ? state.map : null;
       
       if(current != lastMap){
@@ -155,10 +155,9 @@ public class SglAttributeCrafter extends NormalCrafter{
       }
     });
     
-    displayBoost.add(b);
-    stats.add(SglStat.floorBoosting, table -> {
+    stats.add(Stat.affinities, table -> {
       table.row();
-      table.add(displayBoost);
+      table.table(Tex.pane, t -> t.add(boost).grow());
     });
   }
   

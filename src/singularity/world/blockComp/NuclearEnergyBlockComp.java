@@ -1,5 +1,6 @@
 package singularity.world.blockComp;
 
+import mindustry.world.meta.Stats;
 import universeCore.entityComps.blockComps.FieldGetter;
 
 /**Consume组件，为方块添加可标记消耗的功能
@@ -46,5 +47,9 @@ public interface NuclearEnergyBlockComp extends FieldGetter{
   
   default float maxEnergyPressure(){
     return getField(float.class, "maxEnergyPressure");
+  }
+  
+  default void setNuclearStats(Stats stats){
+  
   }
 }

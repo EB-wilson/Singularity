@@ -8,7 +8,9 @@ import arc.math.Mathf;
 import mindustry.entities.Effect;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
+import universeCore.util.Functions;
 
+import static arc.graphics.g2d.Draw.color;
 import static arc.math.Angles.randLenVectors;
 
 public class SglFx{
@@ -66,5 +68,15 @@ public class SglFx{
     Draw.z(Layer.effect);
     Lines.stroke(Mathf.lerp(1.5f, 0.4f, e.fin()));
     Lines.square(e.x, e.y, Mathf.lerp(35, end, e.fin()), Mathf.lerp(e.rotation, endRot, e.fin()));
+  }),
+  
+  FEXsmoke = new Effect(80, e -> {
+    float move = Mathf.clamp(e.fin()/0.35f);
+    float size = 1 - Mathf.clamp((e.fin() - 0.65f)/0.35f);
+    
+    randLenVectors(e.id, 6, 4f + (float)Functions.lerp(0, 9, 0.1f, move*40), (x, y) -> {
+      color(Color.valueOf("FF756F"), Color.lightGray, Mathf.clamp(e.fin() + Mathf.random(-0.1f, 0.1f)));
+      Fill.square(e.x + x, e.y + y, 0.2f + size * 2f + Mathf.random(-0.15f, 0.15f), 45);
+    });
   });
 }

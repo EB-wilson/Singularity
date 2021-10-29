@@ -33,11 +33,6 @@ public class DrawFrame<Target extends DrawableComp> extends SglDrawBlock<Target>
   }
   
   @Override
-  public void load(){
-    super.load();
-  }
-  
-  @Override
   public TextureRegion[] icons(){
     TextureRegion[] icons = new TextureRegion[frames.length];
     for(int layer=0; layer < icons.length; layer++){
