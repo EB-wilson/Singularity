@@ -11,7 +11,6 @@ import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.meta.Stat;
-import singularity.Sgl;
 import singularity.Singularity;
 import singularity.world.blockComp.HeatBuildComp;
 import singularity.world.meta.SglStat;
@@ -25,10 +24,6 @@ public class Gas extends UnlockableContent{
   protected CompressItem compressItem;
   protected CompressLiquid compressLiquid;
   
-  public Item tank;
-  public boolean hasTank = false;
-  public float tankContains;
-  
   public float heatCapacity = 1000f;
   public float flammability = 0f;
   public float explodeRate = 0f;
@@ -37,13 +32,6 @@ public class Gas extends UnlockableContent{
   public Gas(String name, Color color){
     super(name);
     this.color = color;
-  }
-  
-  public Item creatTank(float consume){
-    tank = new Item(name.replace(Sgl.modName + "-", "") + "_tank", color);
-    hasTank = true;
-    tankContains = consume;
-    return tank;
   }
   
   public CompressItem creatItem(float requireComp, float consume){
@@ -156,7 +144,7 @@ public class Gas extends UnlockableContent{
     public final float consumeGas;
   
     public CompressLiquid(String name, Color color, float require, float consume){
-      this(new Liquid(name, color), require, consume);
+      this(new CompLiquid(name, color), require, consume);
     }
     
     public CompressLiquid(Liquid liquid, float require, float consume){
@@ -177,13 +165,25 @@ public class Gas extends UnlockableContent{
     public float consumeLiquid;
   
     public CompressItem(String name, Color color, float require, float consume){
-      this(new Item(name, color), require, consume);
+      this(new CompItem(name, color), require, consume);
     }
     
     public CompressItem(Item item, float require, float consume){
       this.item = item;
       requirePressure = require;
       consumeGas = consume;
+    }
+  }
+  
+  public static class CompLiquid extends Liquid{
+    public CompLiquid(String name, Color color){
+      super(name, color);
+    }
+  }
+  
+  public static class CompItem extends Item{
+    public CompItem(String name, Color color){
+      super(name, color);
     }
   }
 }

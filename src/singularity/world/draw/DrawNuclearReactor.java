@@ -51,8 +51,7 @@ public class DrawNuclearReactor extends DrawFactory<NuclearReactor.NuclearReacto
       Draw.color(coolColor, hotColor, entity.temperature()/entity.block().maxTemperature);
       Fill.rect(entity.x, entity.y, entity.block.size * tilesize, entity.block.size * tilesize);
       
-      Liquid liquid = entity.consumer.optionalCurr != null? entity.consumer.optionalCurr.get(SglConsumeType.liquid).liquids[0].liquid:
-          entity.consumer.getOptional(0).get(SglConsumeType.liquid).liquids[0].liquid;
+      Liquid liquid = entity.block().coolants.get(0).get(SglConsumeType.liquid).liquids[0].liquid;
       
       Draw.color(liquid.color);
       Draw.alpha(entity.liquids.get(liquid)/entity.block.liquidCapacity);

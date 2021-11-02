@@ -46,13 +46,30 @@ public class NuclearBlocks implements ContentList{
     decay_bin = new NormalCrafter("decay_bin"){{
       requirements(SglCategory.nuclear, ItemStack.with());
       size = 2;
+      autoSelect = true;
+      onlyCreatFirst = false;
       
       newConsume();
-      consume.time(300);
+      consume.time(600);
       consume.item(SglItems.uranium_235, 1);
       newProduce();
       produce.energy(0.25f);
       produce.item(Items.thorium, 1);
+      newConsume();
+      consume.time(600);
+      consume.item(SglItems.plutonium_239, 1);
+      newProduce();
+      produce.energy(0.25f);
+      newConsume();
+      consume.time(900);
+      consume.item(SglItems.uranium_238, 1);
+      newProduce();
+      produce.energy(0.12f);
+      newConsume();
+      consume.time(450);
+      consume.item(Items.thorium, 1);
+      newProduce();
+      produce.energy(0.2f);
       
       updateEffect = Fx.generatespark;
       updateEffectChance = 0.01f;
@@ -84,8 +101,8 @@ public class NuclearBlocks implements ContentList{
       itemCapacity = 35;
       liquidCapacity = 25;
       
-      newReact(SglItems.concentration_uranium_235, 240, 12, true);
-      newReact(SglItems.concentration_plutonium_239, 240, 12, true);
+      newReact(SglItems.concentration_uranium_235, 450, 12, true);
+      newReact(SglItems.concentration_plutonium_239, 450, 12, true);
       
       addCoolant(2600f);
       consume.liquid(Liquids.cryofluid, 0.2f);
@@ -94,6 +111,13 @@ public class NuclearBlocks implements ContentList{
         NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
         return entity.heat > 0 && entity.absTemperature() > getLiquidAbsTemperature(Liquids.cryofluid);
       };
+  
+      addTransfer(new ItemStack(SglItems.plutonium_239, 1));
+      consume.time(180);
+      consume.item(SglItems.uranium_238, 1);
+      addTransfer(new ItemStack(SglItems.uranium_235, 1));
+      consume.time(210);
+      consume.item(Items.thorium, 1);
     }};
   
     nuclear_energy_source = new EnergySource("nuclear_energy_source"){{

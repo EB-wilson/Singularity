@@ -31,6 +31,12 @@ public class SglStat{
       maxTemperature = handler.addEnumItemTail("maxTemperature", SglStatCat.heat),
       heatCoefficient = handler.addEnumItemTail("heatCoefficient", SglStatCat.heat),
   
+      deltaHeat = handler.addEnumItemTail("deltaHeat", SglStatCat.reaction),
+      requirePressure = handler.addEnumItemTail("requirePressure", SglStatCat.reaction),
+      requireTemperature = handler.addEnumItemTail("requireTemperature", SglStatCat.reaction),
+      consume = handler.addEnumItemTail("consume", SglStatCat.reaction),
+      product = handler.addEnumItemTail("product", SglStatCat.reaction),
+  
       generatorType = handler.addEnumItemTail("generator", SglStatCat.generator),
   
       effect = handler.addEnumItemTail("effect", StatCat.function);

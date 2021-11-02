@@ -8,7 +8,7 @@ import mindustry.world.meta.Stat;
 import mindustry.world.meta.Stats;
 import singularity.type.Gas;
 import singularity.type.GasStack;
-import singularity.ui.tables.GasValue;
+import singularity.ui.tables.GasDisplay;
 import singularity.world.blockComp.GasBuildComp;
 import universeCore.entityComps.blockComps.ConsumerBuildComp;
 import universeCore.world.consumers.BaseConsume;
@@ -46,7 +46,7 @@ public class SglConsumeGases<T extends Building & GasBuildComp & ConsumerBuildCo
         t.defaults().left().fill().padLeft(6);
         t.add(Core.bundle.get("misc.gas") + ":").left();
         for(GasStack stack: gases){
-          t.add(new GasValue(stack.gas, stack.amount*60));
+          t.add(new GasDisplay(stack.gas, stack.amount*60));
         }
       }).left().padLeft(5);
     });

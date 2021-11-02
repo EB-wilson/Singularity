@@ -311,7 +311,7 @@ public class NuclearPipeNode extends NuclearBlock{
     private float chanceFlow;
     private final Interval flowTimer = new Interval();
     private final WindowedMean flowMean = new WindowedMean(5);
-  
+    
     @Override
     public NuclearPipeNode block(){
       return (NuclearPipeNode)super.block();
@@ -361,9 +361,9 @@ public class NuclearPipeNode extends NuclearBlock{
     public void updateTile(){
       super.updateTile();
       if(flowTimer.get(10)){
-        flowMean.add(chanceFlow/10*delta());
+        flowMean.add(chanceFlow);
         chanceFlow = 0;
-        flowing = flowMean.mean();
+        flowing = flowMean.mean()/10;
       }
     }
   

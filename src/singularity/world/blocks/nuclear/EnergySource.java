@@ -72,7 +72,7 @@ public class EnergySource extends NuclearBlock{
       table.table(Styles.black6, t -> {
         t.defaults().pad(0).margin(0);
         t.table(Tex.buttonTrans, i -> i.image(Singularity.getModAtlas("nuclear")).size(40)).size(50);
-        t.slider(-energyCapacity, energyCapacity, 0.01f, outputEnergy, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+        t.slider(0, energyCapacity, 0.01f, outputEnergy, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
         t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(outputEnergy, 2) + "NF"));
       });
     }

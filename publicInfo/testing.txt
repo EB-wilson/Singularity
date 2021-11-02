@@ -1,4 +1,0 @@
-title
-
-testing
-<image=image1>

@@ -25,6 +25,7 @@ import singularity.type.Gas;
 import singularity.ui.SglStyles;
 import singularity.world.blockComp.GasBuildComp;
 import singularity.world.blockComp.HeatBlockComp;
+import singularity.world.blockComp.HeatBuildComp;
 import singularity.world.blocks.SglBlock;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.modules.ReactionModule;
@@ -34,9 +35,9 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   public float totalItemCapacity = 60;
   public float heatCoefficient = 0.2f;
   public float totalLiquidCapacity = 60;
-  public float maxTemperature = 850;
+  public float maxTemperature = 920;
   public float baseHeatCapacity = 600;
-  public float productHeat = 6000f;
+  public float productHeat = 30000f;
   
   public ReactionKettle(String name){
     super(name);
@@ -66,7 +67,7 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
       @Override
       public float requestedPower(Building e){
         ReactionKettleBuild entity = (ReactionKettleBuild) e;
-        return Math.max(0, productHeat*5*entity.heatScl);
+        return Math.max(0, productHeat/500*entity.heatScl);
       }
     });
   }
@@ -109,7 +110,8 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
       reacts = new ReactionModule(this);
   
       setModules();
-      heat = Sgl.atmospheres.current.getAbsTemperature()*heatCapacity();
+      internalTemperature = Sgl.atmospheres.current.getAbsTemperature();
+      heat = internalTemperature*heatCapacity();
       
       return this;
     }
@@ -171,8 +173,8 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
       table.table(Styles.black6, t -> {
         t.defaults().pad(0).margin(0);
         t.table(Tex.buttonTrans, i -> i.image(Singularity.getModAtlas("icon_temperature")).size(40)).size(50);
-        t.slider(0, maxTemperature, 0.01f, internalTemperature, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
-        t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(internalTemperature*100, 2) + "%"));
+        t.slider(Sgl.atmospheres.current.getAbsTemperature(), maxTemperature, 0.01f, internalTemperature, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+        t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(HeatBuildComp.getTemperature(internalTemperature), 2) + SglStatUnit.temperature.localized()));
       });
     }
   

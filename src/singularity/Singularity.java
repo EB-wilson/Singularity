@@ -6,21 +6,17 @@ import arc.graphics.g2d.TextureRegion;
 import arc.util.Log;
 import arc.util.Time;
 import mindustry.Vars;
-import mindustry.content.TechTree;
-import mindustry.core.ContentLoader;
 import mindustry.ctype.ContentList;
 import mindustry.mod.Mod;
 import singularity.contents.*;
 import singularity.contents.override.OverrideBlocks;
+import singularity.contents.SglTechThree;
 import singularity.core.Init;
 import singularity.type.SglCategory;
 import singularity.type.SglContentType;
 import universeCore.util.OverrideContentList;
 import universeCore.util.UncContentType;
 import universeCore.util.handler.ContentHandler;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
 
 import static mindustry.game.EventType.*;
 
@@ -36,8 +32,10 @@ public class Singularity extends Mod{
       new CrafterBlocks(),//工厂方块
       new GasBlocks(),//气体相关方块
       new TransportBlocks(),//物流方块
-      new CollectBlocks(),//采集方块
+      new CollectBlocks(),//采集方块w
       new Reactions(),//化学反应
+      
+      new SglTechThree(),//科技树
   };
   
   private final OverrideContentList[] overrideContents = new OverrideContentList[]{
@@ -105,18 +103,6 @@ public class Singularity extends Mod{
   
     for(OverrideContentList override: overrideContents){
       override.load();
-    }
-  
-    try{
-      Field arrayField = ContentLoader.class.getDeclaredField("content");
-      arrayField.setAccessible(true);
-      Object[] array = (Object[])arrayField.get(Vars.content);
-  
-      TechTree tree = new TechTree();
-      Array.set(array, array.length - 1, tree);
-      tree.load();
-    }catch(NoSuchFieldException | IllegalAccessException e){
-      Log.err(e);
     }
   
     if(Sgl.config.debugMode) new DebugBlocks().load();

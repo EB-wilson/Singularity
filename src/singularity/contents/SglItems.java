@@ -40,6 +40,8 @@ public class SglItems implements ContentList{
   iridium,
   /**核废料*/
   nuclear_waste,
+  /***/
+  crush_ore,
   /**破碎铀矿石*/
   crush_uranium_ore,
   /**混合铀原料*/
@@ -166,6 +168,13 @@ public class SglItems implements ContentList{
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0.4f;
+    }};
+  
+    crush_ore = new Item("crush_ore", Color.gray){{
+      hardness = 1;
+      explosiveness = 0f;
+      flammability = 0f;
+      radioactivity = 0.3f;
     }};
     
     crush_uranium_ore = new Item("crush_uranium_ore", Color.valueOf("#4D6D15FF")){{

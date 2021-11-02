@@ -3,6 +3,8 @@ package singularity.world.blocks.nuclear;
 import arc.Core;
 import arc.Events;
 import arc.math.Mathf;
+import arc.struct.ObjectSet;
+import arc.struct.Seq;
 import arc.util.Strings;
 import mindustry.content.Fx;
 import mindustry.entities.Damage;
@@ -17,9 +19,12 @@ import mindustry.type.ItemStack;
 import mindustry.type.LiquidStack;
 import mindustry.ui.Bar;
 import mindustry.world.Block;
+import mindustry.world.meta.Stat;
+import mindustry.world.meta.StatValues;
 import singularity.Sgl;
 import singularity.contents.SglItems;
 import singularity.type.GasStack;
+import singularity.ui.tables.GasDisplay;
 import singularity.world.blockComp.HeatBlockComp;
 import singularity.world.blockComp.HeatBuildComp;
 import singularity.world.blocks.product.NormalCrafter;
@@ -37,17 +42,22 @@ import static mindustry.Vars.state;
 import static mindustry.Vars.tilesize;
 
 public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
-  public float maxTemperature = 1273.15f, heatCoefficient = 1f;
-  public float baseHeatCapacity = 1250, productHeat = 1400f;
+  public float maxTemperature = 1273.15f;
+  public float heatCoefficient = 1f;
+  public float baseHeatCapacity = 1250;
+  public float productHeat = 1400f;
   public float smokeThreshold = 500;
   public int explosionRadius = 19;
   public int explosionDamageBase = 350;
   
   public Effect explodeEffect = Fx.reactorExplosion;
   
+  public Seq<BaseConsumers> coolants = new Seq<>();
+  
+  ObjectSet<Item> consItems = new ObjectSet<>();
+  
   public NuclearReactor(String name){
     super(name);
-    oneOfOptionCons = true;
     hasEnergy = true;
     outputEnergy = true;
     autoSelect = true;
@@ -79,10 +89,13 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
       NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
       return entity.heat > 0;
     };
+    coolants.add(consume);
   }
   
   public void addTransfer(ItemStack output){
-    newOptionalConsume((e, c) -> {}, (e, s) -> {});
+    newOptionalConsume((e, c) -> {}, (e, s) -> {
+      e.add(Stat.output, StatValues.items(s.craftTime, output));
+    });
     consume.valid = ent -> ent.getBuilding().consValid();
     consume.trigger = ent -> {
       for(int i = 0; i < output.amount; i++){
@@ -95,7 +108,9 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     newOptionalConsume((e, c) -> {
       NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
       entity.handleLiquid(entity, output.liquid, output.amount);
-    }, (e, s) -> {});
+    }, (e, s) -> {
+      e.add(Stat.output, StatValues.liquid(output.liquid, output.amount*60, true));
+    });
     consume.valid = ent -> ent.getBuilding().consValid();
   }
   
@@ -103,7 +118,9 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     newOptionalConsume((e, c) -> {
       NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
       entity.handleGas(entity, output.gas, output.amount);
-    }, (e, s) -> {});
+    }, (e, s) -> {
+      e.add(Stat.output, t -> t.add(new GasDisplay(output.gas, output.amount*60, true, true)));
+    });
     consume.valid = ent -> ent.getBuilding().consValid();
   }
   
@@ -127,6 +144,16 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
         () -> Pal.accent,
         () -> e.smoothEfficiency
     ));
+  }
+  
+  @Override
+  public void init(){
+    super.init();
+    for(BaseConsumers cons: consumers){
+      for(ItemStack stack: cons.get(SglConsumeType.item).items){
+        consItems.add(stack.item);
+      }
+    }
   }
   
   public class NuclearReactorBuild extends NormalCrafterBuild implements HeatBuildComp{
@@ -211,10 +238,20 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     
       explodeEffect.at(x, y);
     }
+    
+    public int majorConsTotal(){
+      int result = 0;
+      for(BaseConsumers cons: consumers){
+        for(ItemStack stack: cons.get(SglConsumeType.item).items){
+          result += items.get(stack.item);
+        }
+      }
+      return result;
+    }
   
     @Override
     public boolean acceptItem(Building source, Item item){
-      return super.acceptItem(source, item) && items.total() - items.get(SglItems.nuclear_waste) < itemCapacity;
+      return super.acceptItem(source, item) && (!consItems.contains(item) || (consItems.contains(item) && majorConsTotal() < itemCapacity));
     }
   }
 }

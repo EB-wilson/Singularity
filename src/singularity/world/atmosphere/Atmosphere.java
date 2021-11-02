@@ -44,7 +44,6 @@ public class Atmosphere{
   public Atmosphere(Planet planet){
     attach = planet;
     defaults = planet == null? DefaultAtmosphere.defaults: new DefaultAtmosphere(this);
-    Log.info(planet + ": " +defaults.toString());
     
     total = defaults.baseTotal;
     ingredients = defaults.ingredients;

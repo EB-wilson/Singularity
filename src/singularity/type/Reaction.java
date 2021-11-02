@@ -2,14 +2,25 @@ package singularity.type;
 
 import arc.func.Cons;
 import arc.func.Func2;
+import arc.scene.ui.layout.Table;
 import arc.util.Time;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.MappableContent;
 import mindustry.ctype.UnlockableContent;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
+import mindustry.ui.ItemDisplay;
+import mindustry.ui.LiquidDisplay;
 import singularity.Sgl;
+import singularity.ui.tables.GasDisplay;
+import singularity.world.blockComp.HeatBuildComp;
+import singularity.world.meta.SglStat;
+import singularity.world.meta.SglStatUnit;
 import singularity.world.reaction.ReactContainer;
+
+import java.util.Locale;
+
+import static singularity.Singularity.getModAtlas;
 
 public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P extends MappableContent> extends UnlockableContent{
   public Participant<R1> reactantA;
@@ -40,7 +51,9 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
   private byte gReactionCount = -1;
   
   public Reaction(Participant<R1> a, Participant<R2> b, Participant<P> out){
-    super(a.toString() + " + " + b.toString() + " -> " + out.toString());
+    super(a.getName() + " + " + b.getName() + " -> " + out.getName());
+    localizedName = name.replace(Sgl.modName + "-", "");
+    
     reactantA = a;
     reactantB = b;
     product = out;
@@ -88,12 +101,34 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
   
   @Override
   public void setStats(){
+    stats.useCategories = true;
+    stats.add(SglStat.requirePressure, requirePressure*100, SglStatUnit.kPascal);
+    stats.add(SglStat.requireTemperature, HeatBuildComp.getTemperature(requireTemperature), SglStatUnit.temperature);
+    stats.add(SglStat.deltaHeat, deltaHeat/1000, SglStatUnit.kHeat);
+    stats.add(SglStat.consume, t -> {
+      t.row();
+      setInfo(reactantA, t);
+      t.row();
+      setInfo(reactantB, t);
+    });
+    stats.add(SglStat.product, t -> {
+      t.row();
+      setInfo(product, t);
+    });
+  }
   
+  protected void setInfo(Participant<?> part, Table table){
+    table.table(t -> {
+      t.defaults().left().fill().padLeft(6);
+      if(part.isItem) t.add(new ItemDisplay(part.getItem(), (int)part.amount, reactTime, true));
+      if(part.isLiquid) t.add(new LiquidDisplay(part.getLiquid(), part.amount/reactTime*60, true));
+      if(part.isGas) t.add(new GasDisplay(part.getGas(), part.amount/reactTime*60, true, true));
+    }).left().padLeft(5);
   }
   
   @Override
   public void loadIcon(){
-    super.loadIcon();
+    fullIcon = uiIcon = getModAtlas("reaction");
   }
   
   public Participant<?>[] getAllPart(){
@@ -193,6 +228,11 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
     @Override
     public String toString(){
       return "[" + reactant.getContentType().name() + "]" + reactant.name + "*" + (isItem? (int)amount: amount);
+    }
+    
+    public String getName(){
+      String name = reactant.name.replace(Sgl.modName + "-", "");
+      return amount + name.substring(0, 1).toUpperCase(Locale.ROOT) + name.charAt(1);
     }
   }
 }

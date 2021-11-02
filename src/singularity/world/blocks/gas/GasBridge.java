@@ -18,13 +18,15 @@ public class GasBridge extends ItemBridge implements GasBlockComp{
   /**是否显示气体流量*/
   public boolean showGasFlow = true;
   /**方块允许的最大气体压强*/
-  public float maxGasPressure = 7.8f;
+  public float maxGasPressure = 8f;
+  public boolean compressProtect;
   /**气体容积*/
   public float gasCapacity = 20f;
   
   public GasBridge(String name){
     super(name);
     group = SglBlockGroup.gas;
+    hasItems = false;
   }
   
   @Override
@@ -33,6 +35,12 @@ public class GasBridge extends ItemBridge implements GasBlockComp{
     arrowRegion = Core.atlas.find(name + "_arrow");
     endRegion = Core.atlas.find(name + "_end");
     bridgeRegion = Core.atlas.find(name + "_bridge");
+  }
+  
+  @Override
+  public void setStats(){
+    super.setStats();
+    setGasStats(stats);
   }
   
   @Override

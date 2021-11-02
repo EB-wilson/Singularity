@@ -25,39 +25,39 @@ public class SglLiquids implements ContentList{
 
   public void load(){
     FEX_liquid = new Liquid("FEX_liquid", Color.valueOf("#E34248")){{
-      heatCapacity = 0.7f;
+      heatCapacity = 0.3f;
       explosiveness = 0f;
       flammability = 0f;
-      temperature = 1f;
+      temperature = 0.5f;
       viscosity = 0f;
     }};
     
     phase_FEX_liquid = new Liquid("phase_FEX_liquid", Color.valueOf("#E34248")){{
-      heatCapacity = 0.7f;
+      heatCapacity = 1.25f;
       explosiveness = 0f;
       flammability = 0f;
-      temperature = 1f;
+      temperature = 0f;
       viscosity = 0f;
     }};
     
     mixed_chemical_gel = new Liquid("mixed_chemical_gel", Color.valueOf("#FEAEA5")){{
-      heatCapacity = 0.2f;
-      explosiveness = 1f;
+      heatCapacity = 0.7f;
+      explosiveness = 0f;
       flammability = 1f;
       temperature = 0.8f;
-      viscosity = 1f;
+      viscosity = 0.9f;
     }};
     
     iridium_gel = new Liquid("iridium_gel", Color.valueOf("#DAF3F3")){{
-      heatCapacity = 0.42f;
+      heatCapacity = 0.75f;
       explosiveness = 0;
-      flammability = 0.07f;
+      flammability = 0.7f;
       temperature = 1.2f;
-      viscosity = 1f;
+      viscosity = 0.9f;
     }};
     
     lubricant = new Liquid("lubricant", Color.valueOf("#FFD662")){{
-      heatCapacity = 0.3f;
+      heatCapacity = 1f;
       explosiveness = 0.4f;
       flammability = 0f;
       temperature = 0.4f;
@@ -65,11 +65,11 @@ public class SglLiquids implements ContentList{
     }};
     
     rock_bitumen = new Liquid("rock_bitumen", Color.valueOf("#808A73")){{
-      heatCapacity = 1f;
+      heatCapacity = 0.6f;
       explosiveness = 0f;
       flammability = 0f;
-      temperature = 1f;
-      viscosity = 1f;
+      temperature = 0.6f;
+      viscosity = 0.95f;
     }};
     
     mixed_tar = new Liquid("mixed_tar", Color.valueOf("#F0E13D")){{

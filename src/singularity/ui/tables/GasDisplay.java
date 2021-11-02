@@ -6,23 +6,21 @@ import arc.scene.ui.layout.Stack;
 import arc.scene.ui.layout.Table;
 import arc.util.Strings;
 import mindustry.core.UI;
-import mindustry.ui.ItemDisplay;
-import mindustry.ui.LiquidDisplay;
 import mindustry.ui.Styles;
 import mindustry.world.meta.StatUnit;
 import singularity.type.Gas;
 
 import static mindustry.Vars.iconMed;
 
-public class GasValue extends Table{
+public class GasDisplay extends Table{
   public Gas gas;
   public float amount;
   
-  public GasValue(Gas gas, float amount){
+  public GasDisplay(Gas gas, float amount){
     this(gas, amount, true, true);
   }
   
-  public GasValue(Gas gas, float amount, boolean showName, boolean preSec){
+  public GasDisplay(Gas gas, float amount, boolean showName, boolean preSec){
     this.gas = gas;
     this.amount = amount;
     

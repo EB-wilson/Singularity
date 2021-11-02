@@ -39,6 +39,7 @@ import singularity.world.meta.SglStat;
 import singularity.world.products.SglProduceType;
 import universeCore.util.UncLiquidStack;
 import universeCore.world.consumers.BaseConsume;
+import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeItems;
 import universeCore.world.consumers.UncConsumeLiquids;
 import universeCore.world.producers.ProduceLiquids;
@@ -53,7 +54,7 @@ public class CrafterBlocks implements ContentList{
   incubator,
   /**干馏塔*/
   retort_column,
-  /**石油裂解厂*/
+  /**炼油塔*/
   petroleum_separator,
   /**激光解离机*/
   laser_resolver,
@@ -63,7 +64,7 @@ public class CrafterBlocks implements ContentList{
   ore_washer,
   /**结晶器*/
   crystallizer,
-  /***/
+  /**FEX相位混合器*/
   FEX_phase_mixer,
   /**燃料封装机*/
   fuel_packager,
@@ -75,7 +76,7 @@ public class CrafterBlocks implements ContentList{
   purifier,
   /**热能离心机*/
   thermal_centrifuge,
-  /***/
+  /**晶格构建器*/
   lattice_constructor,
   /**FEX充能座*/
   FEX_crystal_charger,
@@ -88,12 +89,15 @@ public class CrafterBlocks implements ContentList{
   
   public void load(){
     fission_weaver = new NormalCrafter("fission_weaver"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.crystal_FEX, 50, Items.phaseFabric, 60, SglItems.strengthening_alloy, 50, Items.plastanium, 45, Items.silicon, 70));
       size = 4;
+      oneOfOptionCons = true;
+      itemCapacity = 12;
+      
       newConsume();
-      consume.time(60);
-      consume.power(2f);
-      consume.items(ItemStack.with(Items.silicon, 4, SglItems.uranium_238, 1));
+      consume.time(90);
+      consume.power(2.5f);
+      consume.items(ItemStack.with(Items.silicon, 3, SglItems.uranium_238, 1));
       consume.valid = e -> e.consData(Integer.class, 0) > 0;
       newProduce();
       produce.item(Items.phaseFabric, 2);
@@ -154,27 +158,32 @@ public class CrafterBlocks implements ContentList{
     }};
     
     incubator = new SglAttributeCrafter("incubator"){{
-      requirements(Category.production, ItemStack.with());
+      requirements(Category.production, ItemStack.with(Items.plastanium, 85, Items.titanium, 90, SglItems.aerogel, 80, Items.copper, 90));
       size = 3;
+      liquidCapacity = 20f;
+      
       newConsume();
-      consume.time(45);
+      consume.time(100);
       consume.power(2.2f);
-      consume.liquid(Liquids.water, 0.4f);
-      consume.gas(Gases.O2, 0.5f);
+      consume.liquid(Liquids.water, 0.6f);
+      consume.gas(Gases.spore_cloud, 0.4f);
       newProduce();
       produce.item(Items.sporePod, 2);
       
       setAttrBooster(Attribute.spores, 0.86f);
-      setAttrBooster(Attribute.heat, 1.8f, 2.85f);
+      setAttrBooster(Attribute.heat, 1.8f, 3f);
       
       draw = new SglDrawCultivator<>(this);
     }};
     
     retort_column = new NormalCrafter("retort_column"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(Items.titanium, 70, Items.graphite, 75, Items.copper, 90, Items.metaglass, 90, Items.plastanium, 50));
       size = 3;
+      itemCapacity = 12;
+      liquidCapacity = 16;
+      
       newConsume();
-      consume.time(30f);
+      consume.time(90f);
       consume.power(2f);
       consume.item(Items.coal, 3);
       newProduce();
@@ -191,12 +200,13 @@ public class CrafterBlocks implements ContentList{
     }};
     
     petroleum_separator = new NormalCrafter("petroleum_separator"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(Items.titanium, 80, Items.silicon, 80, Items.lead, 90, Items.plastanium, 70, Items.metaglass, 60));
       size = 3;
+      liquidCapacity = 24;
+      
       newConsume();
-      consume.time(30f);
       consume.power(1.5f);
-      consume.liquid(Liquids.oil, 0.3f);
+      consume.liquid(Liquids.oil, 0.4f);
       newProduce();
       produce.liquids(UncLiquidStack.with(
           SglLiquids.mixed_tar, 0.2,
@@ -208,21 +218,46 @@ public class CrafterBlocks implements ContentList{
     }};
     
     laser_resolver = new NormalCrafter("laser_resolver"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.crystal_FEX, 45, SglItems.strengthening_alloy, 70, Items.silicon, 90, Items.phaseFabric, 65, Items.metaglass, 120));
       size = 3;
-      itemCapacity = 30;
+      itemCapacity = 20;
+      warmupSpeed = 0.01f;
+      
       newConsume();
       consume.time(30f);
-      consume.power(4f);
+      consume.power(3.2f);
       consume.item(SglItems.nuclear_waste, 2);
       newProduce();
-      produce.items(
-          ItemStack.with(
-              SglItems.salt_iridium, 1,
-              Items.lead, 7,
-              Items.thorium, 3
-          )
+      produce.items(ItemStack.with(
+          SglItems.salt_iridium, 1,
+          Items.lead, 7,
+          Items.thorium, 3)
       ).random();
+      
+      newConsume();
+      consume.time(30f);
+      consume.item(Items.scrap, 2);
+      consume.liquid(Liquids.slag, 0.1f);
+      consume.power(3.5f);
+      newProduce();
+      produce.items(ItemStack.with(
+          Items.thorium, 3,
+          Items.titanium, 4,
+          Items.lead, 5,
+          Items.copper, 3
+      )).random();
+      
+      newConsume();
+      consume.time(45f);
+      consume.item(SglItems.crush_ore, 2);
+      consume.power(2.8f);
+      newProduce();
+      produce.items(ItemStack.with(
+          Items.titanium, 2,
+          Items.thorium, 1,
+          Items.lead, 3,
+          Items.copper, 5
+      )).random();
       
       draw = new DrawFactory<>(this){
         public TextureRegion laser;
@@ -257,7 +292,7 @@ public class CrafterBlocks implements ContentList{
     }};
     
     reaction_kettle = new ReactionKettle("reaction_kettle"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(Items.titanium, 70, Items.lead, 60, Items.plastanium, 70, Items.copper, 100, Items.graphite, 40));
       size = 2;
     
       itemCapacity = 20;
@@ -289,17 +324,18 @@ public class CrafterBlocks implements ContentList{
     }};
     
     ore_washer = new NormalCrafter("ore_washer"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(Items.titanium, 60, Items.graphite, 40, Items.lead, 45, Items.metaglass, 60));
       size = 2;
       itemCapacity = 20;
+      liquidCapacity = 24f;
       
       newConsume();
       consume.time(120f);
-      consume.liquids(UncLiquidStack.with(Liquids.water, 0.8f, SglLiquids.rock_bitumen, 0.6f));
+      consume.liquids(UncLiquidStack.with(Liquids.water, 0.4f, SglLiquids.rock_bitumen, 0.2f));
       consume.power(1.8f);
       newProduce();
-      produce.liquid(SglLiquids.FEX_liquid, 0.2f);
-      produce.items(ItemStack.with(Items.sand, 6, SglItems.crush_uranium_ore, 1)).random();
+      produce.liquid(SglLiquids.FEX_liquid, 0.1f);
+      produce.items(ItemStack.with(Items.sand, 4, SglItems.crush_ore, 2, SglItems.crush_uranium_ore, 1)).random();
       
       craftEffect = Fx.pulverizeMedium;
       
@@ -325,16 +361,16 @@ public class CrafterBlocks implements ContentList{
             Color topColor;
             float alpha = 0;
             if(cons instanceof SglConsumeGases){
-              Gas gas = ((SglConsumeGases) cons).gases[0].gas;
+              Gas gas = ((SglConsumeGases<?>) cons).gases[0].gas;
               topColor = gas.color;
               alpha = entity.gases.getPressure()/entity.getGasBlock().maxGasPressure();
             }else if(cons instanceof UncConsumeLiquids){
-              Liquid liquid = ((UncConsumeLiquids) cons).liquids[0].liquid;
-              if(liquid == Liquids.water) liquid = ((UncConsumeLiquids) cons).liquids[1].liquid;
+              Liquid liquid = ((UncConsumeLiquids<?>) cons).liquids[0].liquid;
+              if(liquid == Liquids.water) liquid = ((UncConsumeLiquids<?>) cons).liquids[1].liquid;
               topColor = liquid.color;
               alpha = entity.liquids.get(liquid)/entity.block.liquidCapacity;
             }else if(cons instanceof UncConsumeItems){
-              Item item = ((UncConsumeItems) cons).items[0].item;
+              Item item = ((UncConsumeItems<?>) cons).items[0].item;
               topColor = item.color;
               alpha = (float) entity.items.get(item)/entity.block.itemCapacity;
             }else topColor = null;
@@ -348,14 +384,15 @@ public class CrafterBlocks implements ContentList{
     }};
   
     crystallizer = new NormalCrafter("crystallizer"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 35, Items.silicon, 45, Items.copper, 40, Items.metaglass, 50));
       size = 2;
+      liquidCapacity = 16;
       
       newConsume();
       consume.time(240f);
       consume.item(SglItems.strengthening_alloy, 1);
-      consume.liquid(SglLiquids.FEX_liquid, 0.2f);
-      consume.power(3f);
+      consume.liquid(SglLiquids.FEX_liquid, 0.4f);
+      consume.power(2.8f);
       newProduce();
       produce.item(SglItems.crystal_FEX, 1);
 
@@ -366,14 +403,15 @@ public class CrafterBlocks implements ContentList{
     }};
   
     FEX_phase_mixer = new NormalCrafter("FEX_phase_mixer"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(Items.titanium, 90, Items.phaseFabric, 85, Items.silicon, 80));
       size = 2;
+      liquidCapacity = 12;
       
       newConsume();
       consume.time(90);
-      consume.item(Items.phaseFabric, 2);
+      consume.item(Items.phaseFabric, 1);
       consume.liquid(SglLiquids.FEX_liquid, 0.2f);
-      consume.power(2);
+      consume.power(1.9f);
       newProduce();
       produce.liquid(SglLiquids.phase_FEX_liquid, 0.2f);
       
@@ -391,19 +429,19 @@ public class CrafterBlocks implements ContentList{
     }};
   
     fuel_packager = new NormalCrafter("fuel_packager"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 45, Items.phaseFabric, 40, Items.silicon, 45, Items.graphite, 30));
       size = 2;
       autoSelect = true;
       
       newConsume();
-      consume.time(90);
-      consume.items(ItemStack.with(SglItems.uranium_235, 2, SglItems.strengthening_alloy, 3));
+      consume.time(120);
+      consume.items(ItemStack.with(SglItems.uranium_235, 2, SglItems.strengthening_alloy, 1));
       consume.power(1.5f);
       newProduce();
       produce.item(SglItems.concentration_uranium_235, 1);
       newConsume();
-      consume.time(90);
-      consume.items(ItemStack.with(SglItems.plutonium_239, 2, SglItems.strengthening_alloy, 3));
+      consume.time(120);
+      consume.items(ItemStack.with(SglItems.plutonium_239, 2, SglItems.strengthening_alloy, 1));
       consume.power(1.5f);
       newProduce();
       produce.item(SglItems.concentration_plutonium_239, 1);
@@ -434,15 +472,15 @@ public class CrafterBlocks implements ContentList{
     }};
   
     strengthening_alloy_smelter = new NormalCrafter("strengthening_alloy_smelter"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(Items.titanium, 60, Items.thorium, 70, SglItems.aerogel, 60, Items.lead, 80, Items.silicon, 60));
       size = 3;
       itemCapacity = 20;
       
       newConsume();
       consume.time(120);
       consume.power(3.5f);
-      consume.items(ItemStack.with(SglItems.coke, 1, Items.titanium, 2, Items.thorium, 2));
-      consume.liquid(SglLiquids.mixed_chemical_gel, 0.33f);
+      consume.items(ItemStack.with(SglItems.coke, 1, Items.titanium, 3, Items.thorium, 2));
+      consume.liquid(SglLiquids.mixed_chemical_gel, 0.2f);
       newProduce();
       produce.item(SglItems.strengthening_alloy, 1);
       
@@ -484,15 +522,15 @@ public class CrafterBlocks implements ContentList{
     }};
     
     gel_mixer = new NormalCrafter("gel_mixer"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(Items.titanium, 90, Items.lead, 100, Items.thorium, 75, Items.graphite, 60, Items.metaglass, 120));
       size = 4;
       liquidCapacity = 40f;
       
       newConsume();
-      consume.time(90f);
-      consume.power(1.5f);
-      consume.items(ItemStack.with(Items.pyratite, 2));
-      consume.gas(Gases.O2, 0.6f);
+      consume.time(120f);
+      consume.power(1.8f);
+      consume.items(ItemStack.with(Items.pyratite, 1));
+      consume.gas(Gases.O2, 0.4f);
       consume.liquids(UncLiquidStack.with(SglLiquids.mixed_tar, 0.2f, Liquids.water, 0.4f));
       newProduce();
       produce.liquid(SglLiquids.mixed_chemical_gel, 0.4f);
@@ -549,9 +587,10 @@ public class CrafterBlocks implements ContentList{
   
     purifier = new NormalCrafter("purifier"){{
       size = 3;
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 70, SglItems.crystal_FEX_power, 75, Items.surgeAlloy, 80, Items.phaseFabric, 65, Items.graphite, 50));
+      
       newConsume();
-      consume.time(90f);
+      consume.time(120f);
       consume.item(SglItems.uranium_cake, 1);
       consume.power(2.2f);
       newProduce();
@@ -599,16 +638,30 @@ public class CrafterBlocks implements ContentList{
     }};
     
     thermal_centrifuge = new NormalCrafter("thermal_centrifuge"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 100, SglItems.aerogel, 80, Items.copper, 120, Items.silicon, 70, Items.plastanium, 75));
       size = 3;
       itemCapacity = 28;
+      
       newConsume();
-      consume.time(180);
+      consume.time(240);
       consume.item(SglItems.salt_uranium, 7);
       consume.power(3.2f);
-      
       newProduce();
       produce.items(ItemStack.with(SglItems.uranium_238, 3, SglItems.uranium_235, 1));
+      
+      newConsume();
+      consume.time(120);
+      consume.liquid(SglLiquids.iridium_gel, 0.4f);
+      consume.power(3);
+      newProduce();
+      produce.item(SglItems.iridium, 1);
+      
+      newConsume();
+      consume.time(120);
+      consume.item(SglItems.crush_ore, 9);
+      consume.power(2.8f);
+      newProduce();
+      produce.items(ItemStack.with(Items.sand, 3, Items.titanium, 1, Items.lead, 2, Items.thorium, 1));
       
       craftEffect = Fx.smeltsmoke;
       updateEffect = Fx.plasticburn;
@@ -645,23 +698,36 @@ public class CrafterBlocks implements ContentList{
             Draw.rect(region, entity.x(), entity.y());
             Drawf.spinSprite(rotator, entity.x(), entity.y(), entity.totalProgress*1.8f);
             Draw.rect(topRotator, entity.x(), entity.y(), -entity.totalProgress*1.2f);
-  
-            Item item = entity.consumer.current.get(SglConsumeType.item).items[0].item;
-            Draw.color(item.color);
-            Draw.alpha(entity.items.get(item) > 5? 1: 0);
-            Draw.rect(top, entity.x(), entity.y(), -entity.totalProgress*1.2f);
+            if(entity.consumer.current != null){
+              BaseConsumers cons = entity.consumer.current;
+              Color color;
+              float alpha;
+              if(cons.get(SglConsumeType.item) != null){
+                Item item = cons.get(SglConsumeType.item).items[0].item;
+                color = item.color;
+                alpha = (float)entity.items.get(item)/itemCapacity;
+              }
+              else{
+                Liquid liquid = cons.get(SglConsumeType.liquid).liquids[0].liquid;
+                color = liquid.color;
+                alpha = entity.liquids.get(liquid)/liquidCapacity;
+              }
+              Draw.color(color);
+              Draw.alpha(alpha);
+              Draw.rect(top, entity.x(), entity.y(), - entity.totalProgress*1.2f);
+            }
           };
         }
       };
     }};
   
     lattice_constructor = new NormalCrafter("lattice_constructor"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 80, SglItems.crystal_FEX_power, 60, SglItems.crystal_FEX, 75, Items.phaseFabric, 80));
       size = 3;
       
       newConsume();
       consume.time(90);
-      consume.liquid(SglLiquids.phase_FEX_liquid, 0.4f);
+      consume.liquid(SglLiquids.phase_FEX_liquid, 0.6f);
       consume.item(SglItems.strengthening_alloy, 1);
       consume.energy(1.25f);
       newProduce();
@@ -728,11 +794,11 @@ public class CrafterBlocks implements ContentList{
     }};
   
     FEX_crystal_charger = new NormalCrafter("FEX_crystal_charger"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 70, SglItems.crystal_FEX, 60, Items.metaglass, 65, Items.phaseFabric, 70, Items.plastanium, 85));
       size = 3;
       
       newConsume();
-      consume.time(90);
+      consume.time(90f);
       consume.item(SglItems.crystal_FEX, 1);
       consume.energy(2f);
       newProduce();
@@ -781,14 +847,14 @@ public class CrafterBlocks implements ContentList{
     }};
   
     matrix_cutter = new NormalCrafter("matrix_cutter"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 80, SglItems.crystal_FEX_power, 75, Items.metaglass, 80, Items.phaseFabric, 90, Items.surgeAlloy, 120));
       size = 4;
       
       newConsume();
       consume.time(120);
       consume.energy(4.85f);
-      consume.items(ItemStack.with(SglItems.crystal_FEX_power, 2, SglItems.strengthening_alloy, 3));
-      consume.liquid(SglLiquids.FEX_liquid, 0.55f);
+      consume.items(ItemStack.with(SglItems.crystal_FEX_power, 1, SglItems.strengthening_alloy, 2));
+      consume.liquid(SglLiquids.phase_FEX_liquid, 0.2f);
       newProduce();
       produce.item(SglItems.matrix_alloy, 1);
       
@@ -834,18 +900,19 @@ public class CrafterBlocks implements ContentList{
     }};
   
     polymer_gravitational_generator = new NormalCrafter("polymer_gravitational_generator"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 180, SglItems.matrix_alloy, 900, SglItems.crystal_FEX_power, 100, SglItems.crystal_FEX, 120, SglItems.iridium, 80, SglItems.aerogel, 100, Items.surgeAlloy, 80, Items.phaseFabric, 90));
       size = 5;
+      itemCapacity = 20;
       
       newConsume();
       consume.energy(5f);
       consume.items(ItemStack.with(
           SglItems.crystal_FEX_power, 2,
-          SglItems.matrix_alloy, 3,
-          SglItems.aerogel, 4,
+          SglItems.matrix_alloy, 2,
+          SglItems.aerogel, 3,
           SglItems.iridium, 2
       ));
-      consume.time(210);
+      consume.time(240);
       newProduce();
       produce.item(SglItems.degenerate_neutron_polymer, 1);
       
@@ -893,15 +960,23 @@ public class CrafterBlocks implements ContentList{
     }};
   
     hadron_reconstructor = new NormalCrafter("hadron_reconstructor"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 180, SglItems.iridium, 120, SglItems.crystal_FEX_power, 120, SglItems.matrix_alloy, 90, SglItems.aerogel, 120, Items.surgeAlloy, 90));
       size = 4;
+      itemCapacity = 24;
       
       newConsume();
       consume.time(300);
-      consume.items(ItemStack.with(Items.titanium, 5, Items.lead, 8));
+      consume.items(ItemStack.with(Items.titanium, 4, Items.lead, 5));
       consume.energy(5.5f);
       newProduce();
       produce.item(SglItems.iridium, 1);
+      
+      newConsume();
+      consume.time(240);
+      consume.items(ItemStack.with(Items.thorium, 2, Items.lead, 1));
+      consume.energy(5f);
+      newProduce();
+      produce.item(SglItems.uranium_238, 1);
       
       craftEffect = SglFx.hadronReconstruct;
       

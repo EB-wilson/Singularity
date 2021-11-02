@@ -112,7 +112,7 @@ public class ReactionModule extends BlockModule{
   }
   
   public boolean requireValid(Reaction<?, ?, ?> react, ReactContainer entity){
-    return entity.temperature() >= react.requireTemperature && entity.pressure() >= react.requirePressure;
+    return entity.absTemperature() >= react.requireTemperature && entity.pressure() >= react.requirePressure;
   }
   
   public boolean metalValid(Reaction<?, ?, ?> react, ReactContainer entity){

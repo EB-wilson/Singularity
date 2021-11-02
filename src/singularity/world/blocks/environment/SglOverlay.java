@@ -37,7 +37,7 @@ public class SglOverlay extends OverlayFloor implements UpdateTiles.Updatable{
   public void createIcons(MultiPacker packer){
     super.createIcons(packer);
     for(int i = 0; i < variants; i++){
-      PixmapRegion shadow = Core.atlas.getPixmap(name + (i + 1));
+      PixmapRegion shadow = Core.atlas.getPixmap(name + "_" + (i + 1));
       Pixmap image = shadow.crop();
       
       int offset = image.width / tilesize - 1;

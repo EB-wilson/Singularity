@@ -46,7 +46,12 @@ public class PressureValve extends GasBlock{
   
     @Override
     public float outputPressure(){
-      return Math.min(outputPressure, pressure());
+      return Math.min(outputPressure, gases.getPressure());
+    }
+  
+    @Override
+    public float pressure(){
+      return outputPressure;
     }
   
     @Override

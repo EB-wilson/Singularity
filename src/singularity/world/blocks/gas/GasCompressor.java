@@ -42,7 +42,7 @@ public class GasCompressor extends GasBlock{
   public boolean pumpOnly = false;
   
   public float minPressure = 0.22f;
-  public Func<GasCompressorBuild, Float> acceptPressure = entity -> Mathf.lerp(Sgl.atmospheres.current.getCurrPressure(), minPressure, entity.power.status);
+  public Func<GasCompressorBuild, Float> acceptPressure = entity -> Mathf.lerp(entity.gases.getPressure(), minPressure, entity.power.status);
   
   public Func<GasCompressorBuild, Float> compressPowerCons = entity -> entity.currentPressure*pressurePowerScl*(entity.gasPumping? pumpingPowerScl: 1);
   
@@ -87,7 +87,7 @@ public class GasCompressor extends GasBlock{
       @Override
       public float requestedPower(Building e){
         GasCompressorBuild entity = (GasCompressorBuild) e;
-        return compressPowerCons.get(entity)*Mathf.num(entity.gases.getPressure() < entity.currentPressure);
+        return compressPowerCons.get(entity);
       }
     });
   }
@@ -158,7 +158,7 @@ public class GasCompressor extends GasBlock{
   }
   
   public class GasCompressorBuild extends SglBuilding{
-    public float currentPressure;
+    public float currentPressure = minPressure;
     public boolean gasPumping, pumpingAtmo = true;
     
     public Seq<SglOverlay> pumpingFloors;
@@ -182,7 +182,8 @@ public class GasCompressor extends GasBlock{
   
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
-      return source.getBuilding().team == getBuilding().team && getGasBlock().hasGases() && !gasPumping && gases.getPressure() < Math.max(currentPressure*power.status, acceptPressure.get(this));
+      return source.getBuilding().team == getBuilding().team && source.getGasBlock().hasGases() && !gasPumping &&
+          source.outputPressure() > acceptPressure.get(this) && gases.getPressure() < currentPressure;
     }
   
     @Override
@@ -192,27 +193,27 @@ public class GasCompressor extends GasBlock{
     
     @Override
     public void updateTile(){
-      if(gasPumping){
-        if(gases.getPressure() >= currentPressure) return;
+      if(gasPumping && gases.getPressure() < currentPressure){
         if(pumpingAtmo){
           float atmoPressure = Sgl.atmospheres.current.getCurrPressure();
-          Sgl.atmospheres.current.eachPresent((gas, present) -> {
-            float dumping = pumpGasSpeed*Mathf.maxZero((currentPressure - atmoPressure)/atmoPressure)/10*present*power.status*delta();
-            handleGas(this, gas, dumping);
-            Sgl.atmospheres.current.remove(gas, dumping);
-          });
+          if(gases.getPressure() < currentPressure){
+            float dumping = pumpGasSpeed*Mathf.maxZero((currentPressure - atmoPressure)/atmoPressure)/10*edelta();
+            gases.distributeAtmo(dumping);
+          }
         }
         else{
           Arrays.fill(pumpRate, 0);
-          for(SglOverlay floor: pumpingFloors){
-            float diff = Mathf.maxZero(floor.gasPressure - acceptPressure.get(this));
-            float delta = diff*pumpGasSpeed*delta();
-            
-            handleGas(this, floor.gas, delta);
-            pumpRate[floor.gas.id] += delta;
-          }
-          for(int i=0; i<pumpRate.length; i++){
-            smoothRate[i] = Mathf.lerpDelta(smoothRate[i], pumpRate[i], 0.15f);
+          if(gases.getPressure() < currentPressure){
+            for(SglOverlay floor : pumpingFloors){
+              float diff = Mathf.maxZero(floor.gasPressure - acceptPressure.get(this));
+              float delta = diff*pumpGasSpeed;
+    
+              handleGas(this, floor.gas, delta*edelta());
+              pumpRate[floor.gas.id] += delta;
+            }
+            for(int i = 0; i < pumpRate.length; i++){
+              smoothRate[i] = Mathf.lerpDelta(smoothRate[i], pumpRate[i], 0.15f);
+            }
           }
         }
       }
@@ -271,7 +272,7 @@ public class GasCompressor extends GasBlock{
       table.table(Styles.black6, t -> {
         t.defaults().pad(0).margin(0);
         t.table(Tex.buttonTrans, i -> i.image(Singularity.getModAtlas("icon_pressure")).size(40)).size(50);
-        t.slider(0, maxGasPressure, 0.01f, currentPressure, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+        t.slider(minPressure, maxGasPressure, 0.01f, currentPressure, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
         t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(currentPressure*100, 2) + "kPa"));
       });
     }

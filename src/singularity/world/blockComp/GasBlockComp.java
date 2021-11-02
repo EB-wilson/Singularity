@@ -10,8 +10,10 @@ import universeCore.entityComps.blockComps.FieldGetter;
  * 必须创建的变量：
  * <pre>{@code
  *   boolean [hasGases]
+ *   boolean [outputGases]
  *   float [maxGasPressure]
  *   float [gasCapacity]
+ *   boolean [compressProtect]
  * }<pre/>
  * 若使用非默认命名则需要重写调用方法*/
 public interface GasBlockComp extends FieldGetter{
@@ -29,6 +31,10 @@ public interface GasBlockComp extends FieldGetter{
   
   default float gasCapacity(){
     return getField(float.class, "gasCapacity");
+  }
+  
+  default boolean compressProtect(){
+    return getField(boolean.class, "compressProtect");
   }
   
   default boolean classicDumpGas(){

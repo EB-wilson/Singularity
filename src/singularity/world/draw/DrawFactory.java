@@ -3,6 +3,7 @@ package singularity.world.draw;
 import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
+import arc.struct.Seq;
 import mindustry.graphics.Drawf;
 import mindustry.world.Block;
 import singularity.Singularity;
@@ -12,6 +13,7 @@ public class DrawFactory<Target extends NormalCrafter.NormalCrafterBuild> extend
   public TextureRegion rotator, top, bottom, liquid;
   
   public float rotationScl;
+  public boolean iconRotator = false;
   
   public DrawFactory(Block block){
     super(block);
@@ -20,22 +22,20 @@ public class DrawFactory<Target extends NormalCrafter.NormalCrafterBuild> extend
   @Override
   public void load(){
     super.load();
-    rotator = Core.atlas.has(block.name + "_rotator")? Core.atlas.find(block.name + "_rotator"): null;
-    top = Core.atlas.has(block.name + "_top")? Core.atlas.find(block.name + "_top"): null;
-    bottom = Core.atlas.has(block.name + "_bottom")? Core.atlas.find(block.name + "_bottom"): Singularity.getModAtlas("bottom_" + block.size);
-    liquid = Core.atlas.has(block.name + "_liquid")? Core.atlas.find(block.name + "_liquid"): null;
+    rotator = Core.atlas.find(block.name + "_rotator", Core.atlas.find(block.name + "-rotator", (TextureRegion)null));
+    top = Core.atlas.find(block.name + "_top", Core.atlas.find(block.name + "-top", (TextureRegion) null));
+    bottom = Core.atlas.find(block.name + "_bottom", Core.atlas.find(block.name + "-bottom", Singularity.getModAtlas("bottom_" + block.size)));
+    liquid = Core.atlas.find(block.name + "_liquid", Core.atlas.find(block.name + "-liquid", (TextureRegion) null));
   }
   
   @Override
   public TextureRegion[] icons(){
-    return top != null? new TextureRegion[]{
-      bottom,
-      region,
-      top
-    }: new TextureRegion[]{
-      bottom,
-      region
-    };
+    Seq<TextureRegion> result = new Seq<>();
+    result.add(bottom);
+    if(rotator != null && iconRotator) result.add(rotator);
+    result.add(region);
+    if(top != null) result.add(top);
+    return result.toArray(TextureRegion.class);
   }
   
   public class DrawFactoryDrawer extends SglDrawBlockDrawer{
@@ -47,6 +47,8 @@ public class DrawFactory<Target extends NormalCrafter.NormalCrafterBuild> extend
     public void draw(){
       Draw.rect(bottom, entity.x(), entity.y());
       Draw.rect(region, entity.x(), entity.y(), block.rotate ? entity.rotation()*90 : 0);
+      if(liquid != null) Drawf.liquid(liquid, entity.x, entity.y,
+          entity.liquids.currentAmount()/entity.block.liquidCapacity, entity.liquids.current().color, block.rotate ? entity.rotation()*90 : 0);
       if(rotator != null) Drawf.spinSprite(rotator, entity.x(), entity.y(), entity.totalProgress*rotationScl);
       if(top != null) Draw.rect(top, entity.x(), entity.y());
       Draw.blend();

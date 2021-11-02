@@ -10,5 +10,6 @@ public class SglStatCat{
       nuclear = handler.addEnumItem("nuclear", 2),
       gas = handler.addEnumItem("gas", 5),
       heat = handler.addEnumItem("heat", 6),
-      generator = handler.addEnumItem("generator", 9);
+      reaction = handler.addEnumItemTail("reaction"),
+      generator = handler.addEnumItemTail("generator");
 }

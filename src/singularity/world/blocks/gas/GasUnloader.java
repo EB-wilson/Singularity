@@ -1,4 +1,4 @@
-package singularity.world.blocks.liquid;
+package singularity.world.blocks.gas;
 
 import arc.graphics.g2d.Draw;
 import arc.scene.ui.layout.Table;
@@ -13,37 +13,40 @@ import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.blocks.ItemSelection;
-import mindustry.world.meta.BlockGroup;
+import singularity.type.Gas;
+import singularity.type.SglContents;
+import singularity.world.blockComp.GasBuildComp;
+import singularity.world.blocks.SglBlock;
+import singularity.world.meta.SglBlockGroup;
 import universeCore.entityComps.blockComps.Dumpable;
 
-import static mindustry.Vars.content;
-
-/**液体提取器，可从周围的方块中抽取液体并送向下一个方块
- * 类似物品装卸器
+/**液体提取器，可连通周围方块的气体槽，并送向下一个方块
+ * 类似物品装卸器，气体压力来自目标方块
  * @see mindustry.world.blocks.storage.Unloader*/
-public class LiquidUnloader extends Block{
+public class GasUnloader extends GasBlock{
 /**液体提取器，可从周围的方块中抽取液体并送向下一个方块*/
-  public LiquidUnloader(String name){
+  public GasUnloader(String name){
     super(name);
     update = true;
     solid = true;
     unloadable = false;
-    hasLiquids = true;
-    liquidCapacity = 10f;
     configurable = true;
-    outputsLiquid = true;
+    outputGases = true;
     saveConfig = true;
     displayFlow = false;
-    group = BlockGroup.liquids;
-
-    config(Liquid.class, (LiquidUnloadedBuild tile, Liquid l) -> tile.current = l);
-    configClear((LiquidUnloadedBuild tile) -> tile.current = null);
+    group = SglBlockGroup.gas;
   }
-
+  
+  @Override
+  public void appliedConfig(){
+    config(Gas.class, (GasUnloaderBuild tile, Gas gas) -> tile.current = gas);
+    configClear((GasUnloaderBuild tile) -> tile.current = null);
+  }
+  
   @Override
   public void setBars(){
     super.setBars();
-    bars.remove("liquid");
+    bars.remove("gasPressure");
   }
 
   @Override
@@ -51,35 +54,42 @@ public class LiquidUnloader extends Block{
     drawRequestConfigCenter(req, req.config, "center");
   }
 
-  public class LiquidUnloadedBuild extends Building implements Dumpable{
-    public @Nullable Liquid current = null;
+  public class GasUnloaderBuild extends SglBlock.SglBuilding implements Dumpable{
+    public @Nullable Gas current = null;
   
     @Override
     public Building create(Block block, Team team){
       super.create(block, team);
-      liquids = null;
+      gases = null;
       return this;
     }
   
     @Override
     public void updateTile(){
-      Building next = getDump(e -> e.block.hasLiquids && e.canUnload());
+      Building next = getDump(e -> {
+        if(!(e instanceof GasBuildComp)) return  false;
+        return ((GasBuildComp) e).getGasBlock().hasGases() && e.canUnload();
+      });
       if(next != null){
-        liquids = next.liquids;
+        gases = ((GasBuildComp)next).gases();
       }
-      else liquids = null;
+      else gases = null;
       
-      if(liquids != null){
+      if(gases != null){
         if(current != null){
-          dumpLiquid(current);
+          dumpGas(current);
         }
-        else liquids.each((l, a) -> dumpLiquid(l));
+        else gases.each(stack -> dumpGas());
       }
     }
   
     @Override
-    public boolean canDumpLiquid(Building to, Liquid liquid){
-      return super.canDumpLiquid(to, liquid) && to.liquids != liquids;
+    public void dumpGas(){
+      GasBuildComp other = (GasBuildComp) getDump(e -> {
+        if(!(e instanceof GasBuildComp)) return false;
+        return ((GasBuildComp)e).getGasBlock().hasGases() && ((GasBuildComp)e).gases() != gases;
+      });
+      if(other != null) moveGas(other);
     }
   
     @Override
@@ -95,7 +105,7 @@ public class LiquidUnloader extends Block{
 
     @Override
     public void buildConfiguration(Table table){
-      ItemSelection.buildTable(table, content.liquids(), () -> current, this::configure);
+      ItemSelection.buildTable(table, SglContents.gases(), () -> current, this::configure);
     }
 
     @Override
@@ -109,7 +119,7 @@ public class LiquidUnloader extends Block{
     }
 
     @Override
-    public Liquid config(){
+    public Gas config(){
       return current;
     }
     
@@ -133,7 +143,7 @@ public class LiquidUnloader extends Block{
     public void read(Reads read, byte revision){
       super.read(read, revision);
       int id = revision == 1 ? read.s() : read.b();
-      current = id == -1 ? null : content.liquid(id);
+      current = id == -1 ? null : SglContents.gas(id);
     }
   }
 }

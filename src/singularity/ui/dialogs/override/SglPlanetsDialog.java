@@ -21,7 +21,7 @@ import mindustry.type.Sector;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.PlanetDialog;
 import singularity.Sgl;
-import singularity.ui.tables.GasValue;
+import singularity.ui.tables.GasDisplay;
 import singularity.world.atmosphere.Atmosphere;
 import singularity.world.atmosphere.AtmosphereSector;
 
@@ -208,7 +208,7 @@ public class SglPlanetsDialog extends PlanetDialog{
             t.pane(table -> {
               table.defaults().pad(4);
               atmo.each((gas, amount) -> {
-                table.add(new GasValue(gas, amount, true, false)).left().padLeft(0)
+                table.add(new GasDisplay(gas, amount, true, false)).left().padLeft(0)
                   .get().addListener(new Tooltip(tip -> tip.background(Tex.buttonTrans).add(amount + "")));
                 table.add(Core.bundle.format("fragment.atmosphere.gasAnalyzedDelta", (atmo.getAnalyzedDelta(gas) > 0? "+": "") + atmo.getAnalyzedDelta(gas)*3600)).padLeft(60f)
                   .get().addListener(new Tooltip(tip -> tip.background(Tex.buttonTrans).add((atmo.getAnalyzedDelta(gas) > 0? "+": "") + atmo.getAnalyzedDelta(gas)*60 + Core.bundle.get("misc.preSecond"))));
@@ -324,7 +324,7 @@ public class SglPlanetsDialog extends PlanetDialog{
               table.defaults().pad(4);
               if(atmoSect.anyDisplay()){
                 atmoSect.eachDisplay((gas, amount) -> {
-                  table.add(new GasValue(gas, 0, true, false)).left().padLeft(0);
+                  table.add(new GasDisplay(gas, 0, true, false)).left().padLeft(0);
                   table.add((amount > 0? "[accent]+": "[]") + (amount*3600 > 1000 ? UI.formatAmount(((Number)(amount*3600)).longValue()) : Strings.autoFixed(amount*3600, 2)) + Core.bundle.get("misc.preMin")).padLeft(90f)
                     .get().addListener(new Tooltip(tip -> tip.background(Tex.buttonTrans).add(amount*60 + Core.bundle.get("misc.preSecond"))));
                   table.row();

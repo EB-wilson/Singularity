@@ -28,6 +28,8 @@ public interface GasBuildComp extends BuildCompBase, FieldGetter, Dumpable{
   }
   
   default float moveGas(GasBuildComp other, Gas gas){
+    if(gas == null) return moveGas(other);
+    
     if(!other.getGasBlock().hasGases() || gases().get(gas) <= 0) return 0;
     float present = gases().get(gas)/gases().total();
     
@@ -68,6 +70,11 @@ public interface GasBuildComp extends BuildCompBase, FieldGetter, Dumpable{
     
     if(gases.size > 0) other.onMoveGasThis(this, gases);
     return flowRate;
+  }
+  
+  /**当前方块内部是否可以进行气体压缩*/
+  default boolean compressing(){
+    return !getGasBlock().compressProtect();
   }
   
   default float pressure(){

@@ -1,6 +1,7 @@
 package singularity.world.reaction;
 
 import arc.math.geom.Position;
+import arc.util.Log;
 import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -23,9 +24,12 @@ import mindustry.world.modules.LiquidModule;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.Reaction;
+import singularity.world.blockComp.GasBlockComp;
 import singularity.world.blockComp.HeatBlockComp;
 import singularity.world.modules.GasesModule;
 import singularity.world.modules.ReactionModule;
+
+import static singularity.Sgl.atmospheres;
 
 public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   public Reaction<?, ?, ?> reaction;
@@ -42,10 +46,23 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   public float heat = 0;
   
   public ReactionModule reacts;
-  public HeatBlockComp block = new HeatBlockComp(){
+  
+  public static HeatBlockComp heatBlock = new HeatBlockComp(){
     @Override
     public float maxTemperature(){
       return 10;
+    }
+  };
+  
+  public static GasBlockComp gasBlock = new GasBlockComp(){
+    public final boolean hasGases = true;
+    public final boolean outputGases = false;
+    public final float gasCapacity = 100;
+    public final boolean compressProtect = false;
+  
+    @Override
+    public float maxGasPressure(){
+      return Sgl.atmospheres.current.getCurrPressure()*2;
     }
   };
   
@@ -63,9 +80,8 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
     return new ReactionPoint();
   }
   
-  public void set(Tile tile, Reaction<?, ?, ?> reaction){
+  public void set(Tile tile){
     this.tile = tile;
-    this.reaction = reaction;
     set(tile.drawx(), tile.drawy());
   }
   
@@ -73,8 +89,32 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
     if(input instanceof Item) items.add((Item)input, (int)amount);
     if(input instanceof Liquid) liquids.add((Liquid)input, amount);
     if(input instanceof Gas) gases.add((Gas)input, amount);
+    reacts.matchAll(input);
     
     heat += getHeat(input)*amount;
+  }
+  
+  @Override
+  public void setModules(){
+    try{
+      setItemModule(this.getClass().getField("items"));
+      setLiquidModule(this.getClass().getField("liquids"));
+      setGasesModule(this.getClass().getField("gases"));
+      
+      heat(atmospheres.current.getTemperature()*heatCapacity());
+    }catch(NoSuchFieldException e){
+      Log.info(e);
+    }
+  }
+  
+  @Override
+  public HeatBlockComp getHeatBlock(){
+    return heatBlock;
+  }
+  
+  @Override
+  public GasBlockComp getGasBlock(){
+    return gasBlock;
   }
   
   @Override

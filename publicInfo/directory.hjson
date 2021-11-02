@@ -4,15 +4,6 @@ pages: [
     languages: [zh_CN]
     info: https://raw.githubusercontent.com/EB-wilson/Singularity/master/publicInfo/testing_#locale#.txt
     assets: {
-      image1: {
-        location: url
-        address: https://raw.githubusercontent.com/EB-wilson/Singularity/master/publicInfo/icon.png
-        size: [300, 300]
-      }
     }
   },
-
-  {
-    title:
-  }
 ]

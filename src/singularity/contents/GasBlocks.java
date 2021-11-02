@@ -4,6 +4,7 @@ import arc.graphics.g2d.TextureRegion;
 import arc.util.Time;
 import mindustry.content.Items;
 import mindustry.ctype.ContentList;
+import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.meta.BuildVisibility;
@@ -19,24 +20,30 @@ public class GasBlocks implements ContentList{
       gas_bridge_conduit,
       phase_gas_bridge_conduit,
       iridium_gas_bridge_conduit,
-      gas_compressor,
+      filter_valve,
+      negative_filter_valve,
+      supercharger,
+      air_compressor,
+      gas_unloader,
       gas_source,
       gas_void;
   
   @Override
   public void load(){
     gas_conduit = new GasConduit("gas_conduit"){{
-      requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 100));
+      requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 1, Items.metaglass, 3));
+      gasCapacity = 5;
+      maxGasPressure = 8;
     }};
     
     pressure_valve = new PressureValve("pressure_valve"){{
-      requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 25));
-      gasCapacity = 10;
-      maxGasPressure = 20;
+      requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 2, Items.metaglass, 5));
+      gasCapacity = 5;
+      maxGasPressure = 10;
     }};
     
     gas_bridge_conduit = new GasBridge("gas_bridge_conduit"){{
-      requirements(SglCategory.gases, ItemStack.with());
+      requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 6, Items.metaglass, 6));
       range = 4;
       fadeIn = moveArrows = false;
       arrowSpacing = 6f;
@@ -44,7 +51,7 @@ public class GasBlocks implements ContentList{
     }};
     
     phase_gas_bridge_conduit = new GasBridge("phase_gas_bridge_conduit"){{
-      requirements(SglCategory.gases, ItemStack.with());
+      requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 8, Items.phaseFabric, 5, Items.metaglass, 10, Items.titanium, 4));
       range = 14;
       arrowPeriod = 0.9f;
       arrowTimeScl = 2.75f;
@@ -55,7 +62,7 @@ public class GasBlocks implements ContentList{
     }};
     
     iridium_gas_bridge_conduit = new GasBridge("iridium_gas_bridge_conduit"){{
-      requirements(SglCategory.gases, ItemStack.with());
+      requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 8, SglItems.iridium, 4, SglItems.strengthening_alloy, 5, Items.silicon, 8));
       range = 24;
       arrowPeriod = 0.7f;
       arrowTimeScl = 3f;
@@ -66,14 +73,35 @@ public class GasBlocks implements ContentList{
     }};
     
     gas_junction = new GasJunction("gas_junction"){{
+      requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 2, Items.metaglass, 2));
+    }};
+  
+    filter_valve = new GasFilter("filter_valve"){{
       requirements(SglCategory.gases, ItemStack.with());
     }};
   
-    gas_compressor = new GasCompressor("gas_compressor"){{
-      requirements(SglCategory.gases, ItemStack.with(SglItems.strengthening_alloy, 200, SglItems.aerogel, 140, Items.graphite, 175));
-      size = 3;
+    negative_filter_valve = new GasFilter("negative_filter_valve"){{
+      requirements(SglCategory.gases, ItemStack.with());
+      through = false;
+    }};
+    
+    supercharger = new GasCompressor("supercharger"){{
+      requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 20, Items.titanium, 30, Items.metaglass, 30));
+      size = 2;
       maxGasPressure = 20;
-      gasCapacity = 30;
+      gasCapacity = 15;
+      hasPump = false;
+      hasItems = true;
+      hasLiquids = true;
+    }};
+    
+    air_compressor = new GasCompressor("air_compressor"){{
+      requirements(Category.production, ItemStack.with(SglItems.strengthening_alloy, 80, SglItems.aerogel, 100, Items.graphite, 125));
+      size = 3;
+      hasItems = true;
+      maxGasPressure = 15;
+      gasCapacity = 20;
+      pumpOnly = true;
     
       draw = new DrawFrame<>(this){
         @Override
@@ -82,11 +110,11 @@ public class GasBlocks implements ContentList{
         
           TextureRegion[] rollers = new TextureRegion[4];
           for(int i=0; i<4; i++){
-            rollers[i] = Singularity.getModAtlas("gas_compressor_roller_" + i);
+            rollers[i] = Singularity.getModAtlas("air_compressor_roller_" + i);
           }
           frames = new TextureRegion[][]{
               new TextureRegion[]{Singularity.getModAtlas("bottom_3")},
-              new TextureRegion[]{Singularity.getModAtlas("gas_compressor")},
+              new TextureRegion[]{Singularity.getModAtlas("air_compressor")},
               rollers
           };
         }
@@ -111,9 +139,13 @@ public class GasBlocks implements ContentList{
         }
       };
     }};
+  
+    gas_unloader = new GasUnloader("gas_unloader"){{
+      requirements(SglCategory.gases, ItemStack.with());
+    }};
     
     gas_source = new GasSource("gas_source"){{
-      requirements(SglCategory.gases, ItemStack.empty);
+      requirements(SglCategory.gases, BuildVisibility.sandboxOnly, ItemStack.empty);
     }};
     
     gas_void = new GasVoid("gas_void"){{

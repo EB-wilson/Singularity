@@ -79,6 +79,8 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   
   /**在显示多液体输出配置时的液体选择贴图*/
   public TextureRegion liquidSelector;
+  public float warmupSpeed = 0.02f;
+  public float stopSpeed = 0.02f;
   
   /**常规的工厂类方块，具有强大的consume-produce制造系统的近乎全能的制造类方块*/
   public NormalCrafter(String name) {
@@ -346,25 +348,25 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
           producer.setCurrent();
         }
       }
-      
+  
+      producer.update();
       //Log.info("updating,data: recipeCurrent:" + recipeCurrent + ", cons valid:" + consValid() + ", prod valid:" + producer.valid);
       /*当未选择配方时不进行更新*/
       if(recipeCurrent == -1) return;
-      producer.update();
       if(block.outputsPower) generator.update();
       super.updateTile();
       
       if(consValid()){
-        progress += getProgressIncrease(consumer.current.craftTime);
-        totalProgress += warmup*delta();
-        warmup = Mathf.lerpDelta(warmup, 1, 0.02f);
+        progress += getProgressIncrease(consumer.current.craftTime)*warmup;
+        warmup = Mathf.lerpDelta(warmup, 1, warmupSpeed);
         if(Mathf.chanceDelta(updateEffectChance)){
           updateEffect.at(getX() + Mathf.range(size * 4f), getY() + Mathf.range(size * 4));
         }
       }
       else{
-        warmup = Mathf.lerpDelta(warmup, 0, 0.02f);
+        warmup = Mathf.lerpDelta(warmup, 0, stopSpeed);
       }
+      totalProgress += warmup*delta();
       
       if(progress >= 1){
         craftEffect.at(getX(), getY());
@@ -429,8 +431,8 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
           ProduceItems<?> produceItems = p.get(SglProduceType.item);
           ProduceLiquids<?> produceLiquids = p.get(SglProduceType.liquid);
           
-          icon = p.icon != null? p.icon: produceItems.items != null?
-          produceItems.items[0].item.uiIcon: produceLiquids.liquids != null?
+          icon = p.icon != null? p.icon: produceItems != null && produceItems.items != null?
+          produceItems.items[0].item.uiIcon: produceLiquids != null && produceLiquids.liquids != null?
           produceLiquids.liquids[0].liquid.uiIcon: null;
           ImageButton button = new ImageButton(icon, Styles.selecti);
           button.clicked(() -> {

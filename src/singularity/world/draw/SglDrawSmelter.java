@@ -36,7 +36,10 @@ public class SglDrawSmelter<Target extends NormalCrafter.NormalCrafterBuild> ext
   
   @Override
   public TextureRegion[] icons(){
-    return new TextureRegion[]{region};
+    return new TextureRegion[]{
+        bottom,
+        region
+    };
   }
   
   public class SglDrawSmelterDrawer extends DrawFactoryDrawer{

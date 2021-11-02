@@ -1,10 +1,7 @@
 package singularity.world.atmosphere;
 
-import arc.graphics.Color;
-import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Position;
-import arc.struct.Seq;
 import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.io.Reads;
@@ -24,20 +21,19 @@ import mindustry.world.Tile;
 import mindustry.world.blocks.environment.Floor;
 import singularity.Sgl;
 import singularity.type.Gas;
-import singularity.type.Reaction;
-import singularity.type.SglContents;
 import singularity.world.SglFx;
+import singularity.world.blockComp.GasBlockComp;
+import singularity.world.blockComp.GasBuildComp;
+import singularity.world.modules.GasesModule;
 
 @SuppressWarnings("unchecked")
-public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
+public class LeakGasArea implements Pool.Poolable, Entityc, Drawc, GasBuildComp{
   public static final float maxGasCapacity = 100;
   
   public Tile tile;
   
   public float radius;
-  public float gasAmount;
-  public Color color;
-  public Gas gas;
+  public GasesModule gases = new GasesModule(this);
   
   public transient int id = EntityGroup.nextId();
   public boolean added = false;
@@ -45,89 +41,106 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   
   public int timing;
   
+  public static GasBlockComp blockMark = new GasBlockComp(){
+    public final boolean hasGases = true;
+    public final boolean outputGases = false;
+    public final float gasCapacity = maxGasCapacity;
+    public final boolean compressProtect = false;
+  
+    @Override
+    public float maxGasPressure(){
+      return Sgl.atmospheres.current.getCurrPressure()*2;
+    }
+  };
+  
   public static LeakGasArea create(){
     return new LeakGasArea();
   }
   
+  @Override
+  public GasBlockComp getGasBlock(){
+    return blockMark;
+  }
+  
   public void set(Gas gas, float flow, Tile tile){
     this.tile = tile;
-    this.gasAmount += flow;
-    this.gas = gas;
-    this.color = gas.color;
+    gases.add(gas, flow);
     set(tile.drawx(), tile.drawy());
   }
   
   @Override
   public boolean isAdded(){
-    return false;
+    return added;
   }
   
   @Override
   public void update(){
-    float leak = Mathf.maxZero(gasAmount - maxGasCapacity);
+    float leakRate = Sgl.atmospheres.current.getCurrPressure()*gases().total()/20;
+    float total = gases.total();
+    gases.each(stack -> {
+      float present = stack.amount/total;
+      gases.remove(stack.gas, leakRate*present);
+      if(Vars.state.isCampaign()) Sgl.atmospheres.current.add(stack.gas, leakRate*present);
+    });
     
-    float leakRate = Sgl.atmospheres.current.getCurrPressure()*gasAmount/20;
-    gasAmount -= leakRate;
-    if(Vars.state.isCampaign()) Sgl.atmospheres.current.currAtmoSector.add(gas, gasAmount + leak);
-    
-    float amount = gasAmount/maxGasCapacity;
+    float amount = gases.total()/maxGasCapacity;
     radius = 5*amount;
-    float rate = Math.min(0.7f, gasAmount/10)*Time.delta;
-    
+    float rate = Math.min(0.7f, gases.total()/10)*Time.delta;
+  
     double random = Math.random();
     if(random<rate){
-      SglFx.gasLeak.at(x, y, 0, color, amount);
+      SglFx.gasLeak.at(x, y, 0, gases.color(), amount);
     }
   
     Geometry.circle(tile.x, tile.y, 5, (x, y) -> {
       Tile otherT = Vars.world.tile(x, y);
       if(otherT == tile || otherT == null) return;
-      Seq<LeakGasArea> others = Sgl.gasAreas.get(otherT);
-      if(others == null) return;
-      for(LeakGasArea other: others){
-        if(other.gas == gas) continue;
-        if(Tmp.cr1.set(tile.x, tile.y, radius/Vars.tilesize).overlaps(Tmp.cr2.set(other.tile.x, other.tile.y, other.radius/Vars.tilesize))){
-          Reaction<?, ?, ?> reaction = Sgl.reactions.match(gas, other.gas);
-          Tile t = Vars.world.tile((tile.x + other.tile.x)/2, (tile.y + other.tile.y)/2);
-          
-          if(reaction != null) Sgl.reactionPoints.transfer(t, gas, 0.4f);
-        }
+      LeakGasArea other = Sgl.gasAreas.get(otherT);
+      
+      if(other == null) return;
+      if(Tmp.cr1.set(tile.x, tile.y, radius/Vars.tilesize).overlaps(Tmp.cr2.set(other.tile.x, other.tile.y, other.radius/Vars.tilesize))){
+        Tile t = Vars.world.tile((tile.x + other.tile.x)/2, (tile.y + other.tile.y)/2);
+        
+        gases.each(stack -> {
+          float moveAmount = Math.min(stack.amount, 0.4f);
+          Sgl.reactionPoints.transfer(t, stack.gas, moveAmount);
+          gases.remove(stack.gas, moveAmount);
+        });
       }
     });
+  
+    gases.update(false);
     
     if(timing>0){
       timing--;
     }
     else{
-      if(gasAmount <= 1) remove();
+      if(gases.total() <= 1) remove();
     }
   }
   
-  public void flow(float flow){
-    gasAmount += flow;
+  public void flow(Gas gas, float flow){
+    gases.add(gas, flow);
     timing = 3;
   }
   
   @Override
   public void draw(){
-  
   }
   
   @Override
   public void read(Reads read){
     short REV = read.s();
     if (REV == 0) {
-      gas = SglContents.gas(read.i());
+      x = read.f();
       read.i();
     } else {
       if (REV != 1) throw new IllegalArgumentException("Unknown revision '" + REV + "' for entity type 'PuddleComp'");
-      gas = SglContents.gas(read.i());
+      x = read.f();
     }
-    color = gas.color;
-    gasAmount = read.f();
-    tile = TypeIO.readTile(read);
-    x = read.f();
     y = read.f();
+    gases.read(read);
+    tile = TypeIO.readTile(read);
     
     this.afterRead();
   }
@@ -140,23 +153,18 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
   @Override
   public void write(Writes writes){
     writes.s(1);
-    writes.i(gas.id);
-    writes.f(gasAmount);
-    TypeIO.writeTile(writes, tile);
     writes.f(x);
     writes.f(y);
+    gases.write(writes);
+    TypeIO.writeTile(writes, tile);
   }
   
   @Override
   public void reset(){
-    gasAmount = 0;
-    color = null;
-    gas = null;
-  
+    gases = null;
     id = EntityGroup.nextId();
     x = 0;
     y = 0;
-  
     added = false;
   }
   
@@ -166,6 +174,7 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
       Groups.all.remove(this);
       Groups.draw.remove(this);
       this.added = false;
+      gases = null;
       Sgl.gasAreas.remove(this);
       Groups.queueFree(this);
     }
@@ -176,6 +185,7 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc{
     if (!added) {
       Groups.all.add(this);
       Groups.draw.add(this);
+      gases = new GasesModule(this);
       added = true;
     }
   }

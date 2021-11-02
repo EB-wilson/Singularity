@@ -2,9 +2,11 @@ package singularity.world.modules;
 
 import arc.func.Cons;
 import arc.func.Cons2;
+import arc.graphics.Color;
 import arc.math.WindowedMean;
 import arc.struct.IntSet;
 import arc.util.Interval;
+import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -42,6 +44,8 @@ public class GasesModule extends BlockModule{
   protected float[] flowRate = new float[gasesLength];
   protected IntSet flows = new IntSet();
   
+  protected Color gasColor, smoothColor = Color.white.cpy();
+  
   public GasesModule(GasBuildComp entity, boolean initContains){
     this.entity = entity;
     tile = entity.getBuilding();
@@ -55,8 +59,8 @@ public class GasesModule extends BlockModule{
   }
   
   public void update(boolean showFlow){
-    each(stack -> {
-      float pressure = entity.pressure();
+    if(entity.compressing()) each(stack -> {
+      float pressure = getPressure();
       Gas gas = stack.gas;
       if(gas.compressible()){
         if(gas.compLiquid()){
@@ -79,17 +83,17 @@ public class GasesModule extends BlockModule{
           
                 if(itemComp[item.item.id] >= item.consumeLiquid){
                   produce(item.item);
-                  itemComp[item.item.id] = 0;
+                  itemComp[item.item.id] %= 1;
                 }
               }
             }
             else{
               remove(gas, item.consumeGas/item.compTime);
-              itemComp[item.item.id] += item.consumeLiquid/item.compTime;
+              itemComp[item.item.id] += item.consumeGas/item.compTime;
         
               if(itemComp[item.item.id] >= item.consumeGas){
                 produce(item.item);
-                itemComp[item.item.id] = 0;
+                itemComp[item.item.id] %= 1;
               }
             }
           }
@@ -97,13 +101,21 @@ public class GasesModule extends BlockModule{
       }
     });
   
+    gasColor = Color.black.cpy();
+    each(stack -> {
+      gasColor.add(stack.gas.color.cpy().mul(stack.amount/total()));
+    });
+    gasColor.a(getPressure()/entity.getGasBlock().maxGasPressure()*0.75f);
+    
+    smoothColor.lerp(gasColor, 0.15f*Time.delta);
+  
     if(showFlow){
       if(flowTimer.get(1, pollScl)){
         boolean inTime = flowTimer.get(updateInterval);
         
         for(int id=0; id<gases.length; id++){
           if(flowMeans[id] == null) flowMeans[id] = new WindowedMean(windowSize);
-          flowMeans[id].add(cacheFlow[id]);
+          flowMeans[id].add(cacheFlow[id]*Time.delta);
           if(cacheFlow[id] > 0) flows.add(id);
           cacheFlow[id] = 0;
   
@@ -202,6 +214,7 @@ public class GasesModule extends BlockModule{
   
   public void clear(){
     gases = new float[SglContents.gases().size];
+    total = 0;
   }
   
   public float total(){
@@ -218,17 +231,21 @@ public class GasesModule extends BlockModule{
     }
   }
   
-  protected void distributeAtmo(){
+  public void distributeAtmo(){
+    distributeAtmo(entity.getGasBlock().gasCapacity()*Sgl.atmospheres.current.getCurrPressure());
+  }
+  
+  public void distributeAtmo(float total){
     Atmosphere curr = Sgl.atmospheres.current;
-    float t = curr.total();
-    float p = curr.getCurrPressure();
-    float capacity = entity.getGasBlock().gasCapacity();
-    float totalGradient = p*capacity;
     
-    curr.each((gas, amount) -> {
-      float gradient = (amount/t)*totalGradient;
-      add(gas, gradient);
+    curr.eachPresent((gas, rate) ->{
+      add(gas, rate*total);
+      if(Vars.state.isCampaign()) Sgl.atmospheres.current.remove(gas, rate*total);
     });
+  }
+  
+  public Color color(){
+    return smoothColor;
   }
   
   @Override

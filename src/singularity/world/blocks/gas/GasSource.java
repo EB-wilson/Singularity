@@ -2,6 +2,7 @@ package singularity.world.blocks.gas;
 
 import arc.graphics.g2d.Draw;
 import arc.scene.ui.layout.Table;
+import arc.struct.Seq;
 import arc.util.Eachable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -15,13 +16,16 @@ public class GasSource extends GasBlock{
   public GasSource(String name){
     super(name);
     solid = true;
-    gasCapacity = 100f;
+    gasCapacity = 10f;
     maxGasPressure = 100f;
     configurable = true;
     outputGases = true;
     saveConfig = true;
     noUpdateDisabled = true;
-    
+  }
+  
+  @Override
+  public void appliedConfig(){
     config(Gas.class, (GasSourceBuild tile, Gas g) -> tile.source = g);
     configClear((GasSourceBuild tile) -> tile.source = null);
   }
@@ -43,10 +47,15 @@ public class GasSource extends GasBlock{
     
     @Override
     public void updateTile(){
+      gases.clear();
       if(source == null){
-        gases.clear();
+        Seq<Gas> allGases = SglContents.gases();
+        for(Gas gas: allGases){
+          gases.set(gas, gasCapacity*((float) 1/allGases.size));
+        }
+        dumpGas();
       }else{
-        gases.set(source, liquidCapacity);
+        gases.set(source, gasCapacity);
         dumpGas(source);
       }
     }

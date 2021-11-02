@@ -90,14 +90,16 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public boolean hasGases;
   /**方块是否输出气体*/
   public boolean outputGases;
-  /***/
+  /**是否分类输出气体*/
   public boolean classicDumpGas;
   /**是否显示气体流量*/
   public boolean showGasFlow;
+  /**方块是否有气体压缩保护，即气体在其中是否不能被压缩*/
+  public boolean compressProtect;
   /**方块允许的最大气体压强*/
-  public float maxGasPressure = 7.8f;
+  public float maxGasPressure = 8f;
   /**气体容积*/
-  public float gasCapacity = 20f;
+  public float gasCapacity = 10f;
   
   /**是否显示当前选择的配方*/
   public boolean displaySelectPrescripts = false;
@@ -123,6 +125,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public TextureRegion prescriptSelector;
   
   public String otherLiquidStr = Core.bundle.get("fragment.bars.otherLiquids");
+  public int maxShowFlow = 5;
   
   public SglBlock(String name) {
     super(name);
@@ -247,8 +250,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public NuclearEnergyModule energy;
     public GasesModule gases;
     
-    public boolean showGasClassic;
-    
     public float smoothPressure = 0;
     
     public SglBaseDrawer<? extends SglBuilding> drawer;
@@ -354,13 +355,14 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public void drawStatus(){
       if(this.block.enableDrawStatus && this.block().consumers.size() > 0) {
-        float brcx = this.tile.drawx() + (float)(this.block.size * 8) / 2.0F - 4.0F;
-        float brcy = this.tile.drawy() - (float)(this.block.size * 8) / 2.0F + 4.0F;
+        float multiplier = block.size > 1 ? 1.0F : 0.64F;
+        float brcx = this.tile.drawx() + (float)(this.block.size * 8)/2.0F - 8*multiplier/2;
+        float brcy = this.tile.drawy() - (float)(this.block.size * 8)/2.0F + 8*multiplier/2;
         Draw.z(71.0F);
         Draw.color(Pal.gray);
-        Fill.square(brcx, brcy, 2.5F, 45.0F);
+        Fill.square(brcx, brcy, 2.5F*multiplier, 45.0F);
         Draw.color(status == SglBlockStatus.proper? status().color: Color.valueOf("#000000"));
-        Fill.square(brcx, brcy, 1.5F, 45.0F);
+        Fill.square(brcx, brcy, 1.5F*multiplier, 45.0F);
         Draw.color();
       }
     }
@@ -416,8 +418,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       }
   
       super.update();
-      
-      showGasClassic = false;
     }
     
     public void updateDisplayLiquid(){
@@ -538,20 +538,22 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
           Runnable rebuild = () -> {
             l.clearChildren();
             l.left();
-            if(showGasClassic){
-              gases.eachFlow((gas, flow) -> {
-                if(flow < 0.01f) return;
-                l.image(() -> gas.uiIcon).padRight(3f);
-                l.label(() -> flow < 0 ? "..." : Strings.fixed(flow, 2) + Core.bundle.get("misc.preSecond")).color(Color.lightGray);
+            Seq<GasStack> gasesFlow = new Seq<>();
+            float[] flowing = {0};
+            gases.eachFlow((gas, flow) -> {
+              if(flow < 0.01f) return;
+              gasesFlow.add(new GasStack(gas, flow));
+              flowing[0] += flow;
+            });
+            
+            if(gasesFlow.size < maxShowFlow){
+              for(GasStack stack: gasesFlow){
+                l.image(() -> stack.gas.uiIcon).padRight(3f);
+                l.label(() -> stack.amount < 0 ? "..." : Strings.fixed(stack.amount, 2) + Core.bundle.get("misc.preSecond")).color(Color.lightGray);
                 l.row();
-              });
+              }
             }
             else{
-              float[] flowing = {0};
-              gases.eachFlow((gas,flow) -> {
-                if(flow < 0.01f) return;
-                flowing[0] += flow;
-              });
               l.add(Core.bundle.get("misc.gasFlowRate") + ": " + flowing[0] + Core.bundle.get("misc.preSecond"));
             }
           };
