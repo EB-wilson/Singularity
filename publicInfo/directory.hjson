@@ -3,7 +3,5 @@ pages: [
     title: testing
     languages: [zh_CN]
     info: https://raw.githubusercontent.com/EB-wilson/Singularity/master/publicInfo/testing_#locale#.txt
-    assets: {
-    }
   },
 ]

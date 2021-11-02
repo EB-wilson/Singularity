@@ -127,36 +127,38 @@ public class PublicInfoDialog extends BaseListDialog{
     ObjectMap<String, TextureRegion> atlas = new ObjectMap<>();
     ObjectMap<String, float[]> atlasSize = new ObjectMap<>();
     
-    Jval.JsonMap assets = sect.get("assets").asObject();
-    Log.info(assets.toString());
-    
-    for(ObjectMap.Entry<String, Jval> asset : assets){
-      if(!atlas.containsKey(asset.key)){
-        Jval.JsonArray size = asset.value.get("size").asArray();
-        atlasSize.put(asset.key, new float[]{size.get(0).asFloat(), size.get(1).asFloat()});
+    if(sect.has("assets")){
+      Jval.JsonMap assets = sect.get("assets").asObject();
+      Log.info(assets.toString());
+  
+      for(ObjectMap.Entry<String, Jval> asset : assets){
+        if(! atlas.containsKey(asset.key)){
+          Jval.JsonArray size = asset.value.get("size").asArray();
+          atlasSize.put(asset.key, new float[]{size.get(0).asFloat(), size.get(1).asFloat()});
+      
+          if(asset.value.get("location").asString().equals("url")){
+            TextureRegion region;
+            atlas.put(asset.key, region = Core.atlas.find("nomap"));
         
-        if(asset.value.get("location").asString().equals("url")){
-          TextureRegion region;
-          atlas.put(asset.key, region = Core.atlas.find("nomap"));
-          
-          Runnable[] r = new Runnable[]{() -> {}};
-          r[0] = () -> Http.get(asset.value.get("address").asString(), res -> {
-            Pixmap pix = new Pixmap(res.getResult());
-            Core.app.post(() -> {
-              try{
-                Texture tex = new Texture(pix);
-                tex.setFilter(Texture.TextureFilter.linear);
-                region.set(tex);
-                pix.dispose();
-              }catch(Exception e){
-                Log.err(e);
-              }
-            });
-          }, e -> r[0].run());
-          
-          r[0].run();
+            Runnable[] r = new Runnable[]{() -> {
+            }};
+            r[0] = () -> Http.get(asset.value.get("address").asString(), res -> {
+              Pixmap pix = new Pixmap(res.getResult());
+              Core.app.post(() -> {
+                try{
+                  Texture tex = new Texture(pix);
+                  tex.setFilter(Texture.TextureFilter.linear);
+                  region.set(tex);
+                  pix.dispose();
+                }catch(Exception e){
+                  Log.err(e);
+                }
+              });
+            }, e -> r[0].run());
+        
+            r[0].run();
+          }else atlas.put(asset.key, Core.atlas.find(asset.value.get("address").asString()));
         }
-        else atlas.put(asset.key, Core.atlas.find(asset.value.get("address").asString()));
       }
     }
     
@@ -183,8 +185,8 @@ public class PublicInfoDialog extends BaseListDialog{
         
         UncCore.cellActions.add(new CellChangeColorAction(cell, infoTable, cell.get().color.cpy().a(1), 30));
         UncCore.cellActions.add(new CellAction(cell, infoTable, 30){
-          float p = pad + 60;
-          float to = pad;
+          final float p = pad + 60;
+          final float to = pad;
           float curr = pad + 60;
           float currP = pad;
     
