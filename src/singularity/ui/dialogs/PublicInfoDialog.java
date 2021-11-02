@@ -171,8 +171,7 @@ public class PublicInfoDialog extends BaseListDialog{
     
     String currLang = Core.settings.getString("locale");
     
-    String language = !currLang.equals("en") && languages.contains(currLang)? currLang: "";
-    String url = sect.get("info").asString().replace(langRegex, language);
+    String url = sect.get("info").asString().replace(langRegex, currLang);
     
     String title = titles.get(sect.get("title").asString()).get(currLang).asString();
     
@@ -185,7 +184,7 @@ public class PublicInfoDialog extends BaseListDialog{
         
         UncCore.cellActions.add(new CellChangeColorAction(cell, infoTable, cell.get().color.cpy().a(1), 30));
         UncCore.cellActions.add(new CellAction(cell, infoTable, 30){
-          final float p = pad + 60;
+          float p = pad + 60;
           final float to = pad;
           float curr = pad + 60;
           float currP = pad;
