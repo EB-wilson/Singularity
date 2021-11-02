@@ -1,4 +1,4 @@
 testing: {
-  en: [accent]industry test[]
-  zh_CN: [accent]工业测试[]
+  en: "[accent]industry test[]"
+  zh_CN: "[accent]工业测试[]"
 }
