@@ -279,6 +279,7 @@ public class PublicInfoDialog extends BaseListDialog{
         t.button(Core.bundle.get("misc.refresh"), () -> {
           lastTest = timeout = connectSucceed = false;
           time = 0;
+          UncCore.cellActions.clear();
           UncCore.cellActions.add(new CellChangeColorAction(cell, this, t.color.cpy().a(0), 60));
   
           ExecutorService exec = FieldHandler.getValue(Http.class, "exec", null);
@@ -296,6 +297,7 @@ public class PublicInfoDialog extends BaseListDialog{
         if(!lastTest && timeout){
           lastTest = true;
   
+          UncCore.cellActions.clear();
           UncCore.cellActions.add(new CellChangeColorAction(cell, this, t.color.cpy().a(1), 60));
         }
       });
