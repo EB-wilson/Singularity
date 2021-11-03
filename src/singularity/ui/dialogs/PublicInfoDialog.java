@@ -179,7 +179,7 @@ public class PublicInfoDialog extends BaseListDialog{
       infoTable.clear();
       
       if(pages.containsKey(url)){
-        Cell<Table> cell = infoTable.add(pages.get(url)).grow().padTop(pad + 60).padBottom(pad);
+        Cell<Table> cell = infoTable.add(pages.get(url)).left().grow().padLeft(pad).padTop(pad + 60).padBottom(pad);
         cell.color(cell.get().color.cpy().a(0));
         
         UncCore.cellActions.clear();
