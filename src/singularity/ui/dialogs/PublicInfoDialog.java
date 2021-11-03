@@ -184,7 +184,7 @@ public class PublicInfoDialog extends BaseListDialog{
         
         UncCore.cellActions.add(new CellChangeColorAction(cell, infoTable, cell.get().color.cpy().a(1), 30));
         UncCore.cellActions.add(new CellAction(cell, infoTable, 30){
-          float p = pad + 60;
+          final float p = pad + 60;
           final float to = pad;
           float curr = pad + 60;
           float currP = pad;
@@ -214,12 +214,12 @@ public class PublicInfoDialog extends BaseListDialog{
               TextureRegion region = atlas.get(image);
               float[] size = atlasSize.get(image);
       
-              float iWidth = Math.min(width - margin*2 - pad - itemBoardWidth, size[0]);
+              float iWidth = Math.min(width - margin*2 - pad*2 - itemBoardWidth - 55, size[0]);
               float scl = iWidth/size[0];
       
               infoContainer.image(region).size(size[0]*scl, size[1]*scl);
             }else{
-              infoContainer.add(str).growX().fillY();
+              infoContainer.add(str).growY().left().padLeft(4).width(width - itemBoardWidth - margin*2 - pad*2 - 55).get().setWrap(true);
             }
             infoContainer.row();
           }
