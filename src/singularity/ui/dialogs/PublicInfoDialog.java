@@ -176,12 +176,13 @@ public class PublicInfoDialog extends BaseListDialog{
     String title = titles.get(sect.get("title").asString()).get(currLang).asString();
     
     loadPage = () -> {
-      infoTable.clearChildren();
+      infoTable.clear();
       
       if(pages.containsKey(url)){
         Cell<Table> cell = infoTable.add(pages.get(url)).grow().padTop(pad + 60).padBottom(pad);
         cell.color(cell.get().color.cpy().a(0));
         
+        UncCore.cellActions.clear();
         UncCore.cellActions.add(new CellChangeColorAction(cell, infoTable, cell.get().color.cpy().a(1), 30));
         UncCore.cellActions.add(new CellAction(cell, infoTable, 30){
           final float p = pad + 60;
@@ -205,7 +206,7 @@ public class PublicInfoDialog extends BaseListDialog{
           loading.finish();
           
           Table infoContainer = new Table();
-          infoContainer.defaults().grow().margin(margin).pad(pad);
+          infoContainer.defaults().grow().margin(margin).padTop(pad);
           String[] strs = result.getResultAsString().split("\n");
   
           for(String str : strs){
@@ -219,7 +220,7 @@ public class PublicInfoDialog extends BaseListDialog{
       
               infoContainer.image(region).size(size[0]*scl, size[1]*scl);
             }else{
-              infoContainer.add(str).growY().left().padLeft(4).width(width - itemBoardWidth - margin*2 - pad*2 - 55).get().setWrap(true);
+              infoContainer.add(str).fillY().left().padLeft(4).width(width - itemBoardWidth - margin*2 - pad*2 - 55).get().setWrap(true);
             }
             infoContainer.row();
           }
