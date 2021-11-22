@@ -37,6 +37,7 @@ import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeItems;
 import universeCore.world.consumers.UncConsumeType;
 import universeCore.world.producers.BaseProduce;
+import universeCore.world.producers.ProducePower;
 
 import static mindustry.Vars.state;
 import static mindustry.Vars.tilesize;
@@ -61,7 +62,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     hasEnergy = true;
     outputEnergy = true;
     autoSelect = true;
-    onlyCreatFirst = false;
+    canSelect = false;
     
     draw = new DrawNuclearReactor(this);
   }
@@ -156,6 +157,21 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     }
   }
   
+  @Override
+  public float maxTemperature(){
+    return maxTemperature;
+  }
+  
+  @Override
+  public float heatCoefficient(){
+    return heatCoefficient;
+  }
+  
+  @Override
+  public float baseHeatCapacity(){
+    return baseHeatCapacity;
+  }
+  
   public class NuclearReactorBuild extends NormalCrafterBuild implements HeatBuildComp{
     public float heat;
     public float lastMulti;
@@ -176,13 +192,26 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     }
   
     @Override
+    public float heat(){
+      return heat;
+    }
+  
+    @Override
+    public void heat(float heat){
+      this.heat = heat;
+    }
+  
+    @Override
     public float heatCapacity(){
       return baseHeatCapacity;
     }
   
     @Override
+    public void heatCapacity(float value){}
+  
+    @Override
     public float productMultiplier(BaseProduce<?> prod){
-      if(!(prod instanceof ProduceEnergy)) return 1;
+      if(!(prod instanceof ProduceEnergy) && !(prod instanceof ProducePower)) return 1;
       int total = 0;
       for(BaseConsumers cons: consumer.get()){
         UncConsumeItems<?> ci = cons.get(UncConsumeType.item);

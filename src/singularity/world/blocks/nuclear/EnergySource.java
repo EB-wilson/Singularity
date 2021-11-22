@@ -1,7 +1,5 @@
 package singularity.world.blocks.nuclear;
 
-import arc.Core;
-import arc.graphics.g2d.Draw;
 import arc.scene.ui.layout.Table;
 import arc.util.Strings;
 import arc.util.io.Reads;
@@ -9,7 +7,6 @@ import arc.util.io.Writes;
 import mindustry.gen.Tex;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
-import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.world.meta.Env;
 import singularity.Singularity;
@@ -18,12 +15,12 @@ import singularity.world.blockComp.NuclearEnergyBuildComp;
 
 import static mindustry.Vars.tilesize;
 
-public class EnergySource extends NuclearBlock{
+public class EnergySource extends NuclearPipeNode{
   public EnergySource(String name){
     super(name);
     energyCapacity = 1024;
     outputEnergy = true;
-    consumeEnergy = true;
+    consumeEnergy = false;
     energyBuffered = true;
     configurable = true;
     saveConfig = true;
@@ -37,17 +34,7 @@ public class EnergySource extends NuclearBlock{
     configClear((EnergySourceBuild tile) -> tile.outputEnergy = 0);
   }
   
-  @Override
-  public void setBars(){
-    super.setBars();
-    bars.add("energy", e -> new Bar(
-      () -> Core.bundle.get("fragment.bars.potentialNuclearEnergy"),
-      () -> Pal.bar,
-      () -> ((NuclearEnergyBuildComp)e).getEnergy() / energyCapacity
-    ));
-  }
-  
-  public class EnergySourceBuild extends SglBuilding{
+  public class EnergySourceBuild extends NuclearPipeNodeBuild{
     protected float outputEnergy = 0;
   
     @Override
@@ -89,12 +76,7 @@ public class EnergySource extends NuclearBlock{
   
     @Override
     public boolean acceptEnergy(NuclearEnergyBuildComp source){
-      return source.getEnergy() > getEnergy();
-    }
-    
-    @Override
-    public void draw(){
-      Draw.rect(region, x, y);
+      return false;
     }
   
     @Override

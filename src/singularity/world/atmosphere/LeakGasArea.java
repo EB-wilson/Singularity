@@ -1,8 +1,9 @@
 package singularity.world.atmosphere;
 
+import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Position;
-import arc.util.Time;
+import arc.struct.Seq;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -11,14 +12,13 @@ import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.core.World;
 import mindustry.entities.EntityGroup;
-import mindustry.gen.Drawc;
-import mindustry.gen.Entityc;
-import mindustry.gen.Groups;
-import mindustry.gen.Unitc;
+import mindustry.gen.*;
 import mindustry.io.TypeIO;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.environment.Floor;
+import mindustry.world.modules.ItemModule;
+import mindustry.world.modules.LiquidModule;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.world.SglFx;
@@ -41,15 +41,31 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc, GasBuildComp{
   
   public int timing;
   
+  @SuppressWarnings("all")
   public static GasBlockComp blockMark = new GasBlockComp(){
-    public final boolean hasGases = true;
-    public final boolean outputGases = false;
-    public final float gasCapacity = maxGasCapacity;
-    public final boolean compressProtect = false;
+    @Override
+    public boolean hasGases(){
+      return true;
+    }
+  
+    @Override
+    public boolean outputGases(){
+      return false;
+    }
   
     @Override
     public float maxGasPressure(){
       return Sgl.atmospheres.current.getCurrPressure()*2;
+    }
+  
+    @Override
+    public float gasCapacity(){
+      return maxGasCapacity;
+    }
+  
+    @Override
+    public boolean compressProtect(){
+      return false;
     }
   };
   
@@ -60,6 +76,11 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc, GasBuildComp{
   @Override
   public GasBlockComp getGasBlock(){
     return blockMark;
+  }
+  
+  @Override
+  public GasesModule gases(){
+    return gases;
   }
   
   public void set(Gas gas, float flow, Tile tile){
@@ -75,7 +96,7 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc, GasBuildComp{
   
   @Override
   public void update(){
-    float leakRate = Sgl.atmospheres.current.getCurrPressure()*gases().total()/20;
+    float leakRate = Sgl.atmospheres.current.getCurrPressure()*gases().total()/24;
     float total = gases.total();
     gases.each(stack -> {
       float present = stack.amount/total;
@@ -85,10 +106,9 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc, GasBuildComp{
     
     float amount = gases.total()/maxGasCapacity;
     radius = 5*amount;
-    float rate = Math.min(0.7f, gases.total()/10)*Time.delta;
-  
-    double random = Math.random();
-    if(random<rate){
+    float rate = Math.min(0.7f, gases.total()/10);
+    
+    if(Mathf.chanceDelta(rate)){
       SglFx.gasLeak.at(x, y, 0, gases.color(), amount);
     }
   
@@ -109,7 +129,7 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc, GasBuildComp{
       }
     });
   
-    gases.update(false);
+    gases.update(false, false);
     
     if(timing>0){
       timing--;
@@ -330,5 +350,25 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc, GasBuildComp{
   @Override
   public void y(float y){
     this.y = y;
+  }
+  
+  @Override
+  public ItemModule items(){
+    return null;
+  }
+  
+  @Override
+  public LiquidModule liquids(){
+    return null;
+  }
+  
+  @Override
+  public byte getCdump(){
+    return 0;
+  }
+  
+  @Override
+  public Seq<Building> getDumps(){
+    return null;
   }
 }

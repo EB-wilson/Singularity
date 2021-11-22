@@ -10,7 +10,7 @@ import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
-import mindustry.ctype.MappableContent;
+import mindustry.ctype.UnlockableContent;
 import mindustry.entities.Puddles;
 import mindustry.gen.Building;
 import mindustry.type.Item;
@@ -26,14 +26,14 @@ import singularity.world.blockComp.GasBuildComp;
 import java.util.Arrays;
 
 public class GasesModule extends BlockModule{
+  private static final Color tempColor = new Color();
   private static final int windowSize = 3, updateInterval = 60;
   private static final int gasesLength = SglContents.gases().size;
   private static final Interval flowTimer = new Interval(2);
   private static final float pollScl = 20f;
   
   protected final GasBuildComp entity;
-  protected final Building tile;
-  protected boolean initContains;
+  protected final Building build;
   
   protected float[] itemComp = new float[Vars.content.items().size];
   protected float[] gases = new float[gasesLength];
@@ -44,12 +44,11 @@ public class GasesModule extends BlockModule{
   protected float[] flowRate = new float[gasesLength];
   protected IntSet flows = new IntSet();
   
-  protected Color gasColor, smoothColor = Color.white.cpy();
+  protected Color gasColor = new Color(), smoothColor = Color.white.cpy();
   
   public GasesModule(GasBuildComp entity, boolean initContains){
     this.entity = entity;
-    tile = entity.getBuilding();
-    this.initContains = initContains;
+    build = entity.getBuilding();
     
     if(initContains) distributeAtmo();
   }
@@ -58,52 +57,17 @@ public class GasesModule extends BlockModule{
     this(entity, true);
   }
   
-  public void update(boolean showFlow){
-    if(entity.compressing()) each(stack -> {
-      float pressure = getPressure();
+  public void update(boolean showFlow, boolean compress){
+    if(compress) each(stack -> {
       Gas gas = stack.gas;
       if(gas.compressible()){
-        if(gas.compLiquid()){
-          Gas.CompressLiquid liquid = gas.getCompressLiquid();
-          if(pressure > liquid.requirePressure){
-            gases[gas.id] -= liquid.consumeGas;
-      
-            produce(liquid.liquid);
-          }
-        }
-  
-        if(gas.compItem()){
-          Gas.CompressItem item = gas.getCompressItem();
-    
-          if(pressure > item.requirePressure){
-            if(gas.multiComp() && tile.block.hasLiquids){
-              if(tile.liquids.get(item.liquid) > item.consumeLiquid/item.compTime){
-                tile.liquids.remove(item.liquid, item.consumeLiquid/item.compTime);
-                itemComp[item.item.id] += item.consumeLiquid/item.compTime;
-          
-                if(itemComp[item.item.id] >= item.consumeLiquid){
-                  produce(item.item);
-                  itemComp[item.item.id] %= 1;
-                }
-              }
-            }
-            else{
-              remove(gas, item.consumeGas/item.compTime);
-              itemComp[item.item.id] += item.consumeGas/item.compTime;
-        
-              if(itemComp[item.item.id] >= item.consumeGas){
-                produce(item.item);
-                itemComp[item.item.id] %= 1;
-              }
-            }
-          }
-        }
+        doCompress(gas);
       }
     });
   
-    gasColor = Color.black.cpy();
+    gasColor.set(Color.black);
     each(stack -> {
-      gasColor.add(stack.gas.color.cpy().mul(stack.amount/total()));
+      gasColor.add(tempColor.set(stack.gas.color).mul(stack.amount/total()));
     });
     gasColor.a(getPressure()/entity.getGasBlock().maxGasPressure()*0.75f);
     
@@ -111,11 +75,12 @@ public class GasesModule extends BlockModule{
   
     if(showFlow){
       if(flowTimer.get(1, pollScl)){
+        if(flowMeans == null) flowMeans = new WindowedMean[gasesLength];
         boolean inTime = flowTimer.get(updateInterval);
         
         for(int id=0; id<gases.length; id++){
           if(flowMeans[id] == null) flowMeans[id] = new WindowedMean(windowSize);
-          flowMeans[id].add(cacheFlow[id]*Time.delta);
+          flowMeans[id].add(cacheFlow[id]);
           if(cacheFlow[id] > 0) flows.add(id);
           cacheFlow[id] = 0;
   
@@ -126,23 +91,63 @@ public class GasesModule extends BlockModule{
       }
     }
     else{
-      flowMeans = new WindowedMean[gasesLength];
+      flowMeans = null;
       flows.clear();
     }
   }
   
-  public void produce(MappableContent object){
+  public void doCompress(Gas gas){
+    float delta = Time.delta;
+    if(gas.compLiquid()){
+      Gas.CompressLiquid liquid = gas.getCompressLiquid();
+      if(getPressure() > liquid.requirePressure){
+        gases[gas.id] -= liquid.consumeGas*delta;
+  
+        produce(liquid.liquid);
+      }
+    }
+    
+    if(gas.compItem()){
+      Gas.CompressItem item = gas.getCompressItem();
+
+      if(getPressure() > item.requirePressure){
+        if(gas.multiComp() && build.block.hasLiquids){
+          if(build.liquids.get(item.liquid) > item.consumeLiquid/item.compTime){
+            build.liquids.remove(item.liquid, item.consumeLiquid/item.compTime*delta);
+            itemComp[item.item.id] += item.consumeLiquid/item.compTime*delta;
+      
+            if(itemComp[item.item.id] >= item.consumeLiquid){
+              produce(item.item);
+              itemComp[item.item.id] %= 1;
+            }
+          }
+        }
+        else{
+          remove(gas, item.consumeGas/item.compTime*delta);
+          itemComp[item.item.id] += item.consumeGas/item.compTime*delta;
+    
+          if(itemComp[item.item.id] >= item.consumeGas){
+            produce(item.item);
+            itemComp[item.item.id] %= 1;
+          }
+        }
+      }
+    }
+  }
+  
+  public void produce(UnlockableContent object){
+    float delta = Time.delta;
     if(object instanceof Item){
-      if(tile.block.hasItems && tile.items.get((Item)object) < tile.block.itemCapacity){
-        tile.items.add((Item)object, 1);
+      if(build.block.hasItems && build.items.get((Item)object) < build.block.itemCapacity){
+        build.items.add((Item)object, 1);
       }
     }
     else if(object instanceof Liquid){
-      if(tile.block.hasLiquids && tile.liquids.get((Liquid)object) < tile.block.liquidCapacity){
-        tile.liquids.add((Liquid)object, 1);
+      if(build.block.hasLiquids && build.liquids.get((Liquid)object) < build.block.liquidCapacity){
+        build.liquids.add((Liquid)object, delta);
       }
       else{
-        Puddles.deposit(tile.tile, (Liquid)object, 1);
+        Puddles.deposit(build.tile, (Liquid)object, delta);
       }
     }
   }

@@ -15,15 +15,19 @@ import static arc.Core.settings;
 public class Sgl{
   /**此mod内部名称*/
   public static final String modName = "singularity";
+  /**此mod前置的内部名称*/
+  public static final String libName = "universe-core";
   /**最大多方块结构尺寸限制*/
-  public static final int maxStructSizeLimit = 50;
+  public static final int maxStructureSize = 50;
   /**空白实体数组*/
   public static final Seq<Building> empty = new Seq<>(0);
   
   /**本模组的文件位置*/
   public static final Fi modDirectory = settings.getDataDirectory().child("mods");
   /**本模组的文件位置*/
-  public static final Fi modFile = getModFile(modName);
+  public static final Fi modFile = getModFile(modName, true);
+  /**本模组前置的文件位置*/
+  public static final Fi libFile = getModFile(libName, false);
   /**模组内配置文件存放位置*/
   public static final Fi internalConfigDir = modFile.child("config");
   /**模组数据文件夹*/
@@ -84,7 +88,7 @@ public class Sgl{
     if(Vars.state.isGame()) updateTiles.update();
   }
   
-  public static Fi getModFile(String modName){
+  public static Fi getModFile(String modName, boolean zip){
     Fi[] modsFiles = modDirectory.list();
     Fi temp = null;
     
@@ -94,7 +98,7 @@ public class Sgl{
       Fi modManifest = zipped.child("mod.hjson").exists()? zipped.child("mod.hjson"): zipped.child("mod.json");
       if(modManifest.exists()){
         String name = Jval.read(modManifest.readString()).get("name").toString();
-        if(name.equals(modName)) temp = zipped;
+        if(name.equals(modName)) temp = zip? zipped: file;
       }
     }
     

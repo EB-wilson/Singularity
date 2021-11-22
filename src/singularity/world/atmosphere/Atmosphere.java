@@ -142,6 +142,10 @@ public class Atmosphere{
     return heat/heatCapacity;
   }
   
+  public void handleHeat(float heat){
+    this.heat += heat;
+  }
+  
   public float total(){
     return total;
   }

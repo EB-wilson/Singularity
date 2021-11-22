@@ -1,6 +1,5 @@
 package singularity.world.modules;
 
-import mindustry.ctype.MappableContent;
 import universeCore.entityComps.blockComps.ConsumerBuildComp;
 import universeCore.world.blockModule.BaseConsumeModule;
 import universeCore.world.consumers.BaseConsumers;

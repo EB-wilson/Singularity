@@ -4,8 +4,8 @@ plugins {
 
 version 'alpha-0.1'
 
-project.sourceCompatibility = 11
-project.targetCompatibility = 11
+sourceCompatibility = 11
+targetCompatibility = 11
 
 sourceSets.main.java.srcDirs = ["src"]
 

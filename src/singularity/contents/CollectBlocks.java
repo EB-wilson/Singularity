@@ -6,6 +6,7 @@ import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.ctype.ContentList;
+import mindustry.graphics.Drawf;
 import mindustry.type.Category;
 import mindustry.world.Block;
 import mindustry.world.meta.Stat;
@@ -38,12 +39,12 @@ public class CollectBlocks implements ContentList {
       
       newConsume();
       consume.power(1.8f);
-      newBooster(2.0f);
-      consume.time(60f);
+      newBooster(2.1f);
+      consume.time(240f);
       consume.item(SglItems.dry_ice, 1);
-      newBooster(1.9f);
+      newBooster(2.0f);
       consume.liquid(Liquids.cryofluid, 0.08f);
-      newBooster(1.8f);
+      newBooster(1.75f);
       consume.liquid(Liquids.water, 0.1f);
     }};
     
@@ -52,6 +53,7 @@ public class CollectBlocks implements ContentList {
       size = 2;
       liquidCapacity = 24;
       oneOfOptionCons = true;
+      health = 180;
       
       setAttrBooster(SglAttribute.bitumen, 1.12f);
       
@@ -96,7 +98,7 @@ public class CollectBlocks implements ContentList {
           
           Draw.rect(bottom, e.x, e.y);
           Draw.rect(region, e.x, e.y);
-          Draw.rect(rotator, e.x, e.y, e.totalProgress*1.5f);
+          Drawf.spinSprite(rotator, e.x, e.y, e.totalProgress*1.5f);
           Draw.color(color);
           Draw.alpha(alpha);
           Draw.rect(liquid, e.x, e.y);

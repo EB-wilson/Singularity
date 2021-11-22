@@ -13,11 +13,13 @@ import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.blocks.ItemSelection;
+import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.SglContents;
 import singularity.world.blockComp.GasBuildComp;
 import singularity.world.blocks.SglBlock;
 import singularity.world.meta.SglBlockGroup;
+import singularity.world.modules.GasesModule;
 import universeCore.entityComps.blockComps.Dumpable;
 
 /**液体提取器，可连通周围方块的气体槽，并送向下一个方块
@@ -34,6 +36,7 @@ public class GasUnloader extends GasBlock{
     outputGases = true;
     saveConfig = true;
     displayFlow = false;
+    compressProtect = true;
     group = SglBlockGroup.gas;
   }
   
@@ -56,11 +59,12 @@ public class GasUnloader extends GasBlock{
 
   public class GasUnloaderBuild extends SglBlock.SglBuilding implements Dumpable{
     public @Nullable Gas current = null;
+    public GasesModule tempGases;
   
     @Override
     public Building create(Block block, Team team){
       super.create(block, team);
-      gases = null;
+      tempGases = gases;
       return this;
     }
   
@@ -73,9 +77,9 @@ public class GasUnloader extends GasBlock{
       if(next != null){
         gases = ((GasBuildComp)next).gases();
       }
-      else gases = null;
+      else gases = tempGases;
       
-      if(gases != null){
+      if(gases != tempGases){
         if(current != null){
           dumpGas(current);
         }
@@ -98,7 +102,7 @@ public class GasUnloader extends GasBlock{
       
       if(current != null){
         Draw.color(current.color);
-        Draw.rect(name + "_top", x, y);
+        Draw.rect(Sgl.modName + "-gases_center", x, y);
         Draw.color();
       }
     }
@@ -122,7 +126,12 @@ public class GasUnloader extends GasBlock{
     public Gas config(){
       return current;
     }
-    
+  
+    @Override
+    public boolean acceptGas(GasBuildComp source, Gas gas){
+      return false;
+    }
+  
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
       return false;

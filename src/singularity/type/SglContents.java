@@ -8,6 +8,7 @@ import static mindustry.Vars.content;
 public class SglContents{
   public static ContentType gas = SglContentType.gas.value;
   public static ContentType ability = SglContentType.ability.value;
+  public static ContentType structure = SglContentType.structure.value;
   public static ContentType reaction = SglContentType.reaction.value;
   
   public static Seq<Gas> gases(){
@@ -32,6 +33,18 @@ public class SglContents{
   
   public static Ability ability(String name){
     return content.getByName(ability, name);
+  }
+  
+  public static Seq<Reaction<?, ?, ?>> structures(){
+    return content.getBy(structure);
+  }
+  
+  public static Reaction<?, ?, ?> structure(int id){
+    return content.getByID(structure, id);
+  }
+  
+  public static Reaction<?, ?, ?> structure(String name){
+    return content.getByName(structure, name);
   }
   
   public static Seq<Reaction<?, ?, ?>> reactions(){

@@ -8,7 +8,7 @@ import mindustry.type.Liquid;
 public class SglLiquids implements ContentList{
   /**FEX流体*/
   public static Liquid FEX_liquid,
-  /***/
+  /**相位态FEX流体*/
   phase_FEX_liquid,
   /**混合化工凝胶*/
   mixed_chemical_gel,
@@ -16,6 +16,8 @@ public class SglLiquids implements ContentList{
   iridium_gel,
   /**润滑剂*/
   lubricant,
+  /**藻泥*/
+  algae_mud,
   /**岩层沥青*/
   rock_bitumen,
   /**混合焦油*/
@@ -44,7 +46,7 @@ public class SglLiquids implements ContentList{
       heatCapacity = 0.7f;
       explosiveness = 0f;
       flammability = 1f;
-      temperature = 0.8f;
+      temperature = 0.5f;
       viscosity = 0.9f;
     }};
     
@@ -52,7 +54,7 @@ public class SglLiquids implements ContentList{
       heatCapacity = 0.75f;
       explosiveness = 0;
       flammability = 0.7f;
-      temperature = 1.2f;
+      temperature = 0.55f;
       viscosity = 0.9f;
     }};
     
@@ -62,6 +64,14 @@ public class SglLiquids implements ContentList{
       flammability = 0f;
       temperature = 0.4f;
       viscosity = 0.2f;
+    }};
+  
+    algae_mud = new Liquid("algae_mud", Color.valueOf("#6EA145")){{
+      heatCapacity = 0.4f;
+      explosiveness = 0f;
+      flammability = 0f;
+      temperature = 0.5f;
+      viscosity = 0.5f;
     }};
     
     rock_bitumen = new Liquid("rock_bitumen", Color.valueOf("#808A73")){{

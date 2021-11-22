@@ -6,7 +6,9 @@ import arc.scene.ui.layout.Table;
 import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import mindustry.content.Bullets;
 import mindustry.core.UI;
+import mindustry.entities.Fires;
 import mindustry.entities.Puddles;
 import mindustry.game.Team;
 import mindustry.gen.Building;
@@ -17,6 +19,7 @@ import mindustry.type.Liquid;
 import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
+import mindustry.world.blocks.storage.Unloader;
 import mindustry.world.consumers.ConsumePower;
 import mindustry.world.consumers.ConsumeType;
 import singularity.Sgl;
@@ -27,17 +30,23 @@ import singularity.world.blockComp.GasBuildComp;
 import singularity.world.blockComp.HeatBlockComp;
 import singularity.world.blockComp.HeatBuildComp;
 import singularity.world.blocks.SglBlock;
+import singularity.world.blocks.gas.GasUnloader;
+import singularity.world.blocks.liquid.LiquidUnloader;
 import singularity.world.meta.SglStatUnit;
+import singularity.world.modules.GasesModule;
 import singularity.world.modules.ReactionModule;
 import singularity.world.reaction.ReactContainer;
+import universeCore.util.handler.FieldHandler;
+
+import java.lang.reflect.Field;
 
 public class ReactionKettle extends SglBlock implements HeatBlockComp{
-  public float totalItemCapacity = 60;
-  public float heatCoefficient = 0.2f;
+  public float totalItemCapacity = 150;
+  public float heatCoefficient = 0.35f;
   public float totalLiquidCapacity = 60;
-  public float maxTemperature = 920;
+  public float maxTemperature = 1000;
   public float baseHeatCapacity = 600;
-  public float productHeat = 30000f;
+  public float productHeat = 24000f;
   
   public ReactionKettle(String name){
     super(name);
@@ -49,6 +58,8 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
     outputsLiquid = false;
     hasGases = true;
     outputGases = false;
+    
+    compressProtect = true;
     
     configurable = true;
     
@@ -96,6 +107,21 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
     ));
   }
   
+  @Override
+  public float maxTemperature(){
+    return maxTemperature;
+  }
+  
+  @Override
+  public float heatCoefficient(){
+    return heatCoefficient;
+  }
+  
+  @Override
+  public float baseHeatCapacity(){
+    return baseHeatCapacity;
+  }
+  
   public class ReactionKettleBuild extends SglBuilding implements ReactContainer{
     public float heat;
     public float internalTemperature;
@@ -111,9 +137,22 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   
       setModules();
       internalTemperature = Sgl.atmospheres.current.getAbsTemperature();
+      gases.distributeAtmo(Sgl.atmospheres.current.getCurrPressure()*gasCapacity/(internalTemperature*heatR));
       heat = internalTemperature*heatCapacity();
       
       return this;
+    }
+  
+    @Override
+    public void setGasesModule(Field gases){
+      FieldHandler.setValue(gases, this, new GasesModule(this, false){
+        @Override
+        public void add(Gas gas, float amount){
+          super.add(gas, amount);
+          handleHeat(getHeat(gas)*amount);
+          updateHeatCapacity(gas, amount);
+        }
+      });
     }
   
     @Override
@@ -139,7 +178,10 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
         if(react.product.isItem){
           if(items.get((Item) react.product.get()) > itemCapacity){
             int lost = items.get((Item) react.product.get()) - itemCapacity;
-      
+            if(react.product.getItem().flammability > 0.5f && temperature() > 200) Fires.create(tile);
+            if(Mathf.chance(0.006 * lost)){
+              Bullets.fireball.createNet(Team.derelict, x, y, Mathf.random(360f), -1f, 1f, 1f);
+            }
             items.remove((Item) react.product.get(), lost);
           }
         }
@@ -166,6 +208,11 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
       });
       
       swapHeat();
+    }
+  
+    @Override
+    public float swellCoff(GasBuildComp source){
+      return 1/(absTemperature()*heatR);
     }
   
     @Override
@@ -202,28 +249,48 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
     }
   
     @Override
+    public float heatCapacity(){
+      return heatCapacity;
+    }
+  
+    @Override
+    public void heatCapacity(float value){
+      heatCapacity = value;
+    }
+  
+    @Override
     public void heat(float heat){
       this.heat = heat;
     }
   
     @Override
+    public ReactionModule reacts(){
+      return reacts;
+    }
+  
+    @Override
+    public float heat(){
+      return heat;
+    }
+  
+    @Override
     public float pressure(){
-      return super.pressure();
+      return super.pressure()*absTemperature()*heatR;
     }
   
     @Override
     public boolean acceptItem(Building source, Item item){
-      return hasItems && items.get(item) < itemCapacity && items.total() < totalItemCapacity;
+      return hasItems && items.get(item) < itemCapacity && items.total() < totalItemCapacity && !(source.block instanceof Unloader);
     }
   
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return hasLiquids && liquids.get(liquid) < liquidCapacity && liquids.total() < totalLiquidCapacity;
+      return hasLiquids && liquids.get(liquid) < liquidCapacity && liquids.total() < totalLiquidCapacity && !(source.block instanceof LiquidUnloader);
     }
   
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
-      return hasGases && source.getBuilding().team == this.team && pressure() < maxGasPressure;
+      return hasGases && source.getBuilding().team == this.team && pressure() < maxGasPressure && !(source.getBlock() instanceof GasUnloader);
     }
   
     @Override

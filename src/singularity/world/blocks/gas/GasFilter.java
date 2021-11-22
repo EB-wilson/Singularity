@@ -3,16 +3,14 @@ package singularity.world.blocks.gas;
 import arc.graphics.g2d.Draw;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
-import arc.struct.Seq;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.gen.Building;
 import mindustry.world.blocks.ItemSelection;
+import singularity.Sgl;
 import singularity.type.Gas;
-import singularity.type.GasStack;
 import singularity.type.SglContents;
 import singularity.world.blockComp.GasBuildComp;
-import singularity.world.modules.GasesModule;
 
 public class GasFilter extends GasJunction{
   public boolean through = true;
@@ -30,56 +28,31 @@ public class GasFilter extends GasJunction{
   
   public class GasFilterBuild extends GasJunctionBuild{
     public Gas gas;
-    public int outCount;
   
     @Override
-    public float moveGas(GasBuildComp other){
-      if(!other.getGasBlock().hasGases()) return 0;
-      int index = getIndex(other);
-      GasesModule gases = gasesBuffer[index];
-      GasBuildComp sideL = (GasBuildComp) nearby(Mathf.mod(index + 1, 4)), sideR = (GasBuildComp) nearby(Mathf.mod(index - 1, 4));
-    
-      float total = gases.total();
-      float[] flow = {0};
-      
-      gases.each(stack -> {
-        float present = gases.get(stack.gas)/total;
-        GasBuildComp out, oth;
-        
-        out = other;
-        if(sideL != null && sideR != null){
-          oth = outCount%2 == 0? sideL: sideR;
-        }
-        else oth = sideL != null? sideL: sideR;
-        
-        if(through){
-          GasBuildComp tmp = out;
-          out = oth;
-          oth = tmp;
-        }
-        
-        GasBuildComp dest;
-        if(stack.gas == gas && out != null && out.acceptGas(this, stack.gas)){
-          dest = out;
-        }
-        else if(oth != null && oth.acceptGas(this, stack.gas)){
-          dest = oth;
-        }
-        else return;
-        
-        float otherTotal = dest.gases().total();
+    public GasBuildComp getGasDestination(GasBuildComp source, Gas gas){
+      if(!enabled) return this;
   
-        float fract = (gases.getPressure() - dest.pressure())/Math.max(getGasBlock().maxGasPressure(), dest.getGasBlock().maxGasPressure());
-        float flowRate = Math.min(fract*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity(), total);
-        flow[0] += flowRate = Math.min(flowRate, dest.getGasBlock().gasCapacity()*dest.getGasBlock().maxGasPressure() - otherTotal)*present;
-  
-        dest.handleGas(this, stack.gas, flowRate);
-        gases.remove(stack.gas, flowRate);
-        dest.onMoveGasThis(this, Seq.with(new GasStack(stack.gas, flowRate)));
-      });
+      int dir = source.getBuilding().relativeTo(tile.x, tile.y);
+      dir = (dir + 4) % 4;
+      GasBuildComp next = nearby(dir) instanceof GasBuildComp? (GasBuildComp) nearby(dir) :null;
+      int finalDir = dir;
+      GasBuildComp other = (GasBuildComp) getDump(e -> e instanceof GasBuildComp &&
+          ((nearby(Mathf.mod(finalDir + 1, 4)) == e || nearby(Mathf.mod(finalDir - 1, 4)) == e) && ((GasBuildComp) e).acceptGas(source, gas)));
       
-      outCount++;
-      return flow[0];
+      if(through){
+        GasBuildComp temp = next;
+        next = other;
+        other = temp;
+      }
+      
+      if(gas == this.gas && next != null && next.acceptGas(source, gas)){
+        return next;
+      }
+      else if(other != null){
+        return other;
+      }
+      else return this;
     }
   
     @Override
@@ -91,7 +64,7 @@ public class GasFilter extends GasJunction{
         Draw.rect("cross", x, y);
       }else{
         Draw.color(gas.color);
-        Draw.rect("center", x, y);
+        Draw.rect(Sgl.modName + "-gases_center", x, y);
         Draw.color();
       }
     }

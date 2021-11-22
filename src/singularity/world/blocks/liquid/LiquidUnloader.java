@@ -2,6 +2,7 @@ package singularity.world.blocks.liquid;
 
 import arc.graphics.g2d.Draw;
 import arc.scene.ui.layout.Table;
+import arc.struct.Seq;
 import arc.util.Eachable;
 import arc.util.Nullable;
 import arc.util.io.Reads;
@@ -14,6 +15,7 @@ import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.blocks.ItemSelection;
 import mindustry.world.meta.BlockGroup;
+import mindustry.world.modules.LiquidModule;
 import universeCore.entityComps.blockComps.Dumpable;
 
 import static mindustry.Vars.content;
@@ -53,11 +55,13 @@ public class LiquidUnloader extends Block{
 
   public class LiquidUnloadedBuild extends Building implements Dumpable{
     public @Nullable Liquid current = null;
+    
+    public LiquidModule tempLiquid = new LiquidModule();
   
     @Override
     public Building create(Block block, Team team){
       super.create(block, team);
-      liquids = null;
+      tempLiquid = liquids;
       return this;
     }
   
@@ -67,9 +71,9 @@ public class LiquidUnloader extends Block{
       if(next != null){
         liquids = next.liquids;
       }
-      else liquids = null;
+      else liquids = tempLiquid;
       
-      if(liquids != null){
+      if(liquids != tempLiquid){
         if(current != null){
           dumpLiquid(current);
         }
@@ -134,6 +138,16 @@ public class LiquidUnloader extends Block{
       super.read(read, revision);
       int id = revision == 1 ? read.s() : read.b();
       current = id == -1 ? null : content.liquid(id);
+    }
+  
+    @Override
+    public byte getCdump(){
+      return cdump;
+    }
+  
+    @Override
+    public Seq<Building> getDumps(){
+      return proximity;
     }
   }
 }

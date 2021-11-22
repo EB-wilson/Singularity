@@ -18,7 +18,7 @@ public class AtmosphereSector{
   private final float[] chance = new float[delta.length];
   private final WindowedMean[] means = new WindowedMean[delta.length];
   
-  protected int subordinateId;
+  public int subordinateId;
   
   protected boolean initialized;
   protected boolean analyzed;

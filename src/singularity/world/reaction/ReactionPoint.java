@@ -1,6 +1,7 @@
 package singularity.world.reaction;
 
 import arc.math.geom.Position;
+import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Time;
 import arc.util.io.Reads;
@@ -8,9 +9,10 @@ import arc.util.io.Writes;
 import arc.util.pooling.Pool;
 import mindustry.Vars;
 import mindustry.content.Blocks;
-import mindustry.ctype.MappableContent;
+import mindustry.ctype.UnlockableContent;
 import mindustry.entities.EntityGroup;
 import mindustry.entities.Puddles;
+import mindustry.gen.Building;
 import mindustry.gen.Entityc;
 import mindustry.gen.Groups;
 import mindustry.gen.Unitc;
@@ -23,7 +25,6 @@ import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
 import singularity.Sgl;
 import singularity.type.Gas;
-import singularity.type.Reaction;
 import singularity.world.blockComp.GasBlockComp;
 import singularity.world.blockComp.HeatBlockComp;
 import singularity.world.modules.GasesModule;
@@ -32,7 +33,6 @@ import singularity.world.modules.ReactionModule;
 import static singularity.Sgl.atmospheres;
 
 public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
-  public Reaction<?, ?, ?> reaction;
   public Tile tile;
   
   public boolean added;
@@ -49,20 +49,46 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   
   public static HeatBlockComp heatBlock = new HeatBlockComp(){
     @Override
+    public float heatCoefficient(){
+      return 10;
+    }
+  
+    @Override
+    public float baseHeatCapacity(){
+      return 1;
+    }
+  
+    @Override
     public float maxTemperature(){
       return 10;
     }
   };
   
+  @SuppressWarnings("all")
   public static GasBlockComp gasBlock = new GasBlockComp(){
-    public final boolean hasGases = true;
-    public final boolean outputGases = false;
-    public final float gasCapacity = 100;
-    public final boolean compressProtect = false;
+    @Override
+    public boolean hasGases(){
+      return true;
+    }
+  
+    @Override
+    public boolean outputGases(){
+      return false;
+    }
   
     @Override
     public float maxGasPressure(){
       return Sgl.atmospheres.current.getCurrPressure()*2;
+    }
+  
+    @Override
+    public float gasCapacity(){
+      return 100;
+    }
+  
+    @Override
+    public boolean compressProtect(){
+      return false;
     }
   };
   
@@ -85,7 +111,7 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
     set(tile.drawx(), tile.drawy());
   }
   
-  public void addMaterial(MappableContent input, float amount){
+  public void addMaterial(UnlockableContent input, float amount){
     if(input instanceof Item) items.add((Item)input, (int)amount);
     if(input instanceof Liquid) liquids.add((Liquid)input, amount);
     if(input instanceof Gas) gases.add((Gas)input, amount);
@@ -127,8 +153,23 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   public void afterRead(){}
   
   @Override
+  public int id(){
+    return id;
+  }
+  
+  @Override
   public boolean isAdded(){
     return added;
+  }
+  
+  @Override
+  public float heatCapacity(){
+    return heatCapacity;
+  }
+  
+  @Override
+  public void heatCapacity(float value){
+    heatCapacity = value;
   }
   
   @Override
@@ -137,8 +178,58 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   }
   
   @Override
+  public Tile tile(){
+    return tile;
+  }
+  
+  @Override
+  public float getY(){
+    return y;
+  }
+  
+  @Override
+  public float x(){
+    return x;
+  }
+  
+  @Override
+  public float y(){
+    return y;
+  }
+  
+  @Override
+  public ReactionModule reacts(){
+    return reacts;
+  }
+  
+  @Override
+  public ItemModule items(){
+    return items;
+  }
+  
+  @Override
+  public LiquidModule liquids(){
+    return liquids;
+  }
+  
+  @Override
+  public GasesModule gases(){
+    return gases;
+  }
+  
+  @Override
+  public float heat(){
+    return heat;
+  }
+  
+  @Override
   public float pressure(){
     return Sgl.atmospheres.current.getCurrPressure();
+  }
+  
+  @Override
+  public float getX(){
+    return x;
   }
   
   @Override
@@ -204,7 +295,6 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   
   @Override
   public void reset(){
-    reaction = null;
     tile = null;
     id = EntityGroup.nextId();
     time = 0;
@@ -296,5 +386,15 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   @Override
   public void y(float y){
     this.y = y;
+  }
+  
+  @Override
+  public byte getCdump(){
+    return 0;
+  }
+  
+  @Override
+  public Seq<Building> getDumps(){
+    return null;
   }
 }

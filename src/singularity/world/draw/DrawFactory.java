@@ -1,6 +1,7 @@
 package singularity.world.draw;
 
 import arc.Core;
+import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.struct.Seq;
@@ -38,6 +39,14 @@ public class DrawFactory<Target extends NormalCrafter.NormalCrafterBuild> extend
     return result.toArray(TextureRegion.class);
   }
   
+  public float liquidAlpha(Target entity){
+    return entity.liquids.currentAmount()/entity.block.liquidCapacity;
+  }
+  
+  public Color liquidColor(Target entity){
+    return entity.liquids.current().color;
+  }
+  
   public class DrawFactoryDrawer extends SglDrawBlockDrawer{
     public DrawFactoryDrawer(Target entity){
       super(entity);
@@ -48,7 +57,7 @@ public class DrawFactory<Target extends NormalCrafter.NormalCrafterBuild> extend
       Draw.rect(bottom, entity.x(), entity.y());
       Draw.rect(region, entity.x(), entity.y(), block.rotate ? entity.rotation()*90 : 0);
       if(liquid != null) Drawf.liquid(liquid, entity.x, entity.y,
-          entity.liquids.currentAmount()/entity.block.liquidCapacity, entity.liquids.current().color, block.rotate ? entity.rotation()*90 : 0);
+          liquidAlpha(entity), liquidColor(entity), block.rotate ? entity.rotation()*90 : 0);
       if(rotator != null) Drawf.spinSprite(rotator, entity.x(), entity.y(), entity.totalProgress*rotationScl);
       if(top != null) Draw.rect(top, entity.x(), entity.y());
       Draw.blend();

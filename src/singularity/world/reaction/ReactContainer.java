@@ -11,27 +11,15 @@ import singularity.world.modules.GasesModule;
 import singularity.world.modules.ReactionModule;
 
 public interface ReactContainer extends Posc, HeatBuildComp, GasBuildComp{
-  default ReactionModule reacts(){
-    return getField(ReactionModule.class, "reacts");
-  }
+  ReactionModule reacts();
   
-  default ItemModule items(){
-    return getField(ItemModule.class, "items");
-  }
+  ItemModule items();
   
-  default LiquidModule liquids(){
-    return getField(LiquidModule.class, "liquids");
-  }
+  LiquidModule liquids();
   
-  default GasesModule gases(){
-    return getField(GasesModule.class, "gases");
-  }
+  GasesModule gases();
   
-  default float heat(){
-    return getField(float.class, "heat");
-  }
-  
-  float pressure();
+  float heat();
   
   @Override
   default int tileY() {
@@ -39,37 +27,26 @@ public interface ReactContainer extends Posc, HeatBuildComp, GasBuildComp{
   }
   
   @Override
-  default float getX(){
-    return getField(int.class, "x");
-  }
+  float getX();
   
   void heat(float heat);
   
-  default Tile tile(){
-    return getField(Tile.class, "tile");
-  }
+  Tile tile();
   
   @Override
   default int tileX() {
     return World.toTile(x());
   }
-  @Override
-  default float getY(){
-    return getField(int.class, "y");
-  }
   
   @Override
-  default float x(){
-    return getField(int.class, "x");
-  }
+  float getY();
   
   @Override
-  default float y(){
-    return getField(int.class, "y");
-  }
+  float x();
   
   @Override
-  default int id(){
-    return getField(int.class, "id");
-  }
+  float y();
+  
+  @Override
+  int id();
 }

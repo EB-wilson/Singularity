@@ -11,6 +11,7 @@ import mindustry.world.Block;
 import mindustry.world.meta.BuildVisibility;
 import singularity.type.SglCategory;
 import singularity.world.blocks.nuclear.EnergySource;
+import singularity.world.blocks.nuclear.EnergyVoid;
 import singularity.world.blocks.nuclear.NuclearPipeNode;
 import singularity.world.blocks.nuclear.NuclearReactor;
 import singularity.world.blocks.product.NormalCrafter;
@@ -19,35 +20,37 @@ import singularity.world.draw.DrawFactory;
 import static singularity.world.blockComp.HeatBuildComp.getLiquidAbsTemperature;
 
 public class NuclearBlocks implements ContentList{
-  /**核能管道*/
+  /**核能塔座*/
   public static Block nuclear_pipe_node,
-  /***/
+  /**相位核能塔*/
   phase_pipe_node,
-  /***/
+  /**衰变仓*/
   decay_bin,
-  /***/
+  /**核反应堆*/
   nuclear_reactor,
   /**核能源*/
-  nuclear_energy_source;
+  nuclear_energy_source,
+  /**核能黑洞*/
+  nuclear_energy_void;
   
   @Override
   public void load(){
     nuclear_pipe_node = new NuclearPipeNode("nuclear_pipe_node"){{
-      requirements(SglCategory.nuclear, ItemStack.with(Items.titanium, 75));
+      requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 8, SglItems.crystal_FEX, 4));
     }};
     
     phase_pipe_node = new NuclearPipeNode("phase_pipe_node"){{
-      requirements(SglCategory.nuclear, ItemStack.with());
+      requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 24, SglItems.crystal_FEX, 16, Items.phaseFabric, 15));
       size = 2;
       maxLinks = 10;
       linkRange = 18;
     }};
     
     decay_bin = new NormalCrafter("decay_bin"){{
-      requirements(SglCategory.nuclear, ItemStack.with());
+      requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 60, SglItems.crystal_FEX, 40, Items.silicon, 50, Items.lead, 80, Items.metaglass, 40));
       size = 2;
       autoSelect = true;
-      onlyCreatFirst = false;
+      canSelect = false;
       
       newConsume();
       consume.time(600);
@@ -96,13 +99,13 @@ public class NuclearBlocks implements ContentList{
     }};
     
     nuclear_reactor = new NuclearReactor("nuclear_reactor"){{
-      requirements(SglCategory.nuclear, ItemStack.with());
+      requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 200, SglItems.crystal_FEX, 160, SglItems.aerogel, 180, Items.lead, 180, Items.phaseFabric, 140));
       size = 4;
       itemCapacity = 35;
       liquidCapacity = 25;
       
-      newReact(SglItems.concentration_uranium_235, 450, 12, true);
-      newReact(SglItems.concentration_plutonium_239, 450, 12, true);
+      newReact(SglItems.concentration_uranium_235, 450, 8, true);
+      newReact(SglItems.concentration_plutonium_239, 450, 8, true);
       
       addCoolant(2600f);
       consume.liquid(Liquids.cryofluid, 0.2f);
@@ -115,12 +118,13 @@ public class NuclearBlocks implements ContentList{
       addTransfer(new ItemStack(SglItems.plutonium_239, 1));
       consume.time(180);
       consume.item(SglItems.uranium_238, 1);
-      addTransfer(new ItemStack(SglItems.uranium_235, 1));
-      consume.time(210);
-      consume.item(Items.thorium, 1);
     }};
   
     nuclear_energy_source = new EnergySource("nuclear_energy_source"){{
+      requirements(SglCategory.nuclear, BuildVisibility.sandboxOnly, ItemStack.empty);
+    }};
+    
+    nuclear_energy_void = new EnergyVoid("nuclear_energy_void"){{
       requirements(SglCategory.nuclear, BuildVisibility.sandboxOnly, ItemStack.empty);
     }};
   }

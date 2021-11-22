@@ -8,6 +8,7 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.Element;
 import arc.scene.ui.Label;
+import mindustry.Vars;
 import mindustry.content.Liquids;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -19,16 +20,17 @@ import singularity.ui.SglStyles;
 
 public class MainMenu extends BaseDialog {
   protected boolean launch = true;
+  private static final Runnable lookForward = () -> Vars.ui.showInfo(Core.bundle.get("mod.lookForward"));
   
   ButtonEntry[] buttonEntries = new ButtonEntry[]{
       new ButtonEntry(Singularity.getModAtlas("icon_start"), () -> Core.bundle.get(launch? "misc.startGame": "misc.backToGame"), () -> Color.white, () -> {hide(); launch = false;}),
-      new ButtonEntry(Singularity.getModAtlas("icon_database"), Core.bundle.get("misc.modDatabase"), Pal.accent, () -> {}),
-      new ButtonEntry(Singularity.getModAtlas("icon_configure"), Core.bundle.get("misc.modConfigure"), Color.lightGray, () -> {}),
+      new ButtonEntry(Singularity.getModAtlas("icon_database"), Core.bundle.get("misc.modDatabase"), Pal.accent, lookForward),
+      new ButtonEntry(Singularity.getModAtlas("icon_configure"), Core.bundle.get("misc.modConfigure"), Color.lightGray, lookForward),
       new ButtonEntry(Singularity.getModAtlas("icon_publicInfo"), () -> Core.bundle.get("misc.publicInfo"), () -> Liquids.cryofluid.color, () -> {
         Sgl.ui.publicInfo.show();
       }),
       new ButtonEntry(Singularity.getModAtlas("icon_about"), Core.bundle.get("misc.aboutMod"), Color.violet, () -> Sgl.ui.aboutDialog.show()),
-      new ButtonEntry(Singularity.getModAtlas("icon_contribute"), Core.bundle.get("misc.contribute"), Color.yellow, () -> {}),
+      new ButtonEntry(Singularity.getModAtlas("icon_contribute"), Core.bundle.get("misc.contribute"), Color.yellow, lookForward),
   };
   
   public MainMenu() {

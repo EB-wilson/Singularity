@@ -1,6 +1,7 @@
 package singularity.world.consumers;
 
 import arc.scene.ui.layout.Table;
+import arc.struct.Bits;
 import mindustry.gen.Building;
 import mindustry.world.meta.Stats;
 import singularity.world.blockComp.NuclearEnergyBuildComp;
@@ -58,7 +59,7 @@ public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & Cons
   }
   
   @Override
-  public Object[] filter(T entity) {
+  public Bits filter(T entity) {
     return null;
   }
 }

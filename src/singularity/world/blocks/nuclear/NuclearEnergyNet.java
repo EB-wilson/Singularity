@@ -49,6 +49,7 @@ public class NuclearEnergyNet{
     
     bfsQueue.addFirst(origin);
     added.add(origin);
+    all.clear();
     while(!bfsQueue.isEmpty()){
       NuclearEnergyBuildComp other = bfsQueue.removeLast();
       for(NuclearEnergyBuildComp next: other.energyLinked()){

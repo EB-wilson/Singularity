@@ -18,6 +18,7 @@ public class PressureValve extends GasBlock{
     saveConfig = true;
     configurable = true;
     canOverdrive = false;
+    compressProtect = true;
   }
   
   @Override
@@ -51,7 +52,7 @@ public class PressureValve extends GasBlock{
   
     @Override
     public float pressure(){
-      return outputPressure;
+      return Math.max(outputPressure, gases.getPressure());
     }
   
     @Override

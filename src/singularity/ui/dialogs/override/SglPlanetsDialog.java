@@ -18,6 +18,7 @@ import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.type.Planet;
 import mindustry.type.Sector;
+import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.PlanetDialog;
 import singularity.Sgl;
@@ -210,7 +211,12 @@ public class SglPlanetsDialog extends PlanetDialog{
               atmo.each((gas, amount) -> {
                 table.add(new GasDisplay(gas, amount, true, false)).left().padLeft(0)
                   .get().addListener(new Tooltip(tip -> tip.background(Tex.buttonTrans).add(amount + "")));
-                table.add(Core.bundle.format("fragment.atmosphere.gasAnalyzedDelta", (atmo.getAnalyzedDelta(gas) > 0? "+": "") + atmo.getAnalyzedDelta(gas)*3600)).padLeft(60f)
+                table.add(new Bar(
+                    () -> Strings.autoFixed(amount/atmo.total()*100, 2) + "%",
+                    () -> gas.color.cpy().a(0.7f),
+                    () -> amount/atmo.total()
+                )).growX().height(25);
+                table.add(Core.bundle.format("fragment.atmosphere.gasAnalyzedDelta", (atmo.getAnalyzedDelta(gas) > 0? "+": "") + atmo.getAnalyzedDelta(gas)*3600)).right()
                   .get().addListener(new Tooltip(tip -> tip.background(Tex.buttonTrans).add((atmo.getAnalyzedDelta(gas) > 0? "+": "") + atmo.getAnalyzedDelta(gas)*60 + Core.bundle.get("misc.preSecond"))));
                 table.row();
               });

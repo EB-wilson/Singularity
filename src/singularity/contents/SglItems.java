@@ -3,6 +3,7 @@ package singularity.contents;
 import arc.graphics.Color;
 import mindustry.ctype.ContentList;
 import mindustry.type.Item;
+import singularity.Sgl;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class SglItems implements ContentList{
@@ -34,6 +35,10 @@ public class SglItems implements ContentList{
   uranium_cake,
   /**干冰*/
   dry_ice,
+  /**绿藻块*/
+  chlorellaBlock,
+  /**绿藻素*/
+  chlorella,
   /**焦炭*/
   coke,
   /**铱*/
@@ -54,14 +59,16 @@ public class SglItems implements ContentList{
       hardness = 3;
       explosiveness = 0f;
       flammability = 0f;
-      radioactivity = 0.5f;
+      radioactivity = 0.4f;
+      cost = 1.25f;
     }};
     
     crystal_FEX_power = new Item("crystal_FEX_power", Color.valueOf("#E34248")){{
       hardness = 3;
       explosiveness = 0.6f;
       flammability = 0f;
-      radioactivity = 0.7f;
+      radioactivity = 1f;
+      cost = 1.35f;
     }};
     
     matrix_alloy = new Item("matrix_alloy", Color.valueOf("#929090")){{
@@ -69,13 +76,15 @@ public class SglItems implements ContentList{
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0f;
+      cost = 1.4f;
     }};
     
     strengthening_alloy = new Item("strengthening_alloy", Color.valueOf("#B1B1B0")){{
-      hardness = 4;
+      hardness = 5;
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0f;
+      cost = 1.25f;
     }};
     
     aerogel = new Item("aerogel", Color.valueOf("#D5EBEE")){{
@@ -83,22 +92,16 @@ public class SglItems implements ContentList{
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0f;
+      cost = 1.1f;
     }};
   
     degenerate_neutron_polymer = new Item("degenerate_neutron_polymer", Color.valueOf("#FF7FE0")){{
-      hardness = 4;
+      hardness = 9;
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0f;
+      cost = 3;
     }};
-    
-    cpu = new Item("cpu", Color.valueOf("#FFEB00")){{
-      hardness = 1;
-      explosiveness = 0f;
-      flammability = 0f;
-      radioactivity = 0f;
-    }};
-    
     
     uranium_238 = new Item("uranium_238", Color.valueOf("#7CA73D")){{
       hardness = 2;
@@ -125,70 +128,88 @@ public class SglItems implements ContentList{
       hardness = 4;
       explosiveness = 1f;
       flammability = 0f;
-      radioactivity = 1f;
+      radioactivity = 1.8f;
     }};
     
     concentration_plutonium_239 = new Item("concentration_plutonium_239", Color.valueOf("#B0B074")){{
       hardness = 4;
       explosiveness = 1f;
       flammability = 0f;
-      radioactivity = 1f;
+      radioactivity = 1.8f;
     }};
     
     uranium_cake = new Item("uranium_cake", Color.valueOf("#E67D53")){{
       hardness = 1;
       explosiveness = 0f;
       flammability = 0f;
-      radioactivity = 0.1f;
+      radioactivity = 0f;
     }};
     
-    dry_ice = new Item("dry_ice", Color.valueOf("#EDF0ED")){{
+    dry_ice = new SglItem("dry_ice", Color.valueOf("#EDF0ED")){{
       hardness = 1;
       explosiveness = 0f;
       flammability = 0f;
+      radioactivity = 0f;
+      
+      temperature = 212;
+      heatCapacity = 620;
+    }};
+  
+    chlorellaBlock = new Item("chlorellaBlock", Color.valueOf("#6CB855")){{
+      hardness = 1;
+      explosiveness = 0.4f;
+      flammability = 1.2f;
+      radioactivity = 0f;
+    }};
+  
+    chlorella = new Item("chlorella", Color.valueOf("#7BD261")){{
+      hardness = 1;
+      explosiveness = 1.2f;
+      flammability = 1.6f;
       radioactivity = 0f;
     }};
     
     coke = new Item("coke", Color.valueOf("#6A6A69")){{
       hardness = 1;
-      explosiveness = 0f;
-      flammability = 0.8f;
+      explosiveness = 1.5f;
+      flammability = 1.8f;
       radioactivity = 0f;
     }};
     
     iridium = new Item("iridium", Color.valueOf("#E4EFEF")){{
-      hardness = 4;
+      hardness = 6;
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0f;
+      cost = 2.5f;
     }};
     
-    nuclear_waste = new Item("nuclear_waste", Color.valueOf("#918245")){{
+    nuclear_waste = new Item("nuclear_waste", Color.valueOf("#AAB3AE")){{
       hardness = 1;
       explosiveness = 0f;
       flammability = 0f;
-      radioactivity = 0.4f;
+      radioactivity = 0.25f;
     }};
   
     crush_ore = new Item("crush_ore", Color.gray){{
       hardness = 1;
       explosiveness = 0f;
       flammability = 0f;
-      radioactivity = 0.3f;
+      radioactivity = 0f;
     }};
     
     crush_uranium_ore = new Item("crush_uranium_ore", Color.valueOf("#4D6D15FF")){{
       hardness = 1;
       explosiveness = 0f;
       flammability = 0f;
-      radioactivity = 0.3f;
+      radioactivity = 0f;
     }};
     
     salt_uranium = new Item("salt_uranium", Color.valueOf("#4D940C")){{
       hardness = 0;
       explosiveness = 0f;
       flammability = 0f;
-      radioactivity = 0.6f;
+      radioactivity = 0.1f;
     }};
     
     salt_iridium = new Item("salt_iridium", Color.valueOf("#D8E1E1")){{
@@ -197,5 +218,18 @@ public class SglItems implements ContentList{
       flammability = 0f;
       radioactivity = 0f;
     }};
+  }
+  
+  public static class SglItem extends Item{
+    public float temperature = -1;
+    public float heatCapacity = 550;
+    
+    public SglItem(String name, Color color){
+      super(name, color);
+    }
+    
+    public float getTemperature(){
+      return temperature > 0? temperature: Sgl.atmospheres.current.getAbsTemperature();
+    }
   }
 }

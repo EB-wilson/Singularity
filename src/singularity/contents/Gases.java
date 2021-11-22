@@ -63,7 +63,7 @@ public class Gases implements ContentList{
       flammability = 1.2f;
     }};
     
-    vapor = new Gas("vapoe", Color.white){{
+    vapor = new Gas("vapor", Color.white){{
       heatCapacity = 421;
       temperature = 292f;
       flammability = 0f;

@@ -10,7 +10,6 @@ import singularity.world.blocks.nuclear.NuclearEnergyNet;
 import singularity.world.modules.NuclearEnergyModule;
 import universeCore.entityComps.blockComps.BuildCompBase;
 import universeCore.entityComps.blockComps.Dumpable;
-import universeCore.entityComps.blockComps.FieldGetter;
 
 /**这个接口表明此Building是具有核能的方块，需要在create当中初始化一个NuclearEnergyModule
  * 必须创建的变量：
@@ -19,21 +18,16 @@ import universeCore.entityComps.blockComps.FieldGetter;
  *   Seq<NuclearEnergyBuildComp> [energyLinked]
  * }<pre/>
  * 若使用非默认命名则需要重写调用方法*/
-public interface NuclearEnergyBuildComp extends BuildCompBase, FieldGetter, Dumpable{
+public interface NuclearEnergyBuildComp extends BuildCompBase, Dumpable{
   /**获得该块的NuclearEnergyBlock*/
   default NuclearEnergyBlockComp getNuclearBlock(){
     return getBlock(NuclearEnergyBlockComp.class);
   }
   
   /**用于获得该方块的核能模块*/
-  default NuclearEnergyModule energy(){
-    return getField(NuclearEnergyModule.class, "energy");
-  }
+  NuclearEnergyModule energy();
   
-  @SuppressWarnings("unchecked")
-  default Seq<NuclearEnergyBuildComp> energyLinked(){
-    return getField(Seq.class, "energyLinked");
-  }
+  Seq<NuclearEnergyBuildComp> energyLinked();
   
   /**将核能面板显示出来，或者显示别的什么东西*/
   default void displayEnergy(Table table){
@@ -174,7 +168,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, FieldGetter, Dump
   default void dumpEnergy(){
     NuclearEnergyBuildComp dump = (NuclearEnergyBuildComp)getDump(e -> {
       if(!(e instanceof NuclearEnergyBuildComp) || e == this) return false;
-      return ((NuclearEnergyBuildComp) e).acceptEnergy(this);
+      return ((NuclearEnergyBuildComp) e).acceptEnergy(this) && getEnergyPressure((NuclearEnergyBuildComp) e) > 0;
     }, getEnergyDumpBuild());
     if(dump != null){
       moveEnergy(dump);

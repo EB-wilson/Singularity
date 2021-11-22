@@ -4,6 +4,7 @@ import arc.struct.IntMap;
 import arc.struct.Seq;
 import arc.util.Log;
 import mindustry.ctype.MappableContent;
+import mindustry.ctype.UnlockableContent;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import singularity.type.Gas;
@@ -20,7 +21,7 @@ public class Reactions{
   protected final Seq<Gas> allReactGases = new Seq<>();
   
   @SuppressWarnings("unchecked")
-  public <RA extends MappableContent, RB extends MappableContent> Reaction<RA, RB, ?> match(RA a, RB b){
+  public <RA extends UnlockableContent, RB extends UnlockableContent> Reaction<RA, RB, ?> match(RA a, RB b){
     RuntimeException exception = new RuntimeException("try use invalid type to get a reaction");
     int type = b instanceof Item? 0: b instanceof Liquid? 1: b instanceof Gas? 2: -1;
     if(type == -1) throw exception;

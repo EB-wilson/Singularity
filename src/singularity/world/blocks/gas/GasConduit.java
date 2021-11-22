@@ -28,6 +28,7 @@ import static mindustry.Vars.tilesize;
 
 public class GasConduit extends GasBlock implements Autotiler{
   public TextureRegion[] regions = new TextureRegion[5], tops = new TextureRegion[5];
+  public final int timerFlow = timers++;
   
   public boolean canLeak = true;
   
@@ -40,6 +41,7 @@ public class GasConduit extends GasBlock implements Autotiler{
     floating = true;
     conveyorPlacement = true;
     noUpdateDisabled = true;
+    unloadable = false;
   }
   
   @Override
@@ -93,7 +95,7 @@ public class GasConduit extends GasBlock implements Autotiler{
   
   public class GasConduitBuild extends SglBuilding{
     int[] blendData;
-  
+    
     @Override
     public void onProximityUpdate(){
       super.onProximityUpdate();
@@ -109,27 +111,37 @@ public class GasConduit extends GasBlock implements Autotiler{
   
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
-      return source.getBuilding().team == getBuilding().team && getGasBlock().hasGases() && pressure() < getGasBlock().maxGasPressure() &&
-          !(lookingAt(tile, rotation, source.getBuilding().tile.x, source.getBuilding().tile.y, source.getBlock()));
+      noSleep();
+      return source.getBuilding().team == getBuilding().team && pressure() < getGasBlock().maxGasPressure() &&
+          (tile != null && (source.getBuilding().relativeTo(tile.x, tile.y) + 2) % 4 != rotation);
     }
   
     @Override
     public void updateTile(){
       super.updateTile();
-      
       Tile next = this.tile.nearby(this.rotation);
-      if(next.build instanceof GasBuildComp){
-        moveGas((GasBuildComp) next.build);
-      }
-      else if(next.build == null){
-        float fract = Math.max(0, pressure() - Sgl.atmospheres.current.getCurrPressure())/getGasBlock().maxGasPressure();
-        
-        if(fract <= 0) return;
-        gases.each(stack -> {
-          float flowRate = Math.min(fract*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity()*(gases().get(stack.gas)/gases().total()), gases().get(stack.gas));
-          handleGas(this, stack.gas, -flowRate);
-          Sgl.gasAreas.pour(next, stack.gas, flowRate);
-        });
+      
+      if(gases.total() > 0.001f && timer(timerFlow, 1)){
+        if(next.build instanceof GasBuildComp){
+          moveGas((GasBuildComp) next.build);
+        }
+        else if(next.build == null && canLeak){
+          float fract = Math.max(0, pressure() - Sgl.atmospheres.current.getCurrPressure())/getGasBlock().maxGasPressure();
+    
+          if(fract <= 0.01) return;
+          gases.each(stack -> {
+            float flowRate = Math.min(fract*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity()*(gases().get(stack.gas)/gases().total()), gases().get(stack.gas));
+            handleGas(this, stack.gas, -flowRate);
+            Sgl.gasAreas.pour(next, stack.gas, flowRate);
+          });
+        }
+  
+        if(nearby(Mathf.mod(rotation + 2, 4)) == null){
+          if(pressure() < Sgl.atmospheres.current.getCurrPressure()){
+            float diff = Sgl.atmospheres.current.getCurrPressure() - pressure();
+            gases.distributeAtmo(diff*gasCapacity);
+          }
+        }
       }
     }
   

@@ -2,12 +2,13 @@ package singularity.world.consumers;
 
 import arc.Core;
 import arc.scene.ui.layout.Table;
+import arc.struct.Bits;
 import mindustry.gen.Building;
 import mindustry.ui.ReqImage;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.Stats;
-import singularity.type.Gas;
 import singularity.type.GasStack;
+import singularity.type.SglContents;
 import singularity.ui.tables.GasDisplay;
 import singularity.world.blockComp.GasBuildComp;
 import universeCore.entityComps.blockComps.ConsumerBuildComp;
@@ -72,12 +73,11 @@ public class SglConsumeGases<T extends Building & GasBuildComp & ConsumerBuildCo
   }
   
   @Override
-  public Object[] filter(T entity){
-    int i = 0;
-    Gas[] acceptGases = new Gas[gases.length];
+  public Bits filter(T entity){
+    Bits result = new Bits(SglContents.gases().size);
     for(GasStack stack: gases){
-      acceptGases[i++] = stack.gas;
+      result.set(stack.gas.id);
     }
-    return acceptGases;
+    return result;
   }
 }

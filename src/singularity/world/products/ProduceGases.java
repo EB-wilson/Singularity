@@ -60,11 +60,6 @@ public class ProduceGases<T extends Building & GasBuildComp & ProducerBuildComp>
   
   @Override
   public void dump(T entity){
-    if(entity.getGasBlock().classicDumpGas()){
-      for(GasStack stack: gases){
-        entity.dumpGas(stack.gas);
-      }
-    }
-    else entity.dumpGas();
+    entity.dumpGas();
   }
 }

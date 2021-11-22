@@ -2,15 +2,17 @@ package singularity;
 
 import arc.Core;
 import arc.Events;
+import arc.files.Fi;
 import arc.graphics.g2d.TextureRegion;
+import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Time;
 import mindustry.Vars;
 import mindustry.ctype.ContentList;
 import mindustry.mod.Mod;
+import mindustry.mod.Mods;
 import singularity.contents.*;
 import singularity.contents.override.OverrideBlocks;
-import singularity.contents.SglTechThree;
 import singularity.core.Init;
 import singularity.type.SglCategory;
 import singularity.type.SglContentType;
@@ -18,31 +20,54 @@ import universeCore.util.OverrideContentList;
 import universeCore.util.UncContentType;
 import universeCore.util.handler.ContentHandler;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
 import static mindustry.game.EventType.*;
+import static singularity.Sgl.libFile;
 
 public class Singularity extends Mod{
   public boolean initialized = false;
   
-  private final ContentList[] modContents = new ContentList[]{
-      new SglItems(),//物品
-      new SglLiquids(),//液体
-      new Gases(),//气体
-      new Environments(),//环境块
-      new NuclearBlocks(),//核能方块
-      new CrafterBlocks(),//工厂方块
-      new GasBlocks(),//气体相关方块
-      new TransportBlocks(),//物流方块
-      new CollectBlocks(),//采集方块w
-      new Reactions(),//化学反应
+  private final ContentList[] modContents;
+  private final OverrideContentList[] overrideContents;
+  
+  @SuppressWarnings("unchecked")
+  public Singularity() throws Exception{
+    try{
+      Class.forName("universeCore.UncCore", false, getClass().getClassLoader());
+    }catch(ClassNotFoundException e){
+      if(!libFile.exists()) throw new RuntimeException("lib file was not exist");
+      Log.info("dependence was not loaded, load it now");
+      Log.info("you will receive an exception that threw by game, tell you the UniverseCore was load fail and skipped.\n" +
+          "don't worry, this is expected, it will not affect your game");
+      Method load = Mods.class.getDeclaredMethod("loadMod", Fi.class);
+      load.setAccessible(true);
+      Field f = Mods.class.getDeclaredField("mods");
+      f.setAccessible(true);
+      Seq<Mods.LoadedMod> mods = (Seq<Mods.LoadedMod>)f.get(Vars.mods);
+      mods.add((Mods.LoadedMod)load.invoke(Vars.mods, libFile));
+    }
+  
+    modContents = new ContentList[]{
+        new SglItems(),//物品
+        new SglLiquids(),//液体
+        new Gases(),//气体
+        new Environments(),//环境块
+        new NuclearBlocks(),//核能方块
+        new CrafterBlocks(),//工厂方块
+        new GasBlocks(),//气体相关方块
+        new LiquidBlocks(),//物流方块
+        new CollectBlocks(),//采集方块w
+        new Reactions(),//化学反应
       
-      new SglTechThree(),//科技树
-  };
-  
-  private final OverrideContentList[] overrideContents = new OverrideContentList[]{
-    new OverrideBlocks(),
-  };
-  
-  public Singularity(){
+        new SglTechThree(),//科技树
+    };
+    
+    overrideContents = new OverrideContentList[]{
+        new OverrideBlocks(),
+    };
+    
     //加载模组配置数据
     Sgl.config.load();
     

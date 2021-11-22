@@ -4,11 +4,15 @@ import arc.files.Fi;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Log;
-import arc.util.io.*;
+import arc.util.io.FastDeflaterOutputStream;
+import arc.util.io.Reads;
+import arc.util.io.ReusableByteOutStream;
+import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.type.Planet;
 import singularity.Sgl;
+import singularity.net.SglCall;
 import singularity.world.atmosphere.Atmosphere;
 
 import java.io.DataInputStream;
@@ -16,7 +20,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.zip.InflaterInputStream;
 
-import static mindustry.Vars.*;
+import static mindustry.Vars.bufferSize;
+import static mindustry.Vars.content;
 
 public class Atmospheres{
   private int timer = 0;
@@ -44,10 +49,9 @@ public class Atmospheres{
     timer = 0;
     if(Vars.state.isCampaign()){
       Planet curr = Vars.state.rules.sector.planet;
-      current = bindMap.get(curr);
-      current.setSector();
+      SglCall.loadAtmosphere(bindMap.get(curr), curr);
     }
-    else current = Atmosphere.defaultSettings;
+    else SglCall.loadAtmosphere(Atmosphere.defaultSettings, null);
   }
   
   public void update(){

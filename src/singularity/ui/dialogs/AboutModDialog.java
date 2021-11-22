@@ -14,6 +14,7 @@ import arc.struct.Seq;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
+import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import singularity.Sgl;
 import singularity.ui.SglStyles;
@@ -29,6 +30,12 @@ public class AboutModDialog extends BaseDialog {
     itemHeight = 45;
     
     build();
+    shown(() -> {
+      infoTable.clearChildren();
+      defaultInfo.get(infoTable);
+      
+      buttonTable.clearChildren();
+    });
   }};
   
   Seq<BaseListDialog.ItemEntry> facebookPages = Seq.with(
@@ -103,6 +110,7 @@ public class AboutModDialog extends BaseDialog {
       t.row();
       t.add(Core.bundle.get("misc.author")).color(Pal.accent);
       t.add(Core.bundle.get("mod.author"));
+      t.button(b -> b.add(Core.bundle.get("mod.contributor")), Styles.underlineb, () -> {}).update(b -> b.setChecked(false)).width(230);
       t.row();
       t.add(Core.bundle.get("misc.version")).color(Pal.accent);
       t.add(Core.bundle.get("mod.version"));
@@ -117,11 +125,11 @@ public class AboutModDialog extends BaseDialog {
           }
         }).size(40);
         update.add(Core.bundle.get("infos.newestVersion"));
-      });
+      }).width(230);
       t.row();
       t.add(Core.bundle.get("infos.releaseDate")).color(Pal.accent);
       t.add(Core.bundle.get("mod.updateDate"));
-      t.button(Core.bundle.get("infos.checkUpdate"), () -> {});
+      t.button(Core.bundle.get("infos.checkUpdate"), () -> {}).width(230);
     }).width(580).fillY();
     
     cont.row();

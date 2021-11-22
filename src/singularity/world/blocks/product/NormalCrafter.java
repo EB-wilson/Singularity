@@ -9,7 +9,6 @@ import arc.math.Mathf;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Table;
 import arc.struct.EnumSet;
-import arc.struct.IntSeq;
 import arc.struct.Seq;
 import arc.util.Strings;
 import arc.util.io.Reads;
@@ -42,14 +41,13 @@ import singularity.world.draw.DrawFactory;
 import singularity.world.meta.SglBlockStatus;
 import singularity.world.meta.SglStat;
 import singularity.world.modules.SglProductModule;
-import singularity.world.power.BaseGenerator;
-import singularity.world.power.GeneratorType;
 import singularity.world.products.ProduceGases;
 import singularity.world.products.Producers;
 import singularity.world.products.SglProduceType;
 import universeCore.entityComps.blockComps.ProducerBlockComp;
 import universeCore.entityComps.blockComps.ProducerBuildComp;
 import universeCore.util.UncLiquidStack;
+import universeCore.world.blockModule.BaseProductModule;
 import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeLiquids;
 import universeCore.world.producers.BaseProducers;
@@ -62,15 +60,13 @@ import java.util.ArrayList;
 public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   public final ArrayList<BaseProducers> producers = new ArrayList<>();
   
-  /**方块的能量生产策略*/
-  public GeneratorType generatorType = GeneratorType.normalGenerator;
   public float updateEffectChance = 0.05f;
   public Effect updateEffect = Fx.none;
   public Effect craftEffect = Fx.none;
   
   public boolean autoSelect = false;
   public boolean canSelect = true;
-  public boolean onlyCreatFirst = true;
+  public boolean shouldConfig;
   
   /**同样的，这也是一个指针，指向当前编辑的produce*/
   public Producers produce;
@@ -95,19 +91,25 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   }
   
   @Override
-  public void appliedConfig() {
-    config(IntSeq.class, (NormalCrafterBuild tile, IntSeq data) -> {
-      for(int i= 0; i<4; i++){
-        if(data.get(i) != -1) {
-          tile.selectLiquid[i] = Vars.content.liquid(data.get(i));
-        }
+  public void appliedConfig(){
+    config(Integer.class, (NormalCrafterBuild e, Integer i) -> {
+      e.selecting = true;
+      e.reset();
+      if(e.recipeCurrent == i || i == -1){
+        e.recipeCurrent = -1;
+        e.selecting = false;
       }
-      tile.recipeCurrent = ((Number)data.get(4)).intValue();
+      else e.recipeCurrent = i;
     });
-    configClear((NormalCrafterBuild tile) -> {
-      tile.selectLiquid = new Liquid[4];
-      tile.recipeCurrent = -1;
+    configClear((NormalCrafterBuild e) -> {
+      e.selecting = false;
+      e.recipeCurrent = 0;
     });
+  }
+  
+  @Override
+  public ArrayList<BaseProducers> producers(){
+    return producers;
   }
   
   @Override
@@ -119,20 +121,20 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
 
   @Override
   public void init(){
-    canSelect &= !(autoSelect && !onlyCreatFirst);
-    if(producers.size() > 1) configurable |= canSelect;
     if(producers.size() > 0) for(BaseProducers prod: producers){
       hasItems |= prod.get(SglProduceType.item) != null;
       hasLiquids |= outputsLiquid |= prod.get(SglProduceType.liquid) != null;
       hasPower |= outputsPower |= prod.get(SglProduceType.power) != null && prod.get(SglProduceType.power).powerProduction != 0;
       hasGases |= outputGases |= prod.get(SglProduceType.gas) != null;
       hasEnergy |= outputEnergy |= prod.get(SglProduceType.energy) != null;
-      configurable |=  prod.get(SglProduceType.liquid) != null && prod.get(SglProduceType.liquid).liquids.length > 1;
     }
     
     super.init();
   
     initProduct();
+  
+    if(producers.size() > 1) configurable = canSelect;
+    if(shouldConfig) configurable = true;
   }
 
   @Override
@@ -146,7 +148,10 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   public void setStats() {
     super.setStats();
     setProducerStats(stats);
-    if(outputsPower) stats.add(SglStat.generatorType, generatorType.localized());
+    if(producers.size() > 1){
+      stats.add(SglStat.autoSelect, autoSelect);
+      stats.add(SglStat.controllable, canSelect);
+    }
   }
 
   @Override
@@ -159,23 +164,24 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     public Liquid[] selectLiquid = new Liquid[4];
     public boolean liquidSelecting = false;
     
-    public BaseGenerator generator;
+    public Seq<Item> outputItems;
+    public Seq<Liquid> outputLiquids;
+    public Seq<Gas> outputGases;
 
     public float progress;
     public float totalProgress;
     public float warmup;
-    public float productionEfficiency = 0f;
     
     public int select;
     
     boolean selecting;
+    public float powerProdEfficiency;
   
     @Override
     public NormalCrafterBuild create(Block block, Team team) {
       super.create(block, team);
       consumer.acceptAll = autoSelect;
       producer = new SglProductModule(this, producers);
-      if(outputsPower)generator = generatorType.applied(this);
       return this;
     }
     
@@ -189,27 +195,14 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     }
   
     @Override
-    public Object config(){
-      int[] selectLiquidOfId = new int[4];
-      for(int i = 0; i<4; i++){
-        selectLiquidOfId[i] = selectLiquid[i] != null? selectLiquid[i].id: -1;
-      }
-      IntSeq out = new IntSeq(selectLiquidOfId);
-      out.add(((Number)super.config()).intValue());
-      return out;
+    public BaseProductModule producer(){
+      return producer;
     }
-    
+  
     @Override
     public void reset(){
       super.reset();
       progress = 0;
-      productionEfficiency = 0;
-    }
-  
-    @Override
-    public void handleGas(GasBuildComp source, Gas gas, float amount){
-      super.handleGas(source, gas, amount);
-      //Log.info("handling, "+ gas + ", " + source + ", " + amount);
     }
   
     @Override
@@ -239,7 +232,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
         Func<Building, Bar> bar = (entity -> new Bar(
           () -> Core.bundle.format("bar.poweroutput",Strings.fixed(entity.getPowerProduction() * 60 * entity.timeScale(), 1)),
           () -> Pal.powerBar,
-          () -> productionEfficiency
+          () -> powerProdEfficiency
         ));
         table.add(bar.get(this)).growX();
         table.row();
@@ -300,13 +293,18 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     @Override
     public Seq<Item> outputItems(){
       if(recipeCurrent == -1) return null;
-      return new Seq<>(producer.current.get(SglProduceType.item).items).map(e -> e.item);
+      return outputItems;
     }
   
     @Override
     public Seq<Liquid> outputLiquids(){
       if(recipeCurrent == -1) return null;
-      return new Seq<>(producer.current.get(SglProduceType.liquid).liquids).map(e -> e.liquid);
+      return outputLiquids;
+    }
+  
+    @Override
+    public Seq<Gas> outputGases(){
+      return outputGases;
     }
   
     @Override
@@ -321,26 +319,17 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   
     @Override
     public void updateTile() {
-      if(!selecting && autoSelect && consumer.hasConsume()){
+      if(!selecting && autoSelect && consumer.hasConsume()
+          && (consumer.current == null || !consumer.valid())){
         recipeCurrent = -1;
         int f = -1;
-        if(!onlyCreatFirst){
-          for(BaseConsumers ignored : consumers){
-            int n = select%consumers.size();
-            if(consumer.valid(n)){
-              f = n;
-              break;
-            }
-            select++;
+        for(BaseConsumers ignored : consumers){
+          int n = select%consumers.size();
+          if(consumer.valid(n)){
+            f = n;
+            break;
           }
-        }
-        else{
-          for(int i=0; i<consumers.size(); i++){
-            if(consumer.valid(i)){
-              f = i;
-              break;
-            }
-          }
+          select = (select + 1)%consumers.size();
         }
         if(recipeCurrent != f && f >= 0){
           recipeCurrent = f;
@@ -353,7 +342,6 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
       //Log.info("updating,data: recipeCurrent:" + recipeCurrent + ", cons valid:" + consValid() + ", prod valid:" + producer.valid);
       /*当未选择配方时不进行更新*/
       if(recipeCurrent == -1) return;
-      if(block.outputsPower) generator.update();
       super.updateTile();
       
       if(consValid()){
@@ -366,23 +354,28 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
       else{
         warmup = Mathf.lerpDelta(warmup, 0, stopSpeed);
       }
-      totalProgress += warmup*delta();
+      totalProgress += warmup*edelta();
       
       if(progress >= 1){
         craftEffect.at(getX(), getY());
         progress = 0;
         consume();
         produce();
-        if(outputsPower) generator.trigger();
       }
       ProduceLiquids<?> prod = producer.current.get(SglProduceType.liquid);
       liquidSelecting = prod != null && prod.liquids.length > 1 && prod.liquids.length <= 4;
+  
+      if(updateRecipe){
+        if(producer.current.get(SglProduceType.item) != null) outputItems = new Seq<>(producer.current.get(SglProduceType.item).items).map(e -> e.item);
+        if(producer.current.get(SglProduceType.liquid) != null) outputLiquids = new Seq<>(producer.current.get(SglProduceType.liquid).liquids).map(e -> e.liquid);
+        if(producer.current.get(SglProduceType.gas) != null) outputGases = new Seq<>(producer.current.get(SglProduceType.gas).gases).map(e -> e.gas);
+      }
     }
     
     @Override
     public float getPowerProduction(){
       if(!outputsPower) return 0;
-      return producer.current.get(SglProduceType.power).powerProduction * productionEfficiency * productMultiplier(producer.current.get(SglProduceType.power));
+      return producer.current.get(SglProduceType.power).powerProduction * (powerProdEfficiency = Mathf.num(shouldConsume() && consValid()) * productMultiplier(producer.current.get(SglProduceType.power)));
     }
     
     @Override
@@ -430,20 +423,15 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
           BaseProducers p = producers.get(i);
           ProduceItems<?> produceItems = p.get(SglProduceType.item);
           ProduceLiquids<?> produceLiquids = p.get(SglProduceType.liquid);
+          ProduceGases<?> produceGases = p.get(SglProduceType.gas);
           
           icon = p.icon != null? p.icon: produceItems != null && produceItems.items != null?
           produceItems.items[0].item.uiIcon: produceLiquids != null && produceLiquids.liquids != null?
-          produceLiquids.liquids[0].liquid.uiIcon: null;
+          produceLiquids.liquids[0].liquid.uiIcon: produceGases != null && produceGases.gases != null?
+          produceGases.gases[0].gas.uiIcon: null;
           ImageButton button = new ImageButton(icon, Styles.selecti);
           button.clicked(() -> {
-            selecting = true;
-            reset();
-            if(recipeCurrent == s){
-              recipeCurrent = -1;
-              selecting = false;
-              return;
-            }
-            recipeCurrent = s;
+            configure(s);
           });
           button.update(() -> button.setChecked(recipeCurrent == s));
           buttons.add(button).size(50, 50);
@@ -464,7 +452,6 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     @Override
     public void draw(){
       super.draw();
-      if(generator != null)generator.draw();
       drawSelectRecipe(this);
       drawStatus();
       Draw.blend();
@@ -481,7 +468,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
         Draw.color();
       }
     }
-    
+  
     @Override
     public void write(Writes write) {
       super.write(write);

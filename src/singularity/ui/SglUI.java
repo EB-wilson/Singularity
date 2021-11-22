@@ -1,5 +1,6 @@
 package singularity.ui;
 
+import mindustry.Vars;
 import singularity.ui.dialogs.AboutModDialog;
 import singularity.ui.dialogs.MainMenu;
 import singularity.ui.dialogs.PublicInfoDialog;
@@ -23,6 +24,6 @@ public class SglUI{
     aboutDialog.build();
     
     //override
-    ui.planet = new SglPlanetsDialog();
+    if(!Vars.net.server()) ui.planet = new SglPlanetsDialog();
   }
 }

@@ -18,10 +18,10 @@ import static singularity.contents.CollectBlocks.fast_spin_drill;
 import static singularity.contents.CollectBlocks.rock_drill;
 import static singularity.contents.CrafterBlocks.*;
 import static singularity.contents.GasBlocks.*;
+import static singularity.contents.LiquidBlocks.*;
 import static singularity.contents.NuclearBlocks.*;
 import static singularity.contents.SglItems.*;
 import static singularity.contents.SglLiquids.*;
-import static singularity.contents.TransportBlocks.liquid_unloader;
 
 public class SglTechThree implements ContentList{
   @Override
@@ -36,9 +36,15 @@ public class SglTechThree implements ContentList{
     
     node(liquidContainer, liquid_unloader, liquidUnl -> {});
     
+    node(platedConduit, cluster_conduit, cluCon -> {
+      cluCon.node(conduit_riveting, conRiv -> {});
+    });
+    
     node(cryofluidMixer, FEX_phase_mixer, FEXMixer -> {});
     
     node(cultivator, incubator, incB -> {});
+    
+    node(cultivator, culturing_barn, culB -> {});
     
     node(phaseWeaver, fission_weaver, fisWea -> {});
     
@@ -83,9 +89,21 @@ public class SglTechThree implements ContentList{
     node(mechanicalDrill, gas_conduit, gasCond -> {
       gasCond.node(gas_junction, gasJun -> {
         gasJun.node(pressure_valve, pressValve -> {
-          pressValve.node(air_compressor, airComp -> {});
+          pressValve.node(air_compressor, airComp -> {
+            airComp.node(supercharger, superCha -> {
+              superCha.node(gas_compressor, gasComp -> {});
+            });
+          });
           
-          pressValve.node(gas_bridge_conduit, gasBridge -> {});
+          pressValve.node(gas_bridge_conduit, gasBridge -> {
+          
+          });
+  
+          pressValve.node(filter_valve, filterVal -> {
+            filterVal.node(gas_unloader, gasUnl -> {});
+    
+            filterVal.node(negative_filter_valve, negaFilter -> {});
+          });
         });
       });
     });
@@ -132,6 +150,12 @@ public class SglTechThree implements ContentList{
       });
     });
     
+    nodeProduce(Liquids.water, algae_mud, alMud -> {
+      alMud.nodeProduce(chlorellaBlock, chBlock -> {
+        chBlock.nodeProduce(chlorella, chl -> {});
+      });
+    });
+    
     nodeProduce(Items.sand, crush_ore, cruOre -> {});
     
     nodeProduce(titanium, uranium_238, u238 -> {
@@ -172,7 +196,7 @@ public class SglTechThree implements ContentList{
   }
   
   public void node(UnlockableContent parent, UnlockableContent content, Seq<Objective> objectives, Cons<TechNodeConstructor> child){
-    new TechNodeConstructor(parent, content, content.researchRequirements(), objectives.and(new Produce(content)), child);
+    new TechNodeConstructor(parent, content, content.researchRequirements(), objectives, child);
   }
   
   public void node(UnlockableContent parent, UnlockableContent content, Cons<TechNodeConstructor> children){

@@ -21,6 +21,20 @@ public class SglDrawCultivator<T extends NormalCrafter.NormalCrafterBuild> exten
     super(block);
   }
   
+  @Override
+  public float liquidAlpha(T entity){
+    return entity.warmup;
+  }
+  
+  @Override
+  public Color liquidColor(T entity){
+    return plantColor;
+  }
+  
+  public Color liquidColorLight(T entity){
+    return plantColorLight;
+  }
+  
   public class SglDrawCultivatorDrawer extends DrawFactoryDrawer{
     protected final Rand rand = new Rand();
     
@@ -38,9 +52,9 @@ public class SglDrawCultivator<T extends NormalCrafter.NormalCrafterBuild> exten
     
     public void drawLiquidRipple(){
       rand.setSeed(entity.pos());
-      Drawf.liquid(liquid, entity.x, entity.y, entity.warmup, plantColor);
+      Drawf.liquid(liquid, entity.x, entity.y, liquidAlpha(entity), liquidColor(entity));
   
-      Draw.color(plantColorLight);
+      Draw.color(liquidColorLight(entity));
       Draw.alpha(entity.warmup);
       for(int i = 0; i < bubbles; i++){
         float x = rand.range(spread), y = rand.range(spread);

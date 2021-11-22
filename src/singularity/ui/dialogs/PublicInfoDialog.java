@@ -11,6 +11,7 @@ import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
+import arc.struct.Queue;
 import arc.util.Http;
 import arc.util.Log;
 import arc.util.Strings;
@@ -30,6 +31,19 @@ public class PublicInfoDialog extends BaseListDialog{
   private static final String langRegex = "#locale#";
   private static final Pattern imagePattern = Pattern.compile("<image *=.*>");
   
+  Cons<Throwable> error = e -> {
+      infoTable.clearChildren();
+      infoTable.table(t -> {
+        StringBuilder errInfo = new StringBuilder(e.getMessage() + "\n");
+        for(StackTraceElement err: e.getStackTrace()){
+          errInfo.append(err).append("\n");
+        }
+        t.add(Core.bundle.format("warn.publicInfo.connectFailed", errInfo));
+        t.row();
+        t.button(Core.bundle.get("misc.refresh"), this::refresh).size(140, 60);
+      });
+  };
+  
   volatile boolean initialized, titleLoaded;
   Throwable titleStatus;
   Jval titles;
@@ -38,6 +52,7 @@ public class PublicInfoDialog extends BaseListDialog{
   
   Runnable loadPage;
   LoadTable itemsLoading;
+  Queue<Runnable> queue = new Queue<>();
   
   public PublicInfoDialog(){
     super(Core.bundle.get("misc.publicInfo"));
@@ -55,6 +70,15 @@ public class PublicInfoDialog extends BaseListDialog{
     build();
     
     shown(this::refresh);
+    
+    update(() -> {
+      if(initialized){
+        if(!queue.isEmpty()){
+          Runnable task = queue.removeLast();
+          task.run();
+        }
+      }
+    });
   }
   
   @SuppressWarnings("StatementWithEmptyBody")
@@ -84,15 +108,10 @@ public class PublicInfoDialog extends BaseListDialog{
     initialized = false;
   
     Http.get(directory, request -> {
-      while(!titleLoaded){
+      while(! titleLoaded){
       }
       if(titleStatus != null){
-        infoTable.clearChildren();
-        infoTable.add(Core.bundle.get("warn.publicInfo.connectFailed"));
-        infoTable.row();
-        infoTable.button(Core.bundle.get("misc.refresh"), this::refresh).size(140, 60);
-        
-        Log.err(titleStatus);
+        error.get(titleStatus);
         return;
       }
       
@@ -107,15 +126,9 @@ public class PublicInfoDialog extends BaseListDialog{
         buildChild(jval);
       }
   
-      rebuild();
+      queue.addFirst(this::rebuild);
     }, e -> {
-      infoTable.clearChildren();
-      infoTable.add(Core.bundle.get("warn.publicInfo.connectFailed"));
-      infoTable.row();
-      infoTable.button(Core.bundle.get("misc.refresh"), this::refresh).size(140, 60);
-      
-      Log.err(directory);
-      Log.err(e);
+      error.get(e);
     });
     
     rebuild();
@@ -140,8 +153,8 @@ public class PublicInfoDialog extends BaseListDialog{
             TextureRegion region;
             atlas.put(asset.key, region = Core.atlas.find("nomap"));
         
-            Runnable[] r = new Runnable[]{() -> {
-            }};
+            Runnable[] r = new Runnable[]{() -> {}};
+            
             r[0] = () -> Http.get(asset.value.get("address").asString(), res -> {
               Pixmap pix = new Pixmap(res.getResult());
               Core.app.post(() -> {
@@ -200,11 +213,7 @@ public class PublicInfoDialog extends BaseListDialog{
         }.gradient(0.2f));
       }
       else{
-        LoadTable loading = infoTable.add(new LoadTable(loadPage)).get();
-        
         Http.get(url, result -> {
-          loading.finish();
-          
           Table infoContainer = new Table();
           infoContainer.defaults().grow().margin(margin).padTop(pad);
           String[] strs = result.getResultAsString().split("\n");
@@ -226,23 +235,16 @@ public class PublicInfoDialog extends BaseListDialog{
           }
     
           pages.put(url, infoContainer);
-          loadPage.run();
+          queue.addFirst(loadPage);
         }, e -> {
-          infoTable.clearChildren();
-          infoTable.add(Core.bundle.get("warn.publicInfo.connectFailed"));
-          infoTable.row();
-          infoTable.button(Core.bundle.get("misc.refresh"), loadPage).size(140, 60);
-    
-          Log.err(e);
+          error.get(e);
         });
       }
     };
     
     items.add(new ItemEntry(table -> {
       table.add(title);
-    }, table -> {
-      loadPage.run();
-    }));
+    }, table -> queue.add(loadPage)));
   }
   
   public static class LoadTable extends Table{
@@ -252,7 +254,7 @@ public class PublicInfoDialog extends BaseListDialog{
     boolean timeout, lastTest = false, connectSucceed;
   
     public Cons<Label> buildLoading = t -> t.setText(Core.bundle.get("misc.loading") + Strings.autoFixed(time/60, 0) + getLoading(3, 30));
-    Runnable refresh;
+    Runnable refreshDef;
   
     Cell<Table> cell;
     
@@ -265,11 +267,11 @@ public class PublicInfoDialog extends BaseListDialog{
     }
     
     public LoadTable(Runnable refresh){
-      this(9000, refresh);
+      this(900, refresh);
     }
     
     public LoadTable(float wait, Runnable refresh){
-      this.refresh = refresh;
+      this.refreshDef = refresh;
       waitTime = wait;
   
       add("").update(buildLoading);
@@ -286,13 +288,14 @@ public class PublicInfoDialog extends BaseListDialog{
           exec.shutdown();
           Http.setMaxConcurrent(8);
           
-          refresh.run();
+          refreshDef.run();
         }).get().touchable(() -> timeout? Touchable.enabled: Touchable.disabled);
       });
       cell.color(cell.get().color.cpy().a(0));
       
       cell.update(t -> {
-        if(!connectSucceed) time += Time.delta;
+        if(connectSucceed) return;
+        time += Time.delta;
         if(time > waitTime) timeout = true;
         if(!lastTest && timeout){
           lastTest = true;

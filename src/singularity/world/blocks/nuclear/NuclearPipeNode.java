@@ -361,7 +361,7 @@ public class NuclearPipeNode extends NuclearBlock{
     public void updateTile(){
       super.updateTile();
       if(flowTimer.get(10)){
-        flowMean.add(chanceFlow);
+        flowMean.add(chanceFlow*Time.delta);
         chanceFlow = 0;
         flowing = flowMean.mean()/10;
       }

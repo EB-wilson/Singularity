@@ -38,6 +38,8 @@ public class SglStat{
       product = handler.addEnumItemTail("product", SglStatCat.reaction),
   
       generatorType = handler.addEnumItemTail("generator", SglStatCat.generator),
-  
+      
+      autoSelect = handler.addEnumItemTail("autoSelect", StatCat.crafting),
+      controllable = handler.addEnumItemTail("controllable", StatCat.crafting),
       effect = handler.addEnumItemTail("effect", StatCat.function);
 }

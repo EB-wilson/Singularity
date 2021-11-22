@@ -14,11 +14,12 @@ public class Reactions implements ContentList{
   @Override
   public void load(){
     sand_coke_si = new Reaction<>(
-        Items.sand, 5,
+        Items.sand, 3,
         SglItems.coke, 1,
-        Items.silicon, 3
+        Items.silicon, 2
     ){{
-      deltaHeat = 35215f;
+      reactTime = 120;
+      deltaHeat = 55215f;
       requireTemperature = 703f;
       requirePressure = 10.27f;
     }};
@@ -29,9 +30,9 @@ public class Reactions implements ContentList{
         SglItems.aerogel, 2
     ){{
       reactTime = 120;
-      deltaHeat = 52809f;
-      requireTemperature = 389f;
-      requirePressure = 5.85f;
+      deltaHeat = 62809f;
+      requireTemperature = 436f;
+      requirePressure = 3.05f;
     }};
     
     uranCrush_chemGel_uranCake = new Reaction<>(
@@ -39,7 +40,7 @@ public class Reactions implements ContentList{
         SglLiquids.mixed_chemical_gel, 12,
         SglItems.uranium_cake, 2
     ){{
-      reactTime = 30;
+      reactTime = 90;
       deltaHeat = 52204f;
       requireTemperature = 568f;
       requirePressure = 7.52f;

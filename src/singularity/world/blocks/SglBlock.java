@@ -52,6 +52,7 @@ import universeCore.entityComps.blockComps.ConsumerBuildComp;
 import universeCore.entityComps.blockComps.Dumpable;
 import universeCore.ui.table.RecipeTable;
 import universeCore.util.UncLiquidStack;
+import universeCore.world.blockModule.BaseConsumeModule;
 import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeItems;
 import universeCore.world.consumers.UncConsumeLiquids;
@@ -90,8 +91,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public boolean hasGases;
   /**方块是否输出气体*/
   public boolean outputGases;
-  /**是否分类输出气体*/
-  public boolean classicDumpGas;
   /**是否显示气体流量*/
   public boolean showGasFlow;
   /**方块是否有气体压缩保护，即气体在其中是否不能被压缩*/
@@ -134,8 +133,45 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   }
   
   public void appliedConfig(){
-    config(Integer.class, (SglBuilding tile, Integer current) -> tile.recipeCurrent = current);
+    config(Integer.class, (SglBuilding tile, Integer current) -> {
+      tile.recipeCurrent = consumers.size() > 1 && tile.recipeCurrent == current? -1: current;
+    });
     configClear((SglBuilding tile) -> tile.recipeCurrent = -1);
+  }
+  
+  @Override
+  public ArrayList<BaseConsumers> consumers(){
+    return consumers;
+  }
+  
+  @Override
+  public RecipeTable recipeTable(){
+    return recipeTable;
+  }
+  
+  @Override
+  public void recipeTable(RecipeTable table){
+    recipeTable = table;
+  }
+  
+  @Override
+  public ArrayList<BaseConsumers> optionalCons(){
+    return optionalCons;
+  }
+  
+  @Override
+  public RecipeTable optionalRecipeTable(){
+    return optionalRecipeTable;
+  }
+  
+  @Override
+  public void optionalRecipeTable(RecipeTable table){
+    optionalRecipeTable = table;
+  }
+  
+  @Override
+  public boolean oneOfOptionCons(){
+    return false;
   }
   
   @Override
@@ -159,7 +195,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   @Override
   public void init() {
-    if(consumers.size() > 1) configurable = true;
+    if(consumers.size() > 1){
+      configurable = true;
+      saveConfig = true;
+    }
     
     ArrayList<ArrayList<BaseConsumers>> consume = new ArrayList<>();
     if(consumers.size() > 0) consume.add(consumers);
@@ -235,7 +274,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public void setBars(){
     bars.add("health", entity -> new Bar("stat.health", Pal.health, entity::healthf).blink(Color.white));
     if(hasGases) bars.add("gasPressure", (SglBuilding entity) -> new Bar(
-      () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.smoothPressure*100, 2) + "kPa",
+      () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.smoothPressure*100, 0) + "kPa",
       () -> Pal.accent,
       () -> Math.min(entity.smoothPressure / maxGasPressure, 1)));
   }
@@ -243,6 +282,71 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   @Override
   public TextureRegion[] icons(){
     return draw.icons();
+  }
+  
+  @Override
+  public boolean hasGases(){
+    return hasGases;
+  }
+  
+  @Override
+  public boolean outputGases(){
+    return outputGases;
+  }
+  
+  @Override
+  public float maxGasPressure(){
+    return maxGasPressure;
+  }
+  
+  @Override
+  public float gasCapacity(){
+    return gasCapacity;
+  }
+  
+  @Override
+  public boolean compressProtect(){
+    return compressProtect;
+  }
+  
+  @Override
+  public boolean hasEnergy(){
+    return hasEnergy;
+  }
+  
+  @Override
+  public float resident(){
+    return resident;
+  }
+  
+  @Override
+  public float energyCapacity(){
+    return energyCapacity;
+  }
+  
+  @Override
+  public boolean outputEnergy(){
+    return outputEnergy;
+  }
+  
+  @Override
+  public boolean consumeEnergy(){
+    return consumeEnergy;
+  }
+  
+  @Override
+  public boolean energyBuffered(){
+    return energyBuffered;
+  }
+  
+  @Override
+  public float basicPotentialEnergy(){
+    return basicPotentialEnergy;
+  }
+  
+  @Override
+  public float maxEnergyPressure(){
+    return maxEnergyPressure;
   }
   
   public class SglBuilding extends Building implements ConsumerBuildComp, GasBuildComp, NuclearEnergyBuildComp, DrawableComp, Dumpable{
@@ -261,8 +365,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public Seq<NuclearEnergyBuildComp> energyLinked = new Seq<>();
     
     public final ObjectMap<Class<?>, Object> consData = new ObjectMap<>();
-    public int recipeCurrent = -1;
-    
+    public int recipeCurrent = -1, lastRecipe;
+    public boolean updateRecipe;
+    public float heat;
+  
     @Override
     public Building create(Block block, Team team) {
       super.create(block, team);
@@ -278,7 +384,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         energy.setNet();
       }
       
-      if(hasGases) gases = new GasesModule(this);
+      if(hasGases){
+        gases = new GasesModule(this);
+        smoothPressure = gases.getPressure();
+      }
   
       drawer = draw.get(this);
       return this;
@@ -314,7 +423,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     
     @Override
     public void onProximityRemoved(){
-      super.onProximityAdded();
+      super.onProximityRemoved();
       if(energy != null){
         onEnergyNetworkRemoved();
       }
@@ -325,6 +434,16 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       return recipeCurrent;
     }
   
+    @Override
+    public BaseConsumeModule consumer(){
+      return consumer;
+    }
+  
+    @Override
+    public ObjectMap<Class<?>, Object> consData(){
+      return consData;
+    }
+  
     /**使效率返回值乘以核能的效率*/
     @Override
     public float efficiency(){
@@ -332,6 +451,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       if(!consumer.hasConsume()) return super.efficiency();
       //未选择配方时返回0
       if(recipeCurrent == -1) return 0f;
+      if(consumer.current == null) return 0f;
       SglConsumeEnergy<?> ce = consumer.current.get(SglConsumeType.energy);
       float powerE = super.efficiency();
       if(!hasEnergy) return powerE;
@@ -390,7 +510,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       int d = ((size % 2 == 0)? size: size + 1)/2 - 1;
       int rd = size % 2;
   
-      switch(rotation){
+      switch(Mathf.mod(rotation, 4)){
         case 0: return nearby(size/2 + 1, distance - d);
         case 1: return nearby(distance - d, size/2 + 1);
         case 2: return nearby(-size/2 - rd, distance - d);
@@ -410,14 +530,19 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     
     @Override
     public void update(){
+      if(lastRecipe != recipeCurrent) updateRecipe = true;
+      lastRecipe = recipeCurrent;
+      
       if(hasEnergy && energy != null) energy.update(updateFlow);
       
       if(hasGases && gases != null){
-        gases.update(updateFlow);
-        smoothPressure = Mathf.lerpDelta(smoothPressure, pressure(), 0.2f);
+        gases.update(updateFlow, compressing());
+        smoothPressure = Mathf.lerpDelta(smoothPressure, pressure(), 0.02f);
       }
   
       super.update();
+      
+      updateRecipe = false;
     }
     
     public void updateDisplayLiquid(){
@@ -554,7 +679,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
               }
             }
             else{
-              l.add(Core.bundle.get("misc.gasFlowRate") + ": " + flowing[0] + Core.bundle.get("misc.preSecond"));
+              l.add(Core.bundle.get("misc.gasFlowRate") + ": " + Strings.fixed(flowing[0], 2) + Core.bundle.get("misc.preSecond"));
             }
           };
       
@@ -578,8 +703,23 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     }
   
     @Override
+    public NuclearEnergyModule energy(){
+      return energy;
+    }
+  
+    @Override
+    public Seq<NuclearEnergyBuildComp> energyLinked(){
+      return energyLinked;
+    }
+  
+    @Override
     public float getMoveResident(NuclearEnergyBuildComp destination){
-      return 0;
+      Seq<NuclearEnergyBuildComp> path = energy.energyNet.getPath(this, destination);
+      float result = 0;
+      for(NuclearEnergyBuildComp next: path){
+        result += next.getResident();
+      }
+      return result;
     }
   
     @Override
@@ -594,6 +734,11 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
     /**具有输出液体的方块返回可能输出的液体，没有则返回null*/
     public Seq<Liquid> outputLiquids(){
+      return null;
+    }
+  
+    /**具有输出液体的方块返回可能输出的气体，没有则返回null*/
+    public Seq<Gas> outputGases(){
       return null;
     }
     
@@ -620,11 +765,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
           ImageButton button = new ImageButton(icon, Styles.selecti);
           button.clicked(() -> {
             reset();
-            if(recipeCurrent == s){
-              recipeCurrent = -1;
-              return;
-            }
-            recipeCurrent = s;
+            configure(s);
           });
           button.update(() -> button.setChecked(recipeCurrent == s));
           buttons.add(button).size(50, 50);
@@ -651,6 +792,11 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public boolean acceptEnergy(NuclearEnergyBuildComp source){
       return source.getBuilding().team == team && energy.getEnergy() < getNuclearBlock().energyCapacity() &&
         source.getEnergyPressure(this) > Math.max(basicPotentialEnergy, getEnergy());
+    }
+  
+    @Override
+    public GasesModule gases(){
+      return gases;
     }
   
     @Override
@@ -695,7 +841,20 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       recipeCurrent = read.i();
       if(consumer != null) consumer.read(read);
       if(energy != null) energy.read(read);
-      if(gases != null) gases.read(read);
+      if(gases != null){
+        gases.read(read);
+        smoothPressure = gases.getPressure();
+      }
+    }
+  
+    @Override
+    public byte getCdump(){
+      return cdump;
+    }
+  
+    @Override
+    public Seq<Building> getDumps(){
+      return proximity;
     }
   }
 }

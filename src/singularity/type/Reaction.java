@@ -22,7 +22,7 @@ import java.util.Locale;
 
 import static singularity.Singularity.getModAtlas;
 
-public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P extends MappableContent> extends UnlockableContent{
+public class Reaction<R1 extends UnlockableContent, R2 extends UnlockableContent, P extends UnlockableContent> extends UnlockableContent{
   public Participant<R1> reactantA;
   public Participant<R2> reactantB;
   public Participant<P> product;
@@ -39,7 +39,7 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
     int pressureSclBase = getGas().length - (product.isGas? 1: 0);
     int heatSclBase = deltaHeat > 0? 1: -1;
     
-    return (pressure*pressureSclBase/2)+(temperature*heatSclBase/2);
+    return (pressure*pressureSclBase/2)+((float)Math.log(temperature)*heatSclBase/2);
   };
   
   public boolean itemReaction = false;
@@ -51,8 +51,8 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
   private byte gReactionCount = -1;
   
   public Reaction(Participant<R1> a, Participant<R2> b, Participant<P> out){
-    super(a.getName() + " + " + b.getName() + " -> " + out.getName());
-    localizedName = name.replace(Sgl.modName + "-", "");
+    super(a.getName() + "+" + b.getName() + "->" + out.getName());
+    localizedName = a.amount + a.get().localizedName + " + " + b.amount + b.get().localizedName + " -> " + out.amount + out.get().localizedName;
     
     reactantA = a;
     reactantB = b;
@@ -185,7 +185,7 @@ public class Reaction<R1 extends MappableContent, R2 extends MappableContent, P 
     return "reaction:" + id + " - " + reactantA + " + " + reactantB + "->" + product + "], requires:[ temperature:" + requireTemperature + ", pressure:" + requirePressure + "]";
   }
   
-  public static class Participant<Type extends MappableContent>{
+  public static class Participant<Type extends UnlockableContent>{
     public final Type reactant;
     public final Class<Type> clazz;
     public final float amount;

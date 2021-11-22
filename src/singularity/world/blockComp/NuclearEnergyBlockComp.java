@@ -1,53 +1,25 @@
 package singularity.world.blockComp;
 
 import mindustry.world.meta.Stats;
-import universeCore.entityComps.blockComps.FieldGetter;
 
 /**Consume组件，为方块添加可标记消耗的功能
- * 必须创建的变量：
- * <pre>{@code
- *   boolean [hasEnergy]
- *   boolean [outputEnergy]
- *   boolean [consumeEnergy]
- *   boolean [energyBuffered]
- *   float [resident]
- *   float [energyCapacity]
- *   float [basicPotentialEnergy]
- *   float [maxEnergyPressure]
- * }<pre/>
  * 若使用非默认命名则需要重写调用方法*/
-public interface NuclearEnergyBlockComp extends FieldGetter{
-  default boolean hasEnergy(){
-    return getField(boolean.class, "hasEnergy");
-  }
+public interface NuclearEnergyBlockComp{
+  boolean hasEnergy();
   
-  default float resident(){
-    return getField(float.class, "resident");
-  }
+  float resident();
   
-  default float energyCapacity(){
-    return getField(float.class, "energyCapacity");
-  }
+  float energyCapacity();
   
-  default boolean outputEnergy(){
-    return getField(boolean.class, "outputEnergy");
-  }
+  boolean outputEnergy();
   
-  default boolean consumeEnergy(){
-    return getField(boolean.class, "consumeEnergy");
-  }
+  boolean consumeEnergy();
   
-  default boolean energyBuffered(){
-    return getField(boolean.class, "energyBuffered");
-  }
+  boolean energyBuffered();
   
-  default float basicPotentialEnergy(){
-    return getField(float.class, "basicPotentialEnergy");
-  }
+  float basicPotentialEnergy();
   
-  default float maxEnergyPressure(){
-    return getField(float.class, "maxEnergyPressure");
-  }
+  float maxEnergyPressure();
   
   default void setNuclearStats(Stats stats){
   

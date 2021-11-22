@@ -6,7 +6,7 @@ import arc.struct.ObjectSet;
 import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
-import mindustry.ctype.MappableContent;
+import mindustry.ctype.UnlockableContent;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.modules.BlockModule;
@@ -19,13 +19,13 @@ import singularity.world.reaction.ReactContainer;
 public class ReactionModule extends BlockModule{
   protected final ReactContainer entity;
   protected ObjectMap<Reaction<?, ?, ?>, float[]> reactions = new ObjectMap<>();
-  protected ObjectSet<MappableContent> matched = new ObjectSet<>();
+  protected ObjectSet<UnlockableContent> matched = new ObjectSet<>();
   
   public ReactionModule(ReactContainer entity){
     this.entity = entity;
   }
   
-  public void matchAll(MappableContent target){
+  public void matchAll(UnlockableContent target){
     if(!matched.add(target)) return;
     
     entity.items().each((i, n) -> {
@@ -59,16 +59,13 @@ public class ReactionModule extends BlockModule{
   public void update(){
     for(ObjectMap.Entry<Reaction<?, ?, ?>, float[]> react: reactions){
       if(metalValid(react.key, entity) && requireValid(react.key, entity)){
-        float efficiencyScl = Math.max(1 + react.key.rateScl.get(entity.pressure(), entity.temperature())*Time.delta, 0);
+        float efficiencyScl = Math.max(1 + react.key.rateScl.get(entity.pressure(), entity.absTemperature())*Time.delta, 0);
         float reactTime = react.key.reactTime;
-        
-        Reaction.Participant<Liquid>[] rLiquid = react.key.getLiquid();
-        Reaction.Participant<Gas>[] rGas = react.key.getGas();
   
-        for(Reaction.Participant<Liquid> part: rLiquid){
+        for(Reaction.Participant<Liquid> part: react.key.getLiquid()){
           entity.liquids().remove(part.reactant, part.amount/reactTime*efficiencyScl);
         }
-        for(Reaction.Participant<Gas> part: rGas){
+        for(Reaction.Participant<Gas> part: react.key.getGas()){
           entity.gases().remove(part.reactant, part.amount/reactTime*efficiencyScl);
         }
   
@@ -85,8 +82,7 @@ public class ReactionModule extends BlockModule{
         
         react.value[0] += 1/react.key.reactTime*efficiencyScl;
         if(react.value[0] >= 1){
-          Reaction.Participant<Item>[] rItems = react.key.getItem();
-          for(Reaction.Participant<Item> part: rItems){
+          for(Reaction.Participant<Item> part: react.key.getItem()){
             entity.items().remove(part.reactant, (int)part.amount);
           }
   
@@ -116,7 +112,7 @@ public class ReactionModule extends BlockModule{
   }
   
   public boolean metalValid(Reaction<?, ?, ?> react, ReactContainer entity){
-    float efficiencyScl = react.rateScl.get(entity.pressure(), entity.temperature())*Time.delta;
+    float efficiencyScl = react.rateScl.get(entity.pressure(), entity.absTemperature())*Time.delta;
     float reactTime = react.reactTime;
   
     Reaction.Participant<Item>[] rItems = react.getItem();

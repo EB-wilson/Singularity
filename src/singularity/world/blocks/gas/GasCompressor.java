@@ -34,7 +34,7 @@ import singularity.world.blocks.environment.SglOverlay;
 import java.util.Arrays;
 
 public class GasCompressor extends GasBlock{
-  public float pumpGasSpeed = 0.2f;
+  public float pumpGasSpeed = 0.25f, pumpAtmoSpeed = 0.2f;
   public float pressurePowerScl = 0.4f;
   public float pumpingPowerScl = 1.8f;
   
@@ -122,7 +122,7 @@ public class GasCompressor extends GasBlock{
             drawPlaceText(floor.gas.localizedName, x, y - line, true):
             //不可挖掘的矿物显示
             drawPlaceText(Core.bundle.get("bar.lowerPressure"), x, y - line, false);
-        float dx = x * Vars.tilesize + offset - width/2f - 4f, dy = y * Vars.tilesize + offset + size * Vars.tilesize / 2f + 5 - line*9f;
+        float dx = x * Vars.tilesize + offset - width/2f - 4f, dy = y * Vars.tilesize + offset + size * Vars.tilesize / 2f + 5 - line*8f;
         Draw.mixcol(Color.darkGray, 1f);
         Draw.rect(floor.gas.uiIcon, dx, dy - 1);
         Draw.reset();
@@ -182,13 +182,13 @@ public class GasCompressor extends GasBlock{
   
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
-      return source.getBuilding().team == getBuilding().team && source.getGasBlock().hasGases() && !gasPumping &&
+      return !gasPumping && source.getBuilding().team == getBuilding().team && source.getGasBlock().hasGases() && !gasPumping &&
           source.outputPressure() > acceptPressure.get(this) && gases.getPressure() < currentPressure;
     }
   
     @Override
     public float pressure(){
-      return acceptPressure.get(this);
+      return gasPumping? acceptPressure.get(this): Sgl.atmospheres.current.getCurrPressure();
     }
     
     @Override
@@ -197,7 +197,7 @@ public class GasCompressor extends GasBlock{
         if(pumpingAtmo){
           float atmoPressure = Sgl.atmospheres.current.getCurrPressure();
           if(gases.getPressure() < currentPressure){
-            float dumping = pumpGasSpeed*Mathf.maxZero((currentPressure - atmoPressure)/atmoPressure)/10*edelta();
+            float dumping = pumpGasSpeed*Mathf.maxZero((currentPressure - atmoPressure)/atmoPressure)*pumpAtmoSpeed*edelta();
             gases.distributeAtmo(dumping);
           }
         }

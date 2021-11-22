@@ -22,6 +22,7 @@ public class GasSource extends GasBlock{
     outputGases = true;
     saveConfig = true;
     noUpdateDisabled = true;
+    compressProtect = true;
   }
   
   @Override

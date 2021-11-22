@@ -1,7 +1,6 @@
 package singularity.world.blocks.drills;
 
 import arc.Core;
-import arc.func.Func;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.math.Mathf;
@@ -69,11 +68,19 @@ public class BaseDrill extends SglBlock{
     sync = true;
     hasItems = true;
     configurable = true;
+    saveConfig = false;
     oneOfOptionCons = true;
     group = BlockGroup.drills;
     ambientSound = Sounds.drill;
     draw = new DrawDrill<>(this);
     ambientSoundVolume = 0.018f;
+  }
+  
+  @Override
+  public void appliedConfig(){
+    super.appliedConfig();
+    config(boolean[].class, (BaseDrillBuild entity, boolean[] b) -> entity.currentMines = b);
+    configClear((BaseDrillBuild e) -> e.currentMines = new boolean[e.currentMines.length]);
   }
   
   @SuppressWarnings("CodeBlock2Expr")
@@ -125,7 +132,7 @@ public class BaseDrill extends SglBlock{
           drawPlaceText(Core.bundle.formatFloat("bar.drillspeed", 60f / (drillTime + stack.item.hardness*50f) * stack.amount, 2), x, y - line, true):
           //不可挖掘的矿物显示
           drawPlaceText(Core.bundle.get("bar.drilltierreq"), x, y - line, false);
-        float dx = x * Vars.tilesize + offset - width/2f - 4f, dy = y * Vars.tilesize + offset + size * Vars.tilesize / 2f + 5 - line*9f;
+        float dx = x * Vars.tilesize + offset - width/2f - 4f, dy = y * Vars.tilesize + offset + size * Vars.tilesize / 2f + 5 - line*8f;
         Draw.mixcol(Color.darkGray, 1f);
         Draw.rect(stack.item.uiIcon, dx, dy - 1);
         Draw.reset();
@@ -210,13 +217,12 @@ public class BaseDrill extends SglBlock{
       super.setBars(table);
       for(int i=0; i<outputItems.size; i++){
         if(!currentMines[i]) continue;
-        int temp = i;
-        Func<BaseDrillBuild, Bar> bar = (e -> new Bar(
-          () -> outputItems.get(temp).item.localizedName + " : " + Core.bundle.format("bar.drillspeed", Strings.fixed(e.lastDrillSpeed[temp] * 60 * e.timeScale(), 2)),
-          () -> Pal.ammo,
-          () -> e.warmup
-        ));
-        table.add(bar.get(this)).growX();
+        int finalI = i;
+        table.add(new Bar(
+            () -> outputItems.get(finalI).item.localizedName + " : " + Core.bundle.format("bar.drillspeed", Strings.fixed(lastDrillSpeed[finalI] * 60 * timeScale(), 2)),
+            () -> Pal.ammo,
+            () -> warmup
+        )).growX();
         table.row();
       }
     }
@@ -248,13 +254,14 @@ public class BaseDrill extends SglBlock{
         mines.row();
         Table buttons = new Table();
         for(int i=0; i<outputItems.size; i++){
-          int t = i;
-          ItemStack stack = outputItems.get(t);
+          int f = i;
+          ItemStack stack = outputItems.get(i);
           ImageButton button = new ImageButton(stack.item.uiIcon, Styles.selecti);
           button.clicked(() -> {
-            currentMines[t] = !currentMines[t];
+            currentMines[f] = !currentMines[f];
+            configure(currentMines);
           });
-          button.update(() -> button.setChecked(currentMines[t]));
+          button.update(() -> button.setChecked(currentMines[f]));
           buttons.add(button).size(50, 50);
           if((i+1) % 4 == 0) buttons.row();
         }

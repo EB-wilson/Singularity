@@ -23,7 +23,6 @@ public class OverrideBlocks implements OverrideContentList{
           requirements(Category.crafting, ItemStack.with(Items.copper, 30, Items.lead, 35, Items.graphite, 45));
           autoSelect = true;
           canSelect = false;
-          onlyCreatFirst = false;
           health = 200;
           hasLiquids = hasPower = true;
         
@@ -55,7 +54,6 @@ public class OverrideBlocks implements OverrideContentList{
           ambientSoundVolume = 0.025f;
           autoSelect = true;
           canSelect = false;
-          onlyCreatFirst = false;
           
           newConsume();
           consume.time(40);
