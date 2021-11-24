@@ -128,7 +128,7 @@ public class GasConduit extends GasBlock implements Autotiler{
         else if(next.build == null && canLeak){
           float fract = Math.max(0, pressure() - Sgl.atmospheres.current.getCurrPressure())/getGasBlock().maxGasPressure();
     
-          if(fract <= 0.01) return;
+          if(fract <= 0.001f) return;
           gases.each(stack -> {
             float flowRate = Math.min(fract*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity()*(gases().get(stack.gas)/gases().total()), gases().get(stack.gas));
             handleGas(this, stack.gas, -flowRate);

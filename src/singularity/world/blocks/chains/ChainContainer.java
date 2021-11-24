@@ -14,7 +14,7 @@ public class ChainContainer{
   private static final Queue<ChainsBuildComp> findQueue = new Queue<>();
   private static final ObjectSet<ChainsBuildComp> added = new ObjectSet<>();
   
-  public ObjectMap<Class<?>, Object> localVars = new ObjectMap<>();
+  public ObjectMap<String, Object> localVars = new ObjectMap<>();
   
   public final ObjectSet<ChainsBuildComp> all = new ObjectSet<>();
   
@@ -25,13 +25,13 @@ public class ChainContainer{
     entity.chains().container = this;
   }
   
-  public void putVar(Object obj){
-    localVars.put(obj.getClass(), obj);
+  public void putVar(String key, Object obj){
+    localVars.put(key, obj);
   }
   
   @SuppressWarnings("unchecked")
-  public <T> T getVar(Class<T> type){
-    return (T)localVars.get(type);
+  public <T> T getVar(String key){
+    return (T)localVars.get(key);
   }
   
   public void add(ChainContainer other){

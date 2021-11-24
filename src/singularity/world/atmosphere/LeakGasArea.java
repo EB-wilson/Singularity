@@ -1,9 +1,11 @@
 package singularity.world.atmosphere;
 
+import arc.graphics.Color;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Position;
 import arc.struct.Seq;
+import arc.util.Strings;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -14,6 +16,7 @@ import mindustry.core.World;
 import mindustry.entities.EntityGroup;
 import mindustry.gen.*;
 import mindustry.io.TypeIO;
+import mindustry.ui.Fonts;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.environment.Floor;
@@ -146,6 +149,9 @@ public class LeakGasArea implements Pool.Poolable, Entityc, Drawc, GasBuildComp{
   
   @Override
   public void draw(){
+    if(Sgl.config.debugMode){
+      Fonts.outline.draw(Strings.autoFixed(gases.total(), 3), x, y-8, Color.white, 0.1f, true, 1);
+    }
   }
   
   @Override

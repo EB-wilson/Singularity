@@ -199,11 +199,13 @@ public class CrafterBlocks implements ContentList{
           
           @Override
           public float efficiency(){
-            return efficiency;
+            return super.efficiency()*efficiency;
           }
     
           @Override
           public void updateTile(){
+            super.updateTile();
+            
             efficiency = enabled ?
                 Mathf.maxZero(Attribute.light.env() +
                     (state.rules.lighting ?
@@ -245,7 +247,7 @@ public class CrafterBlocks implements ContentList{
     }};
   
     electrolytor = new NormalCrafter("electrolytor"){{
-      requirements(Category.crafting, ItemStack.with());
+      requirements(Category.crafting, ItemStack.with(Items.titanium, 60, Items.copper, 40, Items.silicon, 45, Items.metaglass, 60, Items.plastanium, 35));
       size = 2;
       
       newConsume();
@@ -267,7 +269,7 @@ public class CrafterBlocks implements ContentList{
       consume.time(120);
       consume.power(2.4f);
       newProduce().color = SglLiquids.algae_mud.color;
-      produce.item(SglItems.chlorellaBlock, 1);
+      produce.item(SglItems.chlorella_block, 1);
       
       draw = new SglDrawCultivator<>(this){
         final Color trans = new Color(0, 0, 0, 0), temp = new Color();
@@ -724,7 +726,7 @@ public class CrafterBlocks implements ContentList{
       
       newConsume();
       consume.time(120f);
-      consume.item(SglItems.chlorellaBlock, 3);
+      consume.item(SglItems.chlorella_block, 3);
       consume.power(2.4f);
       newProduce();
       produce.item(SglItems.chlorella, 1);
@@ -1117,16 +1119,13 @@ public class CrafterBlocks implements ContentList{
         plasma1 = Pal.reactorPurple;
         plasma2 = Pal.reactorPurple2;
         
-        drawerType = e -> new SglDrawPlasmaDrawer(e){
-          @Override
-          public void draw(){
-            Draw.rect(bottom, entity.x, entity.y);
-            drawPlasma();
-            Draw.alpha(e.progress);
-            if(e.producer.current != null) Draw.rect(e.producer.current.get(ProduceType.item).items[0].item.uiIcon, e.x, e.y, 4, 4);
-            Draw.color();
-            Draw.rect(region, entity.x, entity.y);
-          }
+        drawDef = e -> {
+          Draw.rect(bottom, e.x, e.y);
+          drawPlasma(e);
+          Draw.alpha(e.progress);
+          if(e.producer.current != null) Draw.rect(e.producer.current.get(ProduceType.item).items[0].item.uiIcon, e.x, e.y, 4, 4);
+          Draw.color();
+          Draw.rect(region, e.x, e.y);
         };
       }};
     }};

@@ -64,6 +64,8 @@ public class Reaction<R1 extends UnlockableContent, R2 extends UnlockableContent
     consHeat += getHeat(b.get());
     
     deltaHeat = getHeat(out.get()) - consHeat;
+    
+    alwaysUnlocked = true;
   }
   
   public Reaction(R1 a, float b, R2 c, float d, P e, float f){

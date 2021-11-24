@@ -218,6 +218,7 @@ public class GasesModule extends BlockModule{
   }
   
   public void clear(){
+    if(Vars.state.isCampaign()) each(stack -> Sgl.atmospheres.current.add(stack));
     gases = new float[SglContents.gases().size];
     total = 0;
   }

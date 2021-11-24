@@ -133,10 +133,21 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   }
   
   public void appliedConfig(){
-    config(Integer.class, (SglBuilding tile, Integer current) -> {
-      tile.recipeCurrent = consumers.size() > 1 && tile.recipeCurrent == current? -1: current;
+    config(Integer.class, (SglBuilding e, Integer i) -> {
+      if(consumers.size() > 1){
+        e.recipeSelected = true;
+        e.reset();
+        if(e.recipeCurrent == i || i == - 1){
+          e.recipeCurrent = -1;
+          e.recipeSelected = false;
+        }
+        else e.recipeCurrent = i;
+      }
     });
-    configClear((SglBuilding tile) -> tile.recipeCurrent = -1);
+    configClear((SglBuilding e) -> {
+      e.recipeSelected = false;
+      e.recipeCurrent = 0;
+    });
   }
   
   @Override
@@ -216,7 +227,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       }
     }
   
-    if(hasPower){
+    if(consumesPower){
       initPower(powerCapacity);
     }
     if(hasEnergy && maxEnergyPressure == -1) maxEnergyPressure = energyCapacity*energyCapacity*0.5f;
@@ -353,6 +364,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public SglConsumeModule consumer;
     public NuclearEnergyModule energy;
     public GasesModule gases;
+  
+    public boolean recipeSelected;
     
     public float smoothPressure = 0;
     
@@ -443,20 +456,18 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public ObjectMap<Class<?>, Object> consData(){
       return consData;
     }
-  
-    /**使效率返回值乘以核能的效率*/
+    
     @Override
     public float efficiency(){
-      //无配方要求时返回1
-      if(!consumer.hasConsume()) return super.efficiency();
+      return super.efficiency() * energyEfficiency();
+    }
+    
+    public float energyEfficiency(){
       //未选择配方时返回0
-      if(recipeCurrent == -1) return 0f;
-      if(consumer.current == null) return 0f;
+      if(recipeCurrent == -1 || consumer.current == null) return 0f;
       SglConsumeEnergy<?> ce = consumer.current.get(SglConsumeType.energy);
-      float powerE = super.efficiency();
-      if(!hasEnergy) return powerE;
-      float energyE = ce == null? 1f: ce.buffer? 1f: Math.min(1f, energy.getEnergy() / (ce.usage * 60f * delta()));
-      return powerE * energyE;
+      if(!hasEnergy) return 1;
+      return ce == null? 1f: ce.buffer? 1f: Mathf.clamp(energy.getEnergy() / (ce.usage*60));
     }
     
     public void dumpLiquid(){
@@ -644,7 +655,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public void reset(){
       if(items != null)items.clear();
       if(liquids != null)liquids.clear();
-      if(gases != null)gases.clear();
+      if(gases != null){
+        gases.clear();
+        gases.distributeAtmo();
+      }
     }
     
     @Override

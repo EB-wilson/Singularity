@@ -125,13 +125,13 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       
       chains.listen(ChainsEvents.AddedBlockEvent.class, e -> {
         if(e.oldContainer != null && e.container != e.oldContainer){
-          if(e.target.getBlock().hasItems) e.container.getVar(SpliceItemModule.class).add(e.oldContainer.getVar(SpliceItemModule.class));
-          if(e.target.getBlock().hasLiquids) e.container.getVar(SpliceLiquidModule.class).add(e.oldContainer.getVar(SpliceLiquidModule.class));
-          if(e.target.getBlock(SglBlock.class).hasGases) e.container.getVar(SpliceGasesModule.class).add(e.oldContainer.getVar(SpliceGasesModule.class));
+          if(e.target.getBlock().hasItems) e.container.<SpliceItemModule>getVar("items").add(e.oldContainer.<SpliceItemModule>getVar("items"));
+          if(e.target.getBlock().hasLiquids) e.container.<SpliceLiquidModule>getVar("liquids").add(e.oldContainer.getVar("liquids"));
+          if(e.target.getBlock(SglBlock.class).hasGases) e.container.<SpliceGasesModule>getVar("gases").add(e.oldContainer.<SpliceGasesModule>getVar("gases"));
           
           SpliceCrafterBuild statDisplay;
-          if((statDisplay = e.container.getVar(SpliceCrafterBuild.class)) != e.target){
-            if(statDisplay.y >= e.target.getBuilding().y && statDisplay.x <= e.target.getBuilding().x) e.container.putVar(e.target);
+          if((statDisplay = e.container.getVar("build")) != e.target){
+            if(statDisplay.y >= e.target.getBuilding().y && statDisplay.x <= e.target.getBuilding().x) e.container.putVar("build", e.target);
           }
           
           e.target.getBuilding(SpliceCrafterBuild.class).updateModule = true;
@@ -140,16 +140,16 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       
       chains.listen(ChainsEvents.ConstructFlowEvent.class, e -> {
         SpliceCrafterBuild statDisplay;
-        if((statDisplay = e.container.getVar(SpliceCrafterBuild.class)) != e.target){
-          if(statDisplay.y >= e.target.getBuilding().y && statDisplay.x <= e.target.getBuilding().x) e.container.putVar(e.target);
+        if((statDisplay = e.container.getVar("build")) != e.target){
+          if(statDisplay.y >= e.target.getBuilding().y && statDisplay.x <= e.target.getBuilding().x) e.container.putVar("build", e.target);
         }
         e.target.getBuilding(SpliceCrafterBuild.class).updateModule = true;
       });
       
       chains.listen(ChainsEvents.RemovedBlockEvent.class, e -> {
-        SpliceItemModule items = e.target.chains().getVar(SpliceItemModule.class);
-        SpliceLiquidModule liquids = e.target.chains().getVar(SpliceLiquidModule.class);
-        SpliceGasesModule gases = e.target.chains().getVar(SpliceGasesModule.class);
+        SpliceItemModule items = e.target.chains().getVar("items");
+        SpliceLiquidModule liquids = e.target.chains().getVar("liquids");
+        SpliceGasesModule gases = e.target.chains().getVar("gases");
   
         SpliceCrafter targetBlock = e.target.getBlock(SpliceCrafter.class);
 
@@ -162,9 +162,9 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
 
         for(ChainContainer otherContainer : handled){
           float present = (float) otherContainer.all.size/total;
-          SpliceItemModule oItems = otherContainer.getVar(SpliceItemModule.class);
-          SpliceLiquidModule oLiquids = otherContainer.getVar(SpliceLiquidModule.class);
-          SpliceGasesModule oGases = otherContainer.getVar(SpliceGasesModule.class);
+          SpliceItemModule oItems = otherContainer.getVar("items");
+          SpliceLiquidModule oLiquids = otherContainer.getVar("liquids");
+          SpliceGasesModule oGases = otherContainer.getVar("gases");
           
           if(targetBlock.hasItems){
             oItems.allCapacity = (int) ((items.allCapacity - e.target.getBlock().itemCapacity)*present);
@@ -199,16 +199,16 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         SpliceCrafter b = e.target.getBlock(SpliceCrafter.class);
         SpliceCrafterBuild ent = e.target.getBuilding(SpliceCrafterBuild.class);
         
-        e.newContainer.putVar(new SpliceConsumeModule((ConsumerBuildComp) e.target, consumers, optionalCons));
-        e.newContainer.putVar(new SpliceProduceModule((ProducerBuildComp) e.target, producers));
+        e.newContainer.putVar("consumer", new SpliceConsumeModule((ConsumerBuildComp) e.target, consumers, optionalCons));
+        e.newContainer.putVar("producer", new SpliceProduceModule((ProducerBuildComp) e.target, producers));
         
-        if(b.hasItems) e.newContainer.putVar(new SpliceItemModule(b.itemCapacity));
-        if(b.hasLiquids) e.newContainer.putVar(new SpliceLiquidModule(b.tempLiquidCapacity));
+        if(b.hasItems) e.newContainer.putVar("items", new SpliceItemModule(b.itemCapacity));
+        if(b.hasLiquids) e.newContainer.putVar("liquids", new SpliceLiquidModule(b.tempLiquidCapacity));
         if(b.hasGases){
-          e.newContainer.putVar(new SpliceGasesModule(e.target.getBuilding(GasBuildComp.class), ent.initGas, b.gasCapacity));
+          e.newContainer.putVar("gases", new SpliceGasesModule(e.target.getBuilding(GasBuildComp.class), ent.initGas, b.gasCapacity));
           if(ent.initGas) ent.initGas = false;
         }
-        e.newContainer.putVar(e.target);
+        e.newContainer.putVar("build", e.target);
       });
   
       chains.newContainer();
@@ -368,9 +368,10 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   
     @Override
     public void updateTile(){
+      liquidCapacity = liquids().allCapacity;
       if(updateModule){
         if(hasItems){
-          SpliceItemModule tItems = chains.getVar(SpliceItemModule.class);
+          SpliceItemModule tItems = chains.getVar("items");
           if(!tItems.loaded){
             tItems.set((SpliceItemModule) items);
             tItems.loaded = true;
@@ -378,7 +379,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
           if(items != tItems) items = tItems;
         }
         if(hasLiquids){
-          SpliceLiquidModule tLiquids = chains.getVar(SpliceLiquidModule.class);
+          SpliceLiquidModule tLiquids = chains.getVar("liquids");
           if(!tLiquids.loaded){
             tLiquids.set((SpliceLiquidModule) liquids);
             tLiquids.loaded = true;
@@ -386,7 +387,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
           if(liquids != tLiquids) liquids = tLiquids;
         }
         if(hasGases){
-          SpliceGasesModule tGases = chains.getVar(SpliceGasesModule.class);
+          SpliceGasesModule tGases = chains.getVar("gases");
           if(!tGases.loaded){
             tGases.set((SpliceGasesModule) gases);
             tGases.loaded = true;
@@ -394,7 +395,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
           if(gases != tGases) gases = tGases;
         }
         
-        SpliceConsumeModule tCons = chains.getVar(SpliceConsumeModule.class);
+        SpliceConsumeModule tCons = chains.getVar("consumer");
         if(!tCons.loaded){
           tCons.set((SpliceConsumeModule) consumer);
           tCons.loaded = true;
@@ -404,7 +405,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
           cons(tCons);
         }
         
-        SpliceProduceModule tProd = chains.getVar(SpliceProduceModule.class);
+        SpliceProduceModule tProd = chains.getVar("producer");
         if(!tProd.loaded){
           tProd.set((SpliceProduceModule) producer);
           tProd.loaded = true;
@@ -464,7 +465,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   
     @Override
     public void drawStatus(){
-      if(this.block.enableDrawStatus && this.block().consumers.size() > 0 && chains.getVar(SpliceCrafterBuild.class) == this){
+      if(this.block.enableDrawStatus && this.block().consumers.size() > 0 && chains.getVar("build") == this){
         float multiplier = block.size > 1 || chains.container.all.size > 1 ? 1.0F : 0.64F;
         float brcx = this.tile.drawx() + (float)(this.block.size * 8)/2.0F - 8*multiplier/2;
         float brcy = this.tile.drawy() - (float)(this.block.size * 8)/2.0F + 8*multiplier/2;

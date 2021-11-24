@@ -6,6 +6,7 @@ import arc.math.Mathf;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
 import arc.util.Strings;
+import arc.util.Time;
 import mindustry.content.Fx;
 import mindustry.entities.Damage;
 import mindustry.entities.Effect;
@@ -35,12 +36,15 @@ import singularity.world.meta.SglStatUnit;
 import singularity.world.products.ProduceEnergy;
 import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeItems;
+import universeCore.world.consumers.UncConsumeLiquids;
 import universeCore.world.consumers.UncConsumeType;
 import universeCore.world.producers.BaseProduce;
 import universeCore.world.producers.ProducePower;
 
 import static mindustry.Vars.state;
 import static mindustry.Vars.tilesize;
+import static singularity.world.blockComp.HeatBuildComp.getItemAbsTemperature;
+import static singularity.world.blockComp.HeatBuildComp.getLiquidAbsTemperature;
 
 public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   public float maxTemperature = 1273.15f;
@@ -77,7 +81,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   }
   
   public void addCoolant(float consHeat){
-    newOptionalConsume((e, c) -> {
+    BaseConsumers cons = newOptionalConsume((e, c) -> {
       NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
       entity.handleHeat(-consHeat*e.getBuilding().delta());
     }, (s, c) -> {
@@ -86,10 +90,26 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
         t.add(Core.bundle.get("misc.absorbHeat") + ": " + consHeat*60/1000 + SglStatUnit.kHeat.localized() + Core.bundle.get("misc.preSecond"));
       });
     });
-    consume.valid = e -> {
-      NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
-      return entity.heat > 0;
-    };
+    
+    Time.run(0, () -> {
+      UncConsumeItems<?> ci = cons.get(UncConsumeType.item);
+      UncConsumeLiquids<?> cl = cons.get(UncConsumeType.liquid);
+      
+      float lowTemp = 0;
+      if(ci != null) for(ItemStack items: ci.items){
+        lowTemp = Math.min(lowTemp, getItemAbsTemperature(items.item));
+      }
+      if(cl != null) for(LiquidStack liquids: cl.liquids){
+        lowTemp = Math.min(lowTemp, getLiquidAbsTemperature(liquids.liquid));
+      }
+      
+      float lowTempF = lowTemp;
+      cons.valid = e -> {
+        NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
+        return entity.heat > 0 && entity.absTemperature() > lowTempF;
+      };
+    });
+    
     coolants.add(consume);
   }
   

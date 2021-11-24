@@ -47,12 +47,12 @@ public class ChainsModule extends BlockModule{
     }
   }
   
-  public void putVar(Object obj){
-    container.putVar(obj);
+  public void putVar(String key, Object obj){
+    container.putVar(key, obj);
   }
   
-  public <T> T getVar(Class<T> type){
-    return container.getVar(type);
+  public <T> T getVar(String key){
+    return container.getVar(key);
   }
   
   public void update(){

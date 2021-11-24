@@ -24,8 +24,6 @@ import static mindustry.Vars.bufferSize;
 import static mindustry.Vars.content;
 
 public class Atmospheres{
-  private int timer = 0;
-  
   protected final ReusableByteOutStream byteOutput = new ReusableByteOutStream();
   protected final DataOutputStream dataBytes = new DataOutputStream(byteOutput);
   
@@ -46,7 +44,6 @@ public class Atmospheres{
   }
   
   public void loadAtmo(){
-    timer = 0;
     if(Vars.state.isCampaign()){
       Planet curr = Vars.state.rules.sector.planet;
       SglCall.loadAtmosphere(bindMap.get(curr), curr);
@@ -58,11 +55,11 @@ public class Atmospheres{
     if(!Vars.state.isPlaying() || !Vars.state.isCampaign()) return;
     
     bindMap.each((k, v) -> v.update());
-    
-    if(++timer%7200 == 0) write();
   }
   
   public void write(){
+    if(!Vars.state.isCampaign()) return;
+    
     Fi saveData = Sgl.dataDirectory.child("atmospheres.bin");
     if(saveData.exists()) saveData.moveTo(Sgl.dataDirectory.child("atmospheres.bin.bak"));
     DataOutputStream output = new DataOutputStream(new FastDeflaterOutputStream(saveData.write(false, bufferSize)));

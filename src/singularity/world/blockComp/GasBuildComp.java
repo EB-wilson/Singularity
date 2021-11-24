@@ -34,16 +34,18 @@ public interface GasBuildComp extends BuildCompBase, Dumpable{
     if(gas == null) return moveGas(other);
     
     if(!other.getGasBlock().hasGases() || gases().get(gas) <= 0) return 0;
+    
+    other = other.getGasDestination(this, gas);
     float present = gases().get(gas)/gases().total();
   
     float diff = outputPressure() - other.pressure();
-    if(diff < 0.01) return 0;
+    if(diff < 0.001f) return 0;
     float fract = diff*getGasBlock().gasCapacity();
     float oFract = diff*other.getGasBlock().gasCapacity();
   
     float flowRate = Math.min(Math.min(Math.min(fract, oFract)/other.swellCoff(this), gases().total()),
         (other.getGasBlock().maxGasPressure() - other.pressure())*other.getGasBlock().gasCapacity())*present;
-    if(flowRate > 0.0F && fract > 0 && other.acceptGas(this, gas)){
+    if(flowRate > 0 && fract > 0 && other.acceptGas(this, gas)){
       other.handleGas(this, gas, flowRate);
       gases().remove(gas, flowRate);
       temp.clear();
@@ -58,7 +60,7 @@ public interface GasBuildComp extends BuildCompBase, Dumpable{
     float total = gases().total();
     
     float diff = outputPressure() - other.pressure();
-    if(diff < 0.01) return 0;
+    if(diff < 0.001f) return 0;
     float fract = diff*getGasBlock().gasCapacity();
     float oFract = diff*other.getGasBlock().gasCapacity();
     
@@ -66,12 +68,13 @@ public interface GasBuildComp extends BuildCompBase, Dumpable{
         (other.getGasBlock().maxGasPressure() - other.pressure())*other.getGasBlock().gasCapacity());
     temp.clear();
     gases().each(stack -> {
+      GasBuildComp next = other.getGasDestination(this, stack.gas);
       float present = gases().get(stack.gas)/total;
       
       float f = flowRate*present;
-      if(f > 0.0F && f > 0 && other.acceptGas(this, stack.gas)){
+      if(f > 0 && next.acceptGas(this, stack.gas)){
         temp.add(new GasStack(stack.gas, f));
-        other.handleGas(this, stack.gas, f);
+        next.handleGas(this, stack.gas, f);
         gases().remove(stack.gas, f);
       }
     });

@@ -58,7 +58,8 @@ public class Singularity extends Mod{
         new CrafterBlocks(),//工厂方块
         new GasBlocks(),//气体相关方块
         new LiquidBlocks(),//物流方块
-        new CollectBlocks(),//采集方块w
+        new CollectBlocks(),//采集方块
+        new DefenceBlocks(),//防御方块
         new Reactions(),//化学反应
       
         new SglTechThree(),//科技树
@@ -95,6 +96,14 @@ public class Singularity extends Mod{
       if(initialized) Sgl.update();
     });
     
+    Events.on(SaveWriteEvent.class, e -> {
+      Sgl.atmospheres.write();
+    });
+    
+    Events.on(ResetEvent.class, e -> {
+      Sgl.updateTiles.clear();
+    });
+  
     Time.run(0, () -> {
       Events.on(WorldLoadEvent.class, event -> {
         Sgl.atmospheres.loadAtmo();
@@ -115,7 +124,6 @@ public class Singularity extends Mod{
     
     //游戏本体更改初始化
     Init.init();
-    
     initialized = true;
     if(Sgl.config.loadInfo)Log.info("[Singularity] mod initialize finished");
   }
@@ -130,7 +138,7 @@ public class Singularity extends Mod{
       override.load();
     }
   
-    if(Sgl.config.debugMode) new DebugBlocks().load();
+    new DebugBlocks().load();
     if(Sgl.config.loadInfo) Log.info("[Singularity] mod content loaded");
   }
   

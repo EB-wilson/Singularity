@@ -29,6 +29,23 @@ public class SglDrawPlasma<T extends NormalCrafter.NormalCrafterBuild> extends D
     }
   }
   
+  public void drawPlasma(T entity){
+    for(int i = 0; i < plasmas.length; i++){
+      float r = block.size * tilesize - 3f + Mathf.absin(Time.time, 2f + i * 1f, 5f - i * 0.5f);
+      
+      Draw.color(plasma1, plasma2, (float)i / plasmas.length);
+      Draw.alpha((0.3f + Mathf.absin(Time.time, 2f + i * 2f, 0.3f + i * 0.05f)) * alpha(entity));
+      Draw.blend(Blending.additive);
+      Draw.rect(plasmas[i], entity.x, entity.y, r, r, Time.time * (12 + i * 6f) * alpha(entity));
+      Draw.blend();
+    }
+    Draw.color();
+  }
+  
+  public float alpha(T entity){
+    return entity.warmup;
+  }
+  
   public class SglDrawPlasmaDrawer extends DrawFactoryDrawer{
     public SglDrawPlasmaDrawer(T entity){
       super(entity);
@@ -37,21 +54,8 @@ public class SglDrawPlasma<T extends NormalCrafter.NormalCrafterBuild> extends D
     @Override
     public void draw(){
       Draw.rect(bottom, entity.x, entity.y);
-      drawPlasma();
+      drawPlasma(entity);
       Draw.rect(region, entity.x, entity.y);
-    }
-    
-    public void drawPlasma(){
-      for(int i = 0; i < plasmas.length; i++){
-        float r = block.size * tilesize - 3f + Mathf.absin(Time.time, 2f + i * 1f, 5f - i * 0.5f);
-    
-        Draw.color(plasma1, plasma2, (float)i / plasmas.length);
-        Draw.alpha((0.3f + Mathf.absin(Time.time, 2f + i * 2f, 0.3f + i * 0.05f)) * entity.warmup);
-        Draw.blend(Blending.additive);
-        Draw.rect(plasmas[i], entity.x, entity.y, r, r, Time.time * (12 + i * 6f) * entity.warmup);
-        Draw.blend();
-      }
-      Draw.color();
     }
   }
 }

@@ -1,5 +1,6 @@
 package singularity.contents;
 
+import singularity.Sgl;
 import singularity.type.SglCategory;
 import singularity.world.blocks.debug.BlockDataMonitor;
 import singularity.world.blocks.debug.VarsContainer;
@@ -15,12 +16,12 @@ public class DebugBlocks implements ContentList{
   public void load(){
     blockMonitor = new BlockDataMonitor("block_monitor"){{
       requirements(SglCategory.debugging, ItemStack.empty);
-      buildVisibility = BuildVisibility.sandboxOnly;
+      buildVisibility = Sgl.config.debugMode? BuildVisibility.shown: BuildVisibility.hidden;
     }};
     
     varsContainer = new VarsContainer("vars_container"){{
       requirements(SglCategory.debugging, ItemStack.empty);
-      buildVisibility = BuildVisibility.sandboxOnly;
+      buildVisibility = Sgl.config.debugMode? BuildVisibility.shown: BuildVisibility.hidden;
     }};
   }
 }

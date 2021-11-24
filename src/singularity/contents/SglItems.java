@@ -36,7 +36,7 @@ public class SglItems implements ContentList{
   /**干冰*/
   dry_ice,
   /**绿藻块*/
-  chlorellaBlock,
+  chlorella_block,
   /**绿藻素*/
   chlorella,
   /**焦炭*/
@@ -155,7 +155,7 @@ public class SglItems implements ContentList{
       heatCapacity = 620;
     }};
   
-    chlorellaBlock = new Item("chlorellaBlock", Color.valueOf("#6CB855")){{
+    chlorella_block = new Item("chlorella_block", Color.valueOf("#6CB855")){{
       hardness = 1;
       explosiveness = 0.4f;
       flammability = 1.2f;

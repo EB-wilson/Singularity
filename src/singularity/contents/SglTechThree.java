@@ -17,6 +17,7 @@ import static mindustry.game.Objectives.*;
 import static singularity.contents.CollectBlocks.fast_spin_drill;
 import static singularity.contents.CollectBlocks.rock_drill;
 import static singularity.contents.CrafterBlocks.*;
+import static singularity.contents.DefenceBlocks.*;
 import static singularity.contents.GasBlocks.*;
 import static singularity.contents.LiquidBlocks.*;
 import static singularity.contents.NuclearBlocks.*;
@@ -73,8 +74,8 @@ public class SglTechThree implements ContentList{
     });
     
     node(siliconSmelter, reaction_kettle, reactKet -> {
-      reactKet.node(purifier, pure -> {
-      
+      reactKet.node(electrolytor, eleT -> {
+        eleT.node(purifier, pure -> {});
       });
     });
     
@@ -96,13 +97,15 @@ public class SglTechThree implements ContentList{
           });
           
           pressValve.node(gas_bridge_conduit, gasBridge -> {
-          
+            gasBridge.node(phase_gas_bridge_conduit, phaGasBridge -> {
+              phaGasBridge.node(iridium_gas_bridge_conduit, iridGasBridge -> {});
+            });
           });
   
           pressValve.node(filter_valve, filterVal -> {
             filterVal.node(gas_unloader, gasUnl -> {});
     
-            filterVal.node(negative_filter_valve, negaFilter -> {});
+            filterVal.node(negative_filter_valve, negFilter -> {});
           });
         });
       });
@@ -115,8 +118,22 @@ public class SglTechThree implements ContentList{
         });
         
         nucNode.node(fuel_packager, fuelPack -> {
-          fuelPack.node(nuclear_reactor, nucReact -> {});
+          fuelPack.node(nuclear_reactor, nucReact -> {
+            nucReact.node(lattice_reactor, latReact -> {
+              latReact.node(overrun_reactor, oveReact -> {});
+            });
+            
+            nucReact.node(neutron_generator, neutGen -> {});
+          });
         });
+      });
+    });
+    
+    node(thoriumWall, strengthening_alloy_wall, strWall -> {
+      strWall.node(strengthening_alloy_wall_large, strWallLarge -> {});
+      
+      strWall.node(neutron_polymer_wall, neuWall -> {
+        neuWall.node(neutron_polymer_wall_large, neuWallLar -> {});
       });
     });
     
@@ -151,12 +168,16 @@ public class SglTechThree implements ContentList{
     });
     
     nodeProduce(Liquids.water, algae_mud, alMud -> {
-      alMud.nodeProduce(chlorellaBlock, chBlock -> {
+      alMud.nodeProduce(chlorella_block, chBlock -> {
         chBlock.nodeProduce(chlorella, chl -> {});
       });
     });
     
+    node(Liquids.oil, fuel_oil, fuelOil -> {});
+    
     nodeProduce(Items.sand, crush_ore, cruOre -> {});
+    
+    nodeProduce(Items.sand, dry_ice, dryIce -> {});
     
     nodeProduce(titanium, uranium_238, u238 -> {
       u238.nodeProduce(plutonium_239, p239 -> {});

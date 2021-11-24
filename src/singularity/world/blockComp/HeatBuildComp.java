@@ -28,6 +28,14 @@ public interface HeatBuildComp extends BuildCompBase{
     return (liquid.temperature)*730f;
   }
   
+  static float getItemHeatCapacity(Item item){
+    return item instanceof SglItems.SglItem? ((SglItems.SglItem) item).heatCapacity: 550;
+  }
+  
+  static float getItemAbsTemperature(Item item){
+    return item instanceof SglItems.SglItem? ((SglItems.SglItem) item).getTemperature()*((SglItems.SglItem) item).heatCapacity: atmospheres.current.getAbsTemperature()*550;
+  }
+  
   static float getTemperature(float temperature){
     return temperature - 273.15f;
   }
@@ -85,7 +93,7 @@ public interface HeatBuildComp extends BuildCompBase{
     });
     
     if(getBlock().hasItems) items().each((item, amount) -> {
-      baseHeatCapacity[0] += item instanceof SglItems.SglItem? ((SglItems.SglItem) item).heatCapacity: 550;
+      baseHeatCapacity[0] += getItemHeatCapacity(item)*amount;
     });
     
     return this instanceof GasBuildComp? gasHeatCapacity[0] + baseHeatCapacity[0]: gasHeatCapacity[0];
@@ -101,7 +109,7 @@ public interface HeatBuildComp extends BuildCompBase{
     }
     
     if(target instanceof Item){
-      return (target instanceof SglItems.SglItem? ((SglItems.SglItem) target).getTemperature()*((SglItems.SglItem) target).heatCapacity: atmospheres.current.getAbsTemperature()*550);
+      return getItemAbsTemperature((Item) target);
     }
     
     return 0;

@@ -32,6 +32,8 @@ public class Gas extends UnlockableContent{
   public Gas(String name, Color color){
     super(name);
     this.color = color;
+    
+    alwaysUnlocked = true;
   }
   
   public CompressItem creatItem(float requireComp, float consume){
