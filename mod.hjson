@@ -3,7 +3,7 @@ displayName: "Singularity"
 author: "EBwilson"
 main: "singularity.Singularity"
 description: ""
-version: "Industry-test pre-v0.1"
+version: "0.5.1_industry-test"
 minGameVersion: 133
 
 dependencies: ["universe-core"]

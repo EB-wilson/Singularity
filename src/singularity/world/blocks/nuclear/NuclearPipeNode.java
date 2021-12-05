@@ -92,7 +92,7 @@ public class NuclearPipeNode extends NuclearBlock{
   @Override
   public void init(){
     super.init();
-    clipSize = Math.max(clipSize, linkRange * tilesize);
+    clipSize = Math.max(clipSize, linkRange * tilesize * 2);
   }
   
   @Override

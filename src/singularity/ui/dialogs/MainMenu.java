@@ -39,7 +39,7 @@ public class MainMenu extends BaseDialog {
   
   public void build() {
     cont.top().table(main -> {
-      main.image(Singularity.getModAtlas("launch_logo")).size(256, 128).padTop(30);
+      main.image(Singularity.getModAtlas("launch_logo")).size(220, 110).padTop(30);
       main.row();
       main.image().color(Pal.accent).growX().height(3).pad(0).padTop(4).padBottom(4);
       main.row();
@@ -51,12 +51,12 @@ public class MainMenu extends BaseDialog {
       main.row();
       main.image().color(Pal.accent).growX().height(3).pad(0).padTop(4);
       main.row();
-      main.table(menu -> {
-        menu.defaults().pad(0).padTop(6).margin(0).width(680).height(80).top();
+      main.pane(menu -> {
+        menu.defaults().pad(0).padTop(6).margin(0).width(680).height(64).top();
         for(ButtonEntry entry : buttonEntries){
           menu.button(b -> {
-            b.table(Tex.buttonEdge3, i -> i.image(entry.region).size(64)).size(80);
-            Label l = b.add("").width(510).padLeft(10).get();
+            b.table(Tex.buttonEdge3, i -> i.image(entry.region).size(55)).size(64);
+            Label l = b.add("").width(550).padLeft(10).get();
             shown(() -> l.setText(entry.text.get()));
             
             b.add(new Element(){
@@ -64,16 +64,16 @@ public class MainMenu extends BaseDialog {
               public void draw(){
                 Draw.color(entry.color.get().cpy().lerp(Color.black, 0.3f));
                 Draw.alpha(parentAlpha);
-                Fill.square(x + width/2, y + height/2 - 6, 12, 45);
+                Fill.square(x + width/2, y + height/2 - 6, width/8, 45);
                 Draw.color(entry.color.get());
                 Draw.alpha(parentAlpha);
-                Fill.square(x + width/2, y + height/2, 12, 45);
+                Fill.square(x + width/2, y + height/2, width/8, 45);
               }
-            }).size(80);
+            }).size(64);
           }, SglStyles.underline, entry.clicked);
           menu.row();
         }
-      }).width(680).fillY();
+      }).grow();
     }).growX().top().pad(0).margin(0);
     
     row();

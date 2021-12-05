@@ -30,7 +30,7 @@ import singularity.world.blockComp.GasBuildComp;
 import singularity.world.modules.GasesModule;
 
 @SuppressWarnings("unchecked")
-public class LeakGasArea implements Pool.Poolable, Entityc, Drawc, GasBuildComp{
+public class LeakGasArea implements Pool.Poolable, Drawc, GasBuildComp{
   public static final float maxGasCapacity = 100;
   
   public Tile tile;

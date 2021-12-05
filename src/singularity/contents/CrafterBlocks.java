@@ -777,6 +777,8 @@ public class CrafterBlocks implements ContentList{
       size = 3;
       itemCapacity = 28;
       
+      warmupSpeed = 0.006f;
+      
       newConsume();
       consume.time(240);
       consume.item(SglItems.salt_uranium, 7);
@@ -1014,9 +1016,9 @@ public class CrafterBlocks implements ContentList{
             public void draw(){
               Draw.rect(region, e.x, e.y);
               timeRow += e.warmup*e.edelta();
-              float randY = Mathf.random(-6, 6);
-              dx = 4*(float)Math.sin(timeRow/3);
-              dy = Mathf.clamp(Mathf.lerpDelta(dy, randY, 0.12f * e.warmup), -4, 4);
+              float randY = Mathf.random(-8, 8);
+              dx = 4*(float)Math.sin(timeRow/6);
+              dy = Mathf.clamp(Mathf.lerpDelta(dy, randY, 0.05f*e.warmup), -4, 4);
               
               Draw.rect(laserEmitter, e.x, e.y + dy);
               Draw.rect(laserEmitter, e.x + dx, e.y, 90);

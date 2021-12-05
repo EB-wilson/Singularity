@@ -13,6 +13,8 @@ public interface HeatBlockComp{
   /**导热系数，决定方块与大气交换热量的速度*/
   float heatCoefficient();
   
+  float blockHeatCoff();
+  
   /**基础热容，之后热容量的变化基于此值进行*/
   float baseHeatCapacity();
   

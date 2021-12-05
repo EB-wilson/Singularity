@@ -54,6 +54,11 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
     }
   
     @Override
+    public float blockHeatCoff(){
+      return 0;
+    }
+  
+    @Override
     public float baseHeatCapacity(){
       return 1;
     }

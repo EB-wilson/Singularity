@@ -151,7 +151,7 @@ public class PublicInfoDialog extends BaseListDialog{
       
           if(asset.value.get("location").asString().equals("url")){
             TextureRegion region;
-            atlas.put(asset.key, region = Core.atlas.find("nomap"));
+            atlas.put(asset.key, region = new TextureRegion(Core.atlas.find("nomap")));
         
             Runnable[] r = new Runnable[]{() -> {}};
             

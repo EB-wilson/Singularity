@@ -432,12 +432,12 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   
     @Override
     public boolean acceptItem(Building source, Item item){
-      return source.team == this.team && hasItems && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.item, item) && items.get(item) < items().allCapacity && status == SglBlockStatus.proper;
+      return source.team == this.team && hasItems && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item)) && items.get(item) < items().allCapacity && status == SglBlockStatus.proper;
     }
   
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.team == this.team && hasLiquids && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.liquid, liquid) && liquids.get(liquid) <= liquids().allCapacity - 0.0001f && status == SglBlockStatus.proper;
+      return source.team == this.team && hasLiquids && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)) && liquids.get(liquid) <= liquids().allCapacity - 0.0001f && status == SglBlockStatus.proper;
     }
   
     @Override

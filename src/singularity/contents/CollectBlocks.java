@@ -68,14 +68,14 @@ public class CollectBlocks implements ContentList {
       }, (s, c) -> {
         s.add(Stat.boostEffect, 2.0f, StatUnit.timesSpeed);
       });
-      consume.time(120);
+      consume.time(300);
       consume.item(SglItems.dry_ice, 1);
       newOptionalConsume((e, c) -> {
         e.consData(1.6f);
       }, (s, c) -> {
         s.add(Stat.boostEffect, 1.6f, StatUnit.timesSpeed);
       });
-      consume.liquid(Liquids.cryofluid, 0.5f);
+      consume.liquid(Liquids.cryofluid, 0.2f);
       
       buildType = () -> new SglAttributeCrafterBuild(){
         @Override

@@ -2,11 +2,13 @@ package singularity.world.blocks.nuclear;
 
 import arc.Core;
 import arc.Events;
+import arc.math.Angles;
 import arc.math.Mathf;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
 import arc.util.Strings;
 import arc.util.Time;
+import arc.util.Tmp;
 import mindustry.content.Fx;
 import mindustry.entities.Damage;
 import mindustry.entities.Effect;
@@ -26,6 +28,8 @@ import singularity.Sgl;
 import singularity.contents.SglItems;
 import singularity.type.GasStack;
 import singularity.ui.tables.GasDisplay;
+import singularity.world.Particle;
+import singularity.world.SglFx;
 import singularity.world.blockComp.HeatBlockComp;
 import singularity.world.blockComp.HeatBuildComp;
 import singularity.world.blocks.product.NormalCrafter;
@@ -49,15 +53,17 @@ import static singularity.world.blockComp.HeatBuildComp.getLiquidAbsTemperature;
 public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   public float maxTemperature = 1273.15f;
   public float heatCoefficient = 1f;
+  public float blockHeatCoff = 12f;
   public float baseHeatCapacity = 1250;
   public float productHeat = 1400f;
   public float smokeThreshold = 500;
   public int explosionRadius = 19;
   public int explosionDamageBase = 350;
   
-  public Effect explodeEffect = Fx.reactorExplosion;
+  public Effect explodeEffect = SglFx.reactorExplode;
   
   public Seq<BaseConsumers> coolants = new Seq<>();
+  public Seq<BaseConsumers> flues = new Seq<>();
   
   ObjectSet<Item> consItems = new ObjectSet<>();
   
@@ -78,6 +84,8 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     newProduce();
     produce.energy(output);
     if(prodWaste) produce.item(SglItems.nuclear_waste, 1);
+    
+    flues.add(consume);
   }
   
   public void addCoolant(float consHeat){
@@ -188,6 +196,11 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   }
   
   @Override
+  public float blockHeatCoff(){
+    return blockHeatCoff;
+  }
+  
+  @Override
   public float baseHeatCapacity(){
     return baseHeatCapacity;
   }
@@ -248,7 +261,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     public void updateTile(){
       super.updateTile();
       if(!consValid()) lastMulti = 0;
-      smoothEfficiency = Mathf.lerpDelta(smoothEfficiency, lastMulti, 0.2f);
+      smoothEfficiency = Mathf.lerpDelta(smoothEfficiency, lastMulti*efficiency(), 0.02f);
       heat += lastMulti*productHeat*delta();
       
       if(absTemperature() > maxTemperature){
@@ -276,21 +289,31 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   
     @Override
     public void onDestroyed(){
-      super.onDestroyed();
-    
       Sounds.explosionbig.at(tile);
-      int fuel = items.get(consumer.current.get(SglConsumeType.item).items[0].item);
+      int fuel = 0;
+      for(BaseConsumers cons: flues){
+        for(ItemStack stack: cons.get(SglConsumeType.item).items){
+          fuel += items.get(stack.item);
+        }
+      }
+      super.onDestroyed();
+      
       if((fuel < itemCapacity/3f && absTemperature() < maxTemperature/2) || !state.rules.reactorExplosions) return;
     
-      Effect.shake(6f, 16f, x, y);
-      Damage.damage(x, y, explosionRadius * tilesize, explosionDamageBase*fuel);
+      Effect.shake(8f, 24f, x, y);
+      float strength = explosionDamageBase*fuel;
+      Damage.damage(x, y, (float) explosionRadius*tilesize, strength);
     
-      explodeEffect.at(x, y);
+      explodeEffect.at(x, y, 0, (float) explosionRadius*tilesize);
+      Angles.randLenVectors(System.nanoTime(), Mathf.random(28, 36), 3f, 7.5f, (x, y) -> {
+        float len = Tmp.v1.set(x, y).len();
+        Particle.create(this.x, this.y, x, y, Mathf.random(5f, 7f)*((len - 3)/4.5f));
+      });
     }
     
     public int majorConsTotal(){
       int result = 0;
-      for(BaseConsumers cons: consumers){
+      for(BaseConsumers cons: flues){
         for(ItemStack stack: cons.get(SglConsumeType.item).items){
           result += items.get(stack.item);
         }

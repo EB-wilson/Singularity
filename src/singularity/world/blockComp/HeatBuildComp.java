@@ -1,23 +1,27 @@
 package singularity.world.blockComp;
 
+import arc.math.geom.Point2;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.ctype.MappableContent;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
+import mindustry.world.Edges;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
 import singularity.contents.SglItems;
 import singularity.type.Gas;
 import singularity.world.modules.GasesModule;
 import universeCore.entityComps.blockComps.BuildCompBase;
+import universeCore.entityComps.blockComps.Dumpable;
 import universeCore.util.handler.FieldHandler;
 
 import java.lang.reflect.Field;
 
+import static mindustry.Vars.world;
 import static singularity.Sgl.atmospheres;
 
-public interface HeatBuildComp extends BuildCompBase{
+public interface HeatBuildComp extends BuildCompBase, Dumpable{
   float heatR = 0.008314f;
   
   static float getLiquidHeatCapacity(Liquid liquid){
@@ -53,18 +57,45 @@ public interface HeatBuildComp extends BuildCompBase{
   }
   
   default void swapHeat(){
-    float atmoTemp = atmospheres.current.getAbsTemperature();
-    float highTemp = Math.max(absTemperature(), atmoTemp);
-    float lowTemp = Math.min(absTemperature(), atmoTemp);
+    HeatBuildComp other = (HeatBuildComp)getDump(e -> {
+      if(!(e instanceof HeatBuildComp)) return false;
+      return getMoveCoff((HeatBuildComp) e) >= 0 && ((HeatBuildComp) e).absTemperature() < absTemperature();
+    });
     
-    if(highTemp - lowTemp < 0.01f) return;
-    float rate = lowTemp == 0? 1: (atmoTemp - absTemperature())/(float)Math.log(highTemp/lowTemp)/60;
-    float moveHeat = getBlock().size*getBlock().size*getHeatBlock().heatCoefficient()*rate*getBuilding().delta();
+    if(other != null){
+      float otherTemp = other.absTemperature();
+      float rate = getSwapRate(absTemperature(), otherTemp);
+  
+      Point2[] nearby = Edges.getEdges(getBlock().size);
+      int count = 0;
+      for(Point2 point : nearby){
+        if(other == world.build(getBuilding().tile.x + point.x, getBuilding().tile.y + point.y)) count++;
+      }
+      float moveHeat = count*count*rate*getMoveCoff(other);
+      handleHeat(-moveHeat);
+      other.handleHeat(moveHeat);
+    }
+    
+    float atmoTemp = atmospheres.current.getAbsTemperature();
+    float moveHeat = getBlock().size*getBlock().size*getMoveCoff(null)*getSwapRate(absTemperature(), atmoTemp)*getBuilding().delta();
+    
     if(Float.isNaN(moveHeat)){
       moveHeat = 0;
     }
-    handleHeat(moveHeat);
-    if(Vars.state.isCampaign()) atmospheres.current.handleHeat(-moveHeat);
+    handleHeat(-moveHeat);
+    if(Vars.state.isCampaign()) atmospheres.current.handleHeat(moveHeat);
+  }
+  
+  default float getSwapRate(float temp1, float temp2){
+    float highTemp = Math.max(temp1, temp2);
+    float lowTemp = Math.min(temp1, temp2);
+  
+    if(highTemp - lowTemp < 0.01f) return 0;
+    return lowTemp == 0? 1: (temp1 - temp2)/(float)Math.log(highTemp/lowTemp)/60;
+  }
+  
+  default float getMoveCoff(HeatBuildComp other){
+    return other != null? (getHeatBlock().blockHeatCoff() + other.getHeatBlock().blockHeatCoff())/2: getHeatBlock().heatCoefficient();
   }
   
   default HeatBuildComp getHeatBuild(){

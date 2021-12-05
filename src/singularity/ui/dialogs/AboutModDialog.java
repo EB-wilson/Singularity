@@ -102,7 +102,7 @@ public class AboutModDialog extends BaseDialog {
   
   public void build(){
     cont.clearChildren();
-    cont.defaults().width(710).fillY().top();
+    cont.defaults().fillY().top();
   
     cont.table(Tex.buttonTrans, t -> {
       t.defaults().left().padTop(5).growX().height(40);
@@ -110,7 +110,7 @@ public class AboutModDialog extends BaseDialog {
       t.row();
       t.add(Core.bundle.get("misc.author")).color(Pal.accent);
       t.add(Core.bundle.get("mod.author"));
-      t.button(b -> b.add(Core.bundle.get("mod.contributor")), Styles.underlineb, () -> {}).update(b -> b.setChecked(false)).width(230);
+      t.button(b -> b.add(Core.bundle.get("mod.contributor")), Styles.underlineb, () -> Sgl.ui.contributors.show()).update(b -> b.setChecked(false)).width(230);
       t.row();
       t.add(Core.bundle.get("misc.version")).color(Pal.accent);
       t.add(Core.bundle.get("mod.version"));
@@ -130,57 +130,57 @@ public class AboutModDialog extends BaseDialog {
       t.add(Core.bundle.get("infos.releaseDate")).color(Pal.accent);
       t.add(Core.bundle.get("mod.updateDate"));
       t.button(Core.bundle.get("infos.checkUpdate"), () -> {}).width(230);
-    }).width(580).fillY();
+    }).width(580).fillY().padTop(40);
     
     cont.row();
     
-    cont.table(t -> {
-      t.defaults().growX().height(80).pad(0).padTop(10).margin(0);
+    cont.pane(t -> {
+      t.defaults().growX().height(64).pad(0).padTop(10).margin(0);
       
-      t.add(Core.bundle.get("infos.modPage")).color(Pal.accent).height(24);
+      t.add(Core.bundle.get("infos.modPage")).color(Pal.accent).height(24).width(720);
       t.row();
       t.image().color(Pal.accent).width(740).height(4).pad(0).padTop(4);
       t.row();
       for(ButtonEntry item : modPages){
         t.table(Tex.underline, table -> {
           table.table(img -> {
-            img.image().height(75).width(40f).update(i -> i.setColor(item.color.get()));
+            img.image().height(60).width(40f).update(i -> i.setColor(item.color.get()));
             img.row();
-            img.image().height(5).width(40f).update(i -> i.setColor(item.color.get().cpy().mul(0.8f, 0.8f, 0.8f, 1f)));
+            img.image().height(4).width(40f).update(i -> i.setColor(item.color.get().cpy().mul(0.8f, 0.8f, 0.8f, 1f)));
           }).expandY();
   
-          table.table(Tex.buttonEdge3, i -> i.image(item.region).size(32)).size(80);
-          Table i = table.table().width(510).padLeft(10).get();
+          table.table(Tex.buttonEdge3, i -> i.image(item.region).size(32)).size(64);
+          Table i = table.table().width(545).padLeft(10).get();
           i.defaults().growX().left();
           item.text.get(i);
   
-          table.button(Icon.link, item.clicked).size(80).left().padLeft(12);
+          table.button(Icon.link, item.clicked).size(64).left().padLeft(12);
         }).width(710);
         
         t.row();
       }
       
-      t.add(Core.bundle.get("infos.authorPage")).color(Pal.accent).height(24);
+      t.add(Core.bundle.get("infos.authorPage")).color(Pal.accent).height(24).width(720);
       t.row();
       t.image().color(Pal.accent).width(740).height(4).pad(0).padTop(4);
       t.row();
       for(ButtonEntry item : authorPages){
         t.button(table -> {
           table.table(img -> {
-            img.image().height(75).width(40f).update(i -> i.setColor(item.color.get()));
+            img.image().height(60).width(40f).update(i -> i.setColor(item.color.get()));
             img.row();
-            img.image().height(5).width(40f).update(i -> i.setColor(item.color.get().cpy().mul(0.8f, 0.8f, 0.8f, 1f)));
+            img.image().height(4).width(40f).update(i -> i.setColor(item.color.get().cpy().mul(0.8f, 0.8f, 0.8f, 1f)));
           }).expandY();
     
-          table.table(Tex.buttonEdge3, i -> i.image(item.region).size(32)).size(80);
-          Table i = table.table().width(590).padLeft(10).padRight(12).get();
+          table.table(Tex.buttonEdge3, i -> i.image(item.region).size(32)).size(64);
+          Table i = table.table().width(611).padLeft(10).padRight(12).get();
           i.defaults().growX().left();
           item.text.get(i);
         }, SglStyles.underline, item.clicked).width(722);
         
         t.row();
       }
-    });
+    }).growX().padTop(20);
   }
   
   private static void openUrl(String url){

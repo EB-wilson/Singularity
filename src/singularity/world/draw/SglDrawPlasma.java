@@ -34,15 +34,15 @@ public class SglDrawPlasma<T extends NormalCrafter.NormalCrafterBuild> extends D
       float r = block.size * tilesize - 3f + Mathf.absin(Time.time, 2f + i * 1f, 5f - i * 0.5f);
       
       Draw.color(plasma1, plasma2, (float)i / plasmas.length);
-      Draw.alpha((0.3f + Mathf.absin(Time.time, 2f + i * 2f, 0.3f + i * 0.05f)) * alpha(entity));
+      Draw.alpha((0.3f + Mathf.absin(Time.time, 2f + i * 2f, 0.3f + i * 0.05f)) * warmup(entity));
       Draw.blend(Blending.additive);
-      Draw.rect(plasmas[i], entity.x, entity.y, r, r, Time.time * (12 + i * 6f) * alpha(entity));
+      Draw.rect(plasmas[i], entity.x, entity.y, r, r, Time.time * (12 + i * 6f) * warmup(entity));
       Draw.blend();
     }
     Draw.color();
   }
   
-  public float alpha(T entity){
+  public float warmup(T entity){
     return entity.warmup;
   }
   

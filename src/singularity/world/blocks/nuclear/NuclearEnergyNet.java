@@ -9,6 +9,7 @@ import singularity.world.blockComp.NuclearEnergyBuildComp;
 
 public class NuclearEnergyNet{
   private static final Seq<NuclearEnergyBuildComp> empty = new Seq<>();
+  private static final Seq<NuclearEnergyBuildComp> tmp = new Seq<>();
   private static final ObjectMap<NuclearEnergyBuildComp, ObjectMap<NuclearEnergyBuildComp, Seq<NuclearEnergyBuildComp>>> emptyMap = new ObjectMap<>();
   private static final ObjectSet<NuclearEnergyBuildComp> added = new ObjectSet<>();
   
@@ -94,8 +95,9 @@ public class NuclearEnergyNet{
     for(NuclearEnergyBuildComp other: removed.energyLinked()){
       if(other.energy().energyNet != this) continue;
       
-      new NuclearEnergyNet().add(other);
-      other.energy().energyNet.flow(other, Seq.with(removed));
+      other.energy().setNet();
+      tmp.clear();
+      other.energy().energyNet.flow(other, tmp.and(removed));
     }
   }
   

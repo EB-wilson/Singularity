@@ -161,6 +161,7 @@ public class Atmosphere{
   }
   
   public final void add(Gas gas, float amount){
+    if(true) return;//机制尚不完善，暂不引用
     ingredients[gas.id] += amount;
     total += amount;
   

@@ -28,6 +28,8 @@ public class Sgl{
   public static final Fi modFile = getModFile(modName, true);
   /**本模组前置的文件位置*/
   public static final Fi libFile = getModFile(libName, false);
+  /**本模组前置版本号*/
+  public static final long libVersion = getModVersion(new ZipFi(libFile));
   /**模组内配置文件存放位置*/
   public static final Fi internalConfigDir = modFile.child("config");
   /**模组数据文件夹*/
@@ -45,10 +47,15 @@ public class Sgl{
   public static final String qqGroup2 = "";
   public static final String telegramGroup = "";
   public static final String modDevelopGroup = "https://jq.qq.com/?_wv=1027&k=vjybgqDG";
+  public static final String githubUserAvatars = "https://avatars.githubusercontent.com/";
   public static final String githubProject = "https://github.com/EB-wilson/Singularity";
+  public static final String libGithubProject = "https://github.com/EB-wilson/UniverseCore";
   public static final String discord = "";
   public static final String githubRawMaster = "https://raw.githubusercontent.com/EB-wilson/Singularity/master/";
   public static final String publicInfo = githubRawMaster + "publicInfo/";
+  
+  public static final String modAddress = "";
+  public static final String libAddress = "";
   
   /**模组配置存储器*/
   public static ModConfig config = new ModConfig();
@@ -62,6 +69,8 @@ public class Sgl{
   public static Reactions reactions;
   /**所有反应点的全局存储对象，用于保存和统一操作反应点*/
   public static ReactionPoints reactionPoints;
+  /***/
+  public static Contributors contributors;
   
   public static UpdateTiles updateTiles;
   
@@ -74,6 +83,7 @@ public class Sgl{
     gasAreas = new GasAreas();
     reactions = new Reactions();
     reactionPoints = new ReactionPoints();
+    contributors = new Contributors();
     
     updateTiles = new UpdateTiles();
     
@@ -103,5 +113,23 @@ public class Sgl{
     }
     
     return temp;
+  }
+  
+  public static long getModVersion(Fi mod){
+    Jval main = Jval.read(mod.child("mod.hjson").reader());
+    String str = main.has("version")? main.get("version").asString(): null;
+    
+    long result = -1;
+    if(str != null){
+      String[] vars = str.split("\\.");
+      result = 0;
+      int priority = 10;
+      for(String s: vars){
+        long base = Long.parseLong(s);
+        result += base*priority;
+        priority /= 10;
+      }
+    }
+    return result;
   }
 }

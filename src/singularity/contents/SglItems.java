@@ -65,9 +65,9 @@ public class SglItems implements ContentList{
     
     crystal_FEX_power = new Item("crystal_FEX_power", Color.valueOf("#E34248")){{
       hardness = 3;
-      explosiveness = 0.6f;
+      explosiveness = 1.6f;
       flammability = 0f;
-      radioactivity = 1f;
+      radioactivity = 3f;
       cost = 1.35f;
     }};
     
@@ -107,35 +107,35 @@ public class SglItems implements ContentList{
       hardness = 2;
       explosiveness = 0f;
       flammability = 0f;
-      radioactivity = 0.3f;
+      radioactivity = 0.4f;
     }};
     
     uranium_235 = new Item("uranium_235", Color.valueOf("#B5D980")){{
       hardness = 2;
       explosiveness = 0f;
       flammability = 0f;
-      radioactivity = 0.8f;
+      radioactivity = 1.6f;
     }};
     
     plutonium_239 = new Item("plutonium_239", Color.valueOf("#D1D19F")){{
       hardness = 2;
       explosiveness = 0f;
       flammability = 0f;
-      radioactivity = 0.8f;
+      radioactivity = 1.6f;
     }};
     
     concentration_uranium_235 = new Item("concentration_uranium_235", Color.valueOf("#95B564")){{
       hardness = 4;
-      explosiveness = 1f;
+      explosiveness = 12f;
       flammability = 0f;
-      radioactivity = 1.8f;
+      radioactivity = 2.4f;
     }};
     
     concentration_plutonium_239 = new Item("concentration_plutonium_239", Color.valueOf("#B0B074")){{
       hardness = 4;
-      explosiveness = 1f;
+      explosiveness = 12f;
       flammability = 0f;
-      radioactivity = 1.8f;
+      radioactivity = 2.4f;
     }};
     
     uranium_cake = new Item("uranium_cake", Color.valueOf("#E67D53")){{

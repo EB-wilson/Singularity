@@ -4,23 +4,33 @@ import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
+import arc.math.Angles;
+import arc.math.Mathf;
+import arc.util.Tmp;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.ctype.ContentList;
+import mindustry.entities.Effect;
+import mindustry.gen.Sounds;
 import mindustry.graphics.Drawf;
+import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.meta.BuildVisibility;
 import singularity.type.SglCategory;
+import singularity.world.Particle;
+import singularity.world.SglFx;
 import singularity.world.blocks.nuclear.EnergySource;
 import singularity.world.blocks.nuclear.EnergyVoid;
 import singularity.world.blocks.nuclear.NuclearPipeNode;
 import singularity.world.blocks.nuclear.NuclearReactor;
 import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.draw.DrawExpandPlasma;
 import singularity.world.draw.DrawFactory;
 import singularity.world.draw.SglDrawPlasma;
 
@@ -35,6 +45,8 @@ public class NuclearBlocks implements ContentList{
   decay_bin,
   /**中子能发电机*/
   neutron_generator,
+  /**核子冲击反应堆*/
+  nuclear_impact_reactor,
   /**核反应堆*/
   nuclear_reactor,
   /**晶格反应堆*/
@@ -115,6 +127,8 @@ public class NuclearBlocks implements ContentList{
       requirements(Category.power, ItemStack.with(SglItems.strengthening_alloy, 100, SglItems.crystal_FEX_power, 80, Items.phaseFabric, 70, SglItems.aerogel, 90));
       size = 3;
       
+      warmupSpeed = 0.0075f;
+      
       newConsume();
       consume.energy(4);
       newProduce();
@@ -132,6 +146,50 @@ public class NuclearBlocks implements ContentList{
         };
       }};
     }};
+  
+    nuclear_impact_reactor = new NormalCrafter("nuclear_impact_reactor"){{
+      requirements(Category.power, ItemStack.with());
+      size = 5;
+      itemCapacity = 30;
+      liquidCapacity = 35;
+      
+      craftEffect = SglFx.explodeImpWave;
+      updateEffect = SglFx.impWave;
+      effectRange = 2;
+      updateEffectChance = 0.025f;
+      
+      ambientSoundVolume = 0.6f;
+      craftedSound = Sounds.explosionbig;
+      craftedSoundVolume = 1f;
+  
+      craftTrigger = e -> {
+        Effect.shake(4f, 14f, e.x, e.y);
+        Angles.randLenVectors(System.nanoTime(), Mathf.random(8, 12), 5.5f, 7, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(5f, 7f)).setDest(e.x, e.y).setAttenuate(0.075f));
+      };
+      crafting = e -> {
+        if(Mathf.chanceDelta(0.02f)) Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(3.25f, 4f)));
+      };
+      
+      warmupSpeed = 0.00065f;
+      
+      newConsume();
+      consume.item(SglItems.concentration_uranium_235, 1);
+      consume.power(65);
+      consume.liquid(Liquids.cryofluid, 0.6f);
+      consume.time(210);
+      newProduce();
+      produce.power(275);
+      
+      newConsume();
+      consume.item(SglItems.concentration_plutonium_239, 1);
+      consume.power(65);
+      consume.liquid(Liquids.cryofluid, 0.6f);
+      consume.time(210);
+      newProduce();
+      produce.power(275);
+      
+      draw = new DrawExpandPlasma<>(this, 2);
+    }};
     
     nuclear_reactor = new NuclearReactor("nuclear_reactor"){{
       requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 200, SglItems.crystal_FEX, 160, SglItems.aerogel, 180, Items.lead, 180, Items.phaseFabric, 140));
@@ -139,6 +197,8 @@ public class NuclearBlocks implements ContentList{
       itemCapacity = 35;
       liquidCapacity = 25;
       energyCapacity = 2048;
+      
+      ambientSoundVolume = 0.4f;
       
       newReact(SglItems.concentration_uranium_235, 450, 8, true);
       newReact(SglItems.concentration_plutonium_239, 450, 8, true);
@@ -163,9 +223,9 @@ public class NuclearBlocks implements ContentList{
       
       productHeat = 800;
       
-      newReact(SglItems.uranium_235, 900, 5f, false);
-      newReact(SglItems.plutonium_239, 900, 5f, false);
-      newReact(Items.thorium, 750, 4.2f, false);
+      newReact(SglItems.uranium_235, 1200, 6f, false);
+      newReact(SglItems.plutonium_239, 1200, 6f, false);
+      newReact(Items.thorium, 900, 5f, false);
   
       addCoolant(2600f);
       consume.liquid(Liquids.cryofluid, 0.2f);
@@ -186,6 +246,10 @@ public class NuclearBlocks implements ContentList{
       explosionRadius = 32;
       
       productHeat = 2800;
+      
+      warmupSpeed = 0.0015f;
+      
+      ambientSoundVolume = 0.6f;
       
       newReact(SglItems.concentration_uranium_235, 240, 22, false);
       newReact(SglItems.concentration_plutonium_239, 240, 22, false);
@@ -220,6 +284,33 @@ public class NuclearBlocks implements ContentList{
   
             Draw.color(coolColor, hotColor, e.temperature()/e.block().maxTemperature);
             Fill.rect(e.x, e.y, e.block.size * tilesize, e.block.size * tilesize);
+            
+            Draw.z(Layer.effect);
+            Draw.color(Pal.reactorPurple);
+            
+            float shake = Mathf.random(-0.4f, 0.4f)*e.warmup;
+            Tmp.v1.set(19 + shake, 0).rotate(e.totalProgress*2);
+            Tmp.v2.set(0, 19 + shake).rotate(e.totalProgress*2);
+            Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, e.totalProgress*2);
+            Fill.poly(e.x + Tmp.v2.x, e.y + Tmp.v2.y, 3, 3f, e.totalProgress*2 + 90);
+            Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, e.totalProgress*2 + 180);
+            Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, e.totalProgress*2 + 270);
+            
+            Tmp.v1.set(16, 0).rotate(-e.totalProgress*2);
+            Tmp.v2.set(0, 16).rotate(-e.totalProgress*2);
+            Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, -e.totalProgress*2 - 180);
+            Fill.poly(e.x + Tmp.v2.x, e.y + Tmp.v2.y, 3, 3f, -e.totalProgress*2 - 90);
+            Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, -e.totalProgress*2);
+            Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, -e.totalProgress*2 + 90);
+            
+            Lines.stroke(1.8f*e.warmup);
+            Lines.circle(e.x, e.y, 18 + shake);
+            
+            if(Mathf.chanceDelta(0.15f*e.warmup)) Angles.randVectors(System.nanoTime(), 1, 15, (x, y) -> {
+              float iff = Mathf.random(0.4f, Math.max(0.4f, e.warmup));
+              Tmp.v1.set(x, y).scl(0.5f*iff/2);
+              Particle.create(e.x + x, e.y + y, Tmp.v1.x, Tmp.v1.y, iff*6.5f*e.warmup);
+            });
           };
         }
       };

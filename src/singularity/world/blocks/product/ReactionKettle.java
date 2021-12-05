@@ -43,6 +43,7 @@ import java.lang.reflect.Field;
 public class ReactionKettle extends SglBlock implements HeatBlockComp{
   public float totalItemCapacity = 150;
   public float heatCoefficient = 0.35f;
+  public float blockHeatCoff = 12f;
   public float totalLiquidCapacity = 60;
   public float maxTemperature = 1000;
   public float baseHeatCapacity = 600;
@@ -115,6 +116,11 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   @Override
   public float heatCoefficient(){
     return heatCoefficient;
+  }
+  
+  @Override
+  public float blockHeatCoff(){
+    return blockHeatCoff;
   }
   
   @Override

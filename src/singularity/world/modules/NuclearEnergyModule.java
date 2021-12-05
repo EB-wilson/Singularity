@@ -59,8 +59,7 @@ public class NuclearEnergyModule extends BlockModule {
   
   public void setNet(NuclearEnergyNet net){
     if(net == null){
-      energyNet = new NuclearEnergyNet();
-      energyNet.add(entity);
+      new NuclearEnergyNet().add(entity);
     }
     else energyNet = net;
   }
