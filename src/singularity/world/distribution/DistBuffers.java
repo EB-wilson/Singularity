@@ -1,42 +1,17 @@
 package singularity.world.distribution;
 
 import arc.func.Prov;
+import arc.struct.ObjectMap;
 import arc.struct.Seq;
-import mindustry.gen.Building;
-import mindustry.world.modules.ItemModule;
-import mindustry.world.modules.LiquidModule;
-import singularity.world.blockComp.GasBuildComp;
-import singularity.world.modules.GasesModule;
+import singularity.world.distribution.buffers.BaseBuffer;
+import singularity.world.distribution.buffers.ItemsBuffer;
 
-public class DistBuffers<T>{
-  public static DistBuffers<ItemModule> itemBuffer = new DistBuffers<>(ItemModule::new);
-  public static DistBuffers<LiquidModule> liquidBuffer = new DistBuffers<>(LiquidModule::new);
-  public static DistBuffers<GasesModule> gasBuffer = new DistBuffers<>(() -> new GasesModule(new GasBuildComp(){
-    @Override
-    public GasesModule gases(){
-      return null;
-    }
+public class DistBuffers<T extends BaseBuffer<?, ?>>{
+  public static final ObjectMap<DistBuffers<?>, Integer> defBufferCapacity = new ObjectMap<>();
   
-    @Override
-    public ItemModule items(){
-      return null;
-    }
-  
-    @Override
-    public LiquidModule liquids(){
-      return null;
-    }
-  
-    @Override
-    public byte getCdump(){
-      return 0;
-    }
-  
-    @Override
-    public Seq<Building> getDumps(){
-      return null;
-    }
-  }));
+  public static DistBuffers<ItemsBuffer> itemBuffer = new DistBuffers<>(ItemsBuffer::new);
+  //public static DistBuffers<LiquidsBuffer> liquidBuffer = new DistBuffers<>(LiquidsBuffer::new);
+  //public static DistBuffers<GasesBuffer> gasBuffer = new DistBuffers<>(GasesBuffer::new);
   
   public static Seq<DistBuffers<?>> all = new Seq<>();
   
@@ -44,8 +19,13 @@ public class DistBuffers<T>{
   protected T buffer;
   
   public DistBuffers(Prov<T> initializer){
+    this(initializer, 1024);
+  }
+  
+  public DistBuffers(Prov<T> initializer, int defaultCapacity){
     this.initializer = initializer;
     all.add(this);
+    defBufferCapacity.put(this, defaultCapacity);
   }
   
   public T get(){

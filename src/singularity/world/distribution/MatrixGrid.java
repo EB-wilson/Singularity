@@ -2,11 +2,16 @@ package singularity.world.distribution;
 
 import arc.func.Boolf;
 import arc.struct.ObjectMap;
+import arc.struct.Seq;
 import mindustry.gen.Building;
+import singularity.world.blockComp.distributeNetwork.DistMatrixUnitComp;
 
 import java.util.PriorityQueue;
 
 public class MatrixGrid{
+  public DistMatrixUnitComp handler;
+  private static final Seq<Building> t = new Seq<>();
+  
   ObjectMap<Building, BuildingEntry<?>> all = new ObjectMap<>();
   
   PriorityQueue<BuildingEntry<?>> output = new PriorityQueue<>((a, b) -> a.priority - b.priority);
@@ -15,8 +20,12 @@ public class MatrixGrid{
   
   public int priority;
   
+  public MatrixGrid(DistMatrixUnitComp handler){
+    this.handler = handler;
+  }
+  
   @SuppressWarnings("unchecked")
-  public <T> T get(Class<T> clazz, GridChildType type, Boolf<T> req){
+  public <T> Seq<Building> get(Class<T> clazz, GridChildType type, Boolf<T> req){
     PriorityQueue<BuildingEntry<?>> temp = null;
     switch(type){
       case output: temp = output; break;
@@ -24,11 +33,12 @@ public class MatrixGrid{
       case container: temp = container; break;
     }
     
+    t.clear();
     for(BuildingEntry<?> entry: temp){
-      if(clazz.isAssignableFrom(entry.entity.getClass()) && req.get((T)entry.entity)) return (T)entry.entity;
+      if(clazz.isAssignableFrom(entry.entity.getClass()) && req.get((T)entry.entity)) t.add(entry.entity);
     }
     
-    return null;
+    return t;
   }
   
   @SuppressWarnings("unchecked")

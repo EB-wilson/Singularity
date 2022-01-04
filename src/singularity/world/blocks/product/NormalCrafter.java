@@ -50,7 +50,6 @@ import universeCore.entityComps.blockComps.ProducerBuildComp;
 import universeCore.util.UncLiquidStack;
 import universeCore.world.blockModule.BaseProductModule;
 import universeCore.world.consumers.BaseConsumers;
-import universeCore.world.consumers.UncConsumeItems;
 import universeCore.world.consumers.UncConsumeLiquids;
 import universeCore.world.consumers.UncConsumePower;
 import universeCore.world.producers.BaseProducers;
@@ -79,10 +78,6 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   public Cons<NormalCrafterBuild> craftTrigger;
   public Cons<NormalCrafterBuild> crafting;
   
-  public final NormalCrafter self = this;
-  
-  /**在显示多液体输出配置时的液体选择贴图*/
-  public TextureRegion liquidSelector;
   public float warmupSpeed = 0.02f;
   public float stopSpeed = 0.02f;
   
@@ -115,7 +110,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     if(effectRange == -1) effectRange = size;
     
     if(producers.size() > 0) for(BaseProducers prod: producers){
-      hasItems |= prod.get(SglProduceType.item) != null;
+      hasItems |= outputItems |= prod.get(SglProduceType.item) != null;
       hasLiquids |= outputsLiquid |= prod.get(SglProduceType.liquid) != null;
       hasPower |= outputsPower |= prod.get(SglProduceType.power) != null && prod.get(SglProduceType.power).powerProduction != 0;
       hasGases |= outputGases |= prod.get(SglProduceType.gas) != null;
@@ -391,24 +386,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
           int s = i;
           BaseProducers p = producers.get(i);
           BaseConsumers c = consumers.get(i);
-          
-          ProduceItems<?> produceItems = p.get(SglProduceType.item);
-          ProduceLiquids<?> produceLiquids = p.get(SglProduceType.liquid);
-          ProduceGases<?> produceGases = p.get(SglProduceType.gas);
-          
-          UncConsumeItems<?> consumeItems = c.get(SglConsumeType.item);
-          UncConsumeLiquids<?> consumeLiquids = c.get(SglConsumeType.liquid);
-          SglConsumeGases<?> consumeGases = c.get(SglConsumeType.gas);
-          
-          icon = p.icon != null? p.icon: produceItems != null && produceItems.items != null?
-          produceItems.items[0].item.uiIcon: produceLiquids != null && produceLiquids.liquids != null?
-          produceLiquids.liquids[0].liquid.uiIcon: produceGases != null && produceGases.gases != null?
-          produceGases.gases[0].gas.uiIcon: null;
-  
-          if(icon == null) icon = c.icon != null? c.icon: consumeItems != null && consumeItems.items != null?
-              consumeItems.items[0].item.uiIcon: consumeLiquids != null && consumeLiquids.liquids != null?
-              consumeLiquids.liquids[0].liquid.uiIcon: consumeGases != null && consumeGases.gases != null?
-              consumeGases.gases[0].gas.uiIcon: null;
+          icon = p.icon != null? p.icon.get(): c.icon.get();
           
           ImageButton button = new ImageButton(icon, Styles.selecti);
           button.clicked(() -> {
@@ -427,7 +405,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
 
     @Override
     public NormalCrafter block() {
-      return self;
+      return NormalCrafter.this;
     }
 
     @Override

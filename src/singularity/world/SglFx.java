@@ -6,6 +6,8 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.math.Interp;
 import arc.math.Mathf;
+import arc.math.geom.Geometry;
+import arc.math.geom.Vec2;
 import mindustry.content.Fx;
 import mindustry.entities.Effect;
 import mindustry.graphics.Drawf;
@@ -26,8 +28,6 @@ public class SglFx{
     
     Draw.color(e.color, Color.lightGray, e.fin());
     Draw.alpha(0.75f*param*e.fout());
-    
-    Draw.z(Layer.bullet);
     
     randLenVectors(e.id, 1, 8f + e.fin()*(param + 3), (x, y) -> {
       Fill.circle(e.x + x, e.y + y, 0.55f+e.fslope()*4.5f);
@@ -193,5 +193,24 @@ public class SglFx{
         Drawf.light(b.x + x, b.y + y, (out * 4 * (3f + intensity)) * 3.5f, Draw.getColor(), 0.8f);
       });
     });
+  }),
+  
+  steam = new Effect(90, e -> {
+    Vec2 motion = e.data() instanceof Vec2? e.data(): new Vec2(0, 0);
+    float len = motion.len();
+    Draw.color(Color.white);
+    Draw.alpha(0.75f*e.fout());
+    
+    for(int i=0; i<5; i++){
+      Vec2 curr = motion.cpy().rotate(Mathf.randomSeed(e.id, - 20, 20)).setLength(len*e.finpow());
+      Fill.circle(e.x + curr.x, e.y + curr.y, Mathf.randomSeed(e.id, 3.5f, 5)*(0.3f + 0.7f*e.fslope()));
+    }
+  }),
+  
+  steamBreakOut = new Effect(24, e -> {
+    float leng = Mathf.random(18, 24);
+    for(int i=0; i<4; i++){
+      if(Mathf.chanceDelta(0.3f)) steam.at(e.x, e.y, 0, new Vec2(leng*Geometry.d8(i*2 + 1).x, leng*Geometry.d8(i*2 + 1).y));
+    }
   });
 }

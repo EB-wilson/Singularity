@@ -39,7 +39,8 @@ public class SglStat{
   
       generatorType = handler.addEnumItemTail("generator", SglStatCat.generator),
       
-      autoSelect = handler.addEnumItemTail("autoSelect", StatCat.crafting),
-      controllable = handler.addEnumItemTail("controllable", StatCat.crafting),
+      autoSelect = handler.addEnumItem("autoSelect", 46, StatCat.crafting),
+      controllable = handler.addEnumItem("controllable", 47, StatCat.crafting),
+  
       effect = handler.addEnumItemTail("effect", StatCat.function);
 }

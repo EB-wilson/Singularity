@@ -28,7 +28,6 @@ import singularity.Sgl;
 import singularity.contents.SglItems;
 import singularity.type.GasStack;
 import singularity.ui.tables.GasDisplay;
-import singularity.world.Particle;
 import singularity.world.SglFx;
 import singularity.world.blockComp.HeatBlockComp;
 import singularity.world.blockComp.HeatBuildComp;
@@ -42,6 +41,7 @@ import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeItems;
 import universeCore.world.consumers.UncConsumeLiquids;
 import universeCore.world.consumers.UncConsumeType;
+import universeCore.world.particles.Particle;
 import universeCore.world.producers.BaseProduce;
 import universeCore.world.producers.ProducePower;
 

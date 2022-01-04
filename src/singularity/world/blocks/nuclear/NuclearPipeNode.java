@@ -72,19 +72,10 @@ public class NuclearPipeNode extends NuclearBlock{
     
       if(entity.energy().linked.contains(value)){
         entity.deLink(other);
-      
-        NuclearEnergyNet net = new NuclearEnergyNet();
-        net.flow(entity);
-        if(other.getEnergyNetwork() != net){
-          NuclearEnergyNet otherGroup = new NuclearEnergyNet();
-          otherGroup.flow(other);
-        }
       }
       else{
         if(!linkCountValid(entity, other)) return;
         entity.link(other);
-      
-        entity.getEnergyNetwork().addNet(other.getEnergyNetwork());
       }
     });
   }
@@ -420,9 +411,7 @@ public class NuclearPipeNode extends NuclearBlock{
           Building link = world.build(x, y);
           if(!(link instanceof NuclearEnergyBuildComp)) continue;
           if(link != this && canLink(this, (NuclearEnergyBuildComp) link)){
-            boolean linked = energy.linked.contains(link.pos());
-          
-            if(linked){
+            if(energy.linked.contains(link.pos())){
               Drawf.square(link.x, link.y, link.block.size * tilesize / 2f + 1f, Pal.place);
             }
           }

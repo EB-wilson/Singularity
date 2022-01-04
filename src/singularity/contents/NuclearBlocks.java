@@ -23,7 +23,6 @@ import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.meta.BuildVisibility;
 import singularity.type.SglCategory;
-import singularity.world.Particle;
 import singularity.world.SglFx;
 import singularity.world.blocks.nuclear.EnergySource;
 import singularity.world.blocks.nuclear.EnergyVoid;
@@ -33,6 +32,7 @@ import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.draw.DrawExpandPlasma;
 import singularity.world.draw.DrawFactory;
 import singularity.world.draw.SglDrawPlasma;
+import universeCore.world.particles.Particle;
 
 import static mindustry.Vars.tilesize;
 
@@ -163,8 +163,11 @@ public class NuclearBlocks implements ContentList{
       craftedSoundVolume = 1f;
   
       craftTrigger = e -> {
+        for(Particle particle : Particle.get(p -> p.x < e.x + 20 && p.x > e.x - 20 && p.y < e.y + 20 && p.y > e.y - 20)){
+          particle.remove();
+        }
         Effect.shake(4f, 14f, e.x, e.y);
-        Angles.randLenVectors(System.nanoTime(), Mathf.random(8, 12), 5.5f, 7, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(5f, 7f)).setDest(e.x, e.y).setAttenuate(0.075f));
+        Angles.randLenVectors(System.nanoTime(), Mathf.random(8, 12), 4.75f, 6.25f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(5f, 7f)).setAttenuate(0.125f).deflect().setDest(e.x, e.y));
       };
       crafting = e -> {
         if(Mathf.chanceDelta(0.02f)) Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(3.25f, 4f)));
@@ -174,19 +177,19 @@ public class NuclearBlocks implements ContentList{
       
       newConsume();
       consume.item(SglItems.concentration_uranium_235, 1);
-      consume.power(65);
+      consume.power(70);
       consume.liquid(Liquids.cryofluid, 0.6f);
-      consume.time(210);
+      consume.time(180);
       newProduce();
-      produce.power(275);
+      produce.power(280);
       
       newConsume();
       consume.item(SglItems.concentration_plutonium_239, 1);
-      consume.power(65);
+      consume.power(70);
       consume.liquid(Liquids.cryofluid, 0.6f);
-      consume.time(210);
+      consume.time(180);
       newProduce();
-      produce.power(275);
+      produce.power(280);
       
       draw = new DrawExpandPlasma<>(this, 2);
     }};
@@ -257,6 +260,14 @@ public class NuclearBlocks implements ContentList{
       addCoolant(3000f);
       consume.liquid(SglLiquids.phase_FEX_liquid, 0.4f);
       
+      crafting = e -> {
+        if(Mathf.chanceDelta(0.15f*e.warmup)) Angles.randVectors(System.nanoTime(), 1, 15, (x, y) -> {
+          float iff = Mathf.random(0.4f, Math.max(0.4f, e.warmup));
+          Tmp.v1.set(x, y).scl(0.5f*iff/2);
+          Particle.create(e.x + x, e.y + y, Tmp.v1.x, Tmp.v1.y, iff*6.5f*e.warmup);
+        });
+      };
+      
       draw = new SglDrawPlasma<NuclearReactorBuild>(this, 4){
         TextureRegion rotatorA, rotatorB;
   
@@ -305,12 +316,6 @@ public class NuclearBlocks implements ContentList{
             
             Lines.stroke(1.8f*e.warmup);
             Lines.circle(e.x, e.y, 18 + shake);
-            
-            if(Mathf.chanceDelta(0.15f*e.warmup)) Angles.randVectors(System.nanoTime(), 1, 15, (x, y) -> {
-              float iff = Mathf.random(0.4f, Math.max(0.4f, e.warmup));
-              Tmp.v1.set(x, y).scl(0.5f*iff/2);
-              Particle.create(e.x + x, e.y + y, Tmp.v1.x, Tmp.v1.y, iff*6.5f*e.warmup);
-            });
           };
         }
       };

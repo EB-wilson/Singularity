@@ -1,6 +1,7 @@
 package singularity.world.consumers;
 
 import arc.Core;
+import arc.graphics.g2d.TextureRegion;
 import arc.scene.ui.layout.Table;
 import arc.struct.Bits;
 import mindustry.gen.Building;
@@ -25,6 +26,11 @@ public class SglConsumeGases<T extends Building & GasBuildComp & ConsumerBuildCo
   @Override
   public UncConsumeType<SglConsumeGases<?>> type(){
     return SglConsumeType.gas;
+  }
+  
+  @Override
+  public TextureRegion icon(){
+    return gases[0].gas.uiIcon;
   }
   
   @Override
@@ -67,7 +73,7 @@ public class SglConsumeGases<T extends Building & GasBuildComp & ConsumerBuildCo
   
     for(GasStack stack: gases){
       if(entity.gases() == null || entity.gases().get(stack.gas) < stack.amount*(entity.getBlock().hasPower && entity.getBuilding().power.status != 0?
-        entity.getBuilding().edelta(): entity.getBuilding().delta())) return false;
+          entity.delta()*entity.power.status: entity.getBuilding().delta())*entity.consumeMultiplier(this)) return false;
     }
     return true;
   }

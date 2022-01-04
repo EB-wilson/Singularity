@@ -54,7 +54,6 @@ import universeCore.ui.table.RecipeTable;
 import universeCore.util.UncLiquidStack;
 import universeCore.world.blockModule.BaseConsumeModule;
 import universeCore.world.consumers.BaseConsumers;
-import universeCore.world.consumers.UncConsumeItems;
 import universeCore.world.consumers.UncConsumeLiquids;
 import universeCore.world.consumers.UncConsumeType;
 
@@ -66,13 +65,13 @@ import static mindustry.Vars.*;
 
 /**此mod的基础方块类型，对block添加了完善的consume系统，并拥有核能的基础模块*/
 public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyBlockComp, GasBlockComp{
-  private final SglBlock self = this;
-  
   public RecipeTable recipeTable;
   public RecipeTable optionalRecipeTable;
   
   public boolean autoSelect = false;
   public boolean canSelect = true;
+  
+  public boolean outputItems;
   
   /**方块处于损坏状态时的贴图*/
   public TextureRegion brokenRegion;
@@ -152,6 +151,11 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       e.recipeSelected = false;
       e.recipeCurrent = 0;
     });
+  }
+  
+  @Override
+  public boolean outputsItems(){
+    return outputItems;
   }
   
   @Override
@@ -235,8 +239,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       initPower(powerCapacity);
     }
     if(hasEnergy && maxEnergyPressure == -1) maxEnergyPressure = energyCapacity*energyCapacity*0.5f;
-  
+    
     super.init();
+    initConsume();
   }
   
   @Override
@@ -429,7 +434,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public void onProximityUpdate(){
       super.onProximityUpdate();
-      if(energy != null) updateLinked();
+      updateLinked();
     }
   
     @Override
@@ -469,6 +474,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     }
     
     public float energyEfficiency(){
+      if(!consumer.hasConsume()) return 1;
       //未选择配方时返回0
       if(recipeCurrent == -1 || consumer.current == null) return 0f;
       SglConsumeEnergy<?> ce = consumer.current.get(SglConsumeType.energy);
@@ -792,18 +798,12 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         prescripts.add(Core.bundle.get("fragment.buttons.selectPrescripts")).padLeft(5).padTop(5).padBottom(5);
         prescripts.row();
         
-        TextureRegion icon;
         Table buttons = new Table();
         for(int i=0; i<consumers.size(); i++){
           int s = i;
           BaseConsumers c = consumers.get(i);
-          UncConsumeItems<?> consumeItems = c.get(SglConsumeType.item);
-          UncConsumeLiquids<?> consumeLiquids = c.get(SglConsumeType.liquid);
           
-          icon = c.icon != null? c.icon: consumeItems != null && consumeItems.items != null?
-          consumeItems.items[0].item.uiIcon: consumeLiquids != null && consumeLiquids.liquids != null?
-          consumeLiquids.liquids[0].liquid.uiIcon: null;
-          ImageButton button = new ImageButton(icon, Styles.selecti);
+          ImageButton button = new ImageButton(c.icon.get(), Styles.selecti);
           button.clicked(() -> {
             reset();
             configure(s);
@@ -820,17 +820,17 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     }
     
     public boolean acceptAll(UncConsumeType<?> type){
-      return autoSelect && !canSelect || !recipeSelected;
+      return autoSelect && (!canSelect || !recipeSelected);
     }
     
     @Override
     public boolean acceptItem(Building source, Item item){
-      return source.team == this.team && hasItems && consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item)) && items.get(item) < block().itemCapacity && status == SglBlockStatus.proper;
+      return source.team == this.team && hasItems && (!consumer.hasConsume() || consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item))) && items.get(item) < block().itemCapacity && status == SglBlockStatus.proper;
     }
 
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.team == this.team && hasLiquids && consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)) && liquids.get(liquid) <= block().liquidCapacity - 0.0001f && status == SglBlockStatus.proper;
+      return source.team == this.team && hasLiquids && (!consumer.hasConsume() || consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid))) && liquids.get(liquid) <= block().liquidCapacity - 0.0001f && status == SglBlockStatus.proper;
     }
   
     @Override
@@ -846,7 +846,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
-      return GasBuildComp.super.acceptGas(source, gas) && consumer.filter(SglConsumeType.gas, gas, acceptAll(SglConsumeType.gas));
+      return GasBuildComp.super.acceptGas(source, gas) && (!consumer.hasConsume() || consumer.filter(SglConsumeType.gas, gas, acceptAll(SglConsumeType.gas)));
     }
   
     @Override
@@ -868,7 +868,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     
     @Override
     public SglBlock block(){
-      return self;
+      return SglBlock.this;
     }
     
     @Override

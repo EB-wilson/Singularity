@@ -53,9 +53,7 @@ public class Singularity extends Mod{
   
   @SuppressWarnings("unchecked")
   public Singularity() throws Exception{
-    try{
-      Class.forName("universeCore.UncCore", false, getClass().getClassLoader());
-    }catch(ClassNotFoundException e){
+    if(Vars.mods.getMod(libName) == null){
       if(libFile == null || !libFile.exists() || libVersion < libVersionRequire){
         Time.run(0, () -> {
           BaseDialog tip = new BaseDialog(""){{
@@ -117,7 +115,7 @@ public class Singularity extends Mod{
     }
   
     modContents = new ContentList[]{
-        new SglItems(),//物品
+        new SglItems(),// 物品
         new SglLiquids(),//液体
         new Gases(),//气体
         new Environments(),//环境块
@@ -126,6 +124,7 @@ public class Singularity extends Mod{
         new GasBlocks(),//气体相关方块
         new LiquidBlocks(),//物流方块
         new CollectBlocks(),//采集方块
+        new DistributeBlocks(),//物流运输方块
         new DefenceBlocks(),//防御方块
         new Reactions(),//化学反应
       
@@ -275,4 +274,6 @@ public class Singularity extends Mod{
       }
     }.show();
   }
+  
+  
 }

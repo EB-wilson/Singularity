@@ -64,6 +64,13 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Dumpable{
     other.updateLinked();
     energy().linked.removeValue(other.getBuilding().pos());
     updateLinked();
+  
+    NuclearEnergyNet net = new NuclearEnergyNet();
+    net.flow(this);
+    if(other.getEnergyNetwork() != net){
+      NuclearEnergyNet otherGroup = new NuclearEnergyNet();
+      otherGroup.flow(other);
+    }
   }
   
   default void link(NuclearEnergyBuildComp other){
@@ -71,6 +78,8 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Dumpable{
     other.updateLinked();
     energy().linked.add(other.getBuilding().pos());
     updateLinked();
+  
+    getEnergyNetwork().addNet(other.getEnergyNetwork());
   }
   
   default void onEnergyNetworkRemoved(){
@@ -109,6 +118,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Dumpable{
   }
   
   default void updateLinked(){
+    if(energy() == null) return;
     Seq<NuclearEnergyBuildComp> linked = energyLinked();
     linked.clear();
     for(Building entity: getBuilding().proximity){

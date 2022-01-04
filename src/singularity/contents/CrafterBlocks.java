@@ -651,7 +651,7 @@ public class CrafterBlocks implements ContentList{
     
     gel_mixer = new NormalCrafter("gel_mixer"){{
       requirements(Category.crafting, ItemStack.with(Items.titanium, 90, Items.lead, 100, Items.thorium, 75, Items.graphite, 60, Items.metaglass, 120));
-      size = 4;
+      size = 3;
       liquidCapacity = 40f;
       
       newConsume();
@@ -663,23 +663,26 @@ public class CrafterBlocks implements ContentList{
       newProduce();
       produce.liquid(SglLiquids.mixed_chemical_gel, 0.4f);
       
+      updateEffect = Fx.plasticburn;
+      updateEffectChance = 0.035f;
+      craftEffect = SglFx.steamBreakOut;
+      
       draw = new DrawFactory<>(this){
-        public TextureRegion liquidCenter, liquidSide;
+        public TextureRegion liquidCenter, liquidSide, piston;
         
         @Override
         public void load(){
           super.load();
-          liquidCenter = Core.atlas.find(block.name + "_liquid_center");
-          liquidSide = Core.atlas.find(block.name + "_liquid_side");
+          liquidCenter = Core.atlas.find(block.name + "_center");
+          liquidSide = Core.atlas.find(block.name + "_side");
+          piston = Core.atlas.find(block.name + "_piston");
         }
         
         @Override
         public TextureRegion[] icons(){
           return new TextureRegion[]{
               bottom,
-              region,
-              rotator,
-              top,
+              region
           };
         }
         
@@ -691,8 +694,13 @@ public class CrafterBlocks implements ContentList{
             SglConsumeGases<?> cg = entity.consumer.current.get(SglConsumeType.gas);
             ProduceLiquids<?> pl = entity.producer.current.get(SglProduceType.liquid);
             Draw.rect(bottom, entity.x(), entity.y());
-            Draw.rect(region, entity.x(), entity.y());
+            Draw.color(Liquids.water.color);
+            Draw.alpha(entity.liquids.get(Liquids.water)/entity.block.liquidCapacity);
+            Draw.rect(liquid, entity.x, entity.y);
             Drawf.spinSprite(rotator, entity.x(), entity.y(), 90f + entity.totalProgress*2);
+            
+            float pistonMove = -Mathf.absin(entity.totalProgress + Mathf.halfPi, 6f, 2.5f);
+            int sclx, scly;
             for(int dir=0; dir<4; dir++){
               UnlockableContent o = dir < ci.items.length? ci.items[dir].item:
                   dir-ci.items.length < cl.liquids.length? cl.liquids[dir-ci.items.length].liquid:
@@ -702,12 +710,16 @@ public class CrafterBlocks implements ContentList{
               Draw.alpha(o instanceof Item ? (float)entity.items.get(o.id)/(float)entity.block().itemCapacity: o instanceof Liquid? entity.liquids.get((Liquid)o)/entity.block().liquidCapacity: entity.pressure() / entity.getGasBlock().maxGasPressure());
               Draw.rect(liquidSide, entity.x(), entity.y(), dir*90f);
               Draw.color();
+              
+              sclx = Geometry.d8(dir*2+1).x;
+              scly = Geometry.d8(dir*2+1).y;
+              Draw.rect(piston, entity.x + pistonMove*sclx, entity.y + pistonMove*scly, dir*90);
             }
-            Draw.color(Liquids.water.color, pl.liquids[0].liquid.color, entity.liquids.get(pl.liquids[0].liquid)/entity.block().liquidCapacity);
-            Draw.alpha(entity.liquids.get(Liquids.water)/entity.block.liquidCapacity*0.6f);
+            Draw.color(pl.liquids[0].liquid.color);
+            Draw.alpha(entity.warmup*0.75f);
             Draw.rect(liquidCenter, entity.x(), entity.y());
             Draw.color();
-            Draw.rect(top, entity.x(), entity.y());
+            Draw.rect(region, entity.x(), entity.y());
           };
         }
       };

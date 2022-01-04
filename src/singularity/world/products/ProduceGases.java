@@ -1,6 +1,7 @@
 package singularity.world.products;
 
 import arc.Core;
+import arc.graphics.g2d.TextureRegion;
 import mindustry.gen.Building;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.Stats;
@@ -21,6 +22,11 @@ public class ProduceGases<T extends Building & GasBuildComp & ProducerBuildComp>
   @Override
   public ProduceType<ProduceGases<?>> type(){
     return SglProduceType.gas;
+  }
+  
+  @Override
+  public TextureRegion icon(){
+    return gases[0].gas.uiIcon;
   }
   
   @Override
