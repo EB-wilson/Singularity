@@ -2,13 +2,15 @@ package singularity.world.distribution.buffers;
 
 import arc.math.WindowedMean;
 import arc.struct.IntMap;
-import arc.struct.Seq;
 import arc.util.Interval;
+import mindustry.world.modules.BlockModule;
+import org.jetbrains.annotations.NotNull;
 import singularity.world.distribution.DistributeNetwork;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 
-public abstract class BaseBuffer<C, T extends BaseBuffer.Packet<C>>{
+public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>> implements Iterable<T>{
   public int capacity;
   protected int used;
   
@@ -23,7 +25,13 @@ public abstract class BaseBuffer<C, T extends BaseBuffer.Packet<C>>{
     return capacity - used;
   }
   
-  public abstract Number remainingCapacity();
+  public Number remainingCapacity(){
+    return space()/unit();
+  }
+  
+  public Number usedCapacity(){
+    return used/unit();
+  }
   
   public void update(boolean calculateDetail){
     if(timer.get(0, 10)){
@@ -62,6 +70,21 @@ public abstract class BaseBuffer<C, T extends BaseBuffer.Packet<C>>{
     else memory.put(packet.id(), packet);
   }
   
+  public void set(T packet){
+    int put;
+    Packet existed = memory.get(packet.id());
+    if(existed == null){
+      put = packet.occupation();
+    }
+    else{
+      put = packet.occupation() - existed.occupation();
+    }
+    
+    putCaching += put;
+    used += put;
+    memory.put(packet.id(), packet);
+  }
+  
   @SuppressWarnings("unchecked")
   public <Type extends T> Type get(int id){
     return (Type)memory.get(id);
@@ -70,34 +93,51 @@ public abstract class BaseBuffer<C, T extends BaseBuffer.Packet<C>>{
   public void remove(T packet){
     T p = memory.get(packet.id());
     if(p != null){
-      p.remove(packet);
-      used -= packet.occupation();
-      readCaching += packet.occupation();
+      if(p.occupation() > packet.occupation()){
+        p.remove(packet);
+        used -= packet.occupation();
+        readCaching += packet.occupation();
+      }
+      else{
+        remove(packet.id());
+      }
     }
   }
   
   public void remove(int id){
     T packet = memory.remove(id);
-    used -= packet.occupation();
-    readCaching += packet.occupation();
+    if(packet != null){
+      used -= packet.occupation();
+      readCaching += packet.occupation();
+    }
   }
   
-  public abstract void containerPut(DistributeNetwork network);
+  public abstract void bufferContAssign(DistributeNetwork network);
   
-  public abstract void containerRequire(DistributeNetwork network, Seq<C> requires);
+  public abstract int unit();
   
-  public static abstract class Packet<Type>{
-    public Type obj;
-    
-    public abstract int unit();
+  public abstract BlockModule generateBindModule();
+  
+  @NotNull
+  @Override
+  public Iterator<T> iterator(){
+    return memory.values().iterator();
+  }
+  
+  public static abstract class Packet<Obj, Type>{
+    public Obj obj;
     
     public abstract int id();
     
+    public abstract Type get();
+    
     public abstract int occupation();
     
-    public abstract void merge(Packet<Type> other);
+    public abstract Number amount();
     
-    public abstract void remove(Packet<Type> other);
+    public abstract void merge(Packet<Obj, Type> other);
+    
+    public abstract void remove(Packet<Obj, Type> other);
     
     public abstract void calculateDelta();
     

@@ -1,4 +1,4 @@
-package singularity.ui.fragments.override;
+package singularity.ui.fragments;
 
 import arc.Core;
 import arc.Events;
@@ -39,6 +39,7 @@ public class SecondaryConfigureFragment extends Fragment{
         }
         else{
           table.visible = config.isShown() && configCurrent != null;
+          if(!table.visible) table.clearChildren();
           Building b = config.getSelectedTile();
           configuring = b instanceof SecondableConfigBuildComp? (SecondableConfigBuildComp) b: null;
         }

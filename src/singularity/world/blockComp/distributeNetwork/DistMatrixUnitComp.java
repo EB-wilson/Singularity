@@ -1,35 +1,23 @@
 package singularity.world.blockComp.distributeNetwork;
 
-import mindustry.gen.Building;
-import singularity.world.blockComp.GasBuildComp;
+import arc.struct.ObjectMap;
+import mindustry.ctype.ContentType;
 import singularity.world.distribution.GridChildType;
-import singularity.world.distribution.MatrixGrid;
+import singularity.world.distribution.request.RequestFactories;
+import universeCore.annotations.Annotations;
 
-public interface DistMatrixUnitComp extends DistElementBuildComp{
-  MatrixGrid matrixGrid();
-  
-  @Override
-  default int priority(){
-    return matrixGrid().priority;
+public interface DistMatrixUnitComp{
+  @Annotations.BindField("bufferCapacity")
+  default int bufferCapacity(){
+    return 0;
   }
   
-  @Override
-  default void priority(int priority){
-    matrixGrid().priority = priority;
-    distributor().network.priorityModified(this);
+  @Annotations.BindField("requestFactories")
+  default ObjectMap<GridChildType, ObjectMap<ContentType, RequestFactories.RequestFactory>> requestFactories(){
+    return null;
   }
   
-  default boolean canDistribute(Building entity){
-    return (entity.block.hasItems)
-        || (entity.block.hasLiquids)
-        || (entity instanceof GasBuildComp && ((GasBuildComp) entity).getGasBlock().hasGases());
-  }
-  
-  default void gridAdd(Building entity, GridChildType type, int priority){
-    matrixGrid().add(entity, type, priority);
-  }
-  
-  default boolean gridRemove(Building entity){
-    return matrixGrid().remove(entity);
+  default void setFactory(GridChildType type, ContentType contType, RequestFactories.RequestFactory factory){
+    requestFactories().get(type, ObjectMap::new).put(contType, factory);
   }
 }

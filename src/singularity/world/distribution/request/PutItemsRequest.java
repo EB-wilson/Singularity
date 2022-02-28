@@ -1,61 +1,50 @@
 package singularity.world.distribution.request;
 
 import arc.struct.Seq;
-import mindustry.Vars;
 import mindustry.type.ItemStack;
+import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.buffers.ItemsBuffer;
 
-public class PutItemsRequest extends DistRequestBase{
-  protected ItemsBuffer itemsBuffer;
-  protected ItemsBuffer source;
+/**向网络中写入物品，这一操作将物品写入网络的缓存中，处理结束由网络将缓存分配给网络中的子容器*/
+public class PutItemsRequest extends DistRequestBase<ItemStack>{
+  private final ItemsBuffer source;
+  private ItemsBuffer destination;
   
-  public int require;
-  public int[] reqItems = new int[Vars.content.items().size];
+  private final Seq<ItemStack> reqItems;
   
-  public PutItemsRequest(Seq<ItemStack> items, ItemsBuffer source){
-    for(ItemStack s: items){
-      reqItems[s.item.id] = s.amount;
-      require += s.amount;
-    }
+  public PutItemsRequest(DistMatrixUnitBuildComp sender, ItemsBuffer source, Seq<ItemStack> items){
+    super(sender);
     this.source = source;
-  }
-  
-  @Override
-  public boolean finished(){
-    return killed || require <= 0;
+    this.reqItems = items;
   }
   
   @Override
   public int priority(){
-    return 100;
+    return 128;
   }
   
   @Override
   public void init(DistributeNetwork target){
     super.init(target);
-    itemsBuffer = target.cores.get(0).distributor().getBuffer(DistBuffers.itemBuffer);
+    destination = target.getCore().distributor().getBuffer(DistBuffers.itemBuffer);
   }
   
   @Override
   public void handle(){
-    ItemsBuffer.ItemPacket packet, sourceBuffer;
-    for(int i=0; i<reqItems.length; i++){
-      if(reqItems[i] <= 0) continue;
-      packet = new ItemsBuffer.ItemPacket(Vars.content.item(i), reqItems[i]);
-      int move = Math.min(itemsBuffer.space(), packet.occupation());
-      sourceBuffer = source.get(i);
-      move = Math.min(move, sourceBuffer == null? 0: sourceBuffer.occupation());
+    for(ItemStack stack : reqItems){
+      int move = Math.min(stack.amount, source.get(stack.item));
+      move = Math.min(move, destination.remainingCapacity().intValue());
+      if(move <= 0) continue;
       
-      if(move > packet.unit()){
-        packet.obj.amount = (int)Math.floor((float)move/packet.unit());
-        reqItems[i] -= packet.obj.amount;
-        require -= packet.obj.amount;
-        source.remove(Vars.content.item(i), packet.obj.amount);
-        itemsBuffer.put(packet);
-      }
+      source.remove(stack.item, move);
+      destination.put(stack.item, move);
     }
   }
   
+  @Override
+  public Seq<ItemStack> getList(){
+    return reqItems;
+  }
 }

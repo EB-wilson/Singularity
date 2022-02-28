@@ -1,12 +1,12 @@
 package singularity.world.distribution.buffers;
 
 import arc.math.WindowedMean;
-import arc.struct.Seq;
+import mindustry.world.modules.BlockModule;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.world.distribution.DistributeNetwork;
 
-public class GasesBuffer extends BaseBuffer<GasStack, GasesBuffer.GasPacket>{
+public class GasesBuffer extends BaseBuffer<GasStack, Gas, GasesBuffer.GasPacket>{
   public void put(Gas gas, float amount){
     put(new GasPacket(gas, amount));
   }
@@ -25,21 +25,21 @@ public class GasesBuffer extends BaseBuffer<GasStack, GasesBuffer.GasPacket>{
   }
   
   @Override
-  public Float remainingCapacity(){
-    return space()/4f;
-  }
-  
-  @Override
-  public void containerPut(DistributeNetwork network){
+  public void bufferContAssign(DistributeNetwork network){
   
   }
   
   @Override
-  public void containerRequire(DistributeNetwork network, Seq<GasStack> requires){
-  
+  public int unit(){
+    return 2;
   }
   
-  public static class GasPacket extends Packet<GasStack>{
+  @Override
+  public BlockModule generateBindModule(){
+    return null;
+  }
+  
+  public class GasPacket extends Packet<GasStack, Gas>{
     WindowedMean putMean = new WindowedMean(6), readMean = new WindowedMean(6);
     float putCaching, readCaching;
     float putRate = -1, readRate= -1;
@@ -55,22 +55,27 @@ public class GasesBuffer extends BaseBuffer<GasStack, GasesBuffer.GasPacket>{
     }
   
     @Override
-    public int unit(){
-      return 2;
-    }
-  
-    @Override
     public int id(){
       return obj.gas.id;
     }
-    
+  
+    @Override
+    public Gas get(){
+      return obj.gas;
+    }
+  
     @Override
     public int occupation(){
-      return (int)Math.ceil(obj.amount/8);
+      return (int)Math.ceil(obj.amount*unit());
     }
-    
+  
     @Override
-    public void merge(Packet<GasStack> other){
+    public Float amount(){
+      return obj.amount;
+    }
+  
+    @Override
+    public void merge(Packet<GasStack, Gas> other){
       if(other.id() == id()){
         obj.amount += other.obj.amount;
         putCaching += obj.amount;
@@ -78,7 +83,7 @@ public class GasesBuffer extends BaseBuffer<GasStack, GasesBuffer.GasPacket>{
     }
     
     @Override
-    public void remove(Packet<GasStack> other){
+    public void remove(Packet<GasStack, Gas> other){
       if(other.id() == id()){
         obj.amount -= other.obj.amount;
         readCaching += obj.amount;

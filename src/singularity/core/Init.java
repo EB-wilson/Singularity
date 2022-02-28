@@ -11,7 +11,6 @@ import singularity.ui.fragments.override.SglMenuFrag;
 public class Init{
   public static void init(){
     Vars.ui.menufrag = new SglMenuFrag();
-    Vars.ui.menuGroup.clearChildren();
     Vars.ui.menufrag.build(Vars.ui.menuGroup);
     
     if(Sgl.config.loadInfo) Log.info("[Singularity] mod initialization is complete");

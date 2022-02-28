@@ -1,12 +1,12 @@
 package singularity.world.distribution.buffers;
 
 import arc.math.WindowedMean;
-import arc.struct.Seq;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
+import mindustry.world.modules.BlockModule;
 import singularity.world.distribution.DistributeNetwork;
 
-public class LiquidsBuffer extends BaseBuffer<LiquidStack, LiquidsBuffer.LiquidPacket>{
+public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer.LiquidPacket>{
   public void put(Liquid liquid, float amount){
     put(new LiquidPacket(liquid, amount));
   }
@@ -30,16 +30,21 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, LiquidsBuffer.LiquidP
   }
   
   @Override
-  public void containerPut(DistributeNetwork network){
+  public void bufferContAssign(DistributeNetwork network){
   
   }
   
   @Override
-  public void containerRequire(DistributeNetwork network, Seq<LiquidStack> requires){
-  
+  public int unit(){
+    return 4;
   }
   
-  public static class LiquidPacket extends Packet<LiquidStack>{
+  @Override
+  public BlockModule generateBindModule(){
+    return null;
+  }
+  
+  public class LiquidPacket extends Packet<LiquidStack, Liquid>{
     WindowedMean putMean = new WindowedMean(6), readMean = new WindowedMean(6);
     float putCaching, readCaching;
     float putRate = -1, readRate= -1;
@@ -55,22 +60,27 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, LiquidsBuffer.LiquidP
     }
   
     @Override
-    public int unit(){
-      return 4;
-    }
-  
-    @Override
     public int id(){
       return obj.liquid.id;
     }
   
     @Override
-    public int occupation(){
-      return (int)Math.ceil(obj.amount/8);
+    public Liquid get(){
+      return obj.liquid;
     }
   
     @Override
-    public void merge(Packet<LiquidStack> other){
+    public int occupation(){
+      return (int)Math.ceil(obj.amount*unit());
+    }
+  
+    @Override
+    public Float amount(){
+      return obj.amount;
+    }
+  
+    @Override
+    public void merge(Packet<LiquidStack, Liquid> other){
       if(other.id() == id()){
         obj.amount += other.obj.amount;
         putCaching += obj.amount;
@@ -78,7 +88,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, LiquidsBuffer.LiquidP
     }
   
     @Override
-    public void remove(Packet<LiquidStack> other){
+    public void remove(Packet<LiquidStack, Liquid> other){
       if(other.id() == id()){
         obj.amount -= other.obj.amount;
         readCaching += obj.amount;

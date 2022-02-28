@@ -12,8 +12,9 @@ import mindustry.world.modules.LiquidModule;
 import singularity.contents.SglItems;
 import singularity.type.Gas;
 import singularity.world.modules.GasesModule;
+import universeCore.annotations.Annotations;
 import universeCore.entityComps.blockComps.BuildCompBase;
-import universeCore.entityComps.blockComps.Dumpable;
+import universeCore.entityComps.blockComps.Takeable;
 import universeCore.util.handler.FieldHandler;
 
 import java.lang.reflect.Field;
@@ -21,7 +22,7 @@ import java.lang.reflect.Field;
 import static mindustry.Vars.world;
 import static singularity.Sgl.atmospheres;
 
-public interface HeatBuildComp extends BuildCompBase, Dumpable{
+public interface HeatBuildComp extends BuildCompBase, Takeable{
   float heatR = 0.008314f;
   
   static float getLiquidHeatCapacity(Liquid liquid){
@@ -44,20 +45,28 @@ public interface HeatBuildComp extends BuildCompBase, Dumpable{
     return temperature - 273.15f;
   }
   
-  float heat();
+  @Annotations.BindField("heat")
+  default float heat(){
+    return 0;
+  }
   
-  void heat(float heat);
+  @Annotations.BindField("heat")
+  default void heat(float heat){}
   
-  float heatCapacity();
+  @Annotations.BindField("heatCapacity")
+  default float heatCapacity(){
+    return 0;
+  }
   
-  void heatCapacity(float value);
+  @Annotations.BindField("heatCapacity")
+  default void heatCapacity(float value){}
   
   default void handleHeat(float delta){
     heat(heat() + delta);
   }
   
   default void swapHeat(){
-    HeatBuildComp other = (HeatBuildComp)getDump(e -> {
+    HeatBuildComp other = (HeatBuildComp)getNext("heat", e -> {
       if(!(e instanceof HeatBuildComp)) return false;
       return getMoveCoff((HeatBuildComp) e) >= 0 && ((HeatBuildComp) e).absTemperature() < absTemperature();
     });

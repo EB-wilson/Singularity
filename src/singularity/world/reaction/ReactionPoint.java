@@ -1,7 +1,6 @@
 package singularity.world.reaction;
 
 import arc.math.geom.Position;
-import arc.struct.Seq;
 import arc.util.Log;
 import arc.util.Time;
 import arc.util.io.Reads;
@@ -12,7 +11,6 @@ import mindustry.content.Blocks;
 import mindustry.ctype.UnlockableContent;
 import mindustry.entities.EntityGroup;
 import mindustry.entities.Puddles;
-import mindustry.gen.Building;
 import mindustry.gen.Entityc;
 import mindustry.gen.Groups;
 import mindustry.gen.Unitc;
@@ -391,15 +389,5 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   @Override
   public void y(float y){
     this.y = y;
-  }
-  
-  @Override
-  public byte getCdump(){
-    return 0;
-  }
-  
-  @Override
-  public Seq<Building> getDumps(){
-    return null;
   }
 }

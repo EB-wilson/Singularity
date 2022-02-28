@@ -11,6 +11,7 @@ import mindustry.gen.Tex;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import universeCore.UncCore;
+import universeCore.ui.table.ZoomableTable;
 import universeCore.util.animLayout.CellAnimateGroup;
 import universeCore.util.animLayout.CellChangeColorAction;
 
@@ -23,9 +24,10 @@ public class BaseListDialog extends BaseDialog{
     info.add(Core.bundle.get("misc.noInfo"));
   };
   
-  public Table infoTable, itemsTable, buttonTable;
+  public ZoomableTable infoTable;
+  public Table itemsTable, buttonTable;
   
-  Cell<Table> infoCell;
+  Cell<ZoomableTable> infoCell;
   ItemEntry current, lastEntry;
   
   boolean rebuild;
@@ -90,10 +92,13 @@ public class BaseListDialog extends BaseDialog{
                 new CellChangeColorAction(infoCell, infoTable,  infoTable.color.cpy().a(1), infoTable.color.cpy().a(0), 6f),
                 (Runnable) () -> {
                   infoTable.clearChildren();
+                  infoTable.resetZoom();
                   if(current == null){
+                    infoTable.setValid(false);
                     defaultInfo.get(infoTable);
                   }
                   else{
+                    infoTable.setValid(true);
                     current.infoDisplay.get(infoTable);
                   }
                 },
@@ -109,7 +114,9 @@ public class BaseListDialog extends BaseDialog{
     cont.table(Tex.buttonTrans, t -> {
       t.pane(pane -> {
         pane.margin(margin);
-        infoCell = pane.table(i -> defaultInfo.get(i)).grow().margin(0);
+        ZoomableTable zoom = new ZoomableTable();
+        defaultInfo.get(zoom);
+        infoCell = pane.add(zoom).grow().margin(0);
         infoTable = infoCell.get();
       }).grow();
       t.row();

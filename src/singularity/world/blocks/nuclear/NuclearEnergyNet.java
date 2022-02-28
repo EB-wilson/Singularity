@@ -30,7 +30,7 @@ public class NuclearEnergyNet{
       add(entity);
     }
     
-    onStructModified();
+    onStructModified(empty);
   }
   
   public void add(NuclearEnergyBuildComp entity){
@@ -40,10 +40,11 @@ public class NuclearEnergyNet{
   
       all.add(entity);
       entity.energy().setNet(this);
+      onStructModified(empty);
     }
   }
   
-  /**进行一次bfs搜索构成网络的所有成*/
+  /**进行一次bfs搜索构成网络的所有成员*/
   public void flow(NuclearEnergyBuildComp origin, Seq<NuclearEnergyBuildComp> exclude){
     bfsQueue.clear();
     added.clear();
@@ -60,20 +61,20 @@ public class NuclearEnergyNet{
       add(other);
     }
     
-    onStructModified();
+    onStructModified(exclude);
   }
   
   public void flow(NuclearEnergyBuildComp origin){
     flow(origin, empty);
   }
   
-  public void onStructModified(){
+  public void onStructModified(Seq<NuclearEnergyBuildComp> exclude){
     findTask.clear();
     paths.clear();
     
     for(NuclearEnergyBuildComp source: sources){
       findTask.addFirst(() -> {
-        paths.put(source, calculatePath(source));
+        paths.put(source, calculatePath(source, exclude));
       });
     }
   }
@@ -102,7 +103,7 @@ public class NuclearEnergyNet{
   }
   
   /**计算从一个源发出到所有消耗者*/
-  protected ObjectMap<NuclearEnergyBuildComp, Seq<NuclearEnergyBuildComp>> calculatePath(NuclearEnergyBuildComp source){
+  protected ObjectMap<NuclearEnergyBuildComp, Seq<NuclearEnergyBuildComp>> calculatePath(NuclearEnergyBuildComp source, Seq<NuclearEnergyBuildComp> exclude){
     ObjectMap<NuclearEnergyBuildComp, Seq<NuclearEnergyBuildComp>> result = new ObjectMap<>();
     
     pathFindQueue.clear();
@@ -119,7 +120,7 @@ public class NuclearEnergyNet{
       for(Node child: current.children){
         if(added.add(child.self)){
           child.self.energyLinked().each(e -> {
-            if(!added.contains(e)){
+            if(!added.contains(e) && !exclude.contains(e)){
               child.children.add(new Node(e, child));
             }
           });

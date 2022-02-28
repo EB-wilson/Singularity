@@ -5,7 +5,7 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
-import arc.struct.Seq;
+import arc.struct.ObjectMap;
 import arc.util.Eachable;
 import mindustry.entities.Puddles;
 import mindustry.entities.units.BuildPlan;
@@ -16,7 +16,8 @@ import mindustry.type.Liquid;
 import mindustry.ui.Styles;
 import mindustry.world.Tile;
 import mindustry.world.modules.LiquidModule;
-import universeCore.entityComps.blockComps.Dumpable;
+import universeCore.annotations.Annotations;
+import universeCore.entityComps.blockComps.Takeable;
 
 public class ConduitRiveting extends ClusterConduit{
   public ConduitRiveting(String name){
@@ -55,9 +56,11 @@ public class ConduitRiveting extends ClusterConduit{
     };
   }
   
-  public class ConduitRivetingBuild extends ClusterConduitBuild implements Dumpable{
+  @Annotations.ImplEntries
+  public class ConduitRivetingBuild extends ClusterConduitBuild implements Takeable{
     public int index = -1;
     public boolean output;
+    public ObjectMap<String, Heaps<?>> heaps = new ObjectMap<>();
   
     @Override
     public void draw(){
@@ -109,7 +112,7 @@ public class ConduitRiveting extends ClusterConduit{
           
           if(i == index){
             int i1 = i;
-            Building other = getDump(e -> {
+            Building other = getNext("liquids", e -> {
               if(nearby(Mathf.mod(rotation - 1, 4)) == e || nearby(Mathf.mod(rotation + 1, 4)) == e){
                 if(e instanceof MultLiquidBuild){
                   return ((MultLiquidBuild) e).conduitAccept(this, i1, liquidsBuffer[i1].current());
@@ -175,16 +178,6 @@ public class ConduitRiveting extends ClusterConduit{
         super.handleLiquid(source, liquid, amount);
       }
       else liquidsBuffer[index].add(liquid, amount);
-    }
-  
-    @Override
-    public byte getCdump(){
-      return cdump;
-    }
-  
-    @Override
-    public Seq<Building> getDumps(){
-      return proximity;
     }
   }
 }

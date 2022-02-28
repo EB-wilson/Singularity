@@ -1,27 +1,20 @@
 package singularity.world.blocks.distribute;
 
-import arc.struct.ObjectMap;
-import mindustry.game.Team;
-import mindustry.gen.Building;
-import mindustry.world.Block;
 import singularity.world.blockComp.distributeNetwork.DistComponent;
 import singularity.world.blockComp.distributeNetwork.DistNetworkCoreComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.modules.DistCoreModule;
 
 public class DistNetCore extends DistNetBlock implements DistComponent{
-  public ObjectMap<DistBuffers<?>, Integer> bufferSize = DistBuffers.defBufferCapacity;
   public int computingPower = 32;
   public int frequencyOffer = 8;
 
   public DistNetCore(String name){
     super(name);
     frequencyUse = 0;
-  }
-  
-  @Override
-  public ObjectMap<DistBuffers<?>, Integer> bufferSize(){
-    return bufferSize;
+    hasItems = true;
+    hasLiquids = true;
+    hasGases = true;
   }
   
   @Override
@@ -35,11 +28,13 @@ public class DistNetCore extends DistNetBlock implements DistComponent{
   }
   
   public class DistNetCoreBuild extends DistNetBuild implements DistNetworkCoreComp{
+    protected float updateCounter;
+  
     @Override
-    public Building create(Block block, Team team){
-      super.create(block, team);
+    public void assignNetModule(){
       distributor = new DistCoreModule(this);
-      return this;
+      distributor.setNet();
+      items = distributor().getBuffer(DistBuffers.itemBuffer).generateBindModule();
     }
   
     @Override

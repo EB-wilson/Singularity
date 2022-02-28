@@ -38,7 +38,7 @@ public interface DistElementBuildComp extends BuildCompBase{
   
     updateNetLinked();
     target.updateNetLinked();
-  
+    
     new DistributeNetwork().flow(this);
     new DistributeNetwork().flow(target);
   }
@@ -48,7 +48,7 @@ public interface DistElementBuildComp extends BuildCompBase{
     for(int i=0; i<distributor().distNetLinks.size; i++){
       Tile entity = Vars.world.tile(distributor().distNetLinks.get(i));
       if(entity == null || !(entity.build instanceof DistElementBuildComp)) continue;
-      if(! netLinked().contains((DistElementBuildComp) entity.build)) netLinked().add((DistElementBuildComp) entity.build);
+      if(!netLinked().contains((DistElementBuildComp) entity.build)) netLinked().add((DistElementBuildComp) entity.build);
     }
   }
   

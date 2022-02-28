@@ -9,10 +9,15 @@ import mindustry.gen.Building;
 import singularity.core.*;
 import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
+import singularity.world.blocks.distribute.IOPointBlock;
 
 import static arc.Core.settings;
 
 public class Sgl{
+  static{
+    UpdatePool.receive("sglUpdate", Sgl::update);
+  }
+  
   /**此mod内部名称*/
   public static final String modName = "singularity";
   /**此mod前置的内部名称*/
@@ -22,14 +27,20 @@ public class Sgl{
   /**空白实体数组*/
   public static final Seq<Building> empty = new Seq<>(0);
   
-  /**本模组的文件位置*/
+  /**模组文件夹位置*/
   public static final Fi modDirectory = settings.getDataDirectory().child("mods");
   /**本模组的文件位置*/
   public static final Fi modFile = getModFile(modName, true);
+  /**本模组的文件位置*/
+  public static final Fi modFileUnzip = getModFile(modName, false);
   /**本模组前置的文件位置*/
   public static final Fi libFile = getModFile(libName, false);
+  /**本模组版本号*/
+  public static final String modVersion = getModVersion(modFile);
   /**本模组前置版本号*/
-  public static final long libVersion = getModVersion(new ZipFi(libFile));
+  public static final String libVersion = getModVersion(new ZipFi(libFile));
+  /**本模组前置版本号数值*/
+  public static final long libVersionValue = parseVersion(getModVersion(new ZipFi(libFile)));
   /**模组内配置文件存放位置*/
   public static final Fi internalConfigDir = modFile.child("config");
   /**模组数据文件夹*/
@@ -74,6 +85,8 @@ public class Sgl{
   
   public static UpdateTiles updateTiles;
   
+  public static IOPointBlock ioPoint;
+  
   public static void init(){
     //载入风格
     SglStyles.load();
@@ -115,13 +128,15 @@ public class Sgl{
     return temp;
   }
   
-  public static long getModVersion(Fi mod){
-    Jval main = Jval.read(mod.child("mod.hjson").reader());
-    String str = main.has("version")? main.get("version").asString(): null;
-    
+  public static String getModVersion(Fi mod){
+    Jval main = Jval.read(mod.child("mod.hjson").exists()? mod.child("mod.hjson").reader(): mod.child("mod.json").reader());
+    return main.has("version")? main.get("version").asString(): null;
+  }
+  
+  public static long parseVersion(String version){
     long result = -1;
-    if(str != null){
-      String[] vars = str.split("\\.");
+    if(version != null){
+      String[] vars = version.split("\\.");
       result = 0;
       int priority = 10;
       for(String s: vars){

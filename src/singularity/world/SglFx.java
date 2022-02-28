@@ -208,9 +208,11 @@ public class SglFx{
   }),
   
   steamBreakOut = new Effect(24, e -> {
-    float leng = Mathf.random(18, 24);
+    float[] data = e.data instanceof float[]? e.data(): new float[]{18, 24, 0.3f};
+    
+    float leng = Mathf.random(data[0], data[1]);
     for(int i=0; i<4; i++){
-      if(Mathf.chanceDelta(0.3f)) steam.at(e.x, e.y, 0, new Vec2(leng*Geometry.d8(i*2 + 1).x, leng*Geometry.d8(i*2 + 1).y));
+      if(Mathf.chanceDelta(data[2])) steam.at(e.x, e.y, 0, new Vec2(leng*Geometry.d8(i*2 + 1).x, leng*Geometry.d8(i*2 + 1).y));
     }
   });
 }

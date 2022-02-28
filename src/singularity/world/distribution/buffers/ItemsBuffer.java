@@ -1,19 +1,22 @@
 package singularity.world.distribution.buffers;
 
 import arc.math.WindowedMean;
-import arc.struct.IntMap;
-import arc.struct.Seq;
+import arc.util.Nullable;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.Vars;
+import mindustry.content.Items;
 import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
+import mindustry.world.modules.ItemModule;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
 
-public class ItemsBuffer extends BaseBuffer<ItemStack, ItemsBuffer.ItemPacket>{
-  public int[] containerRequired = new int[Vars.content.items().size];
-  
+import static mindustry.Vars.content;
+
+public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPacket>{
   public void put(Item item, int amount){
     put(new ItemsBuffer.ItemPacket(item, amount));
   }
@@ -26,60 +29,41 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, ItemsBuffer.ItemPacket>{
     remove(item.id);
   }
   
-  public float get(Item item){
+  public int get(Item item){
     ItemPacket p = get(item.id);
-    return p != null? p.obj.amount: 0;
+    return p != null? p.amount(): 0;
   }
   
   @Override
-  public Integer remainingCapacity(){
-    return space()/8;
-  }
-  
-  @Override
-  public void containerPut(DistributeNetwork network){
-    for(IntMap.Entry<ItemPacket> entry : memory){
-      ItemStack stack = entry.value.obj;
-      for(MatrixGrid grid :network.grids){
-        if(stack.amount <= 0) break;
-        Building entity = grid.handler.getBuilding();
-        for(Building building : grid.get(Building.class, GridChildType.container, e -> e.acceptItem(entity, stack.item))){
-          int amount = Math.min(building.block.itemCapacity - building.items.get(stack.item), stack.amount);
-          stack.amount -= amount;
-          entity.items.add(stack.item, amount);
+  public void bufferContAssign(DistributeNetwork network){
+    itemRead: for(ItemPacket packet : this){
+      for(MatrixGrid grid : network.grids){
+        Building handler = grid.handler.getBuilding();
+        for(Building entity : grid.get(Building.class, GridChildType.container, e -> e.acceptStack(packet.get(), packet.amount(), handler) > 0)){
+          if(packet.amount() <= 0) continue itemRead;
+          int amount = Math.min(packet.amount(), entity.acceptStack(packet.get(), packet.amount(), handler));
+          amount = Math.min(amount, packet.amount());
+          
+          remove(packet.get(), amount);
+          entity.handleStack(packet.get(), amount, handler);
         }
       }
     }
   }
   
   @Override
-  public void containerRequire(DistributeNetwork network, Seq<ItemStack> requires){
-    ItemPacket packet, buffer;
-    item:for(ItemStack stack: requires){
-      containerRequired[stack.item.id] += stack.amount;
-      for(MatrixGrid grid: network.grids){
-        if(get(stack.item) >= containerRequired[stack.item.id] || space() <= 0) continue item;
-        
-        for(Building entity: grid.get(Building.class, GridChildType.container, e -> e.items.has(stack.item))){
-          if(get(stack.item) >= containerRequired[stack.item.id] || space() <= 0) continue item;
-          packet = new ItemPacket(stack.item, stack.amount);
-          packet.obj.amount = Math.min(space(), packet.occupation());
-          packet.obj.amount = (int)Math.floor((float)Math.min(entity.items.get(stack.item)*packet.unit(), packet.occupation())/packet.unit());
-          
-          entity.items.remove(stack.item, packet.obj.amount);
-          buffer = memory.get(stack.item.id);
-          if(buffer == null){
-            memory.put(stack.item.id, packet);
-          }
-          else buffer.obj.amount += packet.obj.amount;
-          
-          used += packet.occupation();
-        }
-      }
-    }
+  public int unit(){
+    return 8;
   }
   
-  public static class ItemPacket extends Packet<ItemStack>{
+  @Override
+  public ItemModule generateBindModule(){
+    return new BufferItemModule();
+  }
+  
+  private final ItemPacket tmp = new ItemPacket(Items.copper, 0);
+  
+  public class ItemPacket extends Packet<ItemStack, Item>{
     WindowedMean putMean = new WindowedMean(6), readMean = new WindowedMean(6);
     float putCaching, readCaching;
     float putRate = -1, readRate= -1;
@@ -90,30 +74,41 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, ItemsBuffer.ItemPacket>{
     }
   
     @Override
-    public int unit(){
-      return 8;
+    public int id(){
+      return obj.item.id;
     }
   
     @Override
-    public int id(){
-      return obj.item.id;
+    public Item get(){
+      return obj.item;
     }
   
     @Override
     public int occupation(){
       return obj.amount*unit();
     }
-    
+  
     @Override
-    public void merge(Packet<ItemStack> other){
+    public Integer amount(){
+      return obj.amount;
+    }
+  
+    @Override
+    public void merge(Packet<ItemStack, Item> other){
       if(other.id() == id()){
         obj.amount += other.obj.amount;
         putCaching += obj.amount;
       }
     }
     
+    public void remove(int amount){
+      tmp.obj.item = obj.item;
+      tmp.obj.amount = amount;
+      ItemsBuffer.this.remove(tmp);
+    }
+    
     @Override
-    public void remove(Packet<ItemStack> other){
+    public void remove(Packet<ItemStack, Item> other){
       if(other.id() == id()){
         obj.amount -= other.obj.amount;
         readCaching += obj.amount;
@@ -134,6 +129,134 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, ItemsBuffer.ItemPacket>{
     @Override
     public float delta(){
       return 0;
+    }
+  }
+  
+  public class BufferItemModule extends ItemModule{
+    @Override
+    public void add(ItemModule items){
+      items.each(ItemsBuffer.this::put);
+    }
+    
+    @Override
+    public void add(Item item, int amount){
+      ItemsBuffer.this.put(item, amount);
+    }
+    
+    @Override
+    public int get(int id){
+      return get(Vars.content.item(id));
+    }
+    
+    @Override
+    public int get(Item item){
+      return ItemsBuffer.this.get(item);
+    }
+    
+    @Override
+    public void remove(Item item, int amount){
+      ItemsBuffer.this.remove(item, amount);
+    }
+  
+    @Override
+    public void set(Item item, int amount){
+      ItemsBuffer.this.set(new ItemPacket(item, amount));
+    }
+  
+    @Override
+    public void set(ItemModule other){
+      other.each(this::set);
+    }
+  
+    @Override
+    public int total(){
+      return ItemsBuffer.this.usedCapacity().intValue();
+    }
+    
+    @Override
+    public boolean empty(){
+      return total() == 0;
+    }
+    
+    @Override
+    public boolean any(){
+      return total() > 0;
+    }
+    
+    @Override
+    @Nullable
+    public Item first(){
+      for(int i = 0; i < items.length; i++){
+        if(get(i) > 0){
+          return content.item(i);
+        }
+      }
+      return null;
+    }
+  
+    @Override
+    @Nullable
+    public Item take(){
+      for(int i = 0; i < items.length; i++){
+        int index = (i + takeRotation);
+        if(index >= items.length) index -= items.length;
+        if(get(index) > 0){
+          Item item = content.item(index);
+          remove(item, 1);
+          takeRotation = index + 1;
+          return item;
+        }
+      }
+      return null;
+    }
+    
+    @Override
+    @Nullable
+    public Item takeIndex(int takeRotation){
+      for(int i = 0; i < items.length; i++){
+        int index = (i + takeRotation);
+        if(index >= items.length) index -= items.length;
+        if(get(index) > 0){
+          return content.item(index);
+        }
+      }
+      return null;
+    }
+    
+    @Override
+    public int nextIndex(int takeRotation){
+      for(int i = 1; i < items.length; i++){
+        int index = (i + takeRotation);
+        if(index >= items.length) index -= items.length;
+        if(get(index) > 0){
+          return (takeRotation + i) % items.length;
+        }
+      }
+      return takeRotation;
+    }
+  
+    @Override
+    public void each(ItemConsumer cons){
+      for(ItemPacket packet : ItemsBuffer.this){
+        cons.accept(packet.get(), packet.amount());
+      }
+    }
+  
+    @Override
+    public float sum(ItemCalculator calc){
+      float sum = 0f;
+      for(ItemsBuffer.ItemPacket packet: ItemsBuffer.this){
+        sum += calc.get(packet.get(), packet.amount());
+      }
+      return sum;
+    }
+  
+    @Override
+    public void read(Reads read){
+    }
+  
+    @Override
+    public void write(Writes write){
     }
   }
 }

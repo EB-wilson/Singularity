@@ -2,7 +2,7 @@ package singularity.world.blocks.liquid;
 
 import arc.graphics.g2d.Draw;
 import arc.scene.ui.layout.Table;
-import arc.struct.Seq;
+import arc.struct.ObjectMap;
 import arc.util.Eachable;
 import arc.util.Nullable;
 import arc.util.io.Reads;
@@ -16,7 +16,8 @@ import mindustry.world.Block;
 import mindustry.world.blocks.ItemSelection;
 import mindustry.world.meta.BlockGroup;
 import mindustry.world.modules.LiquidModule;
-import universeCore.entityComps.blockComps.Dumpable;
+import universeCore.annotations.Annotations;
+import universeCore.entityComps.blockComps.Takeable;
 
 import static mindustry.Vars.content;
 
@@ -24,7 +25,7 @@ import static mindustry.Vars.content;
  * 类似物品装卸器
  * @see mindustry.world.blocks.storage.Unloader*/
 public class LiquidUnloader extends Block{
-/**液体提取器，可从周围的方块中抽取液体并送向下一个方块*/
+  /**液体提取器，可从周围的方块中抽取液体并送向下一个方块*/
   public LiquidUnloader(String name){
     super(name);
     update = true;
@@ -53,10 +54,12 @@ public class LiquidUnloader extends Block{
     drawRequestConfigCenter(req, req.config, "center");
   }
 
-  public class LiquidUnloadedBuild extends Building implements Dumpable{
+  @Annotations.ImplEntries
+  public class LiquidUnloadedBuild extends Building implements Takeable{
     public @Nullable Liquid current = null;
     
     public LiquidModule tempLiquid = new LiquidModule();
+    public ObjectMap<String, Heaps<?>> dumps = new ObjectMap<>();
   
     @Override
     public Building create(Block block, Team team){
@@ -67,7 +70,7 @@ public class LiquidUnloader extends Block{
   
     @Override
     public void updateTile(){
-      Building next = getDump(e -> e.block.hasLiquids && e.canUnload());
+      Building next = getNext("liquids" , e -> e.block.hasLiquids && e.canUnload());
       if(next != null){
         liquids = next.liquids;
       }
@@ -138,16 +141,6 @@ public class LiquidUnloader extends Block{
       super.read(read, revision);
       int id = revision == 1 ? read.s() : read.b();
       current = id == -1 ? null : content.liquid(id);
-    }
-  
-    @Override
-    public byte getCdump(){
-      return cdump;
-    }
-  
-    @Override
-    public Seq<Building> getDumps(){
-      return proximity;
     }
   }
 }

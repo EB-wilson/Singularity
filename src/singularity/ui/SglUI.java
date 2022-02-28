@@ -7,7 +7,7 @@ import singularity.ui.dialogs.ContributorsDialog;
 import singularity.ui.dialogs.MainMenu;
 import singularity.ui.dialogs.PublicInfoDialog;
 import singularity.ui.dialogs.override.SglPlanetsDialog;
-import singularity.ui.fragments.override.SecondaryConfigureFragment;
+import singularity.ui.fragments.SecondaryConfigureFragment;
 import universeCore.util.handler.FieldHandler;
 
 import static mindustry.Vars.ui;

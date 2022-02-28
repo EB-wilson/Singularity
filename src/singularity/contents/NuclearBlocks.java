@@ -177,19 +177,19 @@ public class NuclearBlocks implements ContentList{
       
       newConsume();
       consume.item(SglItems.concentration_uranium_235, 1);
-      consume.power(70);
+      consume.power(80);
       consume.liquid(Liquids.cryofluid, 0.6f);
       consume.time(180);
       newProduce();
-      produce.power(280);
+      produce.power(400);
       
       newConsume();
       consume.item(SglItems.concentration_plutonium_239, 1);
-      consume.power(70);
+      consume.power(80);
       consume.liquid(Liquids.cryofluid, 0.6f);
       consume.time(180);
       newProduce();
-      produce.power(280);
+      produce.power(400);
       
       draw = new DrawExpandPlasma<>(this, 2);
     }};

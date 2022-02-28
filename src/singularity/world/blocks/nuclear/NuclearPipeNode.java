@@ -64,13 +64,13 @@ public class NuclearPipeNode extends NuclearBlock{
   @Override
   public void appliedConfig(){
     super.appliedConfig();
-    config(Integer.class, (e, value) -> {
+    config(Point2.class, (e, value) -> {
       NuclearEnergyBuildComp entity = (NuclearEnergyBuildComp)e;
-      Tile tile = Vars.world.tile(value);
+      Tile tile = Vars.world.tile(value.x, value.y);
       if(tile == null || !(tile.build instanceof NuclearEnergyBuildComp) || !((NuclearEnergyBuildComp)tile.build).getNuclearBlock().hasEnergy()) return;
       NuclearEnergyBuildComp other = (NuclearEnergyBuildComp)tile.build;
     
-      if(entity.energy().linked.contains(value)){
+      if(entity.energy().linked.contains(value.pack())){
         entity.deLink(other);
       }
       else{
@@ -327,19 +327,19 @@ public class NuclearPipeNode extends NuclearBlock{
       if(!(other instanceof NuclearEnergyBuildComp)) return true;
       
       if(canLink(this, (NuclearEnergyBuildComp)other)){
-        configure(other.pos());
+        configure(Point2.unpack(other.pos()));
         return false;
       }
       
       if(other == this){
         if(energy.linked.size > 0){
           while(energy.linked.size>0){
-            configure(energy.linked.get(0));
+            configure(Point2.unpack(energy.linked.get(0)));
           }
         }
         else{
           for(NuclearEnergyBuildComp target: getPotentialLink(tile, team)){
-            configure(target.getBuilding().pos());
+            configure(Point2.unpack(target.getBuilding().pos()));
           }
         }
         return false;

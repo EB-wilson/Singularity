@@ -9,11 +9,14 @@ import singularity.world.blockComp.ChainsBuildComp;
 import singularity.world.blocks.chains.ChainContainer;
 import singularity.world.blocks.chains.ChainsEvents;
 
+import java.util.LinkedHashMap;
+
 public class ChainsModule extends BlockModule{
   public ChainsBuildComp entity;
   public ChainContainer container;
   
-  protected ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, Seq<Cons<ChainsEvents.ChainsEvent>>> listener = new ObjectMap<>();
+  protected ObjectMap<ChainsEvents.ChainsTrigger, Seq<Runnable>> listeners = new ObjectMap<>();
+  protected ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<? extends ChainsEvents.ChainsEvent>>> globalListeners = new ObjectMap<>();
   
   public ChainsModule(ChainsBuildComp entity){
     this.entity = entity;
@@ -21,7 +24,7 @@ public class ChainsModule extends BlockModule{
   
   public ChainContainer newContainer(){
     ChainContainer result = new ChainContainer(entity);
-    result.listeners = listener;
+    result.globalListener = new ObjectMap<>(globalListeners);
     handle(new ChainsEvents.InitChainContainerEvent(entity, result));
     
     return result;
@@ -37,14 +40,19 @@ public class ChainsModule extends BlockModule{
     container.handle(event);
   }
   
-  @SuppressWarnings("unchecked")
-  public <T extends ChainsEvents.ChainsEvent> void listen(Class<T> event, Cons<T> cons){
-    Seq<Cons<ChainsEvents.ChainsEvent>> list = listener.get(event);
-    if(list == null){
-      list = new Seq<>();
-      list.add((Cons<ChainsEvents.ChainsEvent>) cons);
-      listener.put(event, list);
+  public void handle(ChainsEvents.ChainsTrigger trigger){
+    for(Runnable listener : listeners.get(trigger, new Seq<>())){
+      listener.run();
     }
+  }
+  
+  public <T extends ChainsEvents.ChainsEvent> void listenGlobal(Class<T> event, String symbol, Cons<T> cons){
+    globalListeners.get(event, LinkedHashMap::new).put(symbol, cons);
+    if(container != null) container.globalListener.get(event, LinkedHashMap::new).put(symbol, cons);
+  }
+  
+  public void listen(ChainsEvents.ChainsTrigger trigger, Runnable listener){
+    listeners.get(trigger, Seq::new).add(listener);
   }
   
   public void putVar(String key, Object obj){

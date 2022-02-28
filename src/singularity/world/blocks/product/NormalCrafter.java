@@ -45,10 +45,10 @@ import singularity.world.modules.SglProductModule;
 import singularity.world.products.ProduceGases;
 import singularity.world.products.Producers;
 import singularity.world.products.SglProduceType;
+import universeCore.annotations.Annotations;
 import universeCore.entityComps.blockComps.ProducerBlockComp;
 import universeCore.entityComps.blockComps.ProducerBuildComp;
 import universeCore.util.UncLiquidStack;
-import universeCore.world.blockModule.BaseProductModule;
 import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeLiquids;
 import universeCore.world.consumers.UncConsumePower;
@@ -59,6 +59,7 @@ import universeCore.world.producers.ProduceLiquids;
 import java.util.ArrayList;
 
 /**常规的工厂类方块，具有强大的consume-produce制造系统的近乎全能的制造类方块*/
+@Annotations.ImplEntries
 public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   public final ArrayList<BaseProducers> producers = new ArrayList<>();
   
@@ -91,11 +92,6 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     ambientSoundVolume = 0.03f;
     draw = new DrawFactory<>(this);
     flags = EnumSet.of(BlockFlag.factory);
-  }
-  
-  @Override
-  public ArrayList<BaseProducers> producers(){
-    return producers;
   }
   
   @Override
@@ -147,6 +143,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     return draw.icons();
   }
 
+  @Annotations.ImplEntries
   public class NormalCrafterBuild extends SglBuilding implements ProducerBuildComp{
     private final Seq<Liquid> tempLiquid = new Seq<>();
     
@@ -171,16 +168,6 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     
     public void produce(){
       producer.trigger();
-    }
-  
-    @Override
-    public int produceCurrent(){
-      return recipeCurrent;
-    }
-  
-    @Override
-    public BaseProductModule producer(){
-      return producer;
     }
   
     @Override

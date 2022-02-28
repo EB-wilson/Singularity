@@ -36,9 +36,13 @@ public class DistNetBlock extends SglBlock implements DistElementBlockComp{
     @Override
     public Building create(Block block, Team team){
       super.create(block, team);
+      assignNetModule();
+      return this;
+    }
+    
+    public void assignNetModule(){
       distributor = new DistributeModule(this);
       distributor.setNet();
-      return this;
     }
   
     @Override

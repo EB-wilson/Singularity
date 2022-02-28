@@ -32,16 +32,15 @@ public class PublicInfoDialog extends BaseListDialog{
   private static final Pattern imagePattern = Pattern.compile("<image *=.*>");
   
   Cons<Throwable> error = e -> {
-      infoTable.clearChildren();
-      infoTable.table(t -> {
-        StringBuilder errInfo = new StringBuilder(e.getMessage() + "\n");
-        for(StackTraceElement err: e.getStackTrace()){
-          errInfo.append(err).append("\n");
-        }
-        t.add(Core.bundle.format("warn.publicInfo.connectFailed", errInfo));
-        t.row();
-        t.button(Core.bundle.get("misc.refresh"), this::refresh).size(140, 60);
-      });
+    infoTable.table(t -> {
+      StringBuilder errInfo = new StringBuilder(e.getMessage() + "\n");
+      for(StackTraceElement err: e.getStackTrace()){
+        errInfo.append(err).append("\n");
+      }
+      t.add(Core.bundle.format("warn.publicInfo.connectFailed", errInfo));
+      t.row();
+      t.button(Core.bundle.get("misc.refresh"), this::refresh).size(140, 60);
+    });
   };
   
   volatile boolean initialized, titleLoaded;
@@ -58,7 +57,6 @@ public class PublicInfoDialog extends BaseListDialog{
     super(Core.bundle.get("misc.publicInfo"));
     
     defaultInfo = table -> {
-      table.clearChildren();
       if(!initialized){
         itemsLoading = table.add(new LoadTable(this::refresh)).get();
       }
@@ -111,6 +109,9 @@ public class PublicInfoDialog extends BaseListDialog{
       while(! titleLoaded){
       }
       if(titleStatus != null){
+        infoTable.clearChildren();
+        infoTable.resetZoom();
+        infoTable.setValid(true);
         error.get(titleStatus);
         return;
       }
@@ -128,6 +129,9 @@ public class PublicInfoDialog extends BaseListDialog{
   
       queue.addFirst(this::rebuild);
     }, e -> {
+      infoTable.clearChildren();
+      infoTable.resetZoom();
+      infoTable.setValid(true);
       error.get(e);
     });
     

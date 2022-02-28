@@ -2,6 +2,7 @@ package singularity.world.blocks.gas;
 
 import arc.graphics.g2d.Draw;
 import arc.scene.ui.layout.Table;
+import arc.struct.ObjectMap;
 import arc.util.Eachable;
 import arc.util.Nullable;
 import arc.util.io.Reads;
@@ -20,7 +21,8 @@ import singularity.world.blockComp.GasBuildComp;
 import singularity.world.blocks.SglBlock;
 import singularity.world.meta.SglBlockGroup;
 import singularity.world.modules.GasesModule;
-import universeCore.entityComps.blockComps.Dumpable;
+import universeCore.annotations.Annotations;
+import universeCore.entityComps.blockComps.Takeable;
 
 /**液体提取器，可连通周围方块的气体槽，并送向下一个方块
  * 类似物品装卸器，气体压力来自目标方块
@@ -56,8 +58,10 @@ public class GasUnloader extends GasBlock{
   public void drawRequestConfig(BuildPlan req, Eachable<BuildPlan> list){
     drawRequestConfigCenter(req, req.config, "center");
   }
-
-  public class GasUnloaderBuild extends SglBlock.SglBuilding implements Dumpable{
+  
+  @Annotations.ImplEntries
+  public class GasUnloaderBuild extends SglBlock.SglBuilding implements Takeable{
+    public ObjectMap<String, Heaps<?>> heaps = new ObjectMap<>();
     public @Nullable Gas current = null;
     public GasesModule tempGases;
   
@@ -70,7 +74,7 @@ public class GasUnloader extends GasBlock{
   
     @Override
     public void updateTile(){
-      Building next = getDump(e -> {
+      Building next = getNext("gases", e -> {
         if(!(e instanceof GasBuildComp)) return  false;
         return ((GasBuildComp) e).getGasBlock().hasGases() && e.canUnload();
       });
@@ -89,7 +93,7 @@ public class GasUnloader extends GasBlock{
   
     @Override
     public void dumpGas(){
-      GasBuildComp other = (GasBuildComp) getDump(e -> {
+      GasBuildComp other = (GasBuildComp)getNext("gases", e -> {
         if(!(e instanceof GasBuildComp)) return false;
         return ((GasBuildComp)e).getGasBlock().hasGases() && ((GasBuildComp)e).gases() != gases;
       });

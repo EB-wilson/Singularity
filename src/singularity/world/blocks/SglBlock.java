@@ -47,12 +47,12 @@ import singularity.world.meta.SglBlockStatus;
 import singularity.world.modules.GasesModule;
 import singularity.world.modules.NuclearEnergyModule;
 import singularity.world.modules.SglConsumeModule;
+import universeCore.annotations.Annotations;
 import universeCore.entityComps.blockComps.ConsumerBlockComp;
 import universeCore.entityComps.blockComps.ConsumerBuildComp;
-import universeCore.entityComps.blockComps.Dumpable;
+import universeCore.entityComps.blockComps.Takeable;
 import universeCore.ui.table.RecipeTable;
 import universeCore.util.UncLiquidStack;
-import universeCore.world.blockModule.BaseConsumeModule;
 import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeLiquids;
 import universeCore.world.consumers.UncConsumeType;
@@ -61,9 +61,8 @@ import java.util.ArrayList;
 
 import static mindustry.Vars.*;
 
-;
-
 /**此mod的基础方块类型，对block添加了完善的consume系统，并拥有核能的基础模块*/
+@Annotations.ImplEntries
 public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyBlockComp, GasBlockComp{
   public RecipeTable recipeTable;
   public RecipeTable optionalRecipeTable;
@@ -94,21 +93,21 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public boolean hasGases;
   /**方块是否输出气体*/
   public boolean outputGases;
-  /**是否显示气体流量*/
-  public boolean showGasFlow;
   /**方块是否有气体压缩保护，即气体在其中是否不能被压缩*/
   public boolean compressProtect;
   /**方块允许的最大气体压强*/
   public float maxGasPressure = 8f;
   /**气体容积*/
   public float gasCapacity = 10f;
+  /**是否显示气体流量*/
+  public boolean showGasFlow;
   
   /**是否显示当前选择的配方*/
   public boolean displaySelectPrescripts = false;
   /**方块的图形绘制方法对象，用于控制方块的draw*/
   public SglDrawBlock<? extends SglBuilding> draw = new SglDrawBlock<>(this);
   
-  /**核能阻值，在运送核能时运输速度会除以这个数值（最大情况为瞬间达到平衡）*/
+  /**核能阻值，在运送核能时运输速度会减去这个数值*/
   public float resident = 0.1f;
   /**方块是否输出核能量*/
   public boolean outputEnergy = false;
@@ -151,46 +150,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       e.recipeSelected = false;
       e.recipeCurrent = 0;
     });
-  }
-  
-  @Override
-  public boolean outputsItems(){
-    return outputItems;
-  }
-  
-  @Override
-  public ArrayList<BaseConsumers> consumers(){
-    return consumers;
-  }
-  
-  @Override
-  public RecipeTable recipeTable(){
-    return recipeTable;
-  }
-  
-  @Override
-  public void recipeTable(RecipeTable table){
-    recipeTable = table;
-  }
-  
-  @Override
-  public ArrayList<BaseConsumers> optionalCons(){
-    return optionalCons;
-  }
-  
-  @Override
-  public RecipeTable optionalRecipeTable(){
-    return optionalRecipeTable;
-  }
-  
-  @Override
-  public void optionalRecipeTable(RecipeTable table){
-    optionalRecipeTable = table;
-  }
-  
-  @Override
-  public boolean oneOfOptionCons(){
-    return false;
   }
   
   @Override
@@ -284,6 +243,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     if(instantTransfer){
       stats.add(Stat.maxConsecutive, 2, StatUnit.none);
     }
+  
+    if (this.hasLiquids) this.stats.add(Stat.liquidCapacity, this.liquidCapacity, StatUnit.liquidUnits);
+  
+    if (this.hasItems && this.itemCapacity > 0) this.stats.add(Stat.itemCapacity, (float)this.itemCapacity, StatUnit.items);
     
     if(hasGases) setGasStats(stats);
     
@@ -304,72 +267,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     return draw.icons();
   }
   
-  @Override
-  public boolean hasGases(){
-    return hasGases;
-  }
-  
-  @Override
-  public boolean outputGases(){
-    return outputGases;
-  }
-  
-  @Override
-  public float maxGasPressure(){
-    return maxGasPressure;
-  }
-  
-  @Override
-  public float gasCapacity(){
-    return gasCapacity;
-  }
-  
-  @Override
-  public boolean compressProtect(){
-    return compressProtect;
-  }
-  
-  @Override
-  public boolean hasEnergy(){
-    return hasEnergy;
-  }
-  
-  @Override
-  public float resident(){
-    return resident;
-  }
-  
-  @Override
-  public float energyCapacity(){
-    return energyCapacity;
-  }
-  
-  @Override
-  public boolean outputEnergy(){
-    return outputEnergy;
-  }
-  
-  @Override
-  public boolean consumeEnergy(){
-    return consumeEnergy;
-  }
-  
-  @Override
-  public boolean energyBuffered(){
-    return energyBuffered;
-  }
-  
-  @Override
-  public float basicPotentialEnergy(){
-    return basicPotentialEnergy;
-  }
-  
-  @Override
-  public float maxEnergyPressure(){
-    return maxEnergyPressure;
-  }
-  
-  public class SglBuilding extends Building implements ConsumerBuildComp, GasBuildComp, NuclearEnergyBuildComp, DrawableComp, Dumpable{
+  @Annotations.ImplEntries
+  public class SglBuilding extends Building implements ConsumerBuildComp, GasBuildComp, NuclearEnergyBuildComp, DrawableComp{
     public SglConsumeModule consumer;
     public NuclearEnergyModule energy;
     public GasesModule gases;
@@ -387,11 +286,12 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public Seq<NuclearEnergyBuildComp> energyLinked = new Seq<>();
     
     public final ObjectMap<Class<?>, Object> consData = new ObjectMap<>();
-    public int recipeCurrent = -1, lastRecipe;
+    @Annotations.FieldKey("consumeCurrent") public int recipeCurrent = -1;
+    public int lastRecipe;
     public boolean updateRecipe;
-    public float heat;
-  
+    
     public int select;
+    @Annotations.FieldKey("heaps") public ObjectMap<String, Takeable.Heaps<?>> dumpPairs = new ObjectMap<>();
   
     @Override
     public Building create(Block block, Team team) {
@@ -404,7 +304,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       
       if(hasEnergy){
         energy = new NuclearEnergyModule(this, basicPotentialEnergy, energyBuffered);
-        
         energy.setNet();
       }
       
@@ -429,43 +328,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
           if(!e.energy().linked.contains(pos())) e.getBuilding().configureAny(pos());
         });
       }
-    }
-  
-    @Override
-    public void onProximityUpdate(){
-      super.onProximityUpdate();
-      updateLinked();
-    }
-  
-    @Override
-    public void onProximityAdded(){
-      super.onProximityAdded();
-      if(energy != null){
-        onEnergyNetworkUpdated();
-      }
-    }
-    
-    @Override
-    public void onProximityRemoved(){
-      super.onProximityRemoved();
-      if(energy != null){
-        onEnergyNetworkRemoved();
-      }
-    }
-  
-    @Override
-    public int consumeCurrent(){
-      return recipeCurrent;
-    }
-  
-    @Override
-    public BaseConsumeModule consumer(){
-      return consumer;
-    }
-  
-    @Override
-    public ObjectMap<Class<?>, Object> consData(){
-      return consData;
     }
     
     @Override
@@ -750,16 +612,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     }
   
     @Override
-    public NuclearEnergyModule energy(){
-      return energy;
-    }
-  
-    @Override
-    public Seq<NuclearEnergyBuildComp> energyLinked(){
-      return energyLinked;
-    }
-  
-    @Override
     public float getMoveResident(NuclearEnergyBuildComp destination){
       Seq<NuclearEnergyBuildComp> path = energy.energyNet.getPath(this, destination);
       float result = 0;
@@ -836,12 +688,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public boolean acceptEnergy(NuclearEnergyBuildComp source){
       return source.getBuilding().team == team && energy.getEnergy() < getNuclearBlock().energyCapacity() &&
-        source.getEnergyPressure(this) > Math.max(basicPotentialEnergy, getEnergy());
-    }
-  
-    @Override
-    public GasesModule gases(){
-      return gases;
+        source.getEnergyPressure(this) > basicPotentialEnergy;
     }
   
     @Override
@@ -892,14 +739,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       }
     }
   
-    @Override
-    public byte getCdump(){
-      return cdump;
-    }
-  
-    @Override
-    public Seq<Building> getDumps(){
-      return proximity;
-    }
+    
   }
 }

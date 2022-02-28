@@ -105,10 +105,10 @@ public class CrafterBlocks implements ContentList{
       newConsume();
       consume.time(90);
       consume.power(2.5f);
-      consume.items(ItemStack.with(Items.silicon, 3, SglItems.uranium_238, 1));
+      consume.items(ItemStack.with(Items.silicon, 4, SglItems.uranium_238, 1));
       consume.valid = e -> e.consData(Integer.class, 0) > 0;
       newProduce();
-      produce.item(Items.phaseFabric, 2);
+      produce.item(Items.phaseFabric, 4);
       
       craftEffect = Fx.smeltsmoke;
   
@@ -415,6 +415,7 @@ public class CrafterBlocks implements ContentList{
     reaction_kettle = new ReactionKettle("reaction_kettle"){{
       requirements(Category.crafting, ItemStack.with(Items.titanium, 70, Items.lead, 60, Items.plastanium, 70, Items.copper, 100, Items.graphite, 40));
       size = 3;
+      health = 600;
     
       itemCapacity = 30;
       liquidCapacity = 20;
@@ -792,9 +793,9 @@ public class CrafterBlocks implements ContentList{
       warmupSpeed = 0.006f;
       
       newConsume();
-      consume.time(240);
+      consume.time(180);
       consume.item(SglItems.salt_uranium, 7);
-      consume.power(3.2f);
+      consume.power(3.8f);
       newProduce();
       produce.items(ItemStack.with(SglItems.uranium_238, 3, SglItems.uranium_235, 1));
       
@@ -1114,18 +1115,25 @@ public class CrafterBlocks implements ContentList{
       itemCapacity = 24;
       
       newConsume();
-      consume.time(240);
+      consume.time(180);
       consume.items(ItemStack.with(Items.titanium, 4, Items.lead, 5));
       consume.energy(6f);
       newProduce();
       produce.item(SglItems.iridium, 1);
       
       newConsume();
-      consume.time(150);
+      consume.time(120);
       consume.items(ItemStack.with(Items.thorium, 2, Items.lead, 1));
-      consume.energy(5f);
+      consume.energy(3f);
       newProduce();
       produce.item(SglItems.uranium_238, 1);
+      
+      newConsume();
+      consume.time(90);
+      consume.items(ItemStack.with(SglItems.strengthening_alloy, 1, Items.silicon, 2));
+      consume.energy(5f);
+      newProduce();
+      produce.item(Items.surgeAlloy, 1);
       
       craftEffect = SglFx.hadronReconstruct;
       

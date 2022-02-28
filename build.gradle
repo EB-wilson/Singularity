@@ -4,14 +4,15 @@ plugins {
 
 version 'alpha-0.1'
 
-sourceCompatibility = 11
-targetCompatibility = 11
-
 sourceSets.main.java.srcDirs = ["src"]
 
 repositories{
     mavenCentral()
     maven{ url 'https://www.jitpack.io' }
+}
+
+tasks.withType(JavaCompile){
+    options.encoding = "UTF-8"
 }
 
 ext{
@@ -40,9 +41,11 @@ allprojects{
 }
 
 dependencies{
+    implementation 'org.jetbrains:annotations:20.1.0'
     compileOnly files("lib/UniverseCore-lib.jar")
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    annotationProcessor files("lib/UniverseCore-lib.jar")
 }
 
 tasks.withType(JavaCompile) {  

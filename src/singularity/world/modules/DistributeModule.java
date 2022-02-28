@@ -4,6 +4,7 @@ import arc.struct.IntSeq;
 import arc.util.io.Writes;
 import mindustry.world.modules.BlockModule;
 import singularity.world.blockComp.distributeNetwork.DistElementBuildComp;
+import singularity.world.blockComp.distributeNetwork.DistNetworkCoreComp;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.request.DistRequestBase;
 
@@ -30,12 +31,14 @@ public class DistributeModule extends BlockModule{
   
   public void assign(DistRequestBase request){
     if(network.netValid()){
-      DistCoreModule core = network.cores.get(0).distributor();
-      if(!core.requestTasks.contains(request)){
-        core.receive(request);
-        lastAssign = request;
-      }
+      DistCoreModule core = core().distributor();
+      core.receive(request);
+      lastAssign = request;
     }
+  }
+  
+  public DistNetworkCoreComp core(){
+    return network.getCore();
   }
   
   @Override

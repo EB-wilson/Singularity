@@ -4,23 +4,23 @@ import arc.struct.Seq;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.world.modules.GasesModule;
+import universeCore.annotations.Annotations;
 import universeCore.entityComps.blockComps.BuildCompBase;
-import universeCore.entityComps.blockComps.Dumpable;
+import universeCore.entityComps.blockComps.Takeable;
 
 /**Gases组件，为方块的Build增加气体相关操作
- * 必须创建的变量：
- * <pre>{@code
- *   GasesModule [gases]
- * }<pre/>
  * 若使用非默认命名则需要重写调用方法*/
-public interface GasBuildComp extends BuildCompBase, Dumpable{
+public interface GasBuildComp extends BuildCompBase, Takeable{
   Seq<GasStack> temp = new Seq<>();
   
   default GasBlockComp getGasBlock(){
     return getBlock(GasBlockComp.class);
   }
   
-  GasesModule gases();
+  @Annotations.BindField("gases")
+  default GasesModule gases(){
+    return null;
+  }
   
   default void handleGas(GasBuildComp source, Gas gas, float amount){
     gases().add(gas, amount);
@@ -99,7 +99,7 @@ public interface GasBuildComp extends BuildCompBase, Dumpable{
   default void onMoveGasThis(GasBuildComp source, Seq<GasStack> gases){}
   
   default void dumpGas(Gas gas){
-    GasBuildComp other = (GasBuildComp) getDump(e -> {
+    GasBuildComp other = (GasBuildComp) this.getNext("gases", e -> {
       if(!(e instanceof GasBuildComp)) return false;
       return ((GasBuildComp)e).getGasBlock().hasGases() && ((GasBuildComp)e).acceptGas(this, gas);
     });
@@ -107,7 +107,7 @@ public interface GasBuildComp extends BuildCompBase, Dumpable{
   }
   
   default void dumpGas(){
-    GasBuildComp other = (GasBuildComp) getDump(e -> {
+    GasBuildComp other = (GasBuildComp) this.getNext("gases", e -> {
       if(!(e instanceof GasBuildComp)) return false;
       return ((GasBuildComp)e).getGasBlock().hasGases() && outputPressure() > ((GasBuildComp) e).pressure();
     });

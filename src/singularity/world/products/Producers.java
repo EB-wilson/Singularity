@@ -8,7 +8,7 @@ import universeCore.world.producers.BaseProducers;
 public class Producers extends BaseProducers{
   public ProduceEnergy<?> energy(float prod){
     return add(new ProduceEnergy<>(prod));
-  };
+  }
   
   public ProduceGases<?> gas(Gas gas, float amount){
     return add(new ProduceGases<>(new GasStack[]{new GasStack(gas, amount)}));

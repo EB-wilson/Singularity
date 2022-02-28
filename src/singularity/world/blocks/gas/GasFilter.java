@@ -37,7 +37,7 @@ public class GasFilter extends GasJunction{
       dir = (dir + 4) % 4;
       GasBuildComp next = nearby(dir) instanceof GasBuildComp? (GasBuildComp) nearby(dir) :null;
       int finalDir = dir;
-      GasBuildComp other = (GasBuildComp) getDump(e -> e instanceof GasBuildComp &&
+      GasBuildComp other = (GasBuildComp) getNext("gases", e -> e instanceof GasBuildComp &&
           ((nearby(Mathf.mod(finalDir + 1, 4)) == e || nearby(Mathf.mod(finalDir - 1, 4)) == e) && ((GasBuildComp) e).acceptGas(source, gas)));
       
       if(through){

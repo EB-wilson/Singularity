@@ -6,6 +6,10 @@ public interface DistNetworkCoreComp extends DistElementBuildComp{
   @Override
   DistCoreModule distributor();
   
+  default boolean updateState(){
+    return false;
+  }
+  
   default void updateDistNetwork(){
     distributor().update();
   }

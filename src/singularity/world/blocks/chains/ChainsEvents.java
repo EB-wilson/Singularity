@@ -3,17 +3,20 @@ package singularity.world.blocks.chains;
 import singularity.world.blockComp.ChainsBuildComp;
 
 public class ChainsEvents{
-  public static class ChainsEvent{}
+  public enum ChainsTrigger{
+    update,
+    structUpdated
+  }
   
-  public static class TargetChainsEvent extends ChainsEvent{
+  public static class ChainsEvent{
     public ChainsBuildComp target;
     
-    public TargetChainsEvent(ChainsBuildComp target){
+    public ChainsEvent(ChainsBuildComp target){
       this.target = target;
     }
   }
   
-  public static class AddedBlockEvent extends TargetChainsEvent{
+  public static class AddedBlockEvent extends ChainsEvent{
     public ChainContainer container;
     public ChainContainer oldContainer;
     
@@ -24,13 +27,13 @@ public class ChainsEvents{
     }
   }
   
-  public static class RemovedBlockEvent extends TargetChainsEvent{
+  public static class RemovedBlockEvent extends ChainsEvent{
     public RemovedBlockEvent(ChainsBuildComp target){
       super(target);
     }
   }
   
-  public static class InitChainContainerEvent extends TargetChainsEvent{
+  public static class InitChainContainerEvent extends ChainsEvent{
     public ChainContainer newContainer;
     
     public InitChainContainerEvent(ChainsBuildComp target, ChainContainer newContainer){
@@ -39,7 +42,7 @@ public class ChainsEvents{
     }
   }
   
-  public static class ConstructFlowEvent extends TargetChainsEvent{
+  public static class ConstructFlowEvent extends ChainsEvent{
     public ChainContainer container;
     public ChainContainer oldContainer;
     
@@ -49,6 +52,4 @@ public class ChainsEvents{
       this.oldContainer = oldContainer;
     }
   }
-  
-  public static class UpdateEvent extends ChainsEvent{}
 }

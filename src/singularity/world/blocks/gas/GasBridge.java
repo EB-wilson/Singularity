@@ -2,7 +2,7 @@ package singularity.world.blocks.gas;
 
 import arc.Core;
 import arc.scene.ui.layout.Table;
-import arc.struct.Seq;
+import arc.struct.ObjectMap;
 import arc.util.Strings;
 import mindustry.game.Team;
 import mindustry.gen.Building;
@@ -15,7 +15,9 @@ import singularity.world.blockComp.GasBlockComp;
 import singularity.world.blockComp.GasBuildComp;
 import singularity.world.meta.SglBlockGroup;
 import singularity.world.modules.GasesModule;
+import universeCore.annotations.Annotations;
 
+@Annotations.ImplEntries
 public class GasBridge extends ItemBridge implements GasBlockComp{
   /**是否显示气体流量*/
   public boolean showGasFlow = true;
@@ -54,33 +56,10 @@ public class GasBridge extends ItemBridge implements GasBlockComp{
     setGasStats(stats);
   }
   
-  @Override
-  public boolean hasGases(){
-    return true;
-  }
-  
-  @Override
-  public boolean outputGases(){
-    return true;
-  }
-  
-  @Override
-  public float maxGasPressure(){
-    return maxGasPressure;
-  }
-  
-  @Override
-  public float gasCapacity(){
-    return gasCapacity;
-  }
-  
-  @Override
-  public boolean compressProtect(){
-    return compressProtect;
-  }
-  
+  @Annotations.ImplEntries
   public class GasBridgeBuild extends ItemBridgeBuild implements GasBuildComp{
     public GasesModule gases;
+    public ObjectMap<String, Heaps<?>> heaps = new ObjectMap<>();
   
     @Override
     public Building create(Block block, Team team){
@@ -128,21 +107,6 @@ public class GasBridge extends ItemBridge implements GasBlockComp{
           l.update(rebuild);
         }).left();
       }
-    }
-  
-    @Override
-    public GasesModule gases(){
-      return gases;
-    }
-  
-    @Override
-    public byte getCdump(){
-      return cdump;
-    }
-  
-    @Override
-    public Seq<Building> getDumps(){
-      return proximity;
     }
   }
 }

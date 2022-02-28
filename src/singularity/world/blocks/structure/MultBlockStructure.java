@@ -1,21 +1,23 @@
 package singularity.world.blocks.structure;
 
-import arc.struct.Bits;
+import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
-import mindustry.world.Block;
 import mindustry.world.Tile;
 import singularity.Sgl;
 import singularity.type.SglContents;
+import singularity.world.blockComp.ChainsBuildComp;
 import singularity.world.blockComp.StructBlockComp;
 import singularity.world.blockComp.StructBuildComp;
+import singularity.world.blocks.chains.ChainContainer;
 
 public class MultBlockStructure extends UnlockableContent{
   StructBlockComp[][] structure;
-  Bits structBlocks = new Bits(Vars.content.blocks().size);
-  Bits anyPosChains = new Bits(Vars.content.blocks().size);
+  ObjectSet<StructBlockComp> structBlocks = new ObjectSet<>();
+  
+  ObjectMap<StructBlockComp, Integer> anyWhere = new ObjectMap<>();
   
   boolean initialized;
   
@@ -30,19 +32,19 @@ public class MultBlockStructure extends UnlockableContent{
     return SglContents.structure;
   }
   
-  public boolean match(ObjectSet<StructBuildComp> targets){
+  public boolean match(ChainContainer container){
     int currX = Vars.world.tiles.width, currY = Vars.world.tiles.height;
-    for(StructBuildComp target: targets){
-      if(!structBlocks.get(target.getBlock().id)) continue;
+    for(ChainsBuildComp target: container.all){
+      if(!(target instanceof StructBuildComp) || !structBlocks.contains((StructBlockComp)target.getChainsBlock())) continue;
       currX = Math.min(currX, target.tileX());
       currY = Math.min(currY, target.tileY());
     }
     Tile tile = Vars.world.tile(currX, currY);
     
-    return tile != null && match(targets, tile);
+    return tile != null && match(container, tile);
   }
   
-  public boolean match(ObjectSet<StructBuildComp> targets, Tile origin){
+  public boolean match(ChainContainer container, Tile origin){
     int ox = origin.x, oy = origin.y;
     
     for(int dx=0; dx<Sgl.maxStructureSize; dx++){
@@ -50,7 +52,7 @@ public class MultBlockStructure extends UnlockableContent{
         if(structure[dx][dy] == null) continue;
         
         Tile tile = Vars.world.tile(ox + dx, oy + dy);
-        if(tile == null || !(tile.build instanceof StructBuildComp) || !targets.contains((StructBuildComp) tile.build)) return false;
+        if(tile == null || !(tile.build instanceof StructBuildComp) || !container.all.contains((StructBuildComp) tile.build)) return false;
         
         if(structure[dx][dy] != tile.build.block) return false;
       }
@@ -60,11 +62,10 @@ public class MultBlockStructure extends UnlockableContent{
   }
   
   public boolean structRequest(StructBlockComp block){
-    return structBlocks.get(((Block)block).id);
+    return structBlocks.contains(block);
   }
   
   public boolean anyRequest(StructBlockComp block){
-    int id = ((Block)block).id;
-    return anyPosChains.get(id) || structBlocks.get(id);
+    return anyWhere.containsKey(block) || structBlocks.contains(block);
   }
 }

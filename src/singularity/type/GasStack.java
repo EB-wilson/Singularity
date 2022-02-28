@@ -36,10 +36,10 @@ public class GasStack implements Comparable<GasStack>{
     return copy;
   }
   
-  public static GasStack[] with(Object... gass){
-    GasStack[] stacks = new GasStack[gass.length / 2];
-    for(int i = 0; i < gass.length; i += 2){
-      stacks[i / 2] = new GasStack((Gas)gass[i], ((Number)gass[i + 1]).floatValue());
+  public static GasStack[] with(Object... gases){
+    GasStack[] stacks = new GasStack[gases.length / 2];
+    for(int i = 0; i < gases.length; i += 2){
+      stacks[i / 2] = new GasStack((Gas)gases[i], ((Number)gases[i + 1]).floatValue());
     }
     return stacks;
   }

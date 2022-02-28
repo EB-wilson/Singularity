@@ -3,6 +3,7 @@ package singularity.type;
 import arc.func.Cons;
 import arc.func.Func2;
 import arc.scene.ui.layout.Table;
+import arc.struct.Seq;
 import arc.util.Time;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.MappableContent;
@@ -22,10 +23,10 @@ import java.util.Locale;
 
 import static singularity.Singularity.getModAtlas;
 
-public class Reaction<R1 extends UnlockableContent, R2 extends UnlockableContent, P extends UnlockableContent> extends UnlockableContent{
+public class Reaction<R1 extends UnlockableContent, R2 extends UnlockableContent> extends UnlockableContent{
   public Participant<R1> reactantA;
   public Participant<R2> reactantB;
-  public Participant<P> product;
+  public Seq<Participant<?>> products;
   
   public float deltaHeat;
   public float requireTemperature;
@@ -36,7 +37,14 @@ public class Reaction<R1 extends UnlockableContent, R2 extends UnlockableContent
   public Cons<ReactContainer> finished = e -> {};
   
   public Func2<Float, Float, Float> rateScl = (pressure, temperature) -> {
-    int pressureSclBase = getGas().length - (product.isGas? 1: 0);
+    float pressureSclBase = 0;
+  
+    for(Participant<Gas> gas : getGas()){
+      pressureSclBase += gas.amount;
+    }
+    for(Participant<?> product : products){
+      pressureSclBase -= product.isGas? product.amount: 0;
+    }
     int heatSclBase = deltaHeat > 0? 1: -1;
     
     return (pressure*pressureSclBase/2)+((float)Math.log(temperature)*heatSclBase/2);
@@ -50,26 +58,55 @@ public class Reaction<R1 extends UnlockableContent, R2 extends UnlockableContent
   private byte lReactionCount = -1;
   private byte gReactionCount = -1;
   
-  public Reaction(Participant<R1> a, Participant<R2> b, Participant<P> out){
-    super(a.getName() + "+" + b.getName() + "->" + out.getName());
-    localizedName = a.amount + a.get().localizedName + " + " + b.amount + b.get().localizedName + " -> " + out.amount + out.get().localizedName;
+  public boolean chainsReact = false;
+  public boolean reversible = false;
+  
+  public Reaction(Participant<R1> a, Participant<R2> b, Participant<?>... out){
+    super(a.getName() + "+" + b.getName() + "->" + getProduct(false, out));
+    localizedName = a.amount + a.get().localizedName + " + " + b.amount + b.get().localizedName + " -> " + getProduct(true, out);
     
     reactantA = a;
     reactantB = b;
-    product = out;
+    products = Seq.with(out);
     
     float consHeat = 0;
     
     consHeat += getHeat(a.get());
     consHeat += getHeat(b.get());
     
-    deltaHeat = getHeat(out.get()) - consHeat;
+    deltaHeat = getHeat(out) - consHeat;
     
     alwaysUnlocked = true;
   }
   
-  public Reaction(R1 a, float b, R2 c, float d, P e, float f){
-    this(new Participant<>(a, b), new Participant<>(c, d), new Participant<>(e, f));
+  private static String getProduct(boolean localization, Participant<?>... products){
+    StringBuilder result = new StringBuilder();
+    boolean first = true;
+    for(Participant<?> product : products){
+      result.append(first? "": localization? " + ": "+").append(localization? product.amount + product.get().localizedName: product.getName());
+      first = false;
+    }
+    return result.toString();
+  }
+  
+  public Reaction(R1 a, float b, R2 c, float d, Object... produces){
+    this(new Participant<>(a, b), new Participant<>(c, d), getProdArr(produces));
+  }
+  
+  private static Participant<?>[] getProdArr(Object... produces){
+    Participant<?>[] result = new Participant<?>[produces.length/2];
+    for(int i = 0; i < produces.length; i+=2){
+      result[i/2] = new Participant<>((UnlockableContent)produces[i], ((Number)produces[i+1]).floatValue());
+    }
+    return result;
+  }
+  
+  public static float getHeat(Participant<?>[] produces){
+    float results = 0;
+    for(Participant<?> p : produces){
+      results += getHeat(p.get());
+    }
+    return results;
   }
   
   private static float getHeat(MappableContent target){
@@ -115,7 +152,7 @@ public class Reaction<R1 extends UnlockableContent, R2 extends UnlockableContent
     });
     stats.add(SglStat.product, t -> {
       t.row();
-      setInfo(product, t);
+      setInfo(products, t);
     });
   }
   
@@ -128,13 +165,24 @@ public class Reaction<R1 extends UnlockableContent, R2 extends UnlockableContent
     }).left().padLeft(5);
   }
   
+  protected void setInfo(Seq<Participant<?>> produces, Table table){
+    table.table(t -> {
+      t.defaults().left().fill().padLeft(6);
+      for(Participant<?> part : produces){
+        if(part.isItem) t.add(new ItemDisplay(part.getItem(), (int) part.amount, reactTime, true));
+        if(part.isLiquid) t.add(new LiquidDisplay(part.getLiquid(), part.amount/reactTime*60, true));
+        if(part.isGas) t.add(new GasDisplay(part.getGas(), part.amount/reactTime*60, true, true));
+      }
+    }).left().padLeft(5);
+  }
+  
   @Override
   public void loadIcon(){
     fullIcon = uiIcon = getModAtlas("reaction");
   }
   
   public Participant<?>[] getAllPart(){
-    return new Participant[]{reactantA, reactantB, product};
+    return products.list().toArray(new Participant<?>[]{reactantA, reactantB});
   }
   
   public boolean accept(MappableContent target){
@@ -184,7 +232,7 @@ public class Reaction<R1 extends UnlockableContent, R2 extends UnlockableContent
   
   @Override
   public String toString(){
-    return "reaction:" + id + " - " + reactantA + " + " + reactantB + "->" + product + "], requires:[ temperature:" + requireTemperature + ", pressure:" + requirePressure + "]";
+    return "reaction:" + id + " - " + reactantA + " + " + reactantB + "->" + getProduct(false, products.toArray()) + "], requires:[ temperature:" + requireTemperature + ", pressure:" + requirePressure + "]";
   }
   
   public static class Participant<Type extends UnlockableContent>{

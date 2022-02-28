@@ -8,8 +8,9 @@ import mindustry.gen.Building;
 import mindustry.world.Tile;
 import singularity.world.blocks.nuclear.NuclearEnergyNet;
 import singularity.world.modules.NuclearEnergyModule;
+import universeCore.annotations.Annotations;
 import universeCore.entityComps.blockComps.BuildCompBase;
-import universeCore.entityComps.blockComps.Dumpable;
+import universeCore.entityComps.blockComps.Takeable;
 
 /**这个接口表明此Building是具有核能的方块，需要在create当中初始化一个NuclearEnergyModule
  * 必须创建的变量：
@@ -18,16 +19,22 @@ import universeCore.entityComps.blockComps.Dumpable;
  *   Seq<NuclearEnergyBuildComp> [energyLinked]
  * }<pre/>
  * 若使用非默认命名则需要重写调用方法*/
-public interface NuclearEnergyBuildComp extends BuildCompBase, Dumpable{
+public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
   /**获得该块的NuclearEnergyBlock*/
   default NuclearEnergyBlockComp getNuclearBlock(){
     return getBlock(NuclearEnergyBlockComp.class);
   }
   
   /**用于获得该方块的核能模块*/
-  NuclearEnergyModule energy();
+  @Annotations.BindField("energy")
+  default NuclearEnergyModule energy(){
+    return null;
+  }
   
-  Seq<NuclearEnergyBuildComp> energyLinked();
+  @Annotations.BindField("energyLinked")
+  default Seq<NuclearEnergyBuildComp> energyLinked(){
+    return null;
+  }
   
   /**将核能面板显示出来，或者显示别的什么东西*/
   default void displayEnergy(Table table){
@@ -82,6 +89,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Dumpable{
     getEnergyNetwork().addNet(other.getEnergyNetwork());
   }
   
+  @Annotations.MethodEntry(entryMethod = "onProximityRemoved")
   default void onEnergyNetworkRemoved(){
     if(energy() == null) return;
     getEnergyNetwork().remove(this);
@@ -96,11 +104,14 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Dumpable{
     updateLinked();
   }
   
+  @Annotations.MethodEntry(entryMethod = "onProximityAdded")
   default void onEnergyNetworkUpdated(){
-    updateLinked();
-    for(NuclearEnergyBuildComp other : energyLinked()){
-      if(other.energy() != null){
-        other.getEnergyNetwork().addNet(getEnergyNetwork());
+    if(energy() != null){
+      updateLinked();
+      for(NuclearEnergyBuildComp other : energyLinked()){
+        if(other.energy() != null){
+          other.getEnergyNetwork().addNet(getEnergyNetwork());
+        }
       }
     }
   }
@@ -108,11 +119,9 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Dumpable{
   /**获取该块对目标块的核能传输速度*/
   default float getEnergyMoveRate(NuclearEnergyBuildComp next){
     if(!next.getNuclearBlock().hasEnergy() || !next.acceptEnergy(this) || getEnergy() < next.getEnergy()) return 0;
-    float avg = (getEnergy()+ next.getEnergy())/2;
-    
     float energyDiff = Mathf.maxZero(getEnergyPressure(next));
-    float flowRate = Math.min(energyDiff*energyDiff/60*getBuilding().delta(), getEnergy() - avg);
-    flowRate = Math.min(Math.min(flowRate, avg - next.getEnergy()), next.getNuclearBlock().energyCapacity() - next.getEnergy());
+    float flowRate = Math.min(energyDiff*energyDiff/60*getBuilding().delta(), energyDiff);
+    flowRate = Math.min(flowRate, next.getNuclearBlock().energyCapacity() - next.getEnergy());
     
     return Math.max(flowRate, 0)-getMoveResident(next)*getBuilding().delta();
   }
@@ -136,12 +145,8 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Dumpable{
     }
   }
   
-  default Seq<Building> getEnergyDumpBuild(){
-    Seq<Building> result = new Seq<>();
-    for(NuclearEnergyBuildComp entity: getEnergyNetwork().consumer){
-      result.add(entity.getBuilding());
-    }
-    return result;
+  default Seq<NuclearEnergyBuildComp> getEnergyDumpBuild(){
+    return getEnergyNetwork().consumer;
   }
   
   default void onMoveEnergy(NuclearEnergyBuildComp dest, float rate){
@@ -176,10 +181,10 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Dumpable{
   
   /**向连接的方块输出核能量，如果那个方块接受的话*/
   default void dumpEnergy(){
-    NuclearEnergyBuildComp dump = (NuclearEnergyBuildComp)getDump(e -> {
-      if(!(e instanceof NuclearEnergyBuildComp) || e == this) return false;
-      return ((NuclearEnergyBuildComp) e).acceptEnergy(this) && getEnergyPressure((NuclearEnergyBuildComp) e) > 0;
-    }, getEnergyDumpBuild());
+    NuclearEnergyBuildComp dump = getNext("energy", getEnergyDumpBuild(), e -> {
+      if(e == null || e == this) return false;
+      return e.acceptEnergy(this) && getEnergyPressure(e) > 0;
+    });
     if(dump != null){
       moveEnergy(dump);
     }

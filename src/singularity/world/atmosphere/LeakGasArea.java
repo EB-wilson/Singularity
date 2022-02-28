@@ -4,7 +4,6 @@ import arc.graphics.Color;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Position;
-import arc.struct.Seq;
 import arc.util.Strings;
 import arc.util.Tmp;
 import arc.util.io.Reads;
@@ -14,7 +13,10 @@ import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.core.World;
 import mindustry.entities.EntityGroup;
-import mindustry.gen.*;
+import mindustry.gen.Drawc;
+import mindustry.gen.Entityc;
+import mindustry.gen.Groups;
+import mindustry.gen.Unitc;
 import mindustry.io.TypeIO;
 import mindustry.ui.Fonts;
 import mindustry.world.Block;
@@ -365,16 +367,6 @@ public class LeakGasArea implements Pool.Poolable, Drawc, GasBuildComp{
   
   @Override
   public LiquidModule liquids(){
-    return null;
-  }
-  
-  @Override
-  public byte getCdump(){
-    return 0;
-  }
-  
-  @Override
-  public Seq<Building> getDumps(){
     return null;
   }
 }

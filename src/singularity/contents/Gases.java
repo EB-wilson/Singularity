@@ -12,11 +12,11 @@ public class Gases implements ContentList{
   CO2,
   CO,
   Cl2,
+  SO2,
   H2,
   N2,
   O2,
   spore_cloud,
-  vapor,
   steam;
   
   @Override
@@ -47,6 +47,11 @@ public class Gases implements ContentList{
       heatCapacity = 302f;
       flammability = 0.6f;
     }};
+    
+    SO2 = new Gas("SO2", Color.valueOf("#B7BD5C")){{
+      heatCapacity = 408f;
+      flammability = 0f;
+    }};
   
     N2 = new Gas("N2", Color.valueOf("#FFFFFF")){{
       heatCapacity = 369f;
@@ -61,12 +66,6 @@ public class Gases implements ContentList{
     spore_cloud = new Gas("spore_cloud", Pal.spore){{
       heatCapacity = 387f;
       flammability = 1.2f;
-    }};
-    
-    vapor = new Gas("vapor", Color.white){{
-      heatCapacity = 421;
-      temperature = 292f;
-      flammability = 0f;
     }};
     
     steam = new Gas("steam", Color.white){{

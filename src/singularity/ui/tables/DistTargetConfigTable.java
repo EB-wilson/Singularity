@@ -1,102 +1,370 @@
 package singularity.ui.tables;
 
+import arc.Core;
 import arc.func.Cons;
+import arc.func.Cons2;
+import arc.func.Cons3;
+import arc.graphics.Color;
+import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.Lines;
+import arc.input.KeyCode;
+import arc.math.Mathf;
+import arc.math.geom.Geometry;
+import arc.math.geom.Vec2;
 import arc.scene.Element;
+import arc.scene.event.ElementGestureListener;
+import arc.scene.event.InputEvent;
+import arc.scene.event.InputListener;
+import arc.scene.event.Touchable;
+import arc.scene.style.TextureRegionDrawable;
+import arc.scene.ui.ImageButton;
+import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
+import arc.util.Align;
+import arc.util.Log;
+import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Building;
+import mindustry.gen.Icon;
 import mindustry.gen.Tex;
+import mindustry.graphics.Drawf;
+import mindustry.graphics.Pal;
+import mindustry.ui.Styles;
+import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.distribution.GridChildType;
 import universeCore.util.DataPackable;
+import universeCore.util.Empties;
 
 public class DistTargetConfigTable extends Table{
-  TargetConfigure config;
-  ContentType currentConfig;
-  Element currentSelect;
-  Runnable rebuildItems;
+  private static final ObjectSet<Character> numbers = ObjectSet.with('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-');
+ 
+  TargetConfigure config = new TargetConfigure();
+  ContentType currType;
+  byte[] currDireBit;
+  ObjectSet<UnlockableContent> currConfig;
   
-  public DistTargetConfigTable(Building target, ContentType[] types, Cons<TargetConfigure> cons){
+  Runnable rebuildItems;
+  int index;
+  
+  public DistTargetConfigTable(Building build, TargetConfigure defaultCfg, GridChildType[] IOTypes, ContentType[] types, Cons<TargetConfigure> cons, Runnable close){
     super(Tex.pane);
-    config = new TargetConfigure(types);
-    config.position = target.pos();
+    if(defaultCfg != null){
+      config.read(defaultCfg.pack());
+    }
+    else{
+      config.position = build.pos();
+    }
     
-    currentConfig = types[0];
+    if(build instanceof IOPointBlock.IOPoint){
+      addChild(
+          new Element(){
+            float deltaX, deltaY;
+            float alpha;
+            boolean selected, valid = true;
+            
+            {
+              touchable(() -> currDireBit != null? Touchable.enabled: Touchable.disabled);
+              update(() -> {
+                alpha = Mathf.lerpDelta(alpha, selected? 1: 0, 0.03f);
+                Vec2 pos = Core.input.mouseScreen(build.x, build.y);
+                setPosition(pos.x + deltaX, pos.y + deltaY, Align.center);
+                setTransform(true);
+                
+                if(Core.app.isAndroid()){
+                  if(!selected || !valid){
+                    deltaX = Mathf.lerpDelta(deltaX, 0, 0.05f);
+                    deltaY = Mathf.lerpDelta(deltaY, 0, 0.05f);
+                  }
+                }
+                else{
+                  selected = Tmp.cr1.set(x, y, 45).contains(Core.input.mouse());
+                }
+              });
+              
+              if(Core.app.isAndroid()){
+                addCaptureListener(new ElementGestureListener(){
+                  @Override
+                  public void touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
+                    super.touchDown(event, x, y, pointer, button);
+                    selected = true;
+                  }
+  
+                  @Override
+                  public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
+                    super.touchUp(event, x, y, pointer, button);
+                    selected = false;
+                    valid = true;
+                  }
+  
+                  @Override
+                  public void pan(InputEvent event, float x, float y, float dx, float dy){
+                    if(valid){
+                      deltaX = dx;
+                      deltaY = dy;
+                      if(deltaX > 90){
+                        setDireBit((byte) 1);
+                      }
+                      else if(deltaX < -90){
+                        setDireBit((byte) 4);
+                      }
+                      else if(deltaY > 90){
+                        setDireBit((byte) 2);
+                      }
+                      else if(deltaY < -90){
+                        setDireBit((byte) 8);
+                      }
+                    }
+                    super.pan(event, x, y, deltaX, deltaY);
+                  }
+                });
+              }
+              else{
+                addListener(new InputListener(){
+                  @Override
+                  public boolean keyDown(InputEvent event, KeyCode keycode){
+                    if(selected){
+                      if(keycode.equals(KeyCode.right)){
+                        setDireBit((byte) 1);
+                      }
+                      else if(keycode.equals(KeyCode.up)){
+                        setDireBit((byte) 2);
+                      }
+                      else if(keycode.equals(KeyCode.left)){
+                        setDireBit((byte) 4);
+                      }
+                      else if(keycode.equals(KeyCode.down)){
+                        setDireBit((byte) 8);
+                      }
+                    }
+                    return super.keyDown(event, keycode);
+                  }
+                });
+              }
+            }
+            
+            @Override
+            public void draw(){
+              Draw.color(currDireBit == null? Pal.gray: Color.lightGray);
+              Draw.alpha(0.4f + 0.6f*alpha);
+              Lines.circle(x, y, 45);
+              Log.info("x: " + x + ", y: " + y);
+              
+              if(currDireBit != null){
+                byte bit = 1;
+                for(int i = 0; i < 4; i++){
+                  int dx = Geometry.d4x(i);
+                  int dy = Geometry.d4y(i);
+    
+                  Color c = (currDireBit[0] & bit) != 0 ? Pal.accent : Pal.gray;
+                  c = c.cpy().a(alpha);
+                  Drawf.square(x + dx*60*alpha, y + dy*60*alpha, 18, 45, c);
+    
+                  bit *= 2;
+                }
+              }
+            }
+  
+            private void setDireBit(byte bit){
+              if(currDireBit != null){
+                currDireBit[0] ^= bit;
+              }
+              valid = false;
+            }
+          });
+    }
     
     table(topBar -> {
-    
-    });
+      topBar.image(Icon.settings).size(50).left().padLeft(4);
+      topBar.add(Core.bundle.get("fragments.configs.gridConfig")).left().padLeft(4);
+      topBar.button(
+          t -> t.add("").update(l -> l.setText(Core.bundle.format("misc.mode", IOTypes[index].locale()))),
+          Styles.clearPartialt,
+          () -> {
+            index = (index + 1)%IOTypes.length;
+            currConfig = config.getOrNew(IOTypes[index], currType);
+            rebuildItems.run();
+          }
+      ).width(85).padLeft(4).padRight(4).growY().left();
+      TextField input = new TextField(Integer.toString(config.priority));
+      input.setFilter((f, c) -> {
+        if(!numbers.contains(c)) return false;
+        try{
+          Integer.valueOf(f.getText());
+          return true;
+        }
+        catch(NumberFormatException e){
+          return false;
+        }
+      });
+      input.setTextFieldListener((f, c) -> config.priority = Integer.valueOf(f.getText()));
+      topBar.add(Core.bundle.get("misc.priority")).right().padRight(4);
+      topBar.add(input).right().width(75).padRight(4);
+    }).fillY().expandX();
+    row();
+    image().color(Pal.gray).growX().height(4).colspan(2).pad(0).margin(0);
     row();
     table(main -> {
-      rebuildItems = () -> {
-        Seq<UnlockableContent> items = Vars.content.getBy(currentConfig);
-        int counter = 0;
-        for(UnlockableContent item: items){
-        
-        }
-      };
-      rebuildItems.run();
+      main.pane(items -> {
+        rebuildItems = () -> {
+          currDireBit = null;
+          items.clearChildren();
+          Seq<UnlockableContent> itemSeq = Vars.content.getBy(currType);
+          int counter = 0;
+          for(UnlockableContent item: itemSeq){
+            if(item.unlocked()){
+              ImageButton button = items.button(Tex.whiteui, Styles.selecti, 30, () -> {
+                if(!config.remove(IOTypes[index], item)){
+                  config.set(IOTypes[index], item, currDireBit = new byte[1]);
+                }
+                else currDireBit = null;
+              }).size(40).get();
+              button.getStyle().imageUp = new TextureRegionDrawable(item.uiIcon);
+              button.update(() -> button.setChecked(currConfig.contains(item)));
+  
+              if(counter++ != 0 && counter%5 == 0) items.row();
+            }
+          }
+        };
+        currType = types[0];
+        currConfig = config.getOrNew(IOTypes[index], currType);
+        rebuildItems.run();
+      }).fillX().height(160);
+      
+      main.image().color(Pal.gray).growY().width(4).colspan(2).padLeft(3).padRight(3).margin(0);
+      
+      main.table(sideBar -> {
+        sideBar.pane(typesTable -> {
+          for(ContentType type : types){
+            typesTable.button(t -> t.add(Core.bundle.get("content." + type.name() + ".name")), Styles.underlineb, () -> {
+              currConfig = config.getOrNew(IOTypes[index], type);
+              currType = type;
+              rebuildItems.run();
+            }).growX().height(35).update(b -> b.setChecked(currType == type))
+                .touchable(() -> currType == type? Touchable.disabled: Touchable.enabled);
+            typesTable.row();
+          }
+        }).size(120, 80);
+        sideBar.row();
+        sideBar.button(Core.bundle.get("misc.sure"), Icon.ok, Styles.clearPartialt, () -> {
+          cons.get(config);
+          close.run();
+        }).size(120, 40);
+        sideBar.row();
+        sideBar.button(Core.bundle.get("misc.reset"), Icon.cancel, Styles.clearPartialt, () -> {
+          config.clear();
+          cons.get(config);
+          close.run();
+        }).size(120, 40);
+      }).fillX();
     });
   }
   
   public static class TargetConfigure implements DataPackable{
+    public boolean isClear = false;
+    
     public int position;
     public int priority;
-    public GridChildType type;
     
-    protected float total;
-    protected ObjectMap<ContentType, float[]> data = new ObjectMap<>();
-    protected ObjectMap<ContentType, ObjectSet<UnlockableContent>> all = new ObjectMap<>();
+    protected ObjectMap<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> data = new ObjectMap<>();
+    protected ObjectMap<GridChildType, ObjectMap<UnlockableContent, byte[]>> directBits = new ObjectMap<>();
     
-    TargetConfigure(ContentType[] types){
-      for(ContentType t: types){
-        data.put(t, new float[Vars.content.getBy(t).size]);
-        all.put(t, new ObjectSet<>());
+    public void set(GridChildType type, UnlockableContent content, byte[] dirBit){
+      data.get(type, ObjectMap::new).get(content.getContentType(), ObjectSet::new).add(content);
+      directBits.get(type, ObjectMap::new).put(content, dirBit);
+    }
+    
+    public boolean remove(GridChildType type, UnlockableContent content){
+      boolean result = data.get(type, Empties.nilMapO()).get(content.getContentType(), Empties.nilSetO()).remove(content);
+      directBits.get(type, Empties.nilMapO()).remove(content);
+      return result;
+    }
+    
+    public boolean get(GridChildType type, UnlockableContent content){
+      return data.get(type, Empties.nilMapO()).get(content.getContentType(), Empties.nilSetO()).contains(content);
+    }
+    
+    public void each(Cons3<GridChildType, ContentType, UnlockableContent> cons){
+      for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> entry : data){
+        for(ObjectMap.Entry<ContentType, ObjectSet<UnlockableContent>> contEntry : entry.value){
+          for(UnlockableContent content : contEntry.value){
+            cons.get(entry.key, contEntry.key, content);
+          }
+        }
       }
     }
     
-    public void set(ContentType t, int id, float amount){
-      total += amount;
-      data.get(t)[id] = amount;
-      all.get(t).add(Vars.content.getByID(t, id));
+    public void eachChildType(Cons2<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> cons){
+      for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> entry : data){
+        if(!entry.value.isEmpty()) cons.get(entry.key, entry.value);
+      }
     }
     
-    public void remove(ContentType t, int id){
-      total -= data.get(t)[id];
-      data.get(t)[id] = 0;
-      all.get(t).remove(Vars.content.getByID(t, id));
+    public byte[] getDirectBit(GridChildType type, UnlockableContent content){
+      return directBits.get(type, Empties.nilMapO()).get(content, new byte[]{-1});
     }
     
-    public float get(ContentType t, int id){
-      return data.get(t, new float[Vars.content.getBy(t).size])[id];
+    public boolean directValid(GridChildType type, UnlockableContent content, byte match){
+      byte bit = getDirectBit(type, content)[0];
+      if(bit == -1 || match == -1) return false;
+      if(bit == 0) return true;
+      return (bit & match) != 0;
     }
     
-    public float[] get(ContentType t){
-      return data.get(t, new float[Vars.content.getBy(t).size]);
+    public ObjectSet<UnlockableContent> getOrNew(GridChildType type, ContentType t){
+      return data.get(type, ObjectMap::new).get(t, ObjectSet::new);
+    }
+    
+    public ObjectSet<UnlockableContent> get(GridChildType type, ContentType t){
+      return data.get(type, Empties.nilMapO()).get(t, Empties.nilSetO());
+    }
+    
+    public ObjectMap<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> get(){
+      return data;
     }
     
     public boolean any(){
-      return total > 0.01f;
+      for(ObjectMap<ContentType, ObjectSet<UnlockableContent>> conts :data.values()){
+        for(ObjectSet<UnlockableContent> cont : conts.values()){
+          if(!cont.isEmpty()) return true;
+        }
+      }
+      return false;
     }
   
     @Override
     public void write(Writes write){
       write.i(position);
       write.i(priority);
-      write.i(type.ordinal());
+      write.bool(isClear);
       
       write.i(data.size);
-      for(ObjectMap.Entry<ContentType, float[]> entry : data){
+      for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> entry : data){
         write.i(entry.key.ordinal());
-        write.i(entry.value.length);
-        for(float v: entry.value){
-          write.f(v);
+        write.i(entry.value.size);
+        for(ObjectMap.Entry<ContentType, ObjectSet<UnlockableContent>> dataEntry : entry.value){
+          write.i(dataEntry.key.ordinal());
+          write.i(dataEntry.value.size);
+          for(UnlockableContent v: dataEntry.value){
+            write.i(v.id);
+          }
+        }
+      }
+      
+      write.i(directBits.size);
+      for(ObjectMap.Entry<GridChildType, ObjectMap<UnlockableContent, byte[]>> entry : directBits){
+        write.i(entry.key.ordinal());
+        write.i(entry.value.size);
+        for(ObjectMap.Entry<UnlockableContent, byte[]> cEntry : entry.value){
+          write.i(cEntry.key.getContentType().ordinal());
+          write.i(cEntry.key.id);
+          write.b(cEntry.value[0]);
         }
       }
     }
@@ -105,7 +373,39 @@ public class DistTargetConfigTable extends Table{
     public void read(Reads read){
       position = read.i();
       priority = read.i();
-      type = GridChildType.values()[read.i()];
+      isClear = read.bool();
+      
+      data = new ObjectMap<>();
+      int count = read.i(), count2, amount;
+      for(int i = 0; i < count; i++){
+        ObjectMap<ContentType, ObjectSet<UnlockableContent>> map = data.get(GridChildType.values()[read.i()], ObjectMap::new);
+        count2 = read.i();
+        for(int l = 0; l < count2; l++){
+          ContentType type = ContentType.values()[read.i()];
+          ObjectSet<UnlockableContent> set = map.get(type, ObjectSet::new);
+          amount = read.i();
+          for(int i1 = 0; i1 < amount; i1++){
+            set.add(Vars.content.getByID(type, read.i()));
+          }
+        }
+      }
+      
+      directBits = new ObjectMap<>();
+      int size = read.i(), length;
+      for(int i = 0; i < size; i++){
+        ObjectMap<UnlockableContent, byte[]> map = directBits.get(GridChildType.values()[read.i()], ObjectMap::new);
+        length = read.i();
+        for(int l = 0; l < length; l++){
+          int typeId = read.i();
+          map.get(Vars.content.getByID(ContentType.values()[typeId], read.i()), () -> new byte[]{read.b()});
+        }
+      }
+    }
+  
+    public void clear(){
+      priority = 0;
+      data.clear();
+      isClear = true;
     }
   }
 }

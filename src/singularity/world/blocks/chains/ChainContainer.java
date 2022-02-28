@@ -8,8 +8,11 @@ import arc.struct.Queue;
 import arc.struct.Seq;
 import singularity.world.blockComp.ChainsBuildComp;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class ChainContainer{
-  public ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, Seq<Cons<ChainsEvents.ChainsEvent>>> listeners = new ObjectMap<>();
+  public ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<? extends ChainsEvents.ChainsEvent>>> globalListener = new ObjectMap<>();
   
   private static final Queue<ChainsBuildComp> findQueue = new Queue<>();
   private static final ObjectSet<ChainsBuildComp> added = new ObjectSet<>();
@@ -40,19 +43,16 @@ public class ChainContainer{
     }
   }
   
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public void handle(ChainsEvents.ChainsEvent event){
-    for(Cons<ChainsEvents.ChainsEvent> listeners: listeners.get(event.getClass(), new Seq<>())){
+    for(Cons listeners: globalListener.get(event.getClass(), new LinkedHashMap<>()).values()){
       listeners.get(event);
     }
   }
   
-  @SuppressWarnings("unchecked")
-  public <T extends ChainsEvents.ChainsEvent> void listen(Class<T> event, Cons<T> cons){
-    Seq<Cons<ChainsEvents.ChainsEvent>> list = listeners.get(event);
-    if(list == null){
-      list = new Seq<>();
-      list.add((Cons<ChainsEvents.ChainsEvent>) cons);
-      listeners.put(event, list);
+  public void handle(ChainsEvents.ChainsTrigger event){
+    for(ChainsBuildComp comp : all){
+      comp.chains().handle(event);
     }
   }
   
@@ -60,14 +60,22 @@ public class ChainContainer{
     if(!all.add(other)) return;
     ChainContainer oldContainer = other.chains().container;
     other.chains().container = this;
-    other.chains().handle(new ChainsEvents.AddedBlockEvent(other, this, oldContainer));
+    
+    LinkedHashMap<String, Cons<? extends ChainsEvents.ChainsEvent>> listeners;
+    for(ObjectMap.Entry<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<? extends ChainsEvents.ChainsEvent>>> entry : oldContainer.globalListener){
+      listeners = globalListener.get(entry.key, LinkedHashMap::new);
+      for(Map.Entry<String, Cons<? extends ChainsEvents.ChainsEvent>> e : entry.value.entrySet()){
+        listeners.put(e.getKey(), e.getValue());
+      }
+    }
+    handle(new ChainsEvents.AddedBlockEvent(other, this, oldContainer));
   }
   
   public void update(){
     if(Core.graphics.getFrameId() == lastFrameUpdated) return;
     lastFrameUpdated = Core.graphics.getFrameId();
     
-    handle(new ChainsEvents.UpdateEvent());
+    handle(ChainsEvents.ChainsTrigger.update);
   }
   
   public void reconstruct(ChainsBuildComp source, Seq<ChainsBuildComp> excludes){
@@ -85,7 +93,7 @@ public class ChainContainer{
       all.add(other);
       ChainContainer oldContainer = other.chains().container;
       other.chains().container = this;
-      other.chains().handle(new ChainsEvents.ConstructFlowEvent(other, this, oldContainer));
+      handle(new ChainsEvents.ConstructFlowEvent(other, this, oldContainer));
     }
   }
   

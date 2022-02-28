@@ -5,7 +5,7 @@ import arc.struct.Queue;
 import arc.struct.Seq;
 import singularity.world.blockComp.distributeNetwork.DistComponent;
 import singularity.world.blockComp.distributeNetwork.DistElementBuildComp;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitComp;
+import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
 import singularity.world.blockComp.distributeNetwork.DistNetworkCoreComp;
 import singularity.world.modules.DistCoreModule;
 
@@ -37,21 +37,18 @@ public class DistributeNetwork{
       components.add((DistComponent) other.getBlock());
     }
     if(other instanceof DistNetworkCoreComp) cores.add((DistNetworkCoreComp) other);
-    if(other instanceof DistMatrixUnitComp) add((DistMatrixUnitComp) other);
+    if(other instanceof DistMatrixUnitBuildComp) grids.add(((DistMatrixUnitBuildComp) other).matrixGrid());
     
     other.distributor().network = this;
     modified();
   }
   
-  public void add(DistMatrixUnitComp unit){
-    if(unit.matrixGrid() != null){
-      if(!elements.contains(unit)) elements.add(unit);
-      grids.add(unit.matrixGrid());
-    }
+  public DistNetworkCoreComp getCore(){
+    return cores.size == 1? cores.get(0): null;
   }
   
   public boolean netValid(){
-    return cores.size == 1 && frequencyUsed < maxFrequency;
+    return getCore() != null && frequencyUsed < maxFrequency;
   }
   
   public void update(){
@@ -64,7 +61,6 @@ public class DistributeNetwork{
   public void modified(){
     if(netValid()){
       DistCoreModule core = cores.get(0).distributor();
-      core.calculatePower = 0;
   
       for(DistBuffers<?> buffers: DistBuffers.all){
         core.getBuffer(buffers).capacity = 0;
@@ -82,12 +78,14 @@ public class DistributeNetwork{
   }
   
   public void restruct(DistElementBuildComp origin, Seq<DistElementBuildComp> exclude){
+    finder.clear();
+    added.clear();
+    
     finder.addFirst(origin);
-    added.add(origin);
     
     DistElementBuildComp other;
     while(!finder.isEmpty()){
-      if(!added.contains(other = finder.removeFirst())){
+      if(added.add(other = finder.removeLast())){
         add(other);
         
         for(DistElementBuildComp next: other.netLinked()){
@@ -100,6 +98,12 @@ public class DistributeNetwork{
   }
   
   public void flow(DistElementBuildComp origin){
+    elements.clear();
+    grids.clear();
+    cores.clear();
+    components.clear();
+    frequencyUsed = maxFrequency = 0;
+    
     restruct(origin, new Seq<>());
   }
   
@@ -117,6 +121,6 @@ public class DistributeNetwork{
   
   public void priorityModified(DistElementBuildComp target){
     if(elements.remove(target)) elements.add(target);
-    if(target instanceof DistMatrixUnitComp && grids.remove(((DistMatrixUnitComp) target).matrixGrid())) grids.add(((DistMatrixUnitComp) target).matrixGrid());
+    if(target instanceof DistMatrixUnitBuildComp && grids.remove(((DistMatrixUnitBuildComp) target).matrixGrid())) grids.add(((DistMatrixUnitBuildComp) target).matrixGrid());
   }
 }

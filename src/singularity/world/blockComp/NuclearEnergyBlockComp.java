@@ -1,25 +1,50 @@
 package singularity.world.blockComp;
 
 import mindustry.world.meta.Stats;
+import universeCore.annotations.Annotations;
 
 /**Consume组件，为方块添加可标记消耗的功能
  * 若使用非默认命名则需要重写调用方法*/
 public interface NuclearEnergyBlockComp{
-  boolean hasEnergy();
+  @Annotations.BindField("hasEnergy")
+  default boolean hasEnergy(){
+    return false;
+  }
   
-  float resident();
+  @Annotations.BindField("resident")
+  default float resident(){
+    return 0;
+  }
   
-  float energyCapacity();
+  @Annotations.BindField("energyCapacity")
+  default float energyCapacity(){
+    return 0;
+  }
   
-  boolean outputEnergy();
+  @Annotations.BindField("outputEnergy")
+  default boolean outputEnergy(){
+    return false;
+  }
   
-  boolean consumeEnergy();
+  @Annotations.BindField("consumeEnergy")
+  default boolean consumeEnergy(){
+    return false;
+  }
   
-  boolean energyBuffered();
+  @Annotations.BindField("energyBuffered")
+  default boolean energyBuffered(){
+    return false;
+  }
   
-  float basicPotentialEnergy();
+  @Annotations.BindField("basicPotentialEnergy")
+  default float basicPotentialEnergy(){
+    return 0;
+  }
   
-  float maxEnergyPressure();
+  @Annotations.BindField("maxEnergyPressure")
+  default float maxEnergyPressure(){
+    return 0;
+  }
   
   default void setNuclearStats(Stats stats){
   

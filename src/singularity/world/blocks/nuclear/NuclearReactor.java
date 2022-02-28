@@ -37,6 +37,7 @@ import singularity.world.draw.DrawNuclearReactor;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.products.ProduceEnergy;
+import universeCore.annotations.Annotations;
 import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeItems;
 import universeCore.world.consumers.UncConsumeLiquids;
@@ -50,6 +51,7 @@ import static mindustry.Vars.tilesize;
 import static singularity.world.blockComp.HeatBuildComp.getItemAbsTemperature;
 import static singularity.world.blockComp.HeatBuildComp.getLiquidAbsTemperature;
 
+@Annotations.ImplEntries
 public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   public float maxTemperature = 1273.15f;
   public float heatCoefficient = 1f;
@@ -185,26 +187,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     }
   }
   
-  @Override
-  public float maxTemperature(){
-    return maxTemperature;
-  }
-  
-  @Override
-  public float heatCoefficient(){
-    return heatCoefficient;
-  }
-  
-  @Override
-  public float blockHeatCoff(){
-    return blockHeatCoff;
-  }
-  
-  @Override
-  public float baseHeatCapacity(){
-    return baseHeatCapacity;
-  }
-  
+  @Annotations.ImplEntries
   public class NuclearReactorBuild extends NormalCrafterBuild implements HeatBuildComp{
     public float heat;
     public float lastMulti;
@@ -225,22 +208,12 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     }
   
     @Override
-    public float heat(){
-      return heat;
-    }
-  
-    @Override
-    public void heat(float heat){
-      this.heat = heat;
-    }
-  
+    public void heatCapacity(float value){}
+    
     @Override
     public float heatCapacity(){
-      return baseHeatCapacity;
+      return 10000;
     }
-  
-    @Override
-    public void heatCapacity(float value){}
   
     @Override
     public float productMultiplier(BaseProduce<?> prod){
