@@ -4,15 +4,17 @@ import arc.func.Prov;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import singularity.world.distribution.buffers.BaseBuffer;
+import singularity.world.distribution.buffers.GasesBuffer;
 import singularity.world.distribution.buffers.ItemsBuffer;
+import singularity.world.distribution.buffers.LiquidsBuffer;
 
 public class DistBuffers<T extends BaseBuffer<?, ?, ?>>{
   public static Seq<DistBuffers<?>> all = new Seq<>();
   public static final ObjectMap<DistBuffers<?>, Integer> defBufferCapacity = new ObjectMap<>();
   
   public static DistBuffers<ItemsBuffer> itemBuffer = new DistBuffers<>(ItemsBuffer::new);
-  //public static DistBuffers<LiquidsBuffer> liquidBuffer = new DistBuffers<>(LiquidsBuffer::new);
-  //public static DistBuffers<GasesBuffer> gasBuffer = new DistBuffers<>(GasesBuffer::new);
+  public static DistBuffers<LiquidsBuffer> liquidBuffer = new DistBuffers<>(LiquidsBuffer::new);
+  public static DistBuffers<GasesBuffer> gasBuffer = new DistBuffers<>(GasesBuffer::new);
   
   protected final Prov<T> initializer;
   

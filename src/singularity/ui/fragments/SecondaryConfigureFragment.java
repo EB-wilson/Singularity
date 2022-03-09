@@ -67,7 +67,8 @@ public class SecondaryConfigureFragment extends Fragment{
       table.setOrigin(Align.center);
       if(configuring == null || configCurrent == null || configCurrent.block == Blocks.air || !configCurrent.isValid()){
         hideConfig();
-      }else{
+      }
+      else{
         configCurrent.updateTableAlign(table);
       }
     });

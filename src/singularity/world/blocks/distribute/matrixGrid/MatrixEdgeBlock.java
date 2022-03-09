@@ -5,6 +5,10 @@ import arc.func.Cons2;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
+import arc.util.Eachable;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
+import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.world.Block;
 import singularity.graphic.SglDraw;
@@ -23,11 +27,12 @@ public class MatrixEdgeBlock extends Block implements MatrixEdgeLinker{
     update = true;
     configurable = true;
     
-    config(Point2.class, (Cons2<MatrixEdgeBuild, Point2>) this::link);
+    config(Point2.class, (MatrixEdgeBuild e, Point2 p) -> e.nextPos = Point2.pack(e.tile.x + p.x, e.tile.y + p.y));
+    config(Integer.class, (Cons2<MatrixEdgeBuild, Integer>) this::link);
   }
   
   @Override
-  public void link(MatrixGridEdge entity, Point2 pos){
+  public void link(MatrixGridEdge entity, Integer pos){
     MatrixEdgeLinker.super.link(entity, pos);
     ((MatrixEdgeBuild)entity).linkLerp = 0;
   }
@@ -44,24 +49,59 @@ public class MatrixEdgeBlock extends Block implements MatrixEdgeLinker{
     linkRegion = Core.atlas.find(name + "_link");
   }
   
+  @Override
+  public void drawRequestConfigTop(BuildPlan req, Eachable<BuildPlan> list){
+    Point2 pos = (Point2) req.config;
+    if(pos == null) return;
+    
+    list.each(plan -> {
+      if(Point2.pack(req.x + pos.x, req.y + pos.y) == Point2.pack(plan.x, plan.y)){
+        if(plan.block instanceof MatrixEdgeLinker){
+          SglDraw.drawLink(req.tile(), req.block.offset, plan.tile(), plan.block.offset, linkRegion, null, 1);
+        }
+      }
+    });
+  }
+  
   @Annotations.ImplEntries
   public class MatrixEdgeBuild extends Building implements MatrixGridEdge{
     protected MatrixEdgeContainer edges = new MatrixEdgeContainer();
     
     public float linkLerp;
-  
+    public boolean loaded;
+    public int nextPos = -1;
+
+    @Override
+    public void linked(MatrixGridEdge next){
+      if(loaded)linkLerp = 0;
+    }
+
+    @Override
+    public void delinked(MatrixGridEdge next){
+      if(loaded) linkLerp = 0;
+    }
+
+    @Override
+    public void updateLinking(){
+      MatrixGridEdge.super.updateLinking();
+      loaded = true;
+    }
+
     @Override
     public void updateTile(){
-      if(nextEdge() != null){
-        if(!nextEdge().getBuilding().isAdded()) delink(nextEdge());
+      if(nextPos != -1){
+        if(nextEdge() != null && !nextEdge().getBuilding().isAdded()) delink(nextEdge());
         linkLerp = Mathf.lerpDelta(linkLerp, 1, 0.02f);
+      }
+      else{
+        linkLerp = 0;
       }
     }
   
     @Override
     public boolean onConfigureTileTapped(Building other){
       if(canLink(this, other)){
-        configure(new Point2(other.tile().x, other.tile().y));
+        configure(other.pos());
         return false;
       }
       return true;
@@ -74,9 +114,27 @@ public class MatrixEdgeBlock extends Block implements MatrixEdgeLinker{
     }
   
     @Override
+    public Point2 config(){
+      Point2 p = Point2.unpack(nextPos);
+      return p.set(p.x - tile.x, p.y - tile.y);
+    }
+  
+    @Override
     public void draw(){
       super.draw();
       if(nextEdge() != null) SglDraw.drawLink(tile, nextEdge().tile(), linkRegion(), null, linkLerp);
+    }
+  
+    @Override
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
+      linkLerp = read.f();
+    }
+  
+    @Override
+    public void write(Writes write){
+      super.write(write);
+      write.f(linkLerp);
     }
   }
 }

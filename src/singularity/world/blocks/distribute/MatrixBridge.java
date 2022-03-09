@@ -9,10 +9,15 @@ import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Intersector;
 import arc.math.geom.Point2;
+import arc.struct.IntSeq;
 import arc.struct.ObjectSet;
+import arc.util.Eachable;
 import arc.util.Time;
 import arc.util.Tmp;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.Vars;
+import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
@@ -22,7 +27,9 @@ import mindustry.world.Tile;
 import singularity.graphic.SglDraw;
 import singularity.type.Gas;
 import singularity.world.blockComp.GasBuildComp;
+import singularity.world.blockComp.distributeNetwork.DistElementBlockComp;
 import singularity.world.blockComp.distributeNetwork.DistElementBuildComp;
+import singularity.world.blockComp.distributeNetwork.DistNetworkCoreComp;
 
 import static mindustry.Vars.tilesize;
 import static mindustry.Vars.world;
@@ -38,6 +45,7 @@ public class MatrixBridge extends DistNetBlock{
   public MatrixBridge(String name){
     super(name);
     configurable = true;
+    frequencyUse = 0;
     hasItems = true;
     hasLiquids = outputsLiquid = true;
     hasGases = outputGases = true;
@@ -47,38 +55,33 @@ public class MatrixBridge extends DistNetBlock{
   public void appliedConfig(){
     super.appliedConfig();
     
+    config(IntSeq.class, (MatrixBridgeBuild e, IntSeq seq) -> {
+      Point2[] ps = new Point2[]{
+          seq.get(0) == -1? null: Point2.unpack(seq.get(0)),
+          seq.get(1) == -1? null: Point2.unpack(seq.get(1))
+      };
+      if(ps[0] != null){
+        e.linkElementPos = ps[0].set(e.tile.x + ps[0].x, e.tile.y + ps[0].y).pack();
+      }
+      if(ps[1] != null){
+        e.linkNextPos = ps[1].set(e.tile.x + ps[1].x, e.tile.y + ps[1].y).pack();
+      }
+    });
+    
     config(Point2.class, (MatrixBridgeBuild e, Point2 p) -> {
       int pos = p.pack();
       Building target = Vars.world.build(pos);
       if(target instanceof MatrixBridgeBuild){
-        if(target == e.linkNext){
-          e.linkNext = null;
-          e.deLink((DistElementBuildComp) target);
+        if(((MatrixBridgeBuild) target).linkNext == e){
+          ((MatrixBridgeBuild) target).linkNextPos = -1;
+          ((MatrixBridgeBuild) target).deLink((DistElementBuildComp) e);
+          ((MatrixBridgeBuild) target).linkNext = null;
         }
-        else{
-          if(e.linkNext != null){
-            e.deLink((DistElementBuildComp) e.linkNext);
-          }
-          if(((MatrixBridgeBuild) target).linkNext == e){
-            ((MatrixBridgeBuild) target).linkNext = null;
-          }
-          else e.link((DistElementBuildComp) target);
-          e.linkNext = (MatrixBridgeBuild) target;
-        }
+        e.linkNextPos = e.linkNextPos == pos? -1: target.pos();
         e.linkNextLerp = 0;
       }
       else if(target instanceof DistElementBuildComp){
-        if(target == e.linkElement){
-          e.linkElement = null;
-          e.deLink((DistElementBuildComp) target);
-        }
-        else{
-          if(e.linkElement != null){
-            e.deLink(e.linkElement);
-          }
-          e.linkElement = (DistElementBuildComp) target;
-          e.link((DistElementBuildComp) target);
-        }
+        e.linkElementPos = e.linkElementPos == pos? -1: target.pos();
         e.linkElementLerp = 0;
       }
     });
@@ -94,12 +97,39 @@ public class MatrixBridge extends DistNetBlock{
   public void load(){
     super.load();
     linkRegion = Core.atlas.find(name + "_link");
-    capRegion = Core.atlas.find(name + "_cap");
+    capRegion = Core.atlas.find(name + "_cap", (TextureRegion)null);
   }
   
   public boolean canLink(Tile origin, Tile other, float range){
     if(origin == null || other == null) return false;
     return Intersector.overlaps(Tmp.cr1.set(origin.drawx(), origin.drawy(), range), other.getHitbox(Tmp.r1));
+  }
+  
+  @Override
+  public void drawRequestConfigTop(BuildPlan req, Eachable<BuildPlan> list){
+    IntSeq seq = (IntSeq) req.config;
+    if(seq == null) return;
+    Point2[] p = new Point2[]{
+        seq.get(0) == -1? null: Point2.unpack(seq.get(0)),
+        seq.get(1) == -1? null: Point2.unpack(seq.get(1))
+    };
+    BuildPlan[] links = new BuildPlan[2];
+    list.each(plan -> {
+      if(p[1] != null && plan.block instanceof MatrixBridge){
+        if(p[1].cpy().set(req.x + p[1].x, req.y + p[1].y).pack() == Point2.pack(plan.x, plan.y)){
+          links[0] = plan;
+        }
+      }
+      else if(p[0] != null && plan.block instanceof DistElementBlockComp){
+        if(p[0].cpy().set(req.x + p[0].x, req.y + p[0].y).pack() == Point2.pack(plan.x, plan.y)){
+          links[1] = plan;
+        }
+      }
+    });
+  
+    for(BuildPlan plan : links){
+      if(plan != null) SglDraw.drawLink(req.tile(), req.block.offset, plan.tile(), plan.block.offset, linkRegion, capRegion, 1);
+    }
   }
   
   public void doCanLink(Tile origin, float range, Cons<MatrixBridgeBuild> cons){
@@ -113,6 +143,7 @@ public class MatrixBridge extends DistNetBlock{
   
   public class MatrixBridgeBuild extends DistNetBuild{
     public float transportCounter;
+    public int linkNextPos = -1, linkElementPos = -1;
     public MatrixBridgeBuild linkNext;
     public DistElementBuildComp linkElement;
     public float linkNextLerp, linkElementLerp;
@@ -122,16 +153,67 @@ public class MatrixBridge extends DistNetBlock{
       if(target instanceof MatrixBridgeBuild && target.block == block) return true;
       return target instanceof DistElementBuildComp;
     }
-  
+
+    @Override
+    public void onProximityAdded(){
+      super.onProximityAdded();
+      onDistNetRemoved();
+
+      updateNetLinked();
+    }
+
     @Override
     public void updateTile(){
       super.updateTile();
-      if(linkNext != null && ! linkNext.getBuilding().isAdded()) linkNext = null;
-      if(linkElement != null && ! linkElement.getBuilding().isAdded()) linkElement = null;
-      if(linkNextLerp < 0.99f) linkNextLerp = Mathf.lerpDelta(linkNextLerp, 1, 0.04f);
-      if(linkElementLerp < 0.99f) linkElementLerp = Mathf.lerpDelta(linkElementLerp, 1, 0.04f);
+      if(linkNextPos != -1 && (linkNext == null || !linkNext.isAdded() || linkNextPos != linkNext.pos())){
+        if(linkNext != null){
+          if(!linkNext.isAdded()){
+            linkNextPos = -1;
+          }
+          deLink((DistElementBuildComp) linkNext);
+          linkNext = null;
+        }
+        Building build = linkNextPos == -1? null: world.build(linkNextPos);
+        if(build instanceof MatrixBridgeBuild){
+          linkNext = (MatrixBridgeBuild) build;
+          linkNextPos = linkNext.pos();//对齐偏移距离
+          link((DistElementBuildComp) linkNext);
+        }
+      }
+      else if(linkNextPos == -1){
+        if(linkNext != null){
+          deLink((DistElementBuildComp) linkNext);
+          linkNext = null;
+        }
+        linkNextLerp = 0;
+      }
       
-      if(consValid()){
+      if(linkElementPos != -1 && (linkElement == null || !linkElement.getBuilding().isAdded() || linkElementPos != linkElement.getBuilding().pos())){
+        if(linkElement != null){
+          if(!linkElement.getBuilding().isAdded()){
+            linkElementPos = -1;
+          }
+          deLink(linkElement);
+          linkElement = null;
+        }
+        Building build = linkElementPos == -1? null: world.build(linkElementPos);
+        if(build instanceof DistElementBuildComp){
+          linkElement = (DistElementBuildComp) build;
+          linkElementPos = linkElement.getBuilding().pos();//对齐偏移距离
+          link(linkElement);
+        }
+      }
+      else if(linkElementPos == -1){
+        if(linkElement != null){
+          deLink(linkElement);
+          linkElement = null;
+        }
+        linkElementLerp = 0;
+      }
+      if(linkNextPos != -1 && linkNext != null && linkNextLerp < 0.99f) linkNextLerp = Mathf.lerpDelta(linkNextLerp, 1, 0.04f);
+      if(linkElementPos != -1 && linkElement != null && linkElementLerp < 0.99f) linkElementLerp = Mathf.lerpDelta(linkElementLerp, 1, 0.04f);
+      
+      if(consValid() && !distributor.network.netValid()){
         if(linkNext == null){
           doDump();
         }
@@ -182,7 +264,7 @@ public class MatrixBridge extends DistNetBlock{
       
       if(canLink(other)){
         if(other instanceof DistElementBuildComp){
-          configure(Point2.unpack(other.pos()));
+          if(other instanceof MatrixBridgeBuild || !(linkElement instanceof DistNetworkCoreComp)) configure(Point2.unpack(other.pos()));
         }
         return false;
       }
@@ -253,6 +335,36 @@ public class MatrixBridge extends DistNetBlock{
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
       return source.getBuilding().team == team && pressure() < maxGasPressure && (source.getBlock() == block || linkNext != null);
+    }
+
+    @Override
+    public IntSeq config(){
+      Point2 t = linkElementPos == -1? null: Point2.unpack(linkElementPos);
+      Point2 m = linkNextPos == -1? null: Point2.unpack(linkNextPos);
+      return IntSeq.with(
+              t == null? -1: t.set(t.x - tile.x, t.y - tile.y).pack(),
+              m == null? -1: m.set(m.x - tile.x, m.y - tile.y).pack()
+      );
+    }
+  
+    @Override
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
+      linkNextLerp = read.f();
+      linkElementLerp = read.f();
+      transportCounter = read.f();
+      linkNextPos = read.i();
+      linkElementPos = read.i();
+    }
+  
+    @Override
+    public void write(Writes write){
+      super.write(write);
+      write.f(linkNextLerp);
+      write.f(linkElementLerp);
+      write.f(transportCounter);
+      write.i(linkNextPos);
+      write.i(linkElementPos);
     }
   }
 }

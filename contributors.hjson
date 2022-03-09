@@ -7,8 +7,3 @@ Carrot-09: {
   contribute: artist
   name: Carrot
 }
-
-PlasGen: {
-  contribute: translate
-  name: Plas_Gensokyo
-}

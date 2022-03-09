@@ -11,18 +11,14 @@ repositories{
     maven{ url 'https://www.jitpack.io' }
 }
 
-tasks.withType(JavaCompile){
-    options.encoding = "UTF-8"
-}
-
 ext{
     //the build number that this mod is made for
     mindustryVersion = 'v135'
     //version of SDK you will be using
     sdkVersion = '30.0.3'
     //version of build-tools you installed
-    sdkRoot = '/home/EBwilson/android-sdk'
-    
+    sdkRoot = '/home/EBwilson/android_sdk'
+    System.out.println(sdkRoot)
     modOutputDir = '/home/EBwilson/sd/Android/data/io.anuke.mindustry/files/mods'
 
     doExec = { cmd ->
@@ -31,8 +27,11 @@ ext{
     }
 }
 
-//java 11 backwards compatibility flag
+//java 8 backwards compatibility flag
 allprojects{
+    sourceCompatibility = 11
+    targetCompatibility = 11
+
     tasks.withType(JavaCompile){
         if(JavaVersion.current() != JavaVersion.VERSION_11){
             options.compilerArgs.addAll(['--release', '11'])
@@ -41,7 +40,7 @@ allprojects{
 }
 
 dependencies{
-    implementation 'org.jetbrains:annotations:20.1.0'
+    implementation 'org.jetbrains:annotations:22.0.0'
     compileOnly files("lib/UniverseCore-lib.jar")
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
@@ -49,7 +48,7 @@ dependencies{
 }
 
 tasks.withType(JavaCompile) {  
-    options.encoding = "GB2312"  
+    options.encoding = "UTF-8"
 }
 
 task jarAndroid{

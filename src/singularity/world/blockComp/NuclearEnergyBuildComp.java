@@ -96,7 +96,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
     
     for(int i=0; i<energy().linked.size; i++){
       Tile tile = Vars.world.tile(energy().linked.get(i));
-      if(!(tile.build instanceof NuclearEnergyBuildComp)) return;
+      if(!(tile.build instanceof NuclearEnergyBuildComp)) continue;
       NuclearEnergyBuildComp other = (NuclearEnergyBuildComp)tile.build;
       deLink(other);
     }

@@ -6,11 +6,11 @@ import arc.func.Cons2;
 import arc.func.Cons3;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
-import arc.math.geom.Vec2;
 import arc.scene.Element;
 import arc.scene.event.ElementGestureListener;
 import arc.scene.event.InputEvent;
@@ -23,8 +23,6 @@ import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
-import arc.util.Align;
-import arc.util.Log;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -34,7 +32,6 @@ import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Building;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
-import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import singularity.world.blocks.distribute.IOPointBlock;
@@ -62,122 +59,119 @@ public class DistTargetConfigTable extends Table{
       config.position = build.pos();
     }
     
-    if(build instanceof IOPointBlock.IOPoint){
-      addChild(
-          new Element(){
-            float deltaX, deltaY;
-            float alpha;
-            boolean selected, valid = true;
-            
-            {
-              touchable(() -> currDireBit != null? Touchable.enabled: Touchable.disabled);
-              update(() -> {
-                alpha = Mathf.lerpDelta(alpha, selected? 1: 0, 0.03f);
-                Vec2 pos = Core.input.mouseScreen(build.x, build.y);
-                setPosition(pos.x + deltaX, pos.y + deltaY, Align.center);
-                setTransform(true);
-                
-                if(Core.app.isAndroid()){
-                  if(!selected || !valid){
-                    deltaX = Mathf.lerpDelta(deltaX, 0, 0.05f);
-                    deltaY = Mathf.lerpDelta(deltaY, 0, 0.05f);
-                  }
-                }
-                else{
-                  selected = Tmp.cr1.set(x, y, 45).contains(Core.input.mouse());
-                }
-              });
-              
-              if(Core.app.isAndroid()){
-                addCaptureListener(new ElementGestureListener(){
-                  @Override
-                  public void touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
-                    super.touchDown(event, x, y, pointer, button);
-                    selected = true;
-                  }
+    class Flip extends Element{
+      float deltaX, deltaY;
+      float alpha;
+      boolean selected, valid = true;
   
-                  @Override
-                  public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
-                    super.touchUp(event, x, y, pointer, button);
-                    selected = false;
-                    valid = true;
-                  }
-  
-                  @Override
-                  public void pan(InputEvent event, float x, float y, float dx, float dy){
-                    if(valid){
-                      deltaX = dx;
-                      deltaY = dy;
-                      if(deltaX > 90){
-                        setDireBit((byte) 1);
-                      }
-                      else if(deltaX < -90){
-                        setDireBit((byte) 4);
-                      }
-                      else if(deltaY > 90){
-                        setDireBit((byte) 2);
-                      }
-                      else if(deltaY < -90){
-                        setDireBit((byte) 8);
-                      }
-                    }
-                    super.pan(event, x, y, deltaX, deltaY);
-                  }
-                });
-              }
-              else{
-                addListener(new InputListener(){
-                  @Override
-                  public boolean keyDown(InputEvent event, KeyCode keycode){
-                    if(selected){
-                      if(keycode.equals(KeyCode.right)){
-                        setDireBit((byte) 1);
-                      }
-                      else if(keycode.equals(KeyCode.up)){
-                        setDireBit((byte) 2);
-                      }
-                      else if(keycode.equals(KeyCode.left)){
-                        setDireBit((byte) 4);
-                      }
-                      else if(keycode.equals(KeyCode.down)){
-                        setDireBit((byte) 8);
-                      }
-                    }
-                    return super.keyDown(event, keycode);
-                  }
-                });
-              }
+      public Flip(){
+        setSize(90);
+        touchable(() -> currDireBit != null? Touchable.enabled: Touchable.disabled);
+        update(() -> {
+          alpha = Mathf.lerpDelta(alpha, selected? 1: 0, 0.045f);
+
+          if(Core.app.isAndroid()){
+            if(!selected || !valid){
+              deltaX = Mathf.lerpDelta(deltaX, 0, 0.05f);
+              deltaY = Mathf.lerpDelta(deltaY, 0, 0.05f);
             }
-            
+          }
+          else{
+            selected = Tmp.cr1.set(x, y, 45).contains(Core.input.mouse());
+          }
+        });
+    
+        if(Core.app.isAndroid()){
+          addCaptureListener(new ElementGestureListener(){
             @Override
-            public void draw(){
-              Draw.color(currDireBit == null? Pal.gray: Color.lightGray);
-              Draw.alpha(0.4f + 0.6f*alpha);
-              Lines.circle(x, y, 45);
-              Log.info("x: " + x + ", y: " + y);
-              
-              if(currDireBit != null){
-                byte bit = 1;
-                for(int i = 0; i < 4; i++){
-                  int dx = Geometry.d4x(i);
-                  int dy = Geometry.d4y(i);
-    
-                  Color c = (currDireBit[0] & bit) != 0 ? Pal.accent : Pal.gray;
-                  c = c.cpy().a(alpha);
-                  Drawf.square(x + dx*60*alpha, y + dy*60*alpha, 18, 45, c);
-    
-                  bit *= 2;
+            public void touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
+              super.touchDown(event, x, y, pointer, button);
+              selected = true;
+            }
+        
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
+              super.touchUp(event, x, y, pointer, button);
+              selected = false;
+              valid = true;
+            }
+        
+            @Override
+            public void pan(InputEvent event, float x, float y, float dx, float dy){
+              if(valid){
+                deltaX += dx;
+                deltaY += dy;
+                if(deltaX > 90){
+                  setDireBit((byte) 1);
+                }
+                else if(deltaX < -90){
+                  setDireBit((byte) 4);
+                }
+                else if(deltaY > 90){
+                  setDireBit((byte) 2);
+                }
+                else if(deltaY < -90){
+                  setDireBit((byte) 8);
                 }
               }
-            }
-  
-            private void setDireBit(byte bit){
-              if(currDireBit != null){
-                currDireBit[0] ^= bit;
-              }
-              valid = false;
+              super.pan(event, x, y, deltaX, deltaY);
             }
           });
+        }
+        else{
+          addListener(new InputListener(){
+            @Override
+            public boolean keyDown(InputEvent event, KeyCode keycode){
+              if(selected){
+                if(keycode.equals(KeyCode.right)){
+                  setDireBit((byte) 1);
+                }
+                else if(keycode.equals(KeyCode.up)){
+                  setDireBit((byte) 2);
+                }
+                else if(keycode.equals(KeyCode.left)){
+                  setDireBit((byte) 4);
+                }
+                else if(keycode.equals(KeyCode.down)){
+                  setDireBit((byte) 8);
+                }
+              }
+              return super.keyDown(event, keycode);
+            }
+          });
+        }
+      }
+  
+      @Override
+      public void draw(){
+        validate();
+    
+        Draw.color(currDireBit == null? Pal.gray: Color.lightGray);
+        Draw.alpha(0.5f + 0.5f*alpha);
+        Lines.stroke(4.5f);
+        Lines.circle(x + deltaX + width/2f, y + deltaY + height/2f, 45);
+    
+        if(currDireBit != null){
+          byte bit = 1;
+          for(int i = 0; i < 4; i++){
+            int dx = Geometry.d4x(i);
+            int dy = Geometry.d4y(i);
+
+            Draw.color((currDireBit[0] & bit) != 0 ? Pal.accent : Pal.gray);
+            Draw.alpha(alpha);
+            Fill.square(x + deltaX + width/2f + dx*60*alpha, y + deltaY + height/2f + dy*60*alpha, 18, 45);
+
+            bit *= 2;
+          }
+        }
+      }
+  
+      private void setDireBit(byte bit){
+        if(currDireBit != null){
+          currDireBit[0] ^= bit;
+        }
+        valid = false;
+      }
     }
     
     table(topBar -> {
@@ -193,16 +187,7 @@ public class DistTargetConfigTable extends Table{
           }
       ).width(85).padLeft(4).padRight(4).growY().left();
       TextField input = new TextField(Integer.toString(config.priority));
-      input.setFilter((f, c) -> {
-        if(!numbers.contains(c)) return false;
-        try{
-          Integer.valueOf(f.getText());
-          return true;
-        }
-        catch(NumberFormatException e){
-          return false;
-        }
-      });
+      input.setFilter((f, c) -> numbers.contains(c));
       input.setTextFieldListener((f, c) -> config.priority = Integer.valueOf(f.getText()));
       topBar.add(Core.bundle.get("misc.priority")).right().padRight(4);
       topBar.add(input).right().width(75).padRight(4);
@@ -264,9 +249,23 @@ public class DistTargetConfigTable extends Table{
         }).size(120, 40);
       }).fillX();
     });
+    
+    Element ele;
+    if(build instanceof IOPointBlock.IOPoint){
+      addChild(ele = new Flip());
+      update(() -> {
+        ele.setPosition(width/2, height + ele.getHeight(), 2);
+      });
+    }
   }
   
   public static class TargetConfigure implements DataPackable{
+    public static final long typeID = 6253491887543618527L;
+    
+    static{
+      DataPackable.assignType(typeID, p -> new TargetConfigure());
+    }
+    
     public boolean isClear = false;
     
     public int position;
@@ -336,6 +335,20 @@ public class DistTargetConfigTable extends Table{
         }
       }
       return false;
+    }
+
+    public boolean isContainer(){
+      for(GridChildType type : data.keys()){
+        if(type == GridChildType.container){
+          return true;
+        }
+      }
+      return false;
+    }
+
+    @Override
+    public long typeID(){
+      return typeID;
     }
   
     @Override

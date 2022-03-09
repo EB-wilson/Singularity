@@ -173,7 +173,7 @@ public class NuclearPipeNode extends NuclearBlock{
         ! nets.contains(other.energy().energyNet) &&
         !(other instanceof NuclearPipeNodeBuild && other.energy().linked.size >= other.getBlock(NuclearPipeNode.class).maxLinks) &&
         ! Structs.contains(Edges.getEdges(size), p -> { //do not link to adjacent buildings
-          var t = world.tile(tile.x + p.x, tile.y + p.y);
+          Tile t = world.tile(tile.x + p.x, tile.y + p.y);
           return t != null && t.build == other;
         });
   
@@ -181,7 +181,7 @@ public class NuclearPipeNode extends NuclearBlock{
     nets.clear();
   
     //add conducting graphs to prevent double link
-    for(var p : Edges.getEdges(size)){
+    for(Point2 p : Edges.getEdges(size)){
       Tile other = tile.nearby(p);
       if(other != null && other.team() == team && other.build instanceof NuclearEnergyBuildComp && ((NuclearEnergyBuildComp)other.build).energy() != null){
         nets.add(((NuclearEnergyBuildComp) other.build).getEnergyNetwork());
@@ -224,7 +224,7 @@ public class NuclearPipeNode extends NuclearBlock{
         other.getBlock(NuclearPipeNode.class).inRange(other.getBuilding().tile, tile, other.getBlock(NuclearPipeNode.class).linkRange * tilesize) && other.getBuilding().team == team
         && !nets.contains(other.getEnergyNetwork()) &&
         !Structs.contains(Edges.getEdges(((Block) block).size), p -> { //do not link to adjacent buildings
-          var t = world.tile(tile.x + p.x, tile.y + p.y);
+          Tile t = world.tile(tile.x + p.x, tile.y + p.y);
           return t != null && t.build == other;
         });
   
@@ -232,7 +232,7 @@ public class NuclearPipeNode extends NuclearBlock{
     nets.clear();
     
     //add conducting graphs to prevent double link
-    for(var p : Edges.getEdges(((Block)block).size)){
+    for(Point2 p : Edges.getEdges(((Block)block).size)){
       Tile other = tile.nearby(p);
       if(other != null && other.team() == team && other.build instanceof NuclearEnergyBuildComp && ((NuclearEnergyBuildComp)other.build).energy() != null
           && !(block.consumeEnergy() && ((NuclearEnergyBuildComp) other.build).getNuclearBlock().consumeEnergy() && !block.outputEnergy() &&

@@ -1,6 +1,8 @@
 package singularity.world.distribution.buffers;
 
 import arc.math.WindowedMean;
+import arc.struct.IntMap;
+import arc.struct.Seq;
 import arc.util.Nullable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -17,6 +19,8 @@ import singularity.world.distribution.MatrixGrid;
 import static mindustry.Vars.content;
 
 public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPacket>{
+  private static final Seq<MatrixGrid.BuildingEntry<Building>> temp = new Seq<>();
+
   public void put(Item item, int amount){
     put(new ItemsBuffer.ItemPacket(item, amount));
   }
@@ -39,13 +43,15 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     itemRead: for(ItemPacket packet : this){
       for(MatrixGrid grid : network.grids){
         Building handler = grid.handler.getBuilding();
-        for(Building entity : grid.get(Building.class, GridChildType.container, e -> e.acceptStack(packet.get(), packet.amount(), handler) > 0)){
+        for(MatrixGrid.BuildingEntry<Building> entry: grid.get(
+            GridChildType.container,
+            (e, c) -> e.acceptStack(packet.get(), packet.amount(), handler) > 0 && c.get(GridChildType.container, packet.get()),
+            temp)){
           if(packet.amount() <= 0) continue itemRead;
-          int amount = Math.min(packet.amount(), entity.acceptStack(packet.get(), packet.amount(), handler));
-          amount = Math.min(amount, packet.amount());
-          
+          int amount = Math.min(packet.amount(), entry.entity.acceptStack(packet.get(), packet.amount(), handler));
+
           remove(packet.get(), amount);
-          entity.handleStack(packet.get(), amount, handler);
+          entry.entity.handleStack(packet.get(), amount, handler);
         }
       }
     }
@@ -252,11 +258,24 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     }
   
     @Override
-    public void read(Reads read){
+    public void read(Reads read, boolean l){
+      memory = new IntMap<>();
+      used = 0;
+      int length = l? read.ub(): read.s();
+      for(int i = 0; i < length; i++){
+        int id = l? read.ub(): read.s();
+        int amount = read.i();
+        put(content.item(id), amount);
+      }
     }
   
     @Override
     public void write(Writes write){
+      write.s(memory.size);
+      for(ItemPacket value : memory.values()){
+        write.s(value.id());
+        write.i(value.amount());
+      }
     }
   }
 }

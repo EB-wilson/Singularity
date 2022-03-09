@@ -33,6 +33,10 @@ public interface GasBlockComp{
   default boolean compressProtect(){
     return false;
   }
+
+  default float realCapacity(){
+    return gasCapacity()*maxGasPressure();
+  }
   
   default void setGasStats(Stats stats){
     stats.add(SglStat.gasCapacity, gasCapacity(), StatUnit.none);

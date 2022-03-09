@@ -6,9 +6,9 @@ import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
 import singularity.world.distribution.DistributeNetwork;
 
 public abstract class DistRequestBase<S>{
-  private long frameId;
+  private long updateMark, executeMark;
   
-  protected boolean initialized, sleeping, killed;
+  protected boolean initialized, sleeping, killed, blocked;
   
   public final DistMatrixUnitBuildComp sender;
   public DistributeNetwork target;
@@ -26,7 +26,19 @@ public abstract class DistRequestBase<S>{
   }
   
   public boolean sleeping(){
-    return sleeping || frameId < Core.graphics.getFrameId() - 1;
+    return sleeping || updateMark < Core.graphics.getFrameId() - 1;
+  }
+  
+  public void block(boolean blocked){
+    this.blocked = blocked;
+  }
+  
+  public boolean isBlocked(){
+    return blocked;
+  }
+  
+  public boolean executing(){
+    return executeMark == Core.graphics.getFrameId();
   }
   
   public void kill(){
@@ -47,7 +59,7 @@ public abstract class DistRequestBase<S>{
   }
   
   public void update(){
-    frameId = Core.graphics.getFrameId();
+    updateMark = Core.graphics.getFrameId();
   }
   
   public void checkStatus(){
@@ -58,13 +70,21 @@ public abstract class DistRequestBase<S>{
     }
   }
   
-  public void preHandle(){}
+  public boolean preHandle(){
+    return true;
+  }
   
-  public void afterHandle(){}
+  public boolean afterHandle(){
+    return true;
+  }
   
-  public abstract void handle();
+  public abstract boolean handle();
   
   public abstract Seq<S> getList();
+  
+  public void onExecute(){
+    executeMark = Core.graphics.getFrameId();
+  }
   
   public static class RequestStatusException extends RuntimeException{
     public RequestStatusException(String info){

@@ -4,7 +4,6 @@ import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
-import arc.math.geom.Point2;
 import arc.struct.ObjectSet;
 import arc.util.Time;
 import arc.util.Tmp;
@@ -129,8 +128,8 @@ public interface MatrixEdgeLinker{
     return (Block) this;
   }
   
-  default void link(MatrixGridEdge entity, Point2 pos){
-    Building build = Vars.world.build(pos.pack());
+  default void link(MatrixGridEdge entity, Integer pos){
+    Building build = Vars.world.build(pos);
     
     if(build instanceof MatrixGridEdge){
       if(entity.nextEdge() == build){

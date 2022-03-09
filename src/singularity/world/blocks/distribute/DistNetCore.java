@@ -1,5 +1,8 @@
 package singularity.world.blocks.distribute;
 
+import mindustry.game.Team;
+import mindustry.gen.Building;
+import mindustry.world.Block;
 import singularity.world.blockComp.distributeNetwork.DistComponent;
 import singularity.world.blockComp.distributeNetwork.DistNetworkCoreComp;
 import singularity.world.distribution.DistBuffers;
@@ -28,18 +31,19 @@ public class DistNetCore extends DistNetBlock implements DistComponent{
   }
   
   public class DistNetCoreBuild extends DistNetBuild implements DistNetworkCoreComp{
-    protected float updateCounter;
+    DistCoreModule distCore;
   
     @Override
-    public void assignNetModule(){
-      distributor = new DistCoreModule(this);
-      distributor.setNet();
-      items = distributor().getBuffer(DistBuffers.itemBuffer).generateBindModule();
+    public Building create(Block block, Team team){
+      distCore = new DistCoreModule(this);
+      super.create(block, team);
+      items = distCore.getBuffer(DistBuffers.itemBuffer).generateBindModule();
+      return this;
     }
   
     @Override
-    public DistCoreModule distributor(){
-      return (DistCoreModule) distributor;
+    public DistCoreModule distCore(){
+      return distCore;
     }
   
     @Override

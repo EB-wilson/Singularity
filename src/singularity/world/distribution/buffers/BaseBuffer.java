@@ -72,7 +72,7 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
   
   public void set(T packet){
     int put;
-    Packet existed = memory.get(packet.id());
+    Packet<?, ?> existed = memory.get(packet.id());
     if(existed == null){
       put = packet.occupation();
     }

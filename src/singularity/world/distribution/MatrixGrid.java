@@ -1,55 +1,44 @@
 package singularity.world.distribution;
 
-import arc.func.Boolf;
-import arc.func.Cons;
+import arc.func.Boolf2;
+import arc.func.Cons2;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
+import mindustry.Vars;
 import mindustry.gen.Building;
+import singularity.ui.tables.DistTargetConfigTable;
 import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
 
 import java.util.PriorityQueue;
 
 public class MatrixGrid{
   public DistMatrixUnitBuildComp handler;
-  private static final Seq<Building> t = new Seq<>();
-  private static final Seq<BuildingEntry<?>> temp = new Seq<>();
   
-  final ObjectMap<Building, BuildingEntry<?>> outputAll = new ObjectMap<>();
-  final ObjectMap<Building, BuildingEntry<?>> inputAll = new ObjectMap<>();
-  final ObjectMap<Building, BuildingEntry<?>> contAll = new ObjectMap<>();
-  final ObjectMap<Building, BuildingEntry<?>> acceptorAll = new ObjectMap<>();
+  final ObjectMap<Building, BuildingEntry<?>> all = new ObjectMap<>();
   
-  final PriorityQueue<BuildingEntry<?>> output = new PriorityQueue<>((a, b) -> a.priority - b.priority);
-  final PriorityQueue<BuildingEntry<?>> input = new PriorityQueue<>((a, b) -> a.priority - b.priority);
-  final PriorityQueue<BuildingEntry<?>> container = new PriorityQueue<>((a, b) -> a.priority - b.priority);
-  final PriorityQueue<BuildingEntry<?>> acceptor = new PriorityQueue<>((a, b) -> a.priority - b.priority);
+  final PriorityQueue<BuildingEntry<?>> output = new PriorityQueue<>((a, b) -> a.config.priority - b.config.priority);
+  final PriorityQueue<BuildingEntry<?>> input = new PriorityQueue<>((a, b) -> a.config.priority - b.config.priority);
+  final PriorityQueue<BuildingEntry<?>> container = new PriorityQueue<>((a, b) -> a.config.priority - b.config.priority);
+  final PriorityQueue<BuildingEntry<?>> acceptor = new PriorityQueue<>((a, b) -> a.config.priority - b.config.priority);
   
   public int priority;
   
   public MatrixGrid(DistMatrixUnitBuildComp handler){
     this.handler = handler;
   }
-  
-  @SuppressWarnings("unchecked")
-  public <T> Seq<Building> get(Class<T> clazz, GridChildType type, Boolf<T> req){
-    PriorityQueue<BuildingEntry<?>> temp = null;
-    switch(type){
-      case output: temp = output; break;
-      case input: temp = input; break;
-      case container: temp = container; break;
-      case acceptor: temp = acceptor; break;
-    }
-    
-    t.clear();
-    for(BuildingEntry<?> entry: temp){
-      if(clazz.isAssignableFrom(entry.entity.getClass()) && req.get((T)entry.entity)) t.add(entry.entity);
-    }
-    
-    return t;
+
+  public <T> Seq<BuildingEntry<T>> get( GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req){
+    return get(type, req, new Seq<>());
   }
-  
+
+  public <T> Seq<BuildingEntry<T>> get(GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req, Seq<BuildingEntry<T>> temp){
+    temp.clear();
+    each(type, req, (e, entry) -> temp.add(new BuildingEntry<>(e, entry)));
+    return temp;
+  }
+
   @SuppressWarnings("unchecked")
-  public <T> void get(Class<T> clazz, GridChildType type, Boolf<T> req, Cons<T> cons){
+  public <T> void each(GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req, Cons2<T, DistTargetConfigTable.TargetConfigure> cons){
     PriorityQueue<BuildingEntry<?>> temp = null;
     switch(type){
       case output: temp = output; break;
@@ -59,77 +48,67 @@ public class MatrixGrid{
     }
     
     for(BuildingEntry<?> entry: temp){
-      if(clazz.isAssignableFrom(entry.entity.getClass()) && req.get((T)entry.entity)) cons.get((T) entry.entity);
+      if(req.get((T)entry.entity, entry.config)) cons.get((T) entry.entity, entry.config);
     }
   }
-  
-  @SuppressWarnings("unchecked")
-  public <T extends Building> void add(T entity, GridChildType type, int priority){
-    PriorityQueue<BuildingEntry<?>> temp = null;
-    ObjectMap<Building, BuildingEntry<?>> all = null;
-    
-    switch(type){
-      case output:
-        temp = output;
-        all = outputAll;
-        break;
-      case input:
-        temp = input;
-        all = inputAll;
-        break;
-      case container:
-        temp = container;
-        all = contAll;
-        break;
-      case acceptor:
-        temp = acceptor;
-        all = acceptorAll;
-    }
-  
-    BuildingEntry<T> entry = (BuildingEntry<T>)all.get(entity);
-    if(entry != null){
-      entry.priority = priority;
-      temp.remove(entry);
-    }
-    else{
-      entry = new BuildingEntry<>(entity, priority, type);
-      all.put(entity, entry);
-    }
-    temp.add(entry);
+
+  public void addConfig(DistTargetConfigTable.TargetConfigure c){
+    Building t = Vars.world.build(c.position);
+    if(t == null) return;
+    boolean existed = all.containsKey(t);
+    BuildingEntry<?> entry = all.get(t, new BuildingEntry<>(t, c));
+
+    c.eachChildType((type, map) -> {
+      PriorityQueue<BuildingEntry<?>> temp = null;
+
+      switch(type){
+        case output:
+          temp = output;
+          break;
+        case input:
+          temp = input;
+          break;
+        case container:
+          temp = container;
+          break;
+        case acceptor:
+          temp = acceptor;
+      }
+
+      if(existed){
+        entry.config.priority = priority;
+        temp.remove(entry);
+      }
+      temp.add(entry);
+    });
+    all.put(t, entry);
   }
   
   public boolean remove(Building building){
-    temp.clear();
-    BuildingEntry<?> tmpEntry;
-    tmpEntry = outputAll.remove(building);
-    if(tmpEntry != null) temp.add(tmpEntry);
-    tmpEntry = inputAll.remove(building);
-    if(tmpEntry != null) temp.add(tmpEntry);
-    tmpEntry = contAll.remove(building);
-    if(tmpEntry != null) temp.add(tmpEntry);
-    tmpEntry = acceptorAll.remove(building);
-    if(tmpEntry != null) temp.add(tmpEntry);
-    
-    for(BuildingEntry<?> entry : temp){
-      switch(entry.type){
-        case output: output.remove(entry); break;
-        case input: input.remove(entry); break;
-        case container: container.remove(entry); break;
-        case acceptor: acceptor.remove(entry); break;
-      }
+    BuildingEntry<?> entry = all.remove(building);
+    if(entry != null){
+      output.remove(entry);
+      input.remove(entry);
+      container.remove(entry);
+      acceptor.remove(entry);
+      return true;
     }
-    return !temp.isEmpty();
+    return false;
   }
   
-  public static class BuildingEntry<T extends Building>{
+  public void clear(){
+    for(Building building : all.keys()){
+      remove(building);
+    }
+  }
+  
+  public static class BuildingEntry<T>{
     public final T entity;
-    public int priority;
-    public final GridChildType type;
+    public DistTargetConfigTable.TargetConfigure config;
     
-    public BuildingEntry(T entity, int priority, GridChildType type){
+    public BuildingEntry(T entity, DistTargetConfigTable.TargetConfigure config){
       this.entity = entity;
-      this.priority = priority;
-      this.type = type;
+      this.config = config;
     }
   }
 }

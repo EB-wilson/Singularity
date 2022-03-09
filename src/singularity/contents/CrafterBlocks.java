@@ -616,24 +616,13 @@ public class CrafterBlocks implements ContentList{
       craftEffect = Fx.smeltsmoke;
       
       draw = new SglDrawSmelter<>(this){
-        TextureRegion rotatorA, rotatorB;
-  
-        @Override
-        public void load(){
-          super.load();
-          rotatorA = Core.atlas.find(name + "_rotator_1");
-          rotatorB = Core.atlas.find(name + "_rotator_2");
-        }
-        
         {
+          {
+            flameRadius = 3.2f;
+            flameRadiusIn = 2.4f;
+          }
+
           drawerType = e -> new SglDrawSmelterDrawer(e){
-            float rotation;
-            
-            {
-              flameRadius = 4;
-              flameRadiusIn = 2.6f;
-            }
-            
             @Override
             public void draw(){
               Draw.rect(bottom, e.x, e.y);
@@ -641,8 +630,6 @@ public class CrafterBlocks implements ContentList{
               Draw.alpha(e.liquids.get(SglLiquids.mixed_chemical_gel)/e.block.liquidCapacity);
               Draw.rect(liquid, e.x, e.y);
               Draw.color();
-              Draw.rect(rotatorA, e.x, e.y, rotation += e.warmup*e.edelta()*2);
-              Draw.rect(rotatorB, e.x, e.y, -rotation);
               super.draw();
             }
           };

@@ -57,14 +57,10 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   }
   
   default boolean configValid(Building entity){
-    if(entity instanceof IOPointBlock.IOPoint && ((IOPointBlock.IOPoint<?>) entity).parent == this) return true;
+    if(entity instanceof IOPointBlock.IOPoint && ((IOPointBlock.IOPoint) entity).parent == this) return true;
     return (entity.block.hasItems)
         || (entity.block.hasLiquids)
         || (entity instanceof GasBuildComp && ((GasBuildComp) entity).getGasBlock().hasGases());
-  }
-  
-  default void gridAdd(Building entity, GridChildType type, int priority){
-    matrixGrid().add(entity, type, priority);
   }
   
   default void gridRemove(Building entity){
@@ -87,6 +83,8 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   default DistMatrixUnitComp getMatrixBlock(){
     return getBlock(DistMatrixUnitComp.class);
   }
+  
+  void ioPointConfigBackEntry(IOPointBlock.IOPoint ioPoint);
   
   boolean tileValid(Tile tile);
   

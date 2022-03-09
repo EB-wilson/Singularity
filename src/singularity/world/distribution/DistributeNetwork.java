@@ -24,6 +24,8 @@ public class DistributeNetwork{
   public int frequencyUsed;
   public int maxFrequency;
   
+  private boolean status = false;
+  
   public void add(DistributeNetwork other){
     if(other != this) for(DistElementBuildComp next: other.elements){
       add(next);
@@ -39,7 +41,7 @@ public class DistributeNetwork{
     if(other instanceof DistNetworkCoreComp) cores.add((DistNetworkCoreComp) other);
     if(other instanceof DistMatrixUnitBuildComp) grids.add(((DistMatrixUnitBuildComp) other).matrixGrid());
     
-    other.distributor().network = this;
+    other.distributor().setNet(this);
     modified();
   }
   
@@ -48,10 +50,18 @@ public class DistributeNetwork{
   }
   
   public boolean netValid(){
-    return getCore() != null && frequencyUsed < maxFrequency;
+    boolean res = getCore() != null && frequencyUsed < maxFrequency;
+    if(!res) status = false;
+    return res;
   }
   
   public void update(){
+    if(!status && netValid()){
+      status = true;
+      for(DistElementBuildComp element : elements){
+        element.networkValided();
+      }
+    }
     frequencyUsed = 0;
     for(DistElementBuildComp element: elements){
       frequencyUsed += element.frequencyUse();
@@ -60,7 +70,7 @@ public class DistributeNetwork{
   
   public void modified(){
     if(netValid()){
-      DistCoreModule core = cores.get(0).distributor();
+      DistCoreModule core = cores.get(0).distCore();
   
       for(DistBuffers<?> buffers: DistBuffers.all){
         core.getBuffer(buffers).capacity = 0;

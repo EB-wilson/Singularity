@@ -10,6 +10,7 @@ import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Tile;
 import mindustry.world.meta.BuildVisibility;
+import mindustry.world.meta.Stat;
 import singularity.type.Gas;
 import singularity.type.SglContents;
 import singularity.ui.tables.DistTargetConfigTable;
@@ -17,12 +18,10 @@ import singularity.world.blockComp.GasBuildComp;
 import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
 import singularity.world.blocks.SglBlock;
 import singularity.world.distribution.GridChildType;
-import universeCore.annotations.Annotations;
 
 import static mindustry.Vars.*;
 
 /**非content类，方块标记，不进入contents，用于创建矩阵网络IO接口点的标记类型*/
-@SuppressWarnings({"rawtypes", "unchecked"})
 public class IOPointBlock extends SglBlock{
   @Nullable protected DistMatrixUnitBuildComp currPlacement;
   
@@ -42,13 +41,20 @@ public class IOPointBlock extends SglBlock{
     liquidCapacity = 16;
     gasCapacity = 8;
     maxGasPressure = 8;
+
+    buildCostMultiplier = 0;
   }
   
   @Override
   public boolean canPlaceOn(Tile tile, Team team){
     return currPlacement != null && currPlacement.tileValid(tile);
   }
-  
+
+  @Override
+  public void setStats(){
+    stats.add(Stat.size, "@x@", size, size);
+  }
+
   public void resetCurrPlacement(){
     currPlacement = null;
     buildVisibility = BuildVisibility.hidden;
@@ -59,32 +65,25 @@ public class IOPointBlock extends SglBlock{
     buildVisibility = BuildVisibility.shown;
   }
   
-  @Annotations.Entrust(implement = {Teamc.class})
-  public class IOPoint<@Annotations.EntrustInst Type extends DistMatrixUnitBuildComp> extends SglBuilding implements Teamc{
-    @Annotations.EntrustInst
-    public final Type parent;
+  public class IOPoint extends SglBuilding implements Teamc{
+    public DistMatrixUnitBuildComp parent;
     public DistTargetConfigTable.TargetConfigure config;
     
     protected boolean siphoning;
     
     public IOPoint(){
-      this((Type) currPlacement);
-    }
-    
-    public IOPoint(@Annotations.EntrustInst(true) Type parent){
-      this.parent = parent;
+      this.parent = currPlacement;
     }
   
     @Override
-    public IOPoint init(Tile tile, Team team, boolean shouldAdd, int rotation){
-      super.init(tile, team, shouldAdd, rotation);
-      parent.ioPoints().put(pos(), this);
-      return this;
+    public void onProximityAdded(){
+      super.onProximityAdded();
+      if(parent != null) parent.ioPoints().put(pos(), this);
     }
   
     @Override
     public void remove(){
-      parent.removeIO(pos());
+      if(parent != null) parent.removeIO(pos());
       super.remove();
     }
   
@@ -297,7 +296,7 @@ public class IOPointBlock extends SglBlock{
           && config.get(GridChildType.acceptor, SglContents.gas).contains(gas)
           && super.acceptGas(source, gas);
     }
-    
+  
     public final boolean acceptGasSuper(GasBuildComp source, Gas gas){
       return super.acceptGas(source, gas);
     }

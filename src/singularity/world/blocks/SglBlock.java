@@ -52,6 +52,7 @@ import universeCore.entityComps.blockComps.ConsumerBlockComp;
 import universeCore.entityComps.blockComps.ConsumerBuildComp;
 import universeCore.entityComps.blockComps.Takeable;
 import universeCore.ui.table.RecipeTable;
+import universeCore.util.DataPackable;
 import universeCore.util.UncLiquidStack;
 import universeCore.world.consumers.BaseConsumers;
 import universeCore.world.consumers.UncConsumeLiquids;
@@ -83,6 +84,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
   /**这是一个指针，用于标记当前编辑的consume*/
   public SglConsumers consume;
+  /**独立的物品栏，为true所有物品具有独立的容量，否则共用物品空间*/
+  public boolean independenceInventory = true;
+  /**独立的液体储罐，为true所有液体具有独立的容量，否则共用液体空间*/
+  public boolean independenceLiquidTank = true;
   /**控制在多种可选输入都可用时是全部可用还是其中优先级最高的一种使用*/
   public boolean oneOfOptionCons = false;
   
@@ -132,6 +137,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     super(name);
     consumesPower = false;
     appliedConfig();
+    config(byte[].class, (SglBuilding e, byte[] code) -> {
+      parseConfigObjects(e, DataPackable.readObject(code, e));
+    });
   }
   
   public void appliedConfig(){
@@ -151,6 +159,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       e.recipeCurrent = 0;
     });
   }
+  
+  public void parseConfigObjects(SglBuilding e, Object obj){}
   
   @Override
   public BaseConsumers newConsume(){
@@ -677,12 +687,12 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     
     @Override
     public boolean acceptItem(Building source, Item item){
-      return source.team == this.team && hasItems && (!consumer.hasConsume() || consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item))) && items.get(item) < block().itemCapacity && status == SglBlockStatus.proper;
+      return source.team == this.team && hasItems && (!consumer.hasConsume() || consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item))) && (independenceInventory? items.get(item): items.total()) < block().itemCapacity && status == SglBlockStatus.proper;
     }
 
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.team == this.team && hasLiquids && (!consumer.hasConsume() || consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid))) && liquids.get(liquid) <= block().liquidCapacity - 0.0001f && status == SglBlockStatus.proper;
+      return source.team == this.team && hasLiquids && (!consumer.hasConsume() || consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid))) && (independenceLiquidTank? liquids.get(liquid): liquids.total()) <= block().liquidCapacity - 0.0001f && status == SglBlockStatus.proper;
     }
   
     @Override
@@ -738,7 +748,5 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         smoothPressure = gases.getPressure();
       }
     }
-  
-    
   }
 }

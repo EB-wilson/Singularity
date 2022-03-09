@@ -13,6 +13,7 @@ import singularity.world.distribution.buffers.ItemsBuffer;
 
 /**从网络中读取物品，此操作将物品从网络缓存读出并写入到目标缓存，网络缓存会优先提供已缓存物品，若不足则从网络子容器申请物品到网络缓存再分配*/
 public class ReadItemsRequest extends DistRequestBase<ItemStack>{
+  private static final Seq<MatrixGrid.BuildingEntry<Building>> temp = new Seq<>();
   private final ItemsBuffer destination;
   private ItemsBuffer source;
   
@@ -27,43 +28,52 @@ public class ReadItemsRequest extends DistRequestBase<ItemStack>{
   
   @Override
   public int priority(){
-    return 64;
+    return 128;
   }
   
   @Override
   public void init(DistributeNetwork target){
     super.init(target);
-    source = target.getCore().distributor().getBuffer(DistBuffers.itemBuffer);
+    source = target.getCore().distCore().getBuffer(DistBuffers.itemBuffer);
   }
   
   @Override
-  public void preHandle(){
+  public boolean preHandle(){
     tempItems.clear();
     
     for(ItemStack stack : reqItems){
       int req = stack.amount - source.get(stack.item);
-      if(req > 0) tempItems.set(stack.item, req);
+      if(req > 0){
+        tempItems.set(stack.item, req);
+      }
     }
-  
-    int move;
+
     itemFor: for(ItemStack stack : tempItems){
       for(MatrixGrid grid : target.grids){
-        for(Building entity : grid.get(Building.class, GridChildType.container, e -> e.items.get(stack.item) > 0)){
+        for(MatrixGrid.BuildingEntry<Building> entry: grid.get(GridChildType.container,
+            (e, c) -> e.items.get(stack.item) > 0 && c.get(GridChildType.container, stack.item),
+            temp)){
           if(tempItems.get(stack.item) <= 0) continue itemFor;
-          if(destination.remainingCapacity().intValue() <= 0) break itemFor;
-          move = Math.min(entity.items.get(stack.item), tempItems.get(stack.item));
+          if(source.remainingCapacity().intValue() <= 0) break itemFor;
+
+          int move = Math.min(entry.entity.items.get(stack.item), tempItems.get(stack.item));
+          move = Math.min(move, source.remainingCapacity().intValue());
+
           if(move > 0){
-            entity.removeStack(stack.item, move);
-            destination.put(stack.item, move);
+            entry.entity.removeStack(stack.item, move);
+            source.put(stack.item, move);
             tempItems.remove(stack.item, move);
           }
         }
       }
     }
+    
+    return true;
   }
   
   @Override
-  public void handle(){
+  public boolean handle(){
+    boolean blockTest = false;
     for(ItemStack stack : reqItems){
       int move = Math.min(stack.amount, source.get(stack.item));
       move = Math.min(move, destination.remainingCapacity().intValue());
@@ -71,7 +81,9 @@ public class ReadItemsRequest extends DistRequestBase<ItemStack>{
       
       source.remove(stack.item, move);
       destination.put(stack.item, move);
+      blockTest = true;
     }
+    return blockTest;
   }
   
   @Override

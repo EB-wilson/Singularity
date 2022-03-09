@@ -18,6 +18,8 @@ public interface DistElementBuildComp extends BuildCompBase{
   
   Seq<DistElementBuildComp> netLinked();
   
+  default void networkValided(){}
+  
   default DistElementBlockComp getDistBlock(){
     return getBlock(DistElementBlockComp.class);
   }
