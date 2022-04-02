@@ -11,7 +11,7 @@ import mindustry.type.ItemStack;
 import singularity.contents.SglItems;
 import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.draw.DrawFactory;
-import universeCore.util.OverrideContentList;
+import universecore.util.OverrideContentList;
 
 import static mindustry.type.ItemStack.with;
 

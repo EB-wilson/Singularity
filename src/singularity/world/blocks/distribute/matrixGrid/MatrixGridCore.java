@@ -25,9 +25,11 @@ import mindustry.world.Tile;
 import singularity.Sgl;
 import singularity.graphic.SglDraw;
 import singularity.ui.tables.DistTargetConfigTable;
+import singularity.world.components.EdgeLinkerBuildComp;
+import singularity.world.components.EdgeLinkerComp;
 import singularity.world.blocks.distribute.IOPointBlock;
-import universeCore.annotations.Annotations;
-import universeCore.util.DataPackable;
+import universecore.annotations.Annotations;
+import universecore.util.DataPackable;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -36,7 +38,7 @@ import static mindustry.Vars.tilesize;
 import static mindustry.Vars.world;
 
 @Annotations.ImplEntries
-public class MatrixGridCore extends MatrixGridBlock implements MatrixEdgeLinker{
+public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   static {
     DataPackable.assignType(MatrixGridCoreBuild.LinkPair.typeID, p -> ((MatrixGridCoreBuild)p[0]).new LinkPair());
   }
@@ -96,7 +98,7 @@ public class MatrixGridCore extends MatrixGridBlock implements MatrixEdgeLinker{
     list.each(plan -> {
       Point2 p = Point2.unpack(offset);
       if(Point2.pack(req.x + p.x, req.y + p.y) == Point2.pack(plan.x, plan.y)){
-        if(plan.block instanceof MatrixEdgeLinker){
+        if(plan.block instanceof EdgeLinkerComp){
           SglDraw.drawLink(req.tile(), req.block.offset, plan.tile(), plan.block.offset, linkRegion, null, 1);
         }
       }
@@ -104,8 +106,8 @@ public class MatrixGridCore extends MatrixGridBlock implements MatrixEdgeLinker{
   }
   
   @Override
-  public void link(MatrixGridEdge entity, Integer pos){
-    MatrixEdgeLinker.super.link(entity, pos);
+  public void link(EdgeLinkerBuildComp entity, Integer pos){
+    EdgeLinkerComp.super.link(entity, pos);
     ((MatrixGridCoreBuild)entity).linkLerp = 0;
   }
   
@@ -116,8 +118,8 @@ public class MatrixGridCore extends MatrixGridBlock implements MatrixEdgeLinker{
   }
   
   @Annotations.ImplEntries
-  public class MatrixGridCoreBuild extends MatrixGridBuild implements MatrixGridEdge{
-    protected MatrixEdgeContainer edges = new MatrixEdgeContainer();
+  public class MatrixGridCoreBuild extends MatrixGridBuild implements EdgeLinkerBuildComp{
+    protected EdgeContainer edges = new EdgeContainer();
     protected Polygon lastPoly;
     protected Vec2[] vertices;
     protected FloatSeq verticesSeq;
@@ -154,18 +156,18 @@ public class MatrixGridCore extends MatrixGridBlock implements MatrixEdgeLinker{
     }
 
     @Override
-    public void linked(MatrixGridEdge next){
+    public void linked(EdgeLinkerBuildComp next){
       if(loaded)linkLerp = 0;
     }
 
     @Override
-    public void delinked(MatrixGridEdge next){
+    public void delinked(EdgeLinkerBuildComp next){
       if(loaded) linkLerp = 0;
     }
 
     @Override
     public void updateLinking(){
-      MatrixGridEdge.super.updateLinking();
+      EdgeLinkerBuildComp.super.updateLinking();
       loaded = true;
     }
   
@@ -241,12 +243,14 @@ public class MatrixGridCore extends MatrixGridBlock implements MatrixEdgeLinker{
     @Override
     public void read(Reads read, byte revision){
       super.read(read, revision);
+      nextPos = read.i();
       linkLerp = read.f();
     }
   
     @Override
     public void write(Writes write){
       super.write(write);
+      write.i(nextPos);
       write.f(linkLerp);
     }
   

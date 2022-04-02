@@ -14,7 +14,7 @@ import mindustry.game.EventType;
 import mindustry.gen.Building;
 import mindustry.ui.fragments.BlockConfigFragment;
 import mindustry.ui.fragments.Fragment;
-import singularity.world.blockComp.SecondableConfigBuildComp;
+import singularity.world.components.SecondableConfigBuildComp;
 
 import static mindustry.Vars.state;
 

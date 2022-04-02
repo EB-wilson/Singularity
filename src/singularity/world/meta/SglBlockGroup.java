@@ -1,8 +1,8 @@
 package singularity.world.meta;
 
 import mindustry.world.meta.BlockGroup;
-import universeCore.util.handler.EnumHandler;
-import universeCore.util.handler.FieldHandler;
+import universecore.util.handler.EnumHandler;
+import universecore.util.handler.FieldHandler;
 
 public class SglBlockGroup{
   private static final EnumHandler<BlockGroup> handler = new EnumHandler<>(BlockGroup.class, (inst, param) -> {

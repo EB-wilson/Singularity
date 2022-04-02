@@ -5,7 +5,6 @@ import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.game.Team;
 import mindustry.gen.Building;
-import mindustry.gen.Teamc;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Tile;
@@ -14,8 +13,8 @@ import mindustry.world.meta.Stat;
 import singularity.type.Gas;
 import singularity.type.SglContents;
 import singularity.ui.tables.DistTargetConfigTable;
-import singularity.world.blockComp.GasBuildComp;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
+import singularity.world.components.GasBuildComp;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.blocks.SglBlock;
 import singularity.world.distribution.GridChildType;
 
@@ -65,7 +64,7 @@ public class IOPointBlock extends SglBlock{
     buildVisibility = BuildVisibility.shown;
   }
   
-  public class IOPoint extends SglBuilding implements Teamc{
+  public class IOPoint extends SglBuilding{
     public DistMatrixUnitBuildComp parent;
     public DistTargetConfigTable.TargetConfigure config;
     
@@ -137,7 +136,7 @@ public class IOPointBlock extends SglBlock{
           Item item = content.item(ii);
         
           other = getNext("dumpItem",
-              e -> e.team == team
+              e -> e.interactable(team)
                   && items.has(item)
                   && e.acceptItem(this, item)
                   && canDump(e, item)
@@ -152,7 +151,7 @@ public class IOPointBlock extends SglBlock{
       }
       else{
         other = getNext("dumpItem",
-            e -> e.team == team && items.has(toDump)
+            e -> e.interactable(team) && items.has(toDump)
                 && e.acceptItem(this, toDump)
                 && canDump(e, toDump)
                 && config.directValid(GridChildType.output, toDump, getDirectBit(e)));
@@ -178,7 +177,7 @@ public class IOPointBlock extends SglBlock{
         Building other = proximity.get((i + dump) % proximity.size);
         other = other.getLiquidDestination(this, liquid);
       
-        if(other != null && other.team == team && other.block.hasLiquids && canDumpLiquid(other, liquid) && other.liquids != null
+        if(other != null && other.interactable(team) && other.block.hasLiquids && canDumpLiquid(other, liquid) && other.liquids != null
             && config.directValid(GridChildType.output, liquid, getDirectBit(other))){
           float ofract = other.liquids.get(liquid) / other.block.liquidCapacity;
           float fract = liquids.get(liquid) / block.liquidCapacity;
@@ -192,7 +191,7 @@ public class IOPointBlock extends SglBlock{
     public void dumpGas(Gas gas){
       GasBuildComp other = (GasBuildComp) this.getNext("gases",
           e -> e instanceof GasBuildComp
-              && e.team == team && gases.get(gas) > 0
+              && e.interactable(team) && gases.get(gas) > 0
               && ((GasBuildComp) e).acceptGas(this, gas)
               && config.directValid(GridChildType.output, gas, getDirectBit(e)));
       
@@ -216,7 +215,7 @@ public class IOPointBlock extends SglBlock{
     public void transBack(){
       Building parentBuild = parent.getBuilding();
       items.each((item, amount) -> {
-        int accept = parentBuild.acceptStack(item, amount, this);
+        int accept = parentBuild.acceptItem(this, item)? Math.min(parentBuild.getMaximumAccepted(item) - parentBuild.items.get(item), amount): 0;
         if(accept > 0){
           removeStack(item, accept);
           parentBuild.handleStack(item, accept, this);
@@ -243,7 +242,7 @@ public class IOPointBlock extends SglBlock{
   
     public void siphonLiquid(Liquid liquid){
       Building next;
-      next = getNext("siphonItem",
+      next = getNext("siphonLiquid",
           e -> e.block.hasLiquids
               && e.liquids.get(liquid) > 0
               && config.directValid(GridChildType.input, liquid, getDirectBit(e)));
@@ -253,7 +252,7 @@ public class IOPointBlock extends SglBlock{
   
     public void siphonGas(Gas gas){
       GasBuildComp next;
-      next = (GasBuildComp) getNext("siphonItem",
+      next = (GasBuildComp) getNext("siphonGas",
           e -> e instanceof GasBuildComp
               && ((GasBuildComp) e).getGasBlock().hasGases()
               && ((GasBuildComp) e).gases().get(gas) > 0

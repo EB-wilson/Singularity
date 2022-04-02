@@ -2,7 +2,8 @@ package singularity.ui.dialogs;
 
 import arc.Core;
 import arc.graphics.Color;
-import arc.scene.ui.*;
+import arc.scene.ui.Image;
+import arc.scene.ui.Label;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
@@ -11,9 +12,9 @@ import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import universeCore.debugModules.ObjectDataMonitor;
-import universeCore.debugModules.ObjectDataMonitor.VarStructure;
-import universeCore.util.handler.FieldHandler;
+import universecore.debugs.ObjectDataMonitor;
+import universecore.debugs.ObjectDataMonitor.VarStructure;
+import universecore.util.handler.FieldHandler;
 
 import java.util.Objects;
 

@@ -16,7 +16,7 @@ public class SglBaseDrawer<Target>{
   public void draw(){
   }
   
-  /**渲染*/
+  /**渲染光照*/
   public void drawLight(){
   }
 }

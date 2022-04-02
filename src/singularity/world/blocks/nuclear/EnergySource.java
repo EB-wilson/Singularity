@@ -11,7 +11,7 @@ import mindustry.ui.Styles;
 import mindustry.world.meta.Env;
 import singularity.Singularity;
 import singularity.ui.SglStyles;
-import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.components.NuclearEnergyBuildComp;
 
 import static mindustry.Vars.tilesize;
 
@@ -30,6 +30,7 @@ public class EnergySource extends NuclearPipeNode{
   
   @Override
   public void appliedConfig(){
+    super.appliedConfig();
     config(Float.class, (EnergySourceBuild tile, Float value) -> tile.outputEnergy = value);
     configClear((EnergySourceBuild tile) -> tile.outputEnergy = 0);
   }

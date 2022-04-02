@@ -8,9 +8,9 @@ import mindustry.ctype.UnlockableContent;
 import mindustry.world.Tile;
 import singularity.Sgl;
 import singularity.type.SglContents;
-import singularity.world.blockComp.ChainsBuildComp;
-import singularity.world.blockComp.StructBlockComp;
-import singularity.world.blockComp.StructBuildComp;
+import singularity.world.components.ChainsBuildComp;
+import singularity.world.components.StructBlockComp;
+import singularity.world.components.StructBuildComp;
 import singularity.world.blocks.chains.ChainContainer;
 
 public class MultBlockStructure extends UnlockableContent{

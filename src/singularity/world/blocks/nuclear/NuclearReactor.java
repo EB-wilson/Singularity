@@ -29,27 +29,27 @@ import singularity.contents.SglItems;
 import singularity.type.GasStack;
 import singularity.ui.tables.GasDisplay;
 import singularity.world.SglFx;
-import singularity.world.blockComp.HeatBlockComp;
-import singularity.world.blockComp.HeatBuildComp;
+import singularity.world.components.HeatBlockComp;
+import singularity.world.components.HeatBuildComp;
 import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.draw.DrawNuclearReactor;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.products.ProduceEnergy;
-import universeCore.annotations.Annotations;
-import universeCore.world.consumers.BaseConsumers;
-import universeCore.world.consumers.UncConsumeItems;
-import universeCore.world.consumers.UncConsumeLiquids;
-import universeCore.world.consumers.UncConsumeType;
-import universeCore.world.particles.Particle;
-import universeCore.world.producers.BaseProduce;
-import universeCore.world.producers.ProducePower;
+import universecore.annotations.Annotations;
+import universecore.world.consumers.BaseConsumers;
+import universecore.world.consumers.UncConsumeItems;
+import universecore.world.consumers.UncConsumeLiquids;
+import universecore.world.consumers.UncConsumeType;
+import universecore.world.particles.Particle;
+import universecore.world.producers.BaseProduce;
+import universecore.world.producers.ProducePower;
 
 import static mindustry.Vars.state;
 import static mindustry.Vars.tilesize;
-import static singularity.world.blockComp.HeatBuildComp.getItemAbsTemperature;
-import static singularity.world.blockComp.HeatBuildComp.getLiquidAbsTemperature;
+import static singularity.world.components.HeatBuildComp.getItemAbsTemperature;
+import static singularity.world.components.HeatBuildComp.getLiquidAbsTemperature;
 
 @Annotations.ImplEntries
 public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
@@ -158,18 +158,12 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   @Override
   public void setStats(){
     super.setStats();
-    setHeatStats(stats);
     stats.add(SglStat.heatProduct, productHeat*60/1000 + SglStatUnit.kHeat.localized() + Core.bundle.get("misc.preSecond"));
   }
   
   @Override
   public void setBars(){
     super.setBars();
-    bars.add("temperature", (NuclearReactorBuild e) -> new Bar(
-        () -> Core.bundle.get("misc.temperature"),
-        () -> Pal.lightOrange,
-        () -> e.temperature() / HeatBuildComp.getTemperature(maxTemperature)
-    ));
     bars.add("efficiency", (NuclearReactorBuild e) -> new Bar(
         () -> Core.bundle.get("misc.efficiency") + ": " + Strings.autoFixed(e.smoothEfficiency*100, 0) + "%",
         () -> Pal.accent,
@@ -273,7 +267,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
       
       if((fuel < itemCapacity/3f && absTemperature() < maxTemperature/2) || !state.rules.reactorExplosions) return;
     
-      Effect.shake(8f, 24f, x, y);
+      Effect.shake(8f, 120f, x, y);
       float strength = explosionDamageBase*fuel;
       Damage.damage(x, y, (float) explosionRadius*tilesize, strength);
     

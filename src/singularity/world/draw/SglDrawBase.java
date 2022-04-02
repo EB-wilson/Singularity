@@ -5,7 +5,7 @@ import arc.func.Func;
 import arc.graphics.g2d.TextureRegion;
 import arc.util.Log;
 import arc.util.Structs;
-import singularity.world.blockComp.DrawableComp;
+import singularity.world.components.DrawableComp;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

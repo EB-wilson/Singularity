@@ -1,7 +1,7 @@
 package singularity.world.products;
 
-import universeCore.world.producers.BaseProduce;
-import universeCore.world.producers.ProduceType;
+import universecore.world.producers.BaseProduce;
+import universecore.world.producers.ProduceType;
 
 @SuppressWarnings("unchecked")
 public class SglProduceType<T extends BaseProduce<?>> extends ProduceType<T>{
@@ -11,4 +11,5 @@ public class SglProduceType<T extends BaseProduce<?>> extends ProduceType<T>{
   
   public static final ProduceType<ProduceGases<?>> gas = (ProduceType<ProduceGases<?>>) add(ProduceGases.class);
   public static final ProduceType<ProduceEnergy<?>> energy = (ProduceType<ProduceEnergy<?>>) add(ProduceEnergy.class);
+  public static final ProduceType<ProduceMedium<?>> medium = (ProduceType<ProduceMedium<?>>) add(ProduceMedium.class);
 }

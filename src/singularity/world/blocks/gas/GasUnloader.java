@@ -17,12 +17,12 @@ import mindustry.world.blocks.ItemSelection;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.SglContents;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBuildComp;
 import singularity.world.blocks.SglBlock;
 import singularity.world.meta.SglBlockGroup;
 import singularity.world.modules.GasesModule;
-import universeCore.annotations.Annotations;
-import universeCore.entityComps.blockComps.Takeable;
+import universecore.annotations.Annotations;
+import universecore.components.blockcomp.Takeable;
 
 /**液体提取器，可连通周围方块的气体槽，并送向下一个方块
  * 类似物品装卸器，气体压力来自目标方块
@@ -87,7 +87,7 @@ public class GasUnloader extends GasBlock{
         if(current != null){
           dumpGas(current);
         }
-        else gases.each(stack -> dumpGas());
+        else dumpGas();
       }
     }
   

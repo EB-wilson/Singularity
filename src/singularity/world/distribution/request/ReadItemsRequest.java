@@ -2,9 +2,8 @@ package singularity.world.distribution.request;
 
 import arc.struct.Seq;
 import mindustry.gen.Building;
-import mindustry.type.ItemSeq;
 import mindustry.type.ItemStack;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
@@ -18,7 +17,7 @@ public class ReadItemsRequest extends DistRequestBase<ItemStack>{
   private ItemsBuffer source;
   
   private final Seq<ItemStack> reqItems;
-  private static final ItemSeq tempItems = new ItemSeq();
+  private static final Seq<ItemStack> tempItems = new Seq<>();
   
   public ReadItemsRequest(DistMatrixUnitBuildComp sender, ItemsBuffer destination, Seq<ItemStack> items){
     super(sender);
@@ -44,7 +43,7 @@ public class ReadItemsRequest extends DistRequestBase<ItemStack>{
     for(ItemStack stack : reqItems){
       int req = stack.amount - source.get(stack.item);
       if(req > 0){
-        tempItems.set(stack.item, req);
+        tempItems.add(new ItemStack(stack.item, req));
       }
     }
 
@@ -53,16 +52,16 @@ public class ReadItemsRequest extends DistRequestBase<ItemStack>{
         for(MatrixGrid.BuildingEntry<Building> entry: grid.get(GridChildType.container,
             (e, c) -> e.items.get(stack.item) > 0 && c.get(GridChildType.container, stack.item),
             temp)){
-          if(tempItems.get(stack.item) <= 0) continue itemFor;
+          if(stack.amount <= 0) continue itemFor;
           if(source.remainingCapacity().intValue() <= 0) break itemFor;
 
-          int move = Math.min(entry.entity.items.get(stack.item), tempItems.get(stack.item));
+          int move = Math.min(entry.entity.items.get(stack.item), stack.amount);
           move = Math.min(move, source.remainingCapacity().intValue());
 
           if(move > 0){
-            entry.entity.removeStack(stack.item, move);
+            move = entry.entity.removeStack(stack.item, move);
             source.put(stack.item, move);
-            tempItems.remove(stack.item, move);
+            stack.amount -= move;
           }
         }
       }

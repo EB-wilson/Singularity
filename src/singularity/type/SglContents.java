@@ -10,7 +10,8 @@ public class SglContents{
   public static final ContentType ability = SglContentType.ability.value;
   public static final ContentType structure = SglContentType.structure.value;
   public static final ContentType reaction = SglContentType.reaction.value;
-  
+  public static final ContentType atomSchematic = SglContentType.atomSchematic.value;
+
   public static Seq<Gas> gases(){
     return content.getBy(gas);
   }
@@ -57,5 +58,17 @@ public class SglContents{
   
   public static Reaction<?, ?> reaction(String name){
     return content.getByName(reaction, name);
+  }
+
+  public static Seq<AtomSchematic> atomSchematics(){
+    return content.getBy(atomSchematic);
+  }
+
+  public static AtomSchematic atomSchematic(int id){
+    return content.getByID(atomSchematic, id);
+  }
+
+  public static AtomSchematic atomSchematic(String name){
+    return content.getByName(atomSchematic, name);
   }
 }

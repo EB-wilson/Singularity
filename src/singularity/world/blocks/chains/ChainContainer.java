@@ -6,13 +6,12 @@ import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.Queue;
 import arc.struct.Seq;
-import singularity.world.blockComp.ChainsBuildComp;
+import singularity.world.components.ChainsBuildComp;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class ChainContainer{
-  public ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<? extends ChainsEvents.ChainsEvent>>> globalListener = new ObjectMap<>();
+  public ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<ChainsEvents.ChainsEvent>>> globalListener = new ObjectMap<>();
   
   private static final Queue<ChainsBuildComp> findQueue = new Queue<>();
   private static final ObjectSet<ChainsBuildComp> added = new ObjectSet<>();
@@ -20,12 +19,45 @@ public class ChainContainer{
   public ObjectMap<String, Object> localVars = new ObjectMap<>();
   
   public final ObjectSet<ChainsBuildComp> all = new ObjectSet<>();
+
+  private int minX, minY;
+  private int maxX, maxY;
   
   private long lastFrameUpdated;
-  
+
   public ChainContainer(ChainsBuildComp entity){
     all.add(entity);
+    minX = maxX = entity.tileX();
+    minY = maxY = entity.tileY();
     entity.chains().container = this;
+  }
+
+  public boolean inlerp(int x, int y){
+    return x <= maxX && x >= minX && y <= maxY && y >= minY;
+  }
+
+  public int minX(){
+    return minX;
+  }
+
+  public int maxX(){
+    return maxX;
+  }
+
+  public int minY(){
+    return minY;
+  }
+
+  public int maxY(){
+    return maxY;
+  }
+
+  public int width(){
+    return maxX - minX + 1;
+  }
+
+  public int height(){
+    return maxY - minY + 1;
   }
   
   public void putVar(String key, Object obj){
@@ -36,7 +68,7 @@ public class ChainContainer{
   public <T> T getVar(String key){
     return (T)localVars.get(key);
   }
-  
+
   public void add(ChainContainer other){
     for(ChainsBuildComp next : other.all){
       add(next);
@@ -55,18 +87,27 @@ public class ChainContainer{
       comp.chains().handle(event);
     }
   }
+
+  private void updateEdge(ChainsBuildComp other){
+    float offset = (other.getBlock().size + other.getBlock().offset)/2;
+    minX = Math.min(minX, (int)(other.tileX() - offset));
+    minY = Math.min(minY, (int)(other.tileY() - offset));
+    maxX = Math.max(maxX, (int)(other.tileX() + offset));
+    maxY = Math.max(maxY, (int)(other.tileY() + offset));
+  }
   
   public void add(ChainsBuildComp other){
     if(!all.add(other)) return;
+
+    updateEdge(other);
+
     ChainContainer oldContainer = other.chains().container;
     other.chains().container = this;
     
-    LinkedHashMap<String, Cons<? extends ChainsEvents.ChainsEvent>> listeners;
-    for(ObjectMap.Entry<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<? extends ChainsEvents.ChainsEvent>>> entry : oldContainer.globalListener){
+    LinkedHashMap<String, Cons<ChainsEvents.ChainsEvent>> listeners;
+    for(ObjectMap.Entry<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<ChainsEvents.ChainsEvent>>> entry : oldContainer.globalListener){
       listeners = globalListener.get(entry.key, LinkedHashMap::new);
-      for(Map.Entry<String, Cons<? extends ChainsEvents.ChainsEvent>> e : entry.value.entrySet()){
-        listeners.put(e.getKey(), e.getValue());
-      }
+      listeners.putAll(entry.value);
     }
     handle(new ChainsEvents.AddedBlockEvent(other, this, oldContainer));
   }
@@ -91,6 +132,7 @@ public class ChainContainer{
         if(added.add(next) && !excludes.contains(next)) findQueue.addFirst(next);
       }
       all.add(other);
+      updateEdge(other);
       ChainContainer oldContainer = other.chains().container;
       other.chains().container = this;
       handle(new ChainsEvents.ConstructFlowEvent(other, this, oldContainer));

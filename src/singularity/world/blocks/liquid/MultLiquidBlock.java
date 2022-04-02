@@ -164,7 +164,7 @@ public class MultLiquidBlock extends LiquidBlock{
     public boolean conduitAccept(MultLiquidBuild source, int index, Liquid liquid){
       noSleep();
       LiquidModule liquids = liquidsBuffer[index];
-      return source.team == team && liquids.currentAmount() < 0.01f || liquids.current() == liquid && liquids.currentAmount() < liquidCapacity;
+      return source.interactable(team) && liquids.currentAmount() < 0.01f || liquids.current() == liquid && liquids.currentAmount() < liquidCapacity;
     }
   
     public void handleLiquid(MultLiquidBuild source, int index, Liquid liquid, float amount){
@@ -175,7 +175,7 @@ public class MultLiquidBlock extends LiquidBlock{
       if(dest == null) return 0;
     
       LiquidModule liquids = liquidsBuffer[index], oLiquids = dest.liquidsBuffer[index];
-      if(dest.team == team && liquids.get(liquid) > 0f){
+      if(dest.interactable(team) && liquids.get(liquid) > 0f){
         float ofract = oLiquids.get(liquid) / dest.block().liquidCapacity;
         float fract = liquids.get(liquid) / block().liquidCapacity* block.liquidPressure;
         float flow = Math.min(Mathf.clamp((fract - ofract)) * (block().liquidCapacity), liquids.get(liquid));
@@ -216,7 +216,7 @@ public class MultLiquidBlock extends LiquidBlock{
   
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.team == team && (getModuleAccept(liquid) != null || !isFull());
+      return source.interactable(team) && (getModuleAccept(liquid) != null || !isFull());
     }
   
     @Override

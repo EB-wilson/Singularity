@@ -2,12 +2,12 @@ package singularity.world.products;
 
 import mindustry.gen.Building;
 import mindustry.world.meta.Stats;
-import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
-import universeCore.entityComps.blockComps.ProducerBuildComp;
-import universeCore.world.producers.BaseProduce;
-import universeCore.world.producers.ProduceType;
+import universecore.components.blockcomp.ProducerBuildComp;
+import universecore.world.producers.BaseProduce;
+import universecore.world.producers.ProduceType;
 
 public class ProduceEnergy<T extends Building & NuclearEnergyBuildComp & ProducerBuildComp> extends BaseProduce<T>{
   public float product;

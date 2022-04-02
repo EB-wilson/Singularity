@@ -4,12 +4,12 @@ import arc.scene.ui.layout.Table;
 import arc.struct.Bits;
 import mindustry.gen.Building;
 import mindustry.world.meta.Stats;
-import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
-import universeCore.entityComps.blockComps.ConsumerBuildComp;
-import universeCore.world.consumers.BaseConsume;
-import universeCore.world.consumers.UncConsumeType;
+import universecore.components.blockcomp.ConsumerBuildComp;
+import universecore.world.consumers.BaseConsume;
+import universecore.world.consumers.UncConsumeType;
 
 public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & ConsumerBuildComp> extends BaseConsume<T>{
   public boolean buffer = false;

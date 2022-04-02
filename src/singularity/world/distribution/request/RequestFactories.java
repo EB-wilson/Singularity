@@ -11,10 +11,11 @@ import mindustry.type.ItemSeq;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import singularity.ui.tables.DistTargetConfigTable.TargetConfigure;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.GridChildType;
+import singularity.world.distribution.MatrixGrid;
 import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.buffers.LiquidsBuffer;
 
@@ -55,8 +56,14 @@ public class RequestFactories{
       for(UnlockableContent ignored: cfg.get(type, ContentType.liquid)){
         total++;
       }
-      for(UnlockableContent liquid: cfg.get(type, ContentType.liquid)){
-        liquids.get(liquid.id, () -> new LiquidStack((Liquid) liquid, 0)).amount += capacity*(1/total);
+      if(total > 0){
+        for(UnlockableContent liquid: cfg.get(type, ContentType.liquid)){
+          LiquidStack stack = liquids.get(liquid.id);
+          if(stack == null){
+            liquids.put(liquid.id, new LiquidStack((Liquid) liquid, capacity*(1/total)));
+          }
+          else stack.amount += capacity*(1/total);
+        }
       }
     }
   }
@@ -107,8 +114,9 @@ public class RequestFactories{
   
     @Override
     public void updateIO(DistMatrixUnitBuildComp target){
-      for(IOPointBlock.IOPoint ioPoint : target.ioPoints().values()){
-        if(ioPoint.config == null) return;
+      for(MatrixGrid.BuildingEntry<?> entry : target.matrixGrid().get(GridChildType.output, (e, c) -> e instanceof IOPointBlock.IOPoint)){
+        if(entry.config == null) return;
+        IOPointBlock.IOPoint ioPoint = (IOPointBlock.IOPoint) entry.entity;
         for(UnlockableContent item : ioPoint.config.get(GridChildType.output, ContentType.item)){
           if(target.getBuilding().items.has((Item)item) && ioPoint.acceptItemSuper(target.getBuilding(), (Item) item)){
             int i = target.getBuilding().removeStack((Item) item, 1);
@@ -130,7 +138,7 @@ public class RequestFactories{
 
     @Override
     public DistRequestBase<?> makeRequest(DistMatrixUnitBuildComp sender){
-      return new PutLiquidsRequest(sender, (LiquidsBuffer) sender.buffers().get(DistBuffers.liquidBuffer), new Seq<>(liquids.values().toArray()));
+      return liquids.isEmpty()? null: new PutLiquidsRequest(sender, (LiquidsBuffer) sender.buffers().get(DistBuffers.liquidBuffer), new Seq<>(liquids.values().toArray()));
     }
   }
 
@@ -142,7 +150,7 @@ public class RequestFactories{
 
     @Override
     public DistRequestBase<?> makeRequest(DistMatrixUnitBuildComp sender){
-      return new PutLiquidsRequest(sender, (LiquidsBuffer) sender.buffers().get(DistBuffers.liquidBuffer), new Seq<>(liquids.values().toArray()));
+      return liquids.isEmpty()? null: new PutLiquidsRequest(sender, (LiquidsBuffer) sender.buffers().get(DistBuffers.liquidBuffer), new Seq<>(liquids.values().toArray()));
     }
   }
 
@@ -154,15 +162,16 @@ public class RequestFactories{
 
     @Override
     public DistRequestBase<?> makeRequest(DistMatrixUnitBuildComp sender){
-      return new ReadLiquidsRequest(sender, (LiquidsBuffer) sender.buffers().get(DistBuffers.liquidBuffer), new Seq<>(liquids.values().toArray()));
+      return liquids.isEmpty()? null: new ReadLiquidsRequest(sender, (LiquidsBuffer) sender.buffers().get(DistBuffers.liquidBuffer), new Seq<>(liquids.values().toArray()));
     }
 
     @Override
     public void updateIO(DistMatrixUnitBuildComp target){
-      for(IOPointBlock.IOPoint ioPoint : target.ioPoints().values()){
-        if(ioPoint.config == null) return;
+      for(MatrixGrid.BuildingEntry<?> entry : target.matrixGrid().get(GridChildType.output, (e, c) -> e instanceof IOPointBlock.IOPoint)){
+        if(entry.config == null) return;
+        IOPointBlock.IOPoint ioPoint = (IOPointBlock.IOPoint) entry.entity;
         float total = 0;
-        for(UnlockableContent liquid : ioPoint.config.get(GridChildType.output, ContentType.liquid)){
+        for(UnlockableContent ignored: ioPoint.config.get(GridChildType.output, ContentType.liquid)){
           total++;
         }
         for(UnlockableContent liquid : ioPoint.config.get(GridChildType.output, ContentType.liquid)){

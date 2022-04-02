@@ -14,7 +14,7 @@ import mindustry.ui.ItemDisplay;
 import mindustry.ui.LiquidDisplay;
 import singularity.Sgl;
 import singularity.ui.tables.GasDisplay;
-import singularity.world.blockComp.HeatBuildComp;
+import singularity.world.components.HeatBuildComp;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.reaction.ReactContainer;

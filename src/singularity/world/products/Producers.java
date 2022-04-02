@@ -2,7 +2,7 @@ package singularity.world.products;
 
 import singularity.type.Gas;
 import singularity.type.GasStack;
-import universeCore.world.producers.BaseProducers;
+import universecore.world.producers.BaseProducers;
 
 
 public class Producers extends BaseProducers{
@@ -20,5 +20,9 @@ public class Producers extends BaseProducers{
   
   public ProduceGases<?> gases(Object... args){
     return add(new ProduceGases<>(GasStack.with(args)));
+  }
+
+  public ProduceMedium<?> medium(float prod){
+    return add(new ProduceMedium<>(prod));
   }
 }

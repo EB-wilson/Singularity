@@ -5,7 +5,7 @@ import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.Queue;
 import arc.struct.Seq;
-import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.components.NuclearEnergyBuildComp;
 
 public class NuclearEnergyNet{
   private static final Seq<NuclearEnergyBuildComp> empty = new Seq<>();

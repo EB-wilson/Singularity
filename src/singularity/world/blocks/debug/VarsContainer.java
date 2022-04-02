@@ -3,7 +3,7 @@ package singularity.world.blocks.debug;
 import arc.struct.ObjectMap;
 import mindustry.gen.Building;
 import mindustry.world.Block;
-import universeCore.debugModules.ObjectDataMonitor;
+import universecore.debugs.ObjectDataMonitor;
 
 public class VarsContainer extends Block{
   public VarsContainer(String name){

@@ -18,10 +18,10 @@ import arc.util.Strings;
 import arc.util.Time;
 import arc.util.serialization.Jval;
 import singularity.Sgl;
-import universeCore.UncCore;
-import universeCore.util.animLayout.CellAction;
-import universeCore.util.animLayout.CellChangeColorAction;
-import universeCore.util.handler.FieldHandler;
+import universecore.UncCore;
+import universecore.util.animate.CellAction;
+import universecore.util.animate.CellChangeColorAction;
+import universecore.util.handler.FieldHandler;
 
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;

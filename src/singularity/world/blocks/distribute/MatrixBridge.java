@@ -26,10 +26,10 @@ import mindustry.type.Liquid;
 import mindustry.world.Tile;
 import singularity.graphic.SglDraw;
 import singularity.type.Gas;
-import singularity.world.blockComp.GasBuildComp;
-import singularity.world.blockComp.distributeNetwork.DistElementBlockComp;
-import singularity.world.blockComp.distributeNetwork.DistElementBuildComp;
-import singularity.world.blockComp.distributeNetwork.DistNetworkCoreComp;
+import singularity.world.components.GasBuildComp;
+import singularity.world.components.distnet.DistElementBlockComp;
+import singularity.world.components.distnet.DistElementBuildComp;
+import singularity.world.components.distnet.DistNetworkCoreComp;
 
 import static mindustry.Vars.tilesize;
 import static mindustry.Vars.world;
@@ -324,17 +324,17 @@ public class MatrixBridge extends DistNetBlock{
   
     @Override
     public boolean acceptItem(Building source, Item item){
-      return source.team == team && items.get(item) < itemCapacity && (source.block == block || linkNext != null);
+      return source.interactable(team) && items.get(item) < itemCapacity && (source.block == block || linkNext != null);
     }
   
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.team == team && liquids.get(liquid) < liquidCapacity && (source.block == block || linkNext != null);
+      return source.interactable(team) && liquids.get(liquid) < liquidCapacity && (source.block == block || linkNext != null);
     }
   
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
-      return source.getBuilding().team == team && pressure() < maxGasPressure && (source.getBlock() == block || linkNext != null);
+      return source.getBuilding().interactable(team) && pressure() < maxGasPressure && (source.getBlock() == block || linkNext != null);
     }
 
     @Override

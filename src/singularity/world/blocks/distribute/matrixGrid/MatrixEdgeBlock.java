@@ -12,12 +12,14 @@ import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.world.Block;
 import singularity.graphic.SglDraw;
-import universeCore.annotations.Annotations;
+import singularity.world.components.EdgeLinkerBuildComp;
+import singularity.world.components.EdgeLinkerComp;
+import universecore.annotations.Annotations;
 
 import static mindustry.Vars.tilesize;
 
 @Annotations.ImplEntries
-public class MatrixEdgeBlock extends Block implements MatrixEdgeLinker{
+public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
   public int linkLength = 16;
   
   public TextureRegion linkRegion;
@@ -32,8 +34,8 @@ public class MatrixEdgeBlock extends Block implements MatrixEdgeLinker{
   }
   
   @Override
-  public void link(MatrixGridEdge entity, Integer pos){
-    MatrixEdgeLinker.super.link(entity, pos);
+  public void link(EdgeLinkerBuildComp entity, Integer pos){
+    EdgeLinkerComp.super.link(entity, pos);
     ((MatrixEdgeBuild)entity).linkLerp = 0;
   }
   
@@ -56,7 +58,7 @@ public class MatrixEdgeBlock extends Block implements MatrixEdgeLinker{
     
     list.each(plan -> {
       if(Point2.pack(req.x + pos.x, req.y + pos.y) == Point2.pack(plan.x, plan.y)){
-        if(plan.block instanceof MatrixEdgeLinker){
+        if(plan.block instanceof EdgeLinkerComp){
           SglDraw.drawLink(req.tile(), req.block.offset, plan.tile(), plan.block.offset, linkRegion, null, 1);
         }
       }
@@ -64,26 +66,26 @@ public class MatrixEdgeBlock extends Block implements MatrixEdgeLinker{
   }
   
   @Annotations.ImplEntries
-  public class MatrixEdgeBuild extends Building implements MatrixGridEdge{
-    protected MatrixEdgeContainer edges = new MatrixEdgeContainer();
+  public class MatrixEdgeBuild extends Building implements EdgeLinkerBuildComp{
+    protected EdgeContainer edges = new EdgeContainer();
     
     public float linkLerp;
     public boolean loaded;
     public int nextPos = -1;
 
     @Override
-    public void linked(MatrixGridEdge next){
+    public void linked(EdgeLinkerBuildComp next){
       if(loaded)linkLerp = 0;
     }
 
     @Override
-    public void delinked(MatrixGridEdge next){
+    public void delinked(EdgeLinkerBuildComp next){
       if(loaded) linkLerp = 0;
     }
 
     @Override
     public void updateLinking(){
-      MatrixGridEdge.super.updateLinking();
+      EdgeLinkerBuildComp.super.updateLinking();
       loaded = true;
     }
 

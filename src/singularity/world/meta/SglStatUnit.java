@@ -1,8 +1,8 @@
 package singularity.world.meta;
 
 import mindustry.world.meta.StatUnit;
-import universeCore.util.handler.EnumHandler;
-import universeCore.util.handler.FieldHandler;
+import universecore.util.handler.EnumHandler;
+import universecore.util.handler.FieldHandler;
 
 public class SglStatUnit{
   private static final EnumHandler<StatUnit> handler = new EnumHandler<>(StatUnit.class, (inst, param) -> {

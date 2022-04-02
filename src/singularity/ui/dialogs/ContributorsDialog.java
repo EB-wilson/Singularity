@@ -11,7 +11,7 @@ import singularity.Contribute;
 import singularity.Contributors;
 import singularity.Sgl;
 import singularity.Singularity;
-import universeCore.ui.table.ZoomableTable;
+import universecore.ui.table.ZoomableTable;
 
 public class ContributorsDialog extends BaseDialog{
   protected Table table = new ZoomableTable();

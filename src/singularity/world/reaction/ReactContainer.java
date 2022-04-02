@@ -3,8 +3,8 @@ package singularity.world.reaction;
 import mindustry.core.World;
 import mindustry.gen.Posc;
 import mindustry.world.Tile;
-import singularity.world.blockComp.GasBuildComp;
-import singularity.world.blockComp.HeatBuildComp;
+import singularity.world.components.GasBuildComp;
+import singularity.world.components.HeatBuildComp;
 import singularity.world.modules.ReactionModule;
 
 public interface ReactContainer extends Posc, HeatBuildComp, GasBuildComp{

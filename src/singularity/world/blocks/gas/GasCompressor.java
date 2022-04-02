@@ -14,6 +14,7 @@ import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
+import mindustry.core.UI;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
@@ -28,7 +29,7 @@ import singularity.Singularity;
 import singularity.type.Gas;
 import singularity.type.SglContents;
 import singularity.ui.SglStyles;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBuildComp;
 import singularity.world.blocks.environment.SglOverlay;
 
 import java.util.Arrays;
@@ -95,14 +96,15 @@ public class GasCompressor extends GasBlock{
   @Override
   public void setBars(){
     super.setBars();
-  
-    if(hasGases) bars.add("gasPressure", e -> {
-      GasBuildComp entity = (GasBuildComp) e;
-      return new Bar(
-          () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.gases().getPressure()*100, 2) + "kPa",
-          () -> Pal.accent,
-          () -> Math.min(entity.gases().getPressure() / maxGasPressure, 1));
-    });
+
+    if(hasPower && consumes.hasPower()){
+      ConsumePower cons = consumes.getPower();
+      boolean buffered = cons.buffered;
+      float capacity = cons.capacity;
+
+      bars.add("power", entity -> new Bar(() -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : UI.formatAmount((int)(entity.power.status * capacity))) :
+          Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
+    }
   }
   
   @Override
@@ -182,7 +184,7 @@ public class GasCompressor extends GasBlock{
   
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
-      return !gasPumping && source.getBuilding().team == getBuilding().team && source.getGasBlock().hasGases() && !gasPumping &&
+      return !gasPumping && source.getBuilding().interactable(getBuilding().team) && source.getGasBlock().hasGases() && !gasPumping &&
           source.outputPressure() > acceptPressure.get(this) && gases.getPressure() < currentPressure;
     }
   
@@ -222,8 +224,8 @@ public class GasCompressor extends GasBlock{
     }
   
     @Override
-    public void setBars(Table table){
-      super.setBars(table);
+    public void displayBars(Table bars){
+      super.displayBars(bars);
       for(int id=0; id<pumpRate.length; id++){
         float rate = pumpRate[id];
         if(rate <= 0.0001) continue;
@@ -235,8 +237,8 @@ public class GasCompressor extends GasBlock{
             () -> Pal.ammo,
             () -> e.power.status
         ));
-        table.add(bar.get(this)).growX();
-        table.row();
+        bars.add(bar.get(this)).growX();
+        bars.row();
       }
     }
   
@@ -268,7 +270,7 @@ public class GasCompressor extends GasBlock{
         }).size(316, 50);
         table.row();
       }
-      
+
       table.table(Styles.black6, t -> {
         t.defaults().pad(0).margin(0);
         t.table(Tex.buttonTrans, i -> i.image(Singularity.getModAtlas("icon_pressure")).size(40)).size(50);

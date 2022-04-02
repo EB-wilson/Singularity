@@ -7,6 +7,8 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.util.Time;
+import mindustry.graphics.Drawf;
+import mindustry.graphics.Pal;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
 import singularity.world.blocks.nuclear.NuclearReactor;
@@ -19,6 +21,10 @@ public class DrawNuclearReactor extends DrawFactory<NuclearReactor.NuclearReacto
   public Color hotColor = Color.valueOf("ff9575a3");
   public Color coolColor = new Color(1, 1, 1, 0f);
   public float flashThreshold = 580f;
+
+  public float lightRadius = 60f;
+  public Color lightColor = Pal.reactorPurple;
+  public float lightAlpha = 0.65f;
   
   public DrawNuclearReactor(Block block){
     super(block);
@@ -70,7 +76,7 @@ public class DrawNuclearReactor extends DrawFactory<NuclearReactor.NuclearReacto
   
     @Override
     public void drawLight(){
-      super.drawLight();
+      Drawf.light(entity.team, entity.x(), entity.y(), lightRadius * entity.warmup * block.size, lightColor, lightAlpha);
     }
   }
 }

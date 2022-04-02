@@ -27,8 +27,8 @@ import mindustry.world.modules.LiquidModule;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.world.SglFx;
-import singularity.world.blockComp.GasBlockComp;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBlockComp;
+import singularity.world.components.GasBuildComp;
 import singularity.world.modules.GasesModule;
 
 @SuppressWarnings("unchecked")
@@ -103,10 +103,10 @@ public class LeakGasArea implements Pool.Poolable, Drawc, GasBuildComp{
   public void update(){
     float leakRate = Sgl.atmospheres.current.getCurrPressure()*gases().total()/24;
     float total = gases.total();
-    gases.each(stack -> {
-      float present = stack.amount/total;
-      gases.remove(stack.gas, leakRate*present);
-      if(Vars.state.isCampaign()) Sgl.atmospheres.current.add(stack.gas, leakRate*present);
+    gases.each((gas, amount) ->{
+      float present = amount/total;
+      gases.remove(gas, leakRate*present);
+      if(Vars.state.isCampaign()) Sgl.atmospheres.current.add(gas, leakRate*present);
     });
     
     float amount = gases.total()/maxGasCapacity;
@@ -126,10 +126,10 @@ public class LeakGasArea implements Pool.Poolable, Drawc, GasBuildComp{
       if(Tmp.cr1.set(tile.x, tile.y, radius/Vars.tilesize).overlaps(Tmp.cr2.set(other.tile.x, other.tile.y, other.radius/Vars.tilesize))){
         Tile t = Vars.world.tile((tile.x + other.tile.x)/2, (tile.y + other.tile.y)/2);
         
-        gases.each(stack -> {
-          float moveAmount = Math.min(stack.amount, 0.4f);
-          Sgl.reactionPoints.transfer(t, stack.gas, moveAmount);
-          gases.remove(stack.gas, moveAmount);
+        gases.each((gas, a) ->{
+          float moveAmount = Math.min(a, 0.4f);
+          Sgl.reactionPoints.transfer(t, gas, moveAmount);
+          gases.remove(gas, moveAmount);
         });
       }
     });

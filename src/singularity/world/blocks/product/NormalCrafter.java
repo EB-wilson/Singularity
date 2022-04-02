@@ -34,7 +34,7 @@ import singularity.Singularity;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglLiquidStack;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBuildComp;
 import singularity.world.blocks.SglBlock;
 import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
@@ -45,16 +45,16 @@ import singularity.world.modules.SglProductModule;
 import singularity.world.products.ProduceGases;
 import singularity.world.products.Producers;
 import singularity.world.products.SglProduceType;
-import universeCore.annotations.Annotations;
-import universeCore.entityComps.blockComps.ProducerBlockComp;
-import universeCore.entityComps.blockComps.ProducerBuildComp;
-import universeCore.util.UncLiquidStack;
-import universeCore.world.consumers.BaseConsumers;
-import universeCore.world.consumers.UncConsumeLiquids;
-import universeCore.world.consumers.UncConsumePower;
-import universeCore.world.producers.BaseProducers;
-import universeCore.world.producers.ProduceItems;
-import universeCore.world.producers.ProduceLiquids;
+import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ProducerBlockComp;
+import universecore.components.blockcomp.ProducerBuildComp;
+import universecore.util.UncLiquidStack;
+import universecore.world.consumers.BaseConsumers;
+import universecore.world.consumers.UncConsumeLiquids;
+import universecore.world.consumers.UncConsumePower;
+import universecore.world.producers.BaseProducers;
+import universecore.world.producers.ProduceItems;
+import universecore.world.producers.ProduceLiquids;
 
 import java.util.ArrayList;
 
@@ -76,8 +76,8 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   /**同样的，这也是一个指针，指向当前编辑的produce*/
   public Producers produce;
   
-  public Cons<NormalCrafterBuild> craftTrigger;
-  public Cons<NormalCrafterBuild> crafting;
+  public Cons<? extends NormalCrafterBuild> craftTrigger;
+  public Cons<? extends NormalCrafterBuild> crafting;
   
   public float warmupSpeed = 0.02f;
   public float stopSpeed = 0.02f;
@@ -162,7 +162,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     @Override
     public NormalCrafterBuild create(Block block, Team team) {
       super.create(block, team);
-      producer = new SglProductModule(this, producers);
+      producer = new SglProductModule(this);
       return this;
     }
     
@@ -198,7 +198,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     }
   
     @Override
-    public void setBars(Table table){
+    public void displayBars(Table bars){
       if(recipeCurrent != -1 && producer.current != null && block.hasPower && block.outputsPower && producer.current.get(SglProduceType.power) != null){
         float productPower = powerProdEfficiency*producer.current.get(SglProduceType.power).powerProduction;
         UncConsumePower<?> cp;
@@ -209,10 +209,10 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
           () -> Pal.powerBar,
           () -> powerProdEfficiency
         ));
-        table.add(bar.get(this)).growX();
-        table.row();
+        bars.add(bar.get(this)).growX();
+        bars.row();
       }
-      super.setBars(table);
+      super.displayBars(bars);
       if(recipeCurrent == -1 || producer.current == null) return;
   
       UncConsumeLiquids<?> cl = consumer.current.get(SglConsumeType.liquid);
@@ -221,9 +221,9 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
       ProduceLiquids<?> pl = producer.current.get(SglProduceType.liquid);
       ProduceGases<?> pg = producer.current.get(SglProduceType.gas);
       if(pl != null || pg != null){
-        table.table(cl == null && cg == null? Tex.buttonEdge1: Tex.pane, t -> t.left().add(Core.bundle.get("fragment.bars.product")).pad(4)).pad(0).height(38);
-        table.row();
-        table.table(t -> {
+        bars.table(cl == null && cg == null? Tex.buttonEdge1: Tex.pane, t -> t.left().add(Core.bundle.get("fragment.bars.product")).pad(4)).pad(0).height(38);
+        bars.row();
+        bars.table(t -> {
           t.defaults().grow().margin(0);
           if(pl != null){
             t.table(pg == null? Tex.buttonRight: Tex.pane2, liquid -> {
@@ -297,11 +297,11 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
       if(autoSelect && !canSelect && recipeCurrent == -1) return BlockStatus.noInput;
       return super.status();
     }
-  
+
+    @SuppressWarnings("unchecked")
     @Override
     public void updateTile() {
       producer.update();
-      //Log.info("updating,data: recipeCurrent:" + recipeCurrent + ", cons valid:" + consValid() + ", prod valid:" + producer.valid);
       /*当未选择配方时不进行更新*/
       if(recipeCurrent == -1 || producer.current == null){
         warmup = Mathf.lerpDelta(warmup, 0, stopSpeed);
@@ -316,20 +316,20 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
           updateEffect.at(getX() + Mathf.range(effectRange * 4f), getY() + Mathf.range(effectRange * 4));
         }
         
-        if(crafting != null) crafting.get(this);
+        if(crafting != null) ((Cons<NormalCrafterBuild>)crafting).get(this);
       }
       else{
         warmup = Mathf.lerpDelta(warmup, 0, stopSpeed);
       }
       totalProgress += warmup*edelta();
       
-      if(progress >= 1){
+      while(progress >= 1){
         craftEffect.at(getX(), getY());
-        progress = 0;
+        progress %= 1;
         consume();
         produce();
   
-        if(craftTrigger != null) craftTrigger.get(this);
+        if(craftTrigger != null) ((Cons<NormalCrafterBuild>)craftTrigger).get(this);
         if(craftedSound != Sounds.none) craftedSound.at(x, y, 1, craftedSoundVolume);
       }
   
@@ -360,22 +360,26 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     @Override
     public void buildConfiguration(Table table){
       if(status == SglBlockStatus.broken || !canSelect) return;
-      
+
       if(producers.size() > 1){
         Table prescripts = new Table(Tex.buttonTrans);
         prescripts.defaults().grow().marginTop(0).marginBottom(0).marginRight(5).marginRight(5);
         prescripts.add(Core.bundle.get("fragment.buttons.selectPrescripts")).padLeft(5).padTop(5).padBottom(5);
         prescripts.row();
-        
+
         TextureRegion icon;
         Table buttons = new Table();
         for(int i=0; i<producers.size(); i++){
           int s = i;
           BaseProducers p = producers.get(i);
           BaseConsumers c = consumers.get(i);
+
+          if(c.selectable.get() == BaseConsumers.Visibility.hidden) continue;
+
           icon = p.icon != null? p.icon.get(): c.icon.get();
-          
+
           ImageButton button = new ImageButton(icon, Styles.selecti);
+          button.touchablility = () -> c.selectable.get().buttonValid;
           button.clicked(() -> {
             configure(s);
           });
@@ -383,7 +387,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
           buttons.add(button).size(50, 50);
           if((i+1) % 4 == 0) buttons.row();
         }
-        
+
         prescripts.add(buttons);
         table.add(prescripts);
         table.row();

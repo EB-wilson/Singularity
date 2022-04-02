@@ -12,7 +12,7 @@ import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.meta.Stat;
 import singularity.Singularity;
-import singularity.world.blockComp.HeatBuildComp;
+import singularity.world.components.HeatBuildComp;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.meta.SglStatValues;
@@ -28,6 +28,8 @@ public class Gas extends UnlockableContent{
   public float flammability = 0f;
   public float explodeRate = 0f;
   public float temperature = 292f;
+
+  public float filterPressure;
   
   public Gas(String name, Color color){
     super(name);

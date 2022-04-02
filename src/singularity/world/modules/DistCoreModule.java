@@ -5,21 +5,21 @@ import arc.struct.ObjectSet;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.world.modules.BlockModule;
-import singularity.world.blockComp.distributeNetwork.DistElementBuildComp;
-import singularity.world.blockComp.distributeNetwork.DistNetworkCoreComp;
+import singularity.world.components.distnet.DistElementBuildComp;
+import singularity.world.components.distnet.DistNetworkCoreComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.request.DistRequestBase;
+import universecore.util.colletion.TreeSeq;
 
 import java.util.LinkedList;
-import java.util.PriorityQueue;
 
 @SuppressWarnings("rawtypes")
 public class DistCoreModule extends BlockModule{
   private static final ObjectSet<DistRequestBase> blocked = new ObjectSet<>();
   private static final LinkedList<DistRequestBase> tempQueue = new LinkedList<>();
   
-  public PriorityQueue<DistRequestBase> requestTasks = new PriorityQueue<>((a, b) -> a.priority() - b.priority());
+  public TreeSeq<DistRequestBase> requestTasks = new TreeSeq<>((a, b) -> b.priority() - a.priority());
   protected DistRequestBase[] taskStack;
   
   public int calculatePower;

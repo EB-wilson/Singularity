@@ -9,7 +9,7 @@ import mindustry.ui.Styles;
 import singularity.Singularity;
 import singularity.type.Gas;
 import singularity.ui.SglStyles;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBuildComp;
 
 public class PressureValve extends GasBlock{
   public PressureValve(String name){
@@ -32,7 +32,7 @@ public class PressureValve extends GasBlock{
   
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
-      return source.getBuilding().team == getBuilding().team && getGasBlock().hasGases() && pressure() < maxGasPressure;
+      return source.getBuilding().interactable(getBuilding().team) && getGasBlock().hasGases() && pressure() < maxGasPressure;
     }
   
     @Override

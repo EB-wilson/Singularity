@@ -13,7 +13,7 @@ import mindustry.gen.Building;
 import mindustry.gen.Tex;
 import mindustry.ui.Bar;
 import mindustry.world.modules.BlockModule;
-import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.blocks.SglBlock.SglBuilding;
 import singularity.world.blocks.nuclear.NuclearEnergyNet;
 

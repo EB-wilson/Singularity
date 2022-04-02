@@ -4,8 +4,8 @@ import arc.struct.IntSeq;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.world.modules.BlockModule;
-import singularity.world.blockComp.distributeNetwork.DistElementBuildComp;
-import singularity.world.blockComp.distributeNetwork.DistNetworkCoreComp;
+import singularity.world.components.distnet.DistElementBuildComp;
+import singularity.world.components.distnet.DistNetworkCoreComp;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.request.DistRequestBase;
 
@@ -46,17 +46,11 @@ public class DistributeModule extends BlockModule{
   
   @Override
   public void read(Reads read){
-    int len = read.i();
-    for(int i = 0; i < len; i++){
-      distNetLinks.add(read.i());
-    }
+
   }
   
   @Override
   public void write(Writes write){
-    write.i(distNetLinks.size);
-    for(int i = 0; i < distNetLinks.size; i++){
-      write.i(distNetLinks.get(i));
-    }
+
   }
 }

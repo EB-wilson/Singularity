@@ -2,7 +2,8 @@ package singularity.world.blocks.gas;
 
 import arc.graphics.g2d.Draw;
 import singularity.type.Gas;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBuildComp;
+import singularity.world.meta.SglStat;
 
 public class GasJunction extends GasBlock{
   public GasJunction(String name){
@@ -18,7 +19,14 @@ public class GasJunction extends GasBlock{
     super.setBars();
     bars.remove("gasPressure");
   }
-  
+
+  @Override
+  public void setStats(){
+    super.setStats();
+    stats.remove(SglStat.gasCapacity);
+    stats.remove(SglStat.maxGasPressure);
+  }
+
   public class GasJunctionBuild extends SglBuilding{
     @Override
     public void draw(){

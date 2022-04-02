@@ -1,6 +1,6 @@
 package singularity.world.blocks.chains;
 
-import singularity.world.blockComp.ChainsBuildComp;
+import singularity.world.components.ChainsBuildComp;
 
 public class ChainsEvents{
   public enum ChainsTrigger{

@@ -1,13 +1,16 @@
 package singularity.world.blocks.product;
 
 import arc.Core;
+import arc.func.Cons;
 import arc.func.Func;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
+import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
+import arc.struct.Seq;
 import arc.util.Eachable;
 import arc.util.Strings;
 import mindustry.entities.units.BuildPlan;
@@ -19,13 +22,14 @@ import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.ui.Bar;
 import mindustry.world.Block;
+import mindustry.world.Tile;
 import mindustry.world.consumers.ConsumePower;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglLiquidStack;
-import singularity.world.blockComp.*;
+import singularity.world.components.*;
 import singularity.world.blocks.SglBlock;
 import singularity.world.blocks.chains.ChainContainer;
 import singularity.world.blocks.chains.ChainsEvents;
@@ -39,30 +43,127 @@ import singularity.world.modules.SglConsumeModule;
 import singularity.world.modules.SglProductModule;
 import singularity.world.products.ProduceGases;
 import singularity.world.products.SglProduceType;
-import universeCore.annotations.Annotations;
-import universeCore.entityComps.blockComps.ConsumerBuildComp;
-import universeCore.entityComps.blockComps.ProducerBuildComp;
-import universeCore.util.UncLiquidStack;
-import universeCore.world.consumers.BaseConsume;
-import universeCore.world.consumers.BaseConsumers;
-import universeCore.world.consumers.UncConsumeLiquids;
-import universeCore.world.producers.BaseProduce;
-import universeCore.world.producers.BaseProducers;
-import universeCore.world.producers.ProduceLiquids;
+import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ConsumerBuildComp;
+import universecore.components.blockcomp.ProducerBuildComp;
+import universecore.util.UncLiquidStack;
+import universecore.world.consumers.BaseConsume;
+import universecore.world.consumers.UncConsumeLiquids;
+import universecore.world.producers.BaseProduce;
+import universecore.world.producers.ProduceLiquids;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
 
+@Annotations.ImplEntries
 public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
+  public int maxChainsWidth = 10;
+  public int maxChainsHeight = 10;
+
   public boolean interCorner = true;
   public float tempLiquidCapacity;
+
+  protected ObjectMap<ChainsEvents.ChainsTrigger, Seq<Runnable>> chainsListeners = new ObjectMap<>();
+  protected ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<ChainsEvents.ChainsEvent>>> globalChainsListeners = new ObjectMap<>();
   
   public SpliceCrafter(String name){
     super(name);
     
     draw = new DrawSpliceBlock<>(this);
   }
-  
+
+  @Override
+  public void setListeners(){
+    listenGlobal(ChainsEvents.AddedBlockEvent.class, e -> {
+      if(e.oldContainer != null && e.container != e.oldContainer){
+        if(e.target.getBlock().hasItems) e.container.<SpliceItemModule>getVar("items").add(e.oldContainer.<SpliceItemModule>getVar("items"));
+        if(e.target.getBlock().hasLiquids) e.container.<SpliceLiquidModule>getVar("liquids").add(e.oldContainer.getVar("liquids"));
+        if(e.target.getBlock(SglBlock.class).hasGases) e.container.<SpliceGasesModule>getVar("gases").add(e.oldContainer.<SpliceGasesModule>getVar("gases"));
+
+        SpliceCrafterBuild statDisplay;
+        if((statDisplay = e.container.getVar("build")) != e.target){
+          if(statDisplay.y >= e.target.getBuilding().y && statDisplay.x <= e.target.getBuilding().x) e.container.putVar("build", e.target);
+        }
+
+        e.target.getBuilding(SpliceCrafterBuild.class).updateModule = true;
+      }
+    }, "mergeModules");
+
+    listenGlobal(ChainsEvents.ConstructFlowEvent.class, e -> {
+      SpliceCrafterBuild statDisplay;
+      if((statDisplay = e.container.getVar("build")) != e.target){
+        if(statDisplay.y >= e.target.getBuilding().y && statDisplay.x <= e.target.getBuilding().x) e.container.putVar("build", e.target);
+      }
+      e.target.getBuilding(SpliceCrafterBuild.class).updateModule = true;
+    }, "updateController");
+
+    listenGlobal(ChainsEvents.RemovedBlockEvent.class, e -> {
+      SpliceItemModule items = e.target.chains().getVar("items");
+      SpliceLiquidModule liquids = e.target.chains().getVar("liquids");
+      SpliceGasesModule gases = e.target.chains().getVar("gases");
+
+      SpliceCrafter targetBlock = e.target.getBlock(SpliceCrafter.class);
+
+      ObjectSet<ChainContainer> handled = new ObjectSet<>();
+      int total = 0;
+
+      for(ChainsBuildComp other : e.target.chainBuilds()){
+        if(handled.add(other.chains().container)) total += other.chains().container.all.size;
+      }
+
+      for(ChainContainer otherContainer : handled){
+        float present = (float) otherContainer.all.size/total;
+        SpliceItemModule oItems = otherContainer.getVar("items");
+        SpliceLiquidModule oLiquids = otherContainer.getVar("liquids");
+        SpliceGasesModule oGases = otherContainer.getVar("gases");
+
+        if(targetBlock.hasItems){
+          oItems.allCapacity = (int) ((items.allCapacity - e.target.getBlock().itemCapacity)*present);
+          oItems.clear();
+          float totalPre = (float) items.total()/items.allCapacity;
+          items.each((item, amount) -> {
+            float pre = (float) amount/items.total();
+            oItems.set(item, (int) ((items.total() - targetBlock.itemCapacity*totalPre)*present*pre));
+          });
+        }
+
+        if(targetBlock.hasLiquids){
+          oLiquids.allCapacity = (liquids.allCapacity - targetBlock.tempLiquidCapacity)*present;
+          oLiquids.clear();
+          float totalPre = liquids.total()/liquids.allCapacity;
+          liquids.each((liquid, amount) -> {
+            float pre = amount/liquids.total();
+            oLiquids.set(liquid, ((liquids.total() - targetBlock.liquidCapacity*totalPre)*present*pre));
+          });
+        }
+
+        if(targetBlock.hasGases){
+          oGases.allCapacity = (gases.allCapacity - targetBlock.gasCapacity)*present;
+          oGases.clear();
+          float totalPre = gases.getPressure()/targetBlock.maxGasPressure;
+          gases.each((gas, amount) -> {
+            float pre = amount/gases.total();
+            oGases.set(gas, (gases.total() - targetBlock.maxGasPressure*targetBlock.gasCapacity*totalPre)*present*pre);
+          });
+        }
+      }
+    }, "resetModules");
+
+    listenGlobal(ChainsEvents.InitChainContainerEvent.class, e -> {
+      SpliceCrafter b = e.target.getBlock(SpliceCrafter.class);
+      SpliceCrafterBuild ent = e.target.getBuilding(SpliceCrafterBuild.class);
+
+      e.newContainer.putVar("consumer", new SpliceConsumeModule((ConsumerBuildComp) e.target));
+      e.newContainer.putVar("producer", new SpliceProduceModule((ProducerBuildComp) e.target));
+
+      if(b.hasItems) e.newContainer.putVar("items", new SpliceItemModule(b.itemCapacity, ent.firstInit));
+      if(b.hasLiquids) e.newContainer.putVar("liquids", new SpliceLiquidModule(b.tempLiquidCapacity, ent.firstInit));
+      if(b.hasGases) e.newContainer.putVar("gases", new SpliceGasesModule(e.target.getBuilding(GasBuildComp.class), ent.firstInit, b.gasCapacity));
+
+      e.newContainer.putVar("build", e.target);
+      if(ent.firstInit) ent.firstInit = false;
+    }, "assignModules");
+  }
+
   @Override
   public void init(){
     super.init();
@@ -121,109 +222,22 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       if(hasItems) items = new SpliceItemModule(itemCapacity, true);
       if(hasLiquids) liquids = new SpliceLiquidModule(liquidCapacity, true);
       if(hasGases) gases = new SpliceGasesModule(this, true, tempLiquidCapacity);
-      consumer = new SpliceConsumeModule(this, consumers, optionalCons);
+      consumer = new SpliceConsumeModule(this);
       cons(consumer);
-      producer = new SpliceProduceModule(this, producers);
+      producer = new SpliceProduceModule(this);
       
       setChainsListeners();
-  
+
+      return this;
+    }
+
+    @Override
+    public Building init(Tile tile, Team team, boolean shouldAdd, int rotation){
+      super.init(tile, team, shouldAdd, rotation);
       chains.newContainer();
       return this;
     }
-  
-    @Override
-    public void setChainsListeners(){
-      chains.listenGlobal(ChainsEvents.AddedBlockEvent.class, "mergeModules", e -> {
-        if(e.oldContainer != null && e.container != e.oldContainer){
-          if(e.target.getBlock().hasItems) e.container.<SpliceItemModule>getVar("items").add(e.oldContainer.<SpliceItemModule>getVar("items"));
-          if(e.target.getBlock().hasLiquids) e.container.<SpliceLiquidModule>getVar("liquids").add(e.oldContainer.getVar("liquids"));
-          if(e.target.getBlock(SglBlock.class).hasGases) e.container.<SpliceGasesModule>getVar("gases").add(e.oldContainer.<SpliceGasesModule>getVar("gases"));
-      
-          SpliceCrafterBuild statDisplay;
-          if((statDisplay = e.container.getVar("build")) != e.target){
-            if(statDisplay.y >= e.target.getBuilding().y && statDisplay.x <= e.target.getBuilding().x) e.container.putVar("build", e.target);
-          }
-      
-          e.target.getBuilding(SpliceCrafterBuild.class).updateModule = true;
-        }
-      });
-  
-      chains.listenGlobal(ChainsEvents.ConstructFlowEvent.class, "updateController", e -> {
-        SpliceCrafterBuild statDisplay;
-        if((statDisplay = e.container.getVar("build")) != e.target){
-          if(statDisplay.y >= e.target.getBuilding().y && statDisplay.x <= e.target.getBuilding().x) e.container.putVar("build", e.target);
-        }
-        e.target.getBuilding(SpliceCrafterBuild.class).updateModule = true;
-      });
-  
-      chains.listenGlobal(ChainsEvents.RemovedBlockEvent.class, "resetModules", e -> {
-        SpliceItemModule items = e.target.chains().getVar("items");
-        SpliceLiquidModule liquids = e.target.chains().getVar("liquids");
-        SpliceGasesModule gases = e.target.chains().getVar("gases");
-    
-        SpliceCrafter targetBlock = e.target.getBlock(SpliceCrafter.class);
-    
-        ObjectSet<ChainContainer> handled = new ObjectSet<>();
-        int total = 0;
-    
-        for(ChainsBuildComp other : e.target.chainBuilds()){
-          if(handled.add(other.chains().container)) total += other.chains().container.all.size;
-        }
-    
-        for(ChainContainer otherContainer : handled){
-          float present = (float) otherContainer.all.size/total;
-          SpliceItemModule oItems = otherContainer.getVar("items");
-          SpliceLiquidModule oLiquids = otherContainer.getVar("liquids");
-          SpliceGasesModule oGases = otherContainer.getVar("gases");
-          
-          if(targetBlock.hasItems){
-            oItems.allCapacity = (int) ((items.allCapacity - e.target.getBlock().itemCapacity)*present);
-            oItems.clear();
-            float totalPre = (float) items.total()/items.allCapacity;
-            items.each((item, amount) -> {
-              float pre = (float) amount/items.total();
-              oItems.set(item, (int) ((items.total() - targetBlock.itemCapacity*totalPre)*present*pre));
-            });
-          }
-      
-          if(targetBlock.hasLiquids){
-            oLiquids.allCapacity = (liquids.allCapacity - targetBlock.tempLiquidCapacity)*present;
-            oLiquids.clear();
-            float totalPre = liquids.total()/liquids.allCapacity;
-            liquids.each((liquid, amount) -> {
-              float pre = amount/liquids.total();
-              oLiquids.set(liquid, ((liquids.total() - targetBlock.liquidCapacity*totalPre)*present*pre));
-            });
-          }
-      
-          if(targetBlock.hasGases){
-            oGases.allCapacity = (gases.allCapacity - targetBlock.gasCapacity)*present;
-            oGases.clear();
-            float totalPre = gases.getPressure()/targetBlock.maxGasPressure;
-            gases.each(stack -> {
-              float pre = stack.amount/gases.total();
-              oGases.set(stack.gas, (gases.total() - targetBlock.maxGasPressure*targetBlock.gasCapacity*totalPre)*present*pre);
-            });
-          }
-        }
-      });
-  
-      chains.listenGlobal(ChainsEvents.InitChainContainerEvent.class, "assignModules", e -> {
-        SpliceCrafter b = e.target.getBlock(SpliceCrafter.class);
-        SpliceCrafterBuild ent = e.target.getBuilding(SpliceCrafterBuild.class);
-    
-        e.newContainer.putVar("consumer", new SpliceConsumeModule((ConsumerBuildComp) e.target, consumers, optionalCons));
-        e.newContainer.putVar("producer", new SpliceProduceModule((ProducerBuildComp) e.target, producers));
-    
-        if(b.hasItems) e.newContainer.putVar("items", new SpliceItemModule(b.itemCapacity, ent.firstInit));
-        if(b.hasLiquids) e.newContainer.putVar("liquids", new SpliceLiquidModule(b.tempLiquidCapacity, ent.firstInit));
-        if(b.hasGases) e.newContainer.putVar("gases", new SpliceGasesModule(e.target.getBuilding(GasBuildComp.class), ent.firstInit, b.gasCapacity));
-       
-        e.newContainer.putVar("build", e.target);
-        if(ent.firstInit) ent.firstInit = false;
-      });
-    }
-  
+
     @Override
     public float consumeMultiplier(BaseConsume<?> cons){
       return super.consumeMultiplier(cons)*chains.container.all.size;
@@ -235,21 +249,21 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
   
     @Override
-    public void setBars(Table table){
+    public void displayBars(Table bars){
       if(recipeCurrent != -1 && producer.current != null && block.hasPower && block.outputsPower && producer.current.get(SglProduceType.power) != null){
         Func<Building, Bar> bar = (entity -> new Bar(
             () -> Core.bundle.format("bar.poweroutput",Strings.fixed(entity.getPowerProduction() * 60 * entity.timeScale(), 1)),
             () -> Pal.powerBar,
             () -> powerProdEfficiency
         ));
-        table.add(bar.get(this)).growX();
-        table.row();
+        bars.add(bar.get(this)).growX();
+        bars.row();
       }
   
       //显示流体存储量
       if(hasLiquids) updateDisplayLiquid();
       if (!displayLiquids.isEmpty()){
-        table.table(Tex.buttonTrans, t -> {
+        bars.table(Tex.buttonTrans, t -> {
           t.defaults().growX().height(18f).pad(4);
           t.top().add(otherLiquidStr).padTop(0);
           t.row();
@@ -263,7 +277,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
             t.row();
           }
         }).height(26 * displayLiquids.size + 40);
-        table.row();
+        bars.row();
       }
   
       if(recipeCurrent == -1 || consumer.current == null) return;
@@ -274,16 +288,16 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         float capacity = cons.capacity;
         Func<Building, Bar> bar = (entity -> new Bar(() -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : (int)(entity.power.status * capacity)) :
             Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
-        table.add(bar.get(this)).growX();
-        table.row();
+        bars.add(bar.get(this)).growX();
+        bars.row();
       }
   
       UncConsumeLiquids<?> cl = consumer.current.get(SglConsumeType.liquid);
       SglConsumeGases<?> cg = consumer.current.get(SglConsumeType.gas);
       if(cl != null || cg != null){
-        table.table(Tex.buttonEdge1, t -> t.left().add(Core.bundle.get("fragment.bars.consume")).pad(4)).pad(0).height(38).padTop(4);
-        table.row();
-        table.table(t -> {
+        bars.table(Tex.buttonEdge1, t -> t.left().add(Core.bundle.get("fragment.bars.consume")).pad(4)).pad(0).height(38).padTop(4);
+        bars.row();
+        bars.table(t -> {
           t.defaults().grow().margin(0);
           if(cl != null){
             t.table(Tex.pane2, liquid -> {
@@ -324,16 +338,16 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         }).height(46 + Math.max((cl != null? cl.liquids.length: 0), (cg != null? cg.gases.length: 0))*26).padBottom(0).padTop(2);
       }
   
-      table.row();
+      bars.row();
       
       if(recipeCurrent == -1 || producer.current == null) return;
   
       ProduceLiquids<?> pl = producer.current.get(SglProduceType.liquid);
       ProduceGases<?> pg = producer.current.get(SglProduceType.gas);
       if(pl != null || pg != null){
-        table.table(cl == null && cg == null? Tex.buttonEdge1: Tex.pane, t -> t.left().add(Core.bundle.get("fragment.bars.product")).pad(4)).pad(0).height(38);
-        table.row();
-        table.table(t -> {
+        bars.table(cl == null && cg == null? Tex.buttonEdge1: Tex.pane, t -> t.left().add(Core.bundle.get("fragment.bars.product")).pad(4)).pad(0).height(38);
+        bars.row();
+        bars.table(t -> {
           t.defaults().grow().margin(0);
           if(pl != null){
             t.table(pg == null? Tex.buttonRight: Tex.pane2, liquid -> {
@@ -441,12 +455,12 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   
     @Override
     public boolean acceptItem(Building source, Item item){
-      return source.team == this.team && hasItems && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item)) && items.get(item) < items().allCapacity && status == SglBlockStatus.proper;
+      return source.interactable(this.team) && hasItems && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item)) && items.get(item) < items().allCapacity && status == SglBlockStatus.proper;
     }
   
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.team == this.team && hasLiquids && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)) && liquids.get(liquid) <= liquids().allCapacity - 0.0001f && status == SglBlockStatus.proper;
+      return source.interactable(this.team) && hasLiquids && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)) && liquids.get(liquid) <= liquids().allCapacity - 0.0001f && status == SglBlockStatus.proper;
     }
   
     @Override
@@ -563,7 +577,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
     
     public void set(SpliceGasesModule otherModule){
-      otherModule.each(stack -> set(stack.gas, stack.amount));
+      otherModule.each((gas, amount) -> set(gas, amount));
     }
     
     public void add(SpliceGasesModule otherModule){
@@ -592,8 +606,8 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     public boolean loaded;
     public long lastFrameId;
   
-    public SpliceConsumeModule(ConsumerBuildComp entity, ArrayList<BaseConsumers> cons, ArrayList<BaseConsumers> optional){
-      super(entity, cons, optional);
+    public SpliceConsumeModule(ConsumerBuildComp entity){
+      super(entity);
     }
     
     public void set(SpliceConsumeModule module){}
@@ -611,8 +625,8 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     public boolean loaded;
     public long lastFrameId;
     
-    public SpliceProduceModule(ProducerBuildComp entity, List<BaseProducers> producers){
-      super(entity, producers);
+    public SpliceProduceModule(ProducerBuildComp entity){
+      super(entity);
     }
   
     public void set(SpliceProduceModule module){}

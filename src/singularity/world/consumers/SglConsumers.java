@@ -1,11 +1,11 @@
 package singularity.world.consumers;
 
+import arc.struct.ObjectMap;
 import singularity.type.Gas;
 import singularity.type.GasStack;
-import universeCore.world.consumers.BaseConsume;
-import universeCore.world.consumers.BaseConsumers;
-
-import java.util.concurrent.atomic.AtomicReference;
+import universecore.world.consumers.BaseConsume;
+import universecore.world.consumers.BaseConsumers;
+import universecore.world.consumers.UncConsumeType;
 
 public class SglConsumers extends BaseConsumers{
   public SglConsumers(boolean optional){
@@ -23,15 +23,15 @@ public class SglConsumers extends BaseConsumers{
   public SglConsumeEnergy<?> energy(float usage){
     return add(new SglConsumeEnergy<>(usage));
   }
+
+  public SglConsumeMedium<?> medium(float cons){
+    return add(new SglConsumeMedium<>(cons));
+  }
   
   public BaseConsume<?> first(){
-    AtomicReference<BaseConsume<?>> result = new AtomicReference<>();
-    cons.forEach((t, c) -> {
-      if(result.get() == null && c != null){
-        result.set(c);
-      }
-    });
-    
-    return result.get();
+    for(ObjectMap.Entry<UncConsumeType<?>, BaseConsume<?>> con: cons){
+      if(con.value != null) return con.value;
+    }
+    return null;
   }
 }

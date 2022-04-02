@@ -8,6 +8,7 @@ import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Angles;
 import arc.math.Mathf;
+import arc.math.geom.Vec2;
 import arc.util.Tmp;
 import mindustry.content.Fx;
 import mindustry.content.Items;
@@ -22,6 +23,7 @@ import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.meta.BuildVisibility;
+import singularity.graphic.SglDraw;
 import singularity.type.SglCategory;
 import singularity.world.SglFx;
 import singularity.world.blocks.nuclear.EnergySource;
@@ -32,7 +34,7 @@ import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.draw.DrawExpandPlasma;
 import singularity.world.draw.DrawFactory;
 import singularity.world.draw.SglDrawPlasma;
-import universeCore.world.particles.Particle;
+import universecore.world.particles.Particle;
 
 import static mindustry.Vars.tilesize;
 
@@ -166,8 +168,8 @@ public class NuclearBlocks implements ContentList{
         for(Particle particle : Particle.get(p -> p.x < e.x + 20 && p.x > e.x - 20 && p.y < e.y + 20 && p.y > e.y - 20)){
           particle.remove();
         }
-        Effect.shake(4f, 14f, e.x, e.y);
-        Angles.randLenVectors(System.nanoTime(), Mathf.random(8, 12), 4.75f, 6.25f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(5f, 7f)).setAttenuate(0.125f).deflect().setDest(e.x, e.y));
+        Effect.shake(4f, 18f, e.x, e.y);
+        Angles.randLenVectors(System.nanoTime(), Mathf.random(8, 12), 4.75f, 6.25f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(5f, 7f)).setAttenuate(0.125f).deflect().setDest(new Vec2(e.x, e.y), 0.15f*e.warmup, false));
       };
       crafting = e -> {
         if(Mathf.chanceDelta(0.02f)) Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(3.25f, 4f)));
@@ -288,7 +290,9 @@ public class NuclearBlocks implements ContentList{
           drawDef = e -> {
             Draw.rect(bottom, e.x, e.y);
             drawPlasma(e);
+            SglDraw.startBloom(31);
             Drawf.liquid(liquid, e.x, e.y, e.liquids.smoothAmount()/liquidCapacity, e.liquids.current().color.cpy().lerp(Color.white, 0.3f));
+            SglDraw.endBloom();
             Draw.rect(rotatorA, e.x, e.y, e.totalProgress*5);
             Draw.rect(rotatorB, e.x, e.y, -e.totalProgress*5);
             Draw.rect(region, e.x, e.y);

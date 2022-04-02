@@ -11,11 +11,11 @@ import mindustry.ui.Bar;
 import mindustry.world.Block;
 import mindustry.world.blocks.distribution.ItemBridge;
 import mindustry.world.meta.StatUnit;
-import singularity.world.blockComp.GasBlockComp;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBlockComp;
+import singularity.world.components.GasBuildComp;
 import singularity.world.meta.SglBlockGroup;
 import singularity.world.modules.GasesModule;
-import universeCore.annotations.Annotations;
+import universecore.annotations.Annotations;
 
 @Annotations.ImplEntries
 public class GasBridge extends ItemBridge implements GasBlockComp{
@@ -50,12 +50,6 @@ public class GasBridge extends ItemBridge implements GasBlockComp{
         () -> Math.min(entity.gases.getPressure() / maxGasPressure, 1)));
   }
   
-  @Override
-  public void setStats(){
-    super.setStats();
-    setGasStats(stats);
-  }
-  
   @Annotations.ImplEntries
   public class GasBridgeBuild extends ItemBridgeBuild implements GasBuildComp{
     public GasesModule gases;
@@ -73,12 +67,6 @@ public class GasBridge extends ItemBridge implements GasBlockComp{
       if(warmup >= 0.25f){
         moved |= moveGas((GasBuildComp) other) > 0.05f;
       }
-    }
-  
-    @Override
-    public void updateTile(){
-      super.updateTile();
-      gases.update(updateFlow, false);
     }
   
     @Override

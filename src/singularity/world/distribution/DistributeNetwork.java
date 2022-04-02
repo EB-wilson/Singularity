@@ -3,21 +3,20 @@ package singularity.world.distribution;
 import arc.struct.ObjectSet;
 import arc.struct.Queue;
 import arc.struct.Seq;
-import singularity.world.blockComp.distributeNetwork.DistComponent;
-import singularity.world.blockComp.distributeNetwork.DistElementBuildComp;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
-import singularity.world.blockComp.distributeNetwork.DistNetworkCoreComp;
+import singularity.world.components.distnet.DistComponent;
+import singularity.world.components.distnet.DistElementBuildComp;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.DistNetworkCoreComp;
 import singularity.world.modules.DistCoreModule;
-
-import java.util.PriorityQueue;
+import universecore.util.colletion.TreeSeq;
 
 public class DistributeNetwork{
   private static final Queue<DistElementBuildComp> finder = new Queue<>();
   private static final ObjectSet<DistElementBuildComp> added = new ObjectSet<>();
   private static final Seq<DistElementBuildComp> tmp = new Seq<>();
   
-  public PriorityQueue<DistElementBuildComp> elements = new PriorityQueue<>((a, b) -> a.priority() - b.priority());
-  public PriorityQueue<MatrixGrid> grids = new PriorityQueue<>((a, b) -> a.priority - b.priority);
+  public TreeSeq<DistElementBuildComp> elements = new TreeSeq<>((a, b) -> b.priority() - a.priority());
+  public TreeSeq<MatrixGrid> grids = new TreeSeq<>((a, b) -> b.priority - a.priority);
   
   public Seq<DistNetworkCoreComp> cores = new Seq<>();
   public Seq<DistComponent> components = new Seq<>();
@@ -34,10 +33,7 @@ public class DistributeNetwork{
   
   public void add(DistElementBuildComp other){
     elements.add(other);
-    if(other.getBlock() instanceof DistComponent){
-      maxFrequency += other.getBlock(DistComponent.class).frequencyOffer();
-      components.add((DistComponent) other.getBlock());
-    }
+    if(other instanceof DistComponent) components.add((DistComponent) other);
     if(other instanceof DistNetworkCoreComp) cores.add((DistNetworkCoreComp) other);
     if(other instanceof DistMatrixUnitBuildComp) grids.add(((DistMatrixUnitBuildComp) other).matrixGrid());
     
@@ -67,16 +63,23 @@ public class DistributeNetwork{
       frequencyUsed += element.frequencyUse();
     }
   }
-  
+
   public void modified(){
+    maxFrequency = 0;
+
+    for(DistComponent distComponent: components){
+      maxFrequency += distComponent.frequencyOffer();
+    }
+
     if(netValid()){
       DistCoreModule core = cores.get(0).distCore();
-  
+
       for(DistBuffers<?> buffers: DistBuffers.all){
         core.getBuffer(buffers).capacity = 0;
       }
-      
+
       core.calculatePower = 0;
+
       for(DistComponent distComponent: components){
         core.calculatePower += distComponent.computingPower();
   
@@ -118,8 +121,6 @@ public class DistributeNetwork{
   }
   
   public void remove(DistElementBuildComp remove){
-    maxFrequency = remove.getBlock() instanceof DistElementBuildComp? remove.getBlock(DistComponent.class).frequencyOffer(): 0;
-    
     for(DistElementBuildComp other: remove.netLinked()){
       if(other.distributor().network != this) continue;
       
@@ -127,6 +128,7 @@ public class DistributeNetwork{
       tmp.clear();
       other.distributor().network.restruct(other, tmp.and(remove));
     }
+    modified();
   }
   
   public void priorityModified(DistElementBuildComp target){

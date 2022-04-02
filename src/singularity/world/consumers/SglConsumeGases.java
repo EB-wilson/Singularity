@@ -11,10 +11,10 @@ import mindustry.world.meta.Stats;
 import singularity.type.GasStack;
 import singularity.type.SglContents;
 import singularity.ui.tables.GasDisplay;
-import singularity.world.blockComp.GasBuildComp;
-import universeCore.entityComps.blockComps.ConsumerBuildComp;
-import universeCore.world.consumers.BaseConsume;
-import universeCore.world.consumers.UncConsumeType;
+import singularity.world.components.GasBuildComp;
+import universecore.components.blockcomp.ConsumerBuildComp;
+import universecore.world.consumers.BaseConsume;
+import universecore.world.consumers.UncConsumeType;
 
 public class SglConsumeGases<T extends Building & GasBuildComp & ConsumerBuildComp> extends BaseConsume<T>{
   public GasStack[] gases;
@@ -63,14 +63,13 @@ public class SglConsumeGases<T extends Building & GasBuildComp & ConsumerBuildCo
   public void build(T entity, Table table){
     for(GasStack stack : gases){
       table.add(new ReqImage(stack.gas.uiIcon,
-        () -> entity.gases() != null && entity.gases().get(stack.gas) > stack.amount*entity.getBuilding().edelta() + 0.0001f)).padRight(8);
+        () -> entity.gases() != null && entity.gases().get(stack.gas) > stack.amount*entity.consDelta(parent) + 0.0001f)).padRight(8);
     }
     table.row();
   }
   
   @Override
   public boolean valid(T entity){
-  
     for(GasStack stack: gases){
       if(entity.gases() == null || entity.gases().get(stack.gas) < stack.amount*(entity.getBlock().hasPower && entity.getBuilding().power.status != 0?
           entity.delta()*entity.power.status: entity.getBuilding().delta())*entity.consumeMultiplier(this)) return false;

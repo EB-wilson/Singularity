@@ -1,5 +1,6 @@
 package singularity.world.blocks.distribute.matrixGrid;
 
+import arc.Core;
 import arc.func.Boolf;
 import arc.func.Func;
 import arc.math.geom.Point2;
@@ -25,10 +26,10 @@ import singularity.type.Gas;
 import singularity.type.SglContents;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.ui.tables.DistTargetConfigTable.TargetConfigure;
-import singularity.world.blockComp.GasBuildComp;
-import singularity.world.blockComp.SecondableConfigBuildComp;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitComp;
+import singularity.world.components.GasBuildComp;
+import singularity.world.components.SecondableConfigBuildComp;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.DistMatrixUnitComp;
 import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.distribution.DistBuffers;
@@ -39,10 +40,9 @@ import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.buffers.LiquidsBuffer;
 import singularity.world.distribution.request.*;
 import singularity.world.distribution.request.RequestFactories.RequestFactory;
-import universeCore.annotations.Annotations;
-import universeCore.util.DataPackable;
-
-import java.util.PriorityQueue;
+import universecore.annotations.Annotations;
+import universecore.util.DataPackable;
+import universecore.util.colletion.TreeSeq;
 
 import static mindustry.Vars.control;
 import static mindustry.Vars.world;
@@ -89,6 +89,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       TargetConfigure c = (TargetConfigure) obj;
 
       Building t = Vars.world.build(c.position);
+      if(t == null) return;
 
       if(c.isClear){
         if(t instanceof IOPointBlock.IOPoint){
@@ -97,7 +98,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
         TargetConfigure oldCfg = entity.configMap.remove(c.position);
         if(oldCfg != null) entity.configs.remove(oldCfg);
         if(! (t instanceof IOPointBlock.IOPoint)){
-          entity.gridRemove(t);
+          entity.grid.remove(t);
         }
       }
       else{
@@ -181,16 +182,18 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   public class MatrixGridBuild extends DistNetBuild implements DistMatrixUnitBuildComp, SecondableConfigBuildComp{
     public MatrixGrid grid = new MatrixGrid(this);
     
-    protected PriorityQueue<TargetConfigure> configs = new PriorityQueue<>((a, b) -> a.priority - b.priority);
+    protected TreeSeq<TargetConfigure> configs = new TreeSeq<>((a, b) -> b.priority - a.priority);
     protected IntMap<TargetConfigure> configMap = new IntMap<>();
     protected IntMap<IOPointBlock.IOPoint> ioPoints = new IntMap<>();
-    
-    public boolean configIOPoint = false, shouldUpdateTask = false;
+
+    public boolean configIOPoint = false, shouldUpdateTask = true;
   
     public ObjectMap<DistBuffers<?>, BaseBuffer<?, ?, ?>> buffers = new ObjectMap<>();
     
     public ObjectSet<DistRequestBase> requests = new ObjectSet<>();
     public ObjectMap<Boolf<DistMatrixUnitBuildComp>, DistRequestBase> transBackRequest = new ObjectMap<>();
+
+    private double frameID;
     
     @Override
     public Building create(Block block, Team team){
@@ -211,16 +214,22 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
     @Override
     public void onProximityAdded(){
       super.onProximityAdded();
-      for(IntMap.Entry<TargetConfigure> config : configMap){
-        configMap.put(config.key, config.value);
-        configs.add(config.value);
-        Building other = world.build(config.value.position);
-        if(other instanceof IOPointBlock.IOPoint){
-          ((IOPointBlock.IOPoint) other).parent = this;
-          ((IOPointBlock.IOPoint) other).applyConfig(config.value);
-          ioPointConfigBackEntry((IOPointBlock.IOPoint) other);
+      if(frameID != Core.graphics.getFrameId()){
+        frameID = Core.graphics.getFrameId();
+
+        for(IntMap.Entry<TargetConfigure> config: configMap){
+          Building other = world.build(config.value.position);
+          if(other == null || other.pos() != config.value.position) return;
+          if(other instanceof IOPointBlock.IOPoint){
+            ((IOPointBlock.IOPoint) other).parent = this;
+            ((IOPointBlock.IOPoint) other).applyConfig(config.value);
+            ioPointConfigBackEntry((IOPointBlock.IOPoint) other);
+          }
+          else{
+            grid.addConfig(config.value);
+            configs.add(config.value);
+          }
         }
-        else if(other != null) grid.addConfig(config.value);
       }
     }
   
@@ -333,7 +342,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
     public void updateTile(){
       if(gridValid()){
         for(IntMap.Entry<TargetConfigure> entry: configMap){
-          Building b = world.build(entry.key);
+          Building b = ioPoints.get(entry.key);
           if(b != null && !b.isAdded()){
             TargetConfigure c = configMap.remove(entry.key);
             configs.remove(c);
@@ -408,7 +417,22 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       pair.configs = configMap;
       return pair.pack();
     }
-  
+
+    @Override
+    public boolean acceptItem(Building source, Item item){
+      return ioPoints.containsKey(source.pos());
+    }
+
+    @Override
+    public boolean acceptLiquid(Building source, Liquid liquid){
+      return ioPoints.containsKey(source.pos());
+    }
+
+    @Override
+    public boolean acceptGas(GasBuildComp source, Gas gas){
+      return ioPoints.containsKey(source.getBuilding().pos());
+    }
+
     @Override
     public void read(Reads read, byte revision){
       super.read(read, revision);
@@ -416,23 +440,8 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       int len = read.i();
       byte[] bytes = read.b(len);
       pair.read(bytes);
-      
+
       configMap = pair.configs;
-    }
-
-    @Override
-    public boolean acceptItem(Building source, Item item){
-      return ioPoints.containsValue(source, false) && super.acceptItem(source, item);
-    }
-
-    @Override
-    public boolean acceptLiquid(Building source, Liquid liquid){
-      return ioPoints.containsValue(source, false) && super.acceptLiquid(source, liquid);
-    }
-
-    @Override
-    public boolean acceptGas(GasBuildComp source, Gas gas){
-      return ioPoints.containsValue(source, false) && super.acceptGas(source, gas);
     }
 
     @Override

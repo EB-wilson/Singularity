@@ -1,13 +1,11 @@
 package singularity.world.blocks.distribute;
 
 import arc.struct.Seq;
-import arc.util.io.Reads;
-import arc.util.io.Writes;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.world.Block;
-import singularity.world.blockComp.distributeNetwork.DistElementBlockComp;
-import singularity.world.blockComp.distributeNetwork.DistElementBuildComp;
+import singularity.world.components.distnet.DistElementBlockComp;
+import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.blocks.SglBlock;
 import singularity.world.modules.DistributeModule;
 
@@ -63,18 +61,6 @@ public class DistNetBlock extends SglBlock implements DistElementBlockComp{
     @Override
     public Seq<DistElementBuildComp> netLinked(){
       return netLinked;
-    }
-  
-    @Override
-    public void write(Writes write){
-      super.write(write);
-      distributor.write(write);
-    }
-  
-    @Override
-    public void read(Reads read, byte revision){
-      super.read(read, revision);
-      distributor.read(read);
     }
   }
 }

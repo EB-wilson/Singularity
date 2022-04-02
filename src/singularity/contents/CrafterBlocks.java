@@ -6,16 +6,19 @@ import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
+import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.util.Interval;
 import arc.util.Time;
+import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.ctype.ContentList;
 import mindustry.ctype.UnlockableContent;
+import mindustry.entities.Effect;
 import mindustry.gen.Sounds;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
@@ -28,25 +31,28 @@ import mindustry.ui.Bar;
 import mindustry.world.Block;
 import mindustry.world.meta.Attribute;
 import mindustry.world.meta.BlockStatus;
+import singularity.graphic.SglDraw;
 import singularity.type.Gas;
 import singularity.world.SglFx;
-import singularity.world.blocks.product.NormalCrafter;
-import singularity.world.blocks.product.ReactionKettle;
-import singularity.world.blocks.product.SglAttributeCrafter;
-import singularity.world.blocks.product.SpliceCrafter;
+import singularity.world.blocks.function.Destructor;
+import singularity.world.blocks.product.*;
 import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.*;
+import singularity.world.lightnings.LightningContainer;
+import singularity.world.lightnings.generator.CircleGenerator;
+import singularity.world.lightnings.generator.PointToPointGenerator;
 import singularity.world.meta.SglStat;
 import singularity.world.products.SglProduceType;
-import universeCore.util.UncLiquidStack;
-import universeCore.world.consumers.BaseConsume;
-import universeCore.world.consumers.BaseConsumers;
-import universeCore.world.consumers.UncConsumeItems;
-import universeCore.world.consumers.UncConsumeLiquids;
-import universeCore.world.producers.ProduceLiquids;
-import universeCore.world.producers.ProduceType;
+import universecore.util.UncLiquidStack;
+import universecore.world.consumers.BaseConsume;
+import universecore.world.consumers.BaseConsumers;
+import universecore.world.consumers.UncConsumeItems;
+import universecore.world.consumers.UncConsumeLiquids;
+import universecore.world.particles.Particle;
+import universecore.world.producers.ProduceLiquids;
+import universecore.world.producers.ProduceType;
 
 import static mindustry.Vars.state;
 import static singularity.Singularity.getModAtlas;
@@ -54,46 +60,52 @@ import static singularity.Singularity.getModAtlas;
 public class CrafterBlocks implements ContentList{
   /**裂变编织器*/
   public static Block fission_weaver,
-  /**绿藻池*/
-  culturing_barn,
-  /**育菌箱*/
-  incubator,
-  /**电解机*/
-  electrolytor,
-  /**干馏塔*/
-  retort_column,
-  /**炼油塔*/
-  petroleum_separator,
-  /**激光解离机*/
-  laser_resolver,
-  /**反应釜*/
-  reaction_kettle,
-  /**洗矿机*/
-  ore_washer,
-  /**结晶器*/
-  crystallizer,
-  /**FEX相位混合器*/
-  FEX_phase_mixer,
-  /**燃料封装机*/
-  fuel_packager,
-  /**强化合金冶炼厂*/
-  strengthening_alloy_smelter,
-  /**混合凝胶工厂*/
-  gel_mixer,
-  /**纯化分离机*/
-  purifier,
-  /**热能离心机*/
-  thermal_centrifuge,
-  /**晶格构建器*/
-  lattice_constructor,
-  /**FEX充能座*/
-  FEX_crystal_charger,
-  /**矩阵切割机*/
-  matrix_cutter,
-  /**聚合引力发生器*/
-  polymer_gravitational_generator,
-  /**强子重构仪*/
-  hadron_reconstructor;
+      /**绿藻池*/
+      culturing_barn,
+      /**育菌箱*/
+      incubator,
+      /**电解机*/
+      electrolytor,
+      /**干馏塔*/
+      retort_column,
+      /**炼油塔*/
+      petroleum_separator,
+      /**激光解离机*/
+      laser_resolver,
+      /**反应釜*/
+      reaction_kettle,
+      /**洗矿机*/
+      ore_washer,
+      /**结晶器*/
+      crystallizer,
+      /**FEX相位混合器*/
+      FEX_phase_mixer,
+      /**燃料封装机*/
+      fuel_packager,
+      /**强化合金冶炼厂*/
+      strengthening_alloy_smelter,
+      /**混合凝胶工厂*/
+      gel_mixer,
+      /**纯化分离机*/
+      purifier,
+      /**热能离心机*/
+      thermal_centrifuge,
+      /**晶格构建器*/
+      lattice_constructor,
+      /**FEX充能座*/
+      FEX_crystal_charger,
+      /**矩阵切割机*/
+      matrix_cutter,
+      /**聚合引力发生器*/
+      polymer_gravitational_generator,
+      /**质量生成器*/
+      quality_generator,
+      /**析构器*/
+      destructor,
+      /**物质逆化器*/
+      substance_inverter,
+      /**强子重构仪*/
+      hadron_reconstructor;
   
   public void load(){
     fission_weaver = new NormalCrafter("fission_weaver"){{
@@ -1016,17 +1028,18 @@ public class CrafterBlocks implements ContentList{
             public void draw(){
               Draw.rect(region, e.x, e.y);
               timeRow += e.warmup*e.edelta();
-              float randY = Mathf.random(-8, 8);
-              dx = 4*(float)Math.sin(timeRow/6);
-              dy = Mathf.clamp(Mathf.lerpDelta(dy, randY, 0.05f*e.warmup), -4, 4);
+              dx = 4*Mathf.sin(timeRow/6);
+              dy = 4*Mathf.sin(timeRow/4);
               
               Draw.rect(laserEmitter, e.x, e.y + dy);
               Draw.rect(laserEmitter, e.x + dx, e.y, 90);
               Draw.color(Color.valueOf("FF756F"));
               Draw.alpha(e.warmup);
-              Lines.stroke(0.4f);
+              Lines.stroke(0.6f);
+              SglDraw.startBloom(31);
               Lines.line(e.x - 6, e.y + dy, e.x + 6, e.y + dy);
               Lines.line(e.x + dx, e.y + 6, e.x + dx, e.y - 6);
+              SglDraw.endBloom();
               Draw.reset();
               if(e.items.get(SglItems.strengthening_alloy) >= 3) Draw.rect(alloy, e.x, e.y);
               Draw.rect(top, e.x, e.y);
@@ -1060,7 +1073,7 @@ public class CrafterBlocks implements ContentList{
           drawerType = e -> new DrawFactoryDrawer(e){
             float rotation;
             final Interval timer = new Interval();
-  
+
             @Override
             public void draw(){
               Draw.rect(bottom, e.x, e.y);
@@ -1071,21 +1084,21 @@ public class CrafterBlocks implements ContentList{
               Draw.rect(rotator, e.x, e.y, rotation += e.warmup*e.edelta()*1.75f);
               Draw.rect(rotator, e.x, e.y, -rotation);
               Draw.rect(region, e.x, e.y);
-              
+
               drawForceField();
             }
-            
+
             void drawForceField(){
+              Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);
               Draw.alpha(e.warmup);
-              Draw.z(Layer.effect);
               Lines.stroke(1.5f);
               Lines.square(e.x, e.y, 34, 45 + rotation/1.5f);
               Lines.square(e.x, e.y, 36, -rotation/1.5f);
               Lines.stroke(0.4f);
               Lines.square(e.x, e.y, 3 + Mathf.random(-0.15f, 0.15f));
               Lines.square(e.x, e.y, 4 + Mathf.random(-0.15f, 0.15f), 45);
-              
+
               if(e.warmup > 0.01 && timer.get(30)){
                 SglFx.forceField.at(e.x, e.y, (45 + rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.warmup});
                 Time.run(15, () -> SglFx.forceField.at(e.x, e.y, (-rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.warmup}));
@@ -1095,32 +1108,155 @@ public class CrafterBlocks implements ContentList{
         }
       };
     }};
+
+    quality_generator = new MediumCrafter("quality_generator"){{
+      requirements(Category.crafting, ItemStack.with());
+      size = 4;
+
+      energyCapacity = 8192;
+      mediumCapacity = 32;
+
+      newConsume();
+      consume.energy(32f);
+      newProduce();
+      produce.medium(0.6f);
+    }};
+
+    substance_inverter = new MediumCrafter("substance_inverter"){{
+      requirements(Category.crafting, ItemStack.with());
+      size = 5;
+
+      newConsume();
+      consume.item(SglItems.degenerate_neutron_polymer, 1);
+      consume.energy(5);
+      consume.medium(3);
+      consume.time(120);
+      newProduce();
+      produce.item(SglItems.anti_metter, 1);
+
+      craftEffect = SglFx.explodeImpWave;
+
+      clipSize = 150;
+
+      initialed = e -> {
+        e.setVar("lightningDrawer", new LightningContainer(){{
+          generator = new CircleGenerator(){{
+            originX = e.x;
+            originY = e.y;
+
+            radius = 13.5f;
+            minInterval = 1f;
+            maxInterval = 2.6f;
+            maxSpread = 2.25f;
+          }};
+          maxWidth = minWidth = 0.8f;
+          lifeTime = 24;
+        }});
+
+        LightningContainer con;
+        e.setVar("lightnings", con = new LightningContainer(){{
+          generator = new PointToPointGenerator(){{
+            originX = e.x;
+            originY = e.y;
+
+            lerp = f -> 1 - f*f;
+
+            maxSpread = 6.5f;
+            minInterval = 5.5f;
+            maxInterval = 8.5f;
+          }};
+        }});
+        e.setVar("lightningGenerator", con.generator);
+      };
+
+      crafting = (NormalCrafterBuild e) -> {
+        if(SglDraw.clipDrawable(e.x, e.y, clipSize) && Mathf.chanceDelta(e.warmup*0.1f)) e.<LightningContainer>getVar("lightningDrawer").create();
+        if(Mathf.chanceDelta(e.warmup*0.04f)) SglFx.randomLightning.at(e.x, e.y, 0, Pal.reactorPurple);
+      };
+
+      craftTrigger = e -> {
+        if(!SglDraw.clipDrawable(e.x, e.y, clipSize)) return;
+        int a = Mathf.random(1, 3);
+        for(int i = 0; i < a; i++){
+          Tmp.v1.rnd(Mathf.random(65, 100));
+          PointToPointGenerator gen = e.getVar("lightningGenerator");
+          gen.targetX = e.x + Tmp.v1.x;
+          gen.targetY = e.y + Tmp.v1.y;
+
+          int amount = Mathf.random(3, 5);
+          for(int i1 = 0; i1 < amount; i1++){
+            e.<LightningContainer>getVar("lightnings").create();
+          }
+
+          if(Mathf.chance(0.25f)){
+            SglFx.explodeImpWave.at(gen.targetX, gen.targetY);
+            Angles.randLenVectors(System.nanoTime(), Mathf.random(4, 7), 2, 3.5f, (x, y) -> Particle.create(gen.targetX, gen.targetY, x, y, Mathf.random(3.25f, 4f)));
+          }
+          else{
+            SglFx.spreadLightning.at(gen.targetX, gen.targetY, Pal.reactorPurple);
+          }
+        }
+        Effect.shake(5.5f, 20f, e.x, e.y);
+      };
+
+      draw = new DrawFactory<>(this){{
+        drawDef = e -> {
+          Draw.rect(bottom, e.x, e.y);
+          Draw.color(Pal.reactorPurple);
+          Draw.alpha(e.warmup);
+          SglDraw.startBloom(31);
+          e.<LightningContainer>getVar("lightningDrawer").draw();
+          SglDraw.endBloom();
+          Draw.color();
+          Draw.rect(region, e.x, e.y);
+          Draw.z(Layer.effect);
+          Draw.color(Pal.reactorPurple);
+          e.<LightningContainer>getVar("lightnings").draw();
+
+          float offsetH = Mathf.absin(0.6f, 4);
+          float offsetW = Mathf.absin(0.4f, 12);
+
+          SglDraw.drawLightEdge(
+              e.x, e.y,
+              (145 + offsetW)*e.warmup, 4*e.warmup,
+              (35 + offsetH)*e.warmup, 2.25f*e.warmup,
+              0
+          );
+
+          Draw.alpha(0.4f*e.warmup);
+          Lines.stroke(5f + 3*e.warmup);
+          Lines.circle(e.x, e.y, 73*e.warmup);
+          Draw.alpha(0.6f*e.warmup);
+          Lines.stroke( + 5*e.warmup);
+          Lines.circle(e.x, e.y, 40*e.warmup);
+          Draw.alpha(0.7f*e.warmup);
+          Lines.stroke(2f);
+          Lines.circle(e.x, e.y, 17*e.warmup);
+
+          Draw.z(Layer.effect - 10);
+          Draw.alpha(0.55f);
+          SglDraw.drawLightEdge(
+              e.x, e.y,
+              (180 + offsetW)*e.warmup, 4*e.warmup,
+              (60 + offsetH)*e.warmup, 2.25f*e.warmup,
+              0
+          );
+        };
+      }};
+    }};
+
+    destructor = new Destructor("destructor"){{
+      requirements(Category.effect, ItemStack.with());
+      size = 5;
+      recipeIndfo = Core.bundle.get("infos.destructItems");
+
+      draw = new SglDrawPlasma<>(this, 4);
+    }};
   
-    hadron_reconstructor = new NormalCrafter("hadron_reconstructor"){{
+    hadron_reconstructor = new AtomSchematicCrafter("hadron_reconstructor"){{
       requirements(Category.crafting, ItemStack.with(SglItems.strengthening_alloy, 180, SglItems.iridium, 120, SglItems.crystal_FEX_power, 120, SglItems.matrix_alloy, 90, SglItems.aerogel, 120, Items.surgeAlloy, 90));
       size = 4;
       itemCapacity = 24;
-      
-      newConsume();
-      consume.time(180);
-      consume.items(ItemStack.with(Items.titanium, 4, Items.lead, 5));
-      consume.energy(6f);
-      newProduce();
-      produce.item(SglItems.iridium, 1);
-      
-      newConsume();
-      consume.time(120);
-      consume.items(ItemStack.with(Items.thorium, 2, Items.lead, 1));
-      consume.energy(3f);
-      newProduce();
-      produce.item(SglItems.uranium_238, 1);
-      
-      newConsume();
-      consume.time(90);
-      consume.items(ItemStack.with(SglItems.strengthening_alloy, 1, Items.silicon, 2));
-      consume.energy(5f);
-      newProduce();
-      produce.item(Items.surgeAlloy, 1);
       
       craftEffect = SglFx.hadronReconstruct;
       

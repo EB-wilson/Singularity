@@ -2,11 +2,11 @@ package singularity.world.distribution.request;
 
 import arc.struct.Seq;
 import mindustry.type.ItemStack;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.buffers.ItemsBuffer;
-import universeCore.util.Empties;
+import universecore.util.Empties;
 
 /**向网络中写入物品，这一操作将物品写入网络的缓存中，处理结束由网络将缓存分配给网络中的子容器*/
 public class PutItemsRequest extends DistRequestBase<ItemStack>{

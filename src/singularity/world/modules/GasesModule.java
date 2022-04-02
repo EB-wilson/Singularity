@@ -1,6 +1,5 @@
 package singularity.world.modules;
 
-import arc.func.Cons;
 import arc.func.Cons2;
 import arc.graphics.Color;
 import arc.math.WindowedMean;
@@ -21,7 +20,7 @@ import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglContents;
 import singularity.world.atmosphere.Atmosphere;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBuildComp;
 
 import java.util.Arrays;
 
@@ -58,16 +57,15 @@ public class GasesModule extends BlockModule{
   }
   
   public void update(boolean showFlow, boolean compress){
-    if(compress) each(stack -> {
-      Gas gas = stack.gas;
+    if(compress) each((gas, amount) -> {
       if(gas.compressible()){
         doCompress(gas);
       }
     });
   
     gasColor.set(Color.black);
-    each(stack -> {
-      gasColor.add(tempColor.set(stack.gas.color).mul(stack.amount/total()));
+    each((gas, amount) -> {
+      gasColor.add(tempColor.set(gas.color).mul(amount/total()));
     });
     gasColor.a(getPressure()/entity.getGasBlock().maxGasPressure()*0.75f);
     
@@ -218,7 +216,7 @@ public class GasesModule extends BlockModule{
   }
   
   public void clear(){
-    if(Vars.state.isCampaign()) each(stack -> Sgl.atmospheres.current.add(stack));
+    if(Vars.state.isCampaign()) each((gas, amount) -> Sgl.atmospheres.current.add(gas, amount));
     gases = new float[SglContents.gases().size];
     total = 0;
   }
@@ -230,10 +228,10 @@ public class GasesModule extends BlockModule{
   public float getPressure(){
     return total/entity.getGasBlock().gasCapacity();
   }
-  
-  public void each(Cons<GasStack> cons){
+
+  public void each(GasConsumer cons){
     for(int id = 0; id<gases.length; id++){
-      if(gases[id] > 0.001) cons.get(new GasStack(SglContents.gas(id), gases[id]));
+      if(gases[id] > 0.001) cons.get(SglContents.gas(id), gases[id]);
     }
   }
   
@@ -282,5 +280,9 @@ public class GasesModule extends BlockModule{
         write.f(gases[i]);
       }
     }
+  }
+
+  public interface GasConsumer{
+    void get(Gas gas, float amount);
   }
 }

@@ -6,20 +6,22 @@ import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.gen.Building;
+import mindustry.world.blocks.storage.CoreBlock;
 import singularity.ui.tables.DistTargetConfigTable;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
-
-import java.util.PriorityQueue;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
+import universecore.util.colletion.TreeSeq;
 
 public class MatrixGrid{
+  private static final Seq tmp = new Seq();
+
   public DistMatrixUnitBuildComp handler;
   
   final ObjectMap<Building, BuildingEntry<?>> all = new ObjectMap<>();
   
-  final PriorityQueue<BuildingEntry<?>> output = new PriorityQueue<>((a, b) -> a.config.priority - b.config.priority);
-  final PriorityQueue<BuildingEntry<?>> input = new PriorityQueue<>((a, b) -> a.config.priority - b.config.priority);
-  final PriorityQueue<BuildingEntry<?>> container = new PriorityQueue<>((a, b) -> a.config.priority - b.config.priority);
-  final PriorityQueue<BuildingEntry<?>> acceptor = new PriorityQueue<>((a, b) -> a.config.priority - b.config.priority);
+  final TreeSeq<BuildingEntry<?>> output = new TreeSeq<>((a, b) -> b.config.priority - a.config.priority);
+  final TreeSeq<BuildingEntry<?>> input = new TreeSeq<>((a, b) -> b.config.priority - a.config.priority);
+  final TreeSeq<BuildingEntry<?>> container = new TreeSeq<>((a, b) -> b.config.priority - a.config.priority);
+  final TreeSeq<BuildingEntry<?>> acceptor = new TreeSeq<>((a, b) -> b.config.priority - a.config.priority);
   
   public int priority;
   
@@ -27,8 +29,16 @@ public class MatrixGrid{
     this.handler = handler;
   }
 
+  public void update(){
+    for(Building bu: all.keys()){
+      if(!(bu instanceof CoreBlock.CoreBuild && bu.isAdded()) && bu.tile.build != bu){
+        remove(bu);
+      }
+    }
+  }
+
   public <T> Seq<BuildingEntry<T>> get( GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req){
-    return get(type, req, new Seq<>());
+    return get(type, req, tmp);
   }
 
   public <T> Seq<BuildingEntry<T>> get(GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req, Seq<BuildingEntry<T>> temp){
@@ -39,7 +49,7 @@ public class MatrixGrid{
 
   @SuppressWarnings("unchecked")
   public <T> void each(GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req, Cons2<T, DistTargetConfigTable.TargetConfigure> cons){
-    PriorityQueue<BuildingEntry<?>> temp = null;
+    TreeSeq<BuildingEntry<?>> temp = null;
     switch(type){
       case output: temp = output; break;
       case input: temp = input; break;
@@ -59,7 +69,7 @@ public class MatrixGrid{
     BuildingEntry<?> entry = all.get(t, new BuildingEntry<>(t, c));
 
     c.eachChildType((type, map) -> {
-      PriorityQueue<BuildingEntry<?>> temp = null;
+      TreeSeq<BuildingEntry<?>> temp = null;
 
       switch(type){
         case output:

@@ -18,7 +18,6 @@ import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.ImageButton;
-import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
@@ -36,8 +35,8 @@ import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.distribution.GridChildType;
-import universeCore.util.DataPackable;
-import universeCore.util.Empties;
+import universecore.util.DataPackable;
+import universecore.util.Empties;
 
 public class DistTargetConfigTable extends Table{
   private static final ObjectSet<Character> numbers = ObjectSet.with('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-');
@@ -186,12 +185,13 @@ public class DistTargetConfigTable extends Table{
             rebuildItems.run();
           }
       ).width(85).padLeft(4).padRight(4).growY().left();
-      TextField input = new TextField(Integer.toString(config.priority));
-      input.setFilter((f, c) -> numbers.contains(c));
-      input.setTextFieldListener((f, c) -> config.priority = Integer.valueOf(f.getText()));
+
       topBar.add(Core.bundle.get("misc.priority")).right().padRight(4);
-      topBar.add(input).right().width(75).padRight(4);
+      topBar.field(Integer.toString(config.priority),
+          (f, c) -> numbers.contains(c),
+          str -> config.priority = Integer.valueOf(str)).right().width(75).padRight(4);
     }).fillY().expandX();
+
     row();
     image().color(Pal.gray).growX().height(4).colspan(2).pad(0).margin(0);
     row();
@@ -220,7 +220,7 @@ public class DistTargetConfigTable extends Table{
         currType = types[0];
         currConfig = config.getOrNew(IOTypes[index], currType);
         rebuildItems.run();
-      }).fillX().height(160);
+      }).size(225, 160);
       
       main.image().color(Pal.gray).growY().width(4).colspan(2).padLeft(3).padRight(3).margin(0);
       

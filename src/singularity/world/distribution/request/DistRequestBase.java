@@ -2,7 +2,7 @@ package singularity.world.distribution.request;
 
 import arc.Core;
 import arc.struct.Seq;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.distribution.DistributeNetwork;
 
 public abstract class DistRequestBase<S>{

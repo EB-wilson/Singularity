@@ -3,7 +3,7 @@ package singularity.world.draw;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import mindustry.world.Block;
-import singularity.world.blockComp.DrawableComp;
+import singularity.world.components.DrawableComp;
 
 /**用于绘制逐帧动画的工具类*/
 public class DrawFrame<Target extends DrawableComp> extends SglDrawBlock<Target>{

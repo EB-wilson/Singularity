@@ -12,7 +12,7 @@ import mindustry.type.Sector;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglContents;
-import singularity.world.blockComp.HeatBuildComp;
+import singularity.world.components.HeatBuildComp;
 
 public class Atmosphere{
   public static final Atmosphere defaultSettings = new Atmosphere(null);

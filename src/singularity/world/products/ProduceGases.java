@@ -7,10 +7,10 @@ import mindustry.world.meta.Stat;
 import mindustry.world.meta.Stats;
 import singularity.type.GasStack;
 import singularity.ui.tables.GasDisplay;
-import singularity.world.blockComp.GasBuildComp;
-import universeCore.entityComps.blockComps.ProducerBuildComp;
-import universeCore.world.producers.BaseProduce;
-import universeCore.world.producers.ProduceType;
+import singularity.world.components.GasBuildComp;
+import universecore.components.blockcomp.ProducerBuildComp;
+import universecore.world.producers.BaseProduce;
+import universecore.world.producers.ProduceType;
 
 public class ProduceGases<T extends Building & GasBuildComp & ProducerBuildComp> extends BaseProduce<T>{
   public GasStack[] gases;

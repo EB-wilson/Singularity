@@ -3,7 +3,7 @@ package singularity.world.distribution.request;
 import arc.struct.Seq;
 import mindustry.gen.Building;
 import mindustry.type.LiquidStack;
-import singularity.world.blockComp.distributeNetwork.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
@@ -23,6 +23,11 @@ public class ReadLiquidsRequest extends DistRequestBase<LiquidStack>{
     super(sender);
     this.destination = destination;
     this.reqLiquids = req;
+  }
+
+  @Override
+  public int priority(){
+    return 128;
   }
 
   @Override

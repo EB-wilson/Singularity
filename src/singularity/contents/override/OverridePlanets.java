@@ -1,6 +1,6 @@
 package singularity.contents.override;
 
-import universeCore.util.OverrideContentList;
+import universecore.util.OverrideContentList;
 
 public class OverridePlanets implements OverrideContentList{
   @Override

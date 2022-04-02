@@ -8,16 +8,15 @@ import arc.util.Nullable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.entities.units.BuildPlan;
-import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.blocks.ItemSelection;
 import mindustry.world.meta.BlockGroup;
-import mindustry.world.modules.LiquidModule;
-import universeCore.annotations.Annotations;
-import universeCore.entityComps.blockComps.Takeable;
+import mindustry.world.meta.Stat;
+import universecore.annotations.Annotations;
+import universecore.components.blockcomp.Takeable;
 
 import static mindustry.Vars.content;
 
@@ -50,6 +49,12 @@ public class LiquidUnloader extends Block{
   }
 
   @Override
+  public void setStats(){
+    super.setStats();
+    stats.remove(Stat.liquidCapacity);
+  }
+
+  @Override
   public void drawRequestConfig(BuildPlan req, Eachable<BuildPlan> list){
     drawRequestConfigCenter(req, req.config, "center");
   }
@@ -57,36 +62,26 @@ public class LiquidUnloader extends Block{
   @Annotations.ImplEntries
   public class LiquidUnloadedBuild extends Building implements Takeable{
     public @Nullable Liquid current = null;
-    
-    public LiquidModule tempLiquid = new LiquidModule();
-    public ObjectMap<String, Heaps<?>> dumps = new ObjectMap<>();
-  
-    @Override
-    public Building create(Block block, Team team){
-      super.create(block, team);
-      tempLiquid = liquids;
-      return this;
-    }
-  
+
+    public ObjectMap<String, Heaps<?>> heaps = new ObjectMap<>();
+
     @Override
     public void updateTile(){
-      Building next = getNext("liquids" , e -> e.block.hasLiquids && e.canUnload());
-      if(next != null){
-        liquids = next.liquids;
-      }
-      else liquids = tempLiquid;
+      Building next = getNext("liquidsPeek" , e -> e.block.hasLiquids && e.canUnload());
+      if(next == null) return;
       
-      if(liquids != tempLiquid){
-        if(current != null){
-          dumpLiquid(current);
-        }
-        else liquids.each((l, a) -> dumpLiquid(l));
-      }
-    }
-  
-    @Override
-    public boolean canDumpLiquid(Building to, Liquid liquid){
-      return super.canDumpLiquid(to, liquid) && to.liquids != liquids;
+      if(next.liquids != null) next.liquids.each((l, a) -> {
+        if(current != null && l != current) return;
+
+        Building dump = getNext("liquids", e -> e.acceptLiquid(next, l) && e != next);
+        if(dump == null || dump.liquids.get(l)/dump.block.liquidCapacity >= a/next.block.liquidCapacity) return;
+
+        float move = (a*dump.block.liquidCapacity - dump.liquids.get(l)*next.block.liquidCapacity)/(dump.block.liquidCapacity + next.block.liquidCapacity);
+        move = Math.min(Math.min(move, dump.block.liquidCapacity - dump.liquids.get(l)), a);
+
+        next.liquids.remove(l, move);
+        dump.liquids.add(l, move);
+      });
     }
   
     @Override

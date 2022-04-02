@@ -7,6 +7,8 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.util.Time;
+import mindustry.graphics.Drawf;
+import mindustry.graphics.Pal;
 import mindustry.world.Block;
 import singularity.world.blocks.product.NormalCrafter;
 
@@ -15,7 +17,10 @@ import static mindustry.Vars.tilesize;
 public class SglDrawPlasma<T extends NormalCrafter.NormalCrafterBuild> extends DrawFactory<T>{
   public TextureRegion[] plasmas;
   public Color plasma1 = Color.valueOf("ffd06b"), plasma2 = Color.valueOf("ff361b");
-  
+  public float lightRadius = 60f;
+  public Color lightColor = Pal.lightFlame;
+  public float lightAlpha = 0.65f;
+
   public SglDrawPlasma(Block block, int length){
     super(block);
     plasmas = new TextureRegion[length];
@@ -56,6 +61,11 @@ public class SglDrawPlasma<T extends NormalCrafter.NormalCrafterBuild> extends D
       Draw.rect(bottom, entity.x, entity.y);
       drawPlasma(entity);
       Draw.rect(region, entity.x, entity.y);
+    }
+
+    @Override
+    public void drawLight(){
+      Drawf.light(entity.team, entity.x(), entity.y(), lightRadius * entity.warmup * block.size, lightColor, lightAlpha);
     }
   }
 }

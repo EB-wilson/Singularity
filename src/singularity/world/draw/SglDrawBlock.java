@@ -4,9 +4,10 @@ import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import mindustry.world.Block;
-import singularity.world.blockComp.DrawableComp;
+import singularity.world.components.DrawableComp;
 
 public class SglDrawBlock<Target extends DrawableComp> extends SglDrawBase<Target>{
+
   public Block block;
   
   public SglDrawBlock(Block block){
@@ -14,7 +15,7 @@ public class SglDrawBlock<Target extends DrawableComp> extends SglDrawBase<Targe
   }
   
   public TextureRegion region;
-  
+
   @Override
   public void load(){
     loadType();

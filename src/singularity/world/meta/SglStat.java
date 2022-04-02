@@ -2,8 +2,8 @@ package singularity.world.meta;
 
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatCat;
-import universeCore.util.handler.EnumHandler;
-import universeCore.util.handler.FieldHandler;
+import universecore.util.handler.EnumHandler;
+import universecore.util.handler.FieldHandler;
 
 public class SglStat{
   private static final EnumHandler<Stat> handler = new EnumHandler<>(Stat.class, (inst, param) -> {
@@ -15,7 +15,8 @@ public class SglStat{
     }
   });
   
-  public static final Stat compressible = handler.addEnumItemTail("compressible", SglStatCat.gas),
+  public static final Stat
+      compressible = handler.addEnumItemTail("compressible", SglStatCat.gas),
       compressor = handler.addEnumItemTail("compressor", SglStatCat.gas),
       gasCapacity = handler.addEnumItemTail("gasCapacity", SglStatCat.gas),
       maxGasPressure = handler.addEnumItemTail("maxGasPressure", SglStatCat.gas),
@@ -33,11 +34,10 @@ public class SglStat{
       requireTemperature = handler.addEnumItemTail("requireTemperature", SglStatCat.reaction),
       consume = handler.addEnumItemTail("consume", SglStatCat.reaction),
       product = handler.addEnumItemTail("product", SglStatCat.reaction),
-  
-      generatorType = handler.addEnumItemTail("generator", SglStatCat.generator),
-      
+
       autoSelect = handler.addEnumItem("autoSelect", 46, StatCat.crafting),
       controllable = handler.addEnumItem("controllable", 47, StatCat.crafting),
+      special = handler.addEnumItem("special", 50, StatCat.crafting),
   
       effect = handler.addEnumItemTail("effect", StatCat.function);
 }

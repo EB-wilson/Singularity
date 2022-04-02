@@ -5,7 +5,7 @@ import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.io.Writes;
 import mindustry.world.modules.BlockModule;
-import singularity.world.blockComp.ChainsBuildComp;
+import singularity.world.components.ChainsBuildComp;
 import singularity.world.blocks.chains.ChainContainer;
 import singularity.world.blocks.chains.ChainsEvents;
 
@@ -16,7 +16,7 @@ public class ChainsModule extends BlockModule{
   public ChainContainer container;
   
   protected ObjectMap<ChainsEvents.ChainsTrigger, Seq<Runnable>> listeners = new ObjectMap<>();
-  protected ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<? extends ChainsEvents.ChainsEvent>>> globalListeners = new ObjectMap<>();
+  protected ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<ChainsEvents.ChainsEvent>>> globalListeners = new ObjectMap<>();
   
   public ChainsModule(ChainsBuildComp entity){
     this.entity = entity;
@@ -45,10 +45,19 @@ public class ChainsModule extends BlockModule{
       listener.run();
     }
   }
-  
+
+  public void setListeners(ObjectMap<ChainsEvents.ChainsTrigger, Seq<Runnable>> listeners){
+    this.listeners = listeners;
+  }
+
+  public void setGlobalListeners(ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<ChainsEvents.ChainsEvent>>> listeners){
+    this.globalListeners = listeners;
+  }
+
+  @SuppressWarnings("unchecked")
   public <T extends ChainsEvents.ChainsEvent> void listenGlobal(Class<T> event, String symbol, Cons<T> cons){
-    globalListeners.get(event, LinkedHashMap::new).put(symbol, cons);
-    if(container != null) container.globalListener.get(event, LinkedHashMap::new).put(symbol, cons);
+    globalListeners.get(event, LinkedHashMap::new).put(symbol, (Cons<ChainsEvents.ChainsEvent>) cons);
+    if(container != null) container.globalListener.get(event, LinkedHashMap::new).put(symbol, (Cons<ChainsEvents.ChainsEvent>) cons);
   }
   
   public void listen(ChainsEvents.ChainsTrigger trigger, Runnable listener){

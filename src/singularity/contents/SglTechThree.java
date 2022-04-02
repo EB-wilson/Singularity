@@ -82,7 +82,13 @@ public class SglTechThree implements ContentList{
     node(kiln, strengthening_alloy_smelter, strAlloySme -> {
       strAlloySme.node(matrix_cutter, matCut -> {
         matCut.node(polymer_gravitational_generator, polyGen -> {
-          polyGen.node(hadron_reconstructor, harRecons -> {});
+          polyGen.node(quality_generator, quaGen -> {
+            quaGen.node(hadron_reconstructor, hadCon -> {});
+
+            quaGen.node(destructor, dest -> {});
+
+            quaGen.node(substance_inverter, subInv -> {});
+          });
         });
       });
     });

@@ -9,9 +9,9 @@ import arc.util.Eachable;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.world.Block;
-import singularity.world.blockComp.ChainsBlockComp;
-import singularity.world.blockComp.SpliceBlockComp;
-import singularity.world.blockComp.SpliceBuildComp;
+import singularity.world.components.ChainsBlockComp;
+import singularity.world.components.SpliceBlockComp;
+import singularity.world.components.SpliceBuildComp;
 
 import java.util.Arrays;
 

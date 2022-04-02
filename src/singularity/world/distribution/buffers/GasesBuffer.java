@@ -6,7 +6,7 @@ import mindustry.gen.Building;
 import mindustry.world.modules.BlockModule;
 import singularity.type.Gas;
 import singularity.type.GasStack;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBuildComp;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;

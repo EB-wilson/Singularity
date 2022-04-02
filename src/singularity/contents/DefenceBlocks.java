@@ -1,6 +1,5 @@
 package singularity.contents;
 
-import mindustry.Vars;
 import mindustry.ctype.ContentList;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
@@ -34,7 +33,6 @@ public class DefenceBlocks implements ContentList{
       requirements(Category.defense, ItemStack.with(SglItems.degenerate_neutron_polymer, 8, SglItems.strengthening_alloy, 4));
       health = 2400;
       damageFilter = 62;
-      gravityRange = 10*Vars.tilesize;
     }};
     
     neutron_polymer_wall_large = new SglWall("neutron_polymer_wall_large"){{
@@ -42,8 +40,6 @@ public class DefenceBlocks implements ContentList{
       size = 2;
       health = 2400*4;
       damageFilter = 85;
-      gravityStrength = 0.02f;
-      gravityRange = 18*Vars.tilesize;
     }};
   }
 }

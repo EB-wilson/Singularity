@@ -16,8 +16,8 @@ import mindustry.type.Liquid;
 import mindustry.ui.Styles;
 import mindustry.world.Tile;
 import mindustry.world.modules.LiquidModule;
-import universeCore.annotations.Annotations;
-import universeCore.entityComps.blockComps.Takeable;
+import universecore.annotations.Annotations;
+import universecore.components.blockcomp.Takeable;
 
 public class ConduitRiveting extends ClusterConduit{
   public ConduitRiveting(String name){
@@ -169,7 +169,7 @@ public class ConduitRiveting extends ClusterConduit{
       if(index == -1){
         return super.acceptLiquid(source, liquid);
       }
-      return source.team == team && liquidsBuffer[index].currentAmount() < 0.01f || liquid == liquidsBuffer[index].current() && liquidsBuffer[index].currentAmount() < liquidCapacity;
+      return source.interactable(team) && liquidsBuffer[index].currentAmount() < 0.01f || liquid == liquidsBuffer[index].current() && liquidsBuffer[index].currentAmount() < liquidCapacity;
     }
   
     @Override

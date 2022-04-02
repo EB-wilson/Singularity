@@ -28,8 +28,8 @@ import mindustry.world.Edges;
 import mindustry.world.Tile;
 import mindustry.world.meta.Env;
 import singularity.contents.NuclearBlocks;
-import singularity.world.blockComp.NuclearEnergyBlockComp;
-import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.components.NuclearEnergyBlockComp;
+import singularity.world.components.NuclearEnergyBuildComp;
 
 import static mindustry.Vars.*;
 import static mindustry.core.Renderer.laserOpacity;
@@ -69,7 +69,10 @@ public class NuclearPipeNode extends NuclearBlock{
       Tile tile = Vars.world.tile(value.x, value.y);
       if(tile == null || !(tile.build instanceof NuclearEnergyBuildComp) || !((NuclearEnergyBuildComp)tile.build).getNuclearBlock().hasEnergy()) return;
       NuclearEnergyBuildComp other = (NuclearEnergyBuildComp)tile.build;
-    
+
+      value.x = tile.x;
+      value.y = tile.y;
+
       if(entity.energy().linked.contains(value.pack())){
         entity.deLink(other);
       }

@@ -1,7 +1,7 @@
 package singularity.world.blocks.gas;
 
 import singularity.type.Gas;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBuildComp;
 
 public class GasVoid extends GasBlock{
   public GasVoid(String name){

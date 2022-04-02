@@ -52,7 +52,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
           if(packet.amount() <= 0.001f) continue liquidRead;
           float move = Math.min(packet.amount(), handler.block.liquidCapacity - handler.liquids.get(packet.get()));
 
-          handler.liquids.remove(packet.get(), move);
+          packet.remove(move);
           entry.entity.handleLiquid(handler, packet.get(), move);
         }
       }

@@ -19,8 +19,8 @@ import mindustry.world.blocks.distribution.ItemBridge;
 import singularity.Sgl;
 import singularity.contents.GasBlocks;
 import singularity.type.Gas;
-import singularity.world.blockComp.GasBlockComp;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBlockComp;
+import singularity.world.components.GasBuildComp;
 
 import java.util.Arrays;
 
@@ -112,7 +112,7 @@ public class GasConduit extends GasBlock implements Autotiler{
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
       noSleep();
-      return source.getBuilding().team == getBuilding().team && pressure() < getGasBlock().maxGasPressure() &&
+      return source.getBuilding().interactable(getBuilding().team) && pressure() < getGasBlock().maxGasPressure() &&
           (tile != null && (source.getBuilding().relativeTo(tile.x, tile.y) + 2) % 4 != rotation);
     }
   
@@ -129,10 +129,10 @@ public class GasConduit extends GasBlock implements Autotiler{
           float fract = Math.max(0, pressure() - Sgl.atmospheres.current.getCurrPressure())/getGasBlock().maxGasPressure();
     
           if(fract <= 0.001f) return;
-          gases.each(stack -> {
-            float flowRate = Math.min(fract*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity()*(gases().get(stack.gas)/gases().total()), gases().get(stack.gas));
-            handleGas(this, stack.gas, -flowRate);
-            Sgl.gasAreas.pour(next, stack.gas, flowRate);
+          gases.each((gas, amount) -> {
+            float flowRate = Math.min(fract*getGasBlock().maxGasPressure()*getGasBlock().gasCapacity()*(gases().get(gas)/gases().total()), gases().get(gas));
+            handleGas(this, gas, -flowRate);
+            Sgl.gasAreas.pour(next, gas, flowRate);
           });
         }
   

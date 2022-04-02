@@ -3,12 +3,12 @@ package singularity.world.blocks.distribute;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.world.Block;
-import singularity.world.blockComp.distributeNetwork.DistComponent;
-import singularity.world.blockComp.distributeNetwork.DistNetworkCoreComp;
+import singularity.world.components.distnet.DistComponent;
+import singularity.world.components.distnet.DistNetworkCoreComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.modules.DistCoreModule;
 
-public class DistNetCore extends DistNetBlock implements DistComponent{
+public class DistNetCore extends DistNetBlock{
   public int computingPower = 32;
   public int frequencyOffer = 8;
 
@@ -20,19 +20,19 @@ public class DistNetCore extends DistNetBlock implements DistComponent{
     hasGases = true;
   }
   
-  @Override
-  public int computingPower(){
-    return computingPower;
-  }
-  
-  @Override
-  public int frequencyOffer(){
-    return frequencyOffer;
-  }
-  
-  public class DistNetCoreBuild extends DistNetBuild implements DistNetworkCoreComp{
+  public class DistNetCoreBuild extends DistNetBuild implements DistNetworkCoreComp, DistComponent{
     DistCoreModule distCore;
-  
+
+    @Override
+    public int computingPower(){
+      return computingPower;
+    }
+
+    @Override
+    public int frequencyOffer(){
+      return frequencyOffer;
+    }
+
     @Override
     public Building create(Block block, Team team){
       distCore = new DistCoreModule(this);

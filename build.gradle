@@ -69,6 +69,8 @@ task jarAndroid{
 jar{
     archiveFileName = "${project.archivesBaseName}Desktop.jar"
 
+    "java SyncBundles.java ${project.rootDir}".execute().waitForProcessOutput(System.out, System.err)
+
     from{
         configurations.runtimeClasspath.collect{ it.isDirectory() ? it : zipTree(it) }
     }

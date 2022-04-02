@@ -15,8 +15,8 @@ import singularity.core.Init;
 import singularity.type.SglCategory;
 import singularity.type.SglContentType;
 import singularity.world.meta.SglAttribute;
-import universeCore.annotations.Annotations;
-import universeCore.util.OverrideContentList;
+import universecore.annotations.Annotations;
+import universecore.util.OverrideContentList;
 
 import static mindustry.game.EventType.*;
 
@@ -36,7 +36,9 @@ public class Singularity extends Mod{
       new DistributeBlocks(),//物流运输方块
       new DefenceBlocks(),//防御方块
       new Reactions(),//化学反应
-    
+
+      new OtherContents(),//其他内容
+
       new SglTechThree(),//科技树
   };
   
@@ -50,7 +52,7 @@ public class Singularity extends Mod{
   public Singularity(){
     //加载模组配置数据
     Sgl.config.load();
-  
+
     //加载属性类型
     SglAttribute.load();
     //加载方块类型

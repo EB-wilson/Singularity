@@ -1,13 +1,10 @@
 package singularity.world.modules;
 
-import universeCore.entityComps.blockComps.ConsumerBuildComp;
-import universeCore.world.blockModule.BaseConsumeModule;
-import universeCore.world.consumers.BaseConsumers;
-
-import java.util.ArrayList;
+import universecore.components.blockcomp.ConsumerBuildComp;
+import universecore.world.blocks.modules.BaseConsumeModule;
 
 public class SglConsumeModule extends BaseConsumeModule{
-  public SglConsumeModule(ConsumerBuildComp entity, ArrayList<BaseConsumers> cons, ArrayList<BaseConsumers> optional){
-    super(entity, cons, optional);
+  public SglConsumeModule(ConsumerBuildComp entity){
+    super(entity);
   }
 }

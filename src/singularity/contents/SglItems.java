@@ -31,6 +31,8 @@ public class SglItems implements ContentList{
   concentration_uranium_235,
   /**浓缩钚239核燃料*/
   concentration_plutonium_239,
+  /**反物质*/
+  anti_metter,
   /**铀饼*/
   uranium_cake,
   /**干冰*/
@@ -96,7 +98,7 @@ public class SglItems implements ContentList{
     }};
   
     degenerate_neutron_polymer = new Item("degenerate_neutron_polymer", Color.valueOf("#FF7FE0")){{
-      hardness = 9;
+      hardness = 10;
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0f;
@@ -136,6 +138,13 @@ public class SglItems implements ContentList{
       explosiveness = 12f;
       flammability = 0f;
       radioactivity = 2.4f;
+    }};
+
+    anti_metter = new Item("anti_metter", Color.valueOf("734CD2")){{
+      hardness = 12;
+      explosiveness = 64;
+      flammability = 0;
+      radioactivity = 0;
     }};
     
     uranium_cake = new Item("uranium_cake", Color.valueOf("#E67D53")){{

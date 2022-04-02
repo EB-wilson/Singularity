@@ -23,7 +23,7 @@ import mindustry.world.blocks.environment.Floor;
 import mindustry.world.meta.Attribute;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
-import universeCore.util.Functions;
+import universecore.math.Functions;
 
 import static mindustry.Vars.indexer;
 import static mindustry.Vars.state;
@@ -63,7 +63,7 @@ public class SglAttributeCrafter extends NormalCrafter{
   }
   
   public void setAttrBooster(Attribute attr, float maxBoost, float optimal, float diffLeft, float diffRight){
-    setAttrBooster(attr, f -> (float)Functions.lerpIncrease(diffLeft, diffRight, maxBoost, optimal, f), (t, bs) -> {
+    setAttrBooster(attr, f -> (float) Functions.lerpIncrease(diffLeft, diffRight, maxBoost, optimal, f), (t, bs) -> {
       t.add(Core.bundle.get("misc.max") + ": " + (int)(maxBoost*100) + "% " + Core.bundle.get("misc.optimal") + ": " + optimal);
       for(Block b: bs){
         float attrValue = b.attributes.get(attr);

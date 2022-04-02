@@ -29,7 +29,7 @@ import mindustry.world.meta.StatUnit;
 import mindustry.world.meta.StatValues;
 import singularity.world.blocks.SglBlock;
 import singularity.world.draw.DrawDrill;
-import universeCore.world.consumers.BaseConsumers;
+import universecore.world.consumers.BaseConsumers;
 
 import java.util.Arrays;
 
@@ -213,17 +213,17 @@ public class BaseDrill extends SglBlock{
     }
     
     @Override
-    public void setBars(Table table){
-      super.setBars(table);
+    public void displayBars(Table bars){
+      super.displayBars(bars);
       for(int i=0; i<outputItems.size; i++){
         if(!currentMines[i]) continue;
         int finalI = i;
-        table.add(new Bar(
+        bars.add(new Bar(
             () -> outputItems.get(finalI).item.localizedName + " : " + Core.bundle.format("bar.drillspeed", Strings.fixed(lastDrillSpeed[finalI] * 60 * timeScale(), 2)),
             () -> Pal.ammo,
             () -> warmup
         )).growX();
-        table.row();
+        bars.row();
       }
     }
   

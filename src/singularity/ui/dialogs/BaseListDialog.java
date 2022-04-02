@@ -10,10 +10,10 @@ import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import universeCore.UncCore;
-import universeCore.ui.table.ZoomableTable;
-import universeCore.util.animLayout.CellAnimateGroup;
-import universeCore.util.animLayout.CellChangeColorAction;
+import universecore.UncCore;
+import universecore.ui.table.ZoomableTable;
+import universecore.util.animate.CellAnimateGroup;
+import universecore.util.animate.CellChangeColorAction;
 
 public class BaseListDialog extends BaseDialog{
   public float width = 750, height = 520;

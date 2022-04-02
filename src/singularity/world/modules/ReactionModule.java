@@ -46,9 +46,9 @@ public class ReactionModule extends BlockModule{
       }
     });
     
-    entity.gases().each(stack -> {
-      if(stack.amount > 0 && stack.gas != target){
-        Reaction<?, ?> r = Sgl.reactions.match(target, stack.gas);
+    entity.gases().each((gas, amount) -> {
+      if(amount > 0 && gas != target){
+        Reaction<?, ?> r = Sgl.reactions.match(target, gas);
         if(r != null && !reactions.containsKey(r)){
           reactions.put(r, new float[]{0, 0});
         }

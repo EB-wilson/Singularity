@@ -1,14 +1,11 @@
 package singularity.world.modules;
 
-import universeCore.entityComps.blockComps.ProducerBuildComp;
-import universeCore.world.blockModule.BaseProductModule;
-import universeCore.world.producers.BaseProducers;
-
-import java.util.List;
+import universecore.components.blockcomp.ProducerBuildComp;
+import universecore.world.blocks.modules.BaseProductModule;
 
 public class SglProductModule extends BaseProductModule{
   
-  public SglProductModule(ProducerBuildComp entity, List<BaseProducers> producers){
-    super(entity, producers);
+  public SglProductModule(ProducerBuildComp entity){
+    super(entity);
   }
 }

@@ -94,13 +94,13 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
     T p = memory.get(packet.id());
     if(p != null){
       if(p.occupation() > packet.occupation()){
-        p.remove(packet);
         used -= packet.occupation();
         readCaching += packet.occupation();
       }
       else{
         remove(packet.id());
       }
+      p.remove(packet);
     }
   }
   

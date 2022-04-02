@@ -4,9 +4,9 @@ import arc.files.Fi;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.SglContents;
-import universeCore.util.ini.Ini;
-import universeCore.util.ini.IniFile;
-import universeCore.util.ini.IniTypes;
+import universecore.util.ini.Ini;
+import universecore.util.ini.IniFile;
+import universecore.util.ini.IniTypes;
 
 import java.util.Arrays;
 

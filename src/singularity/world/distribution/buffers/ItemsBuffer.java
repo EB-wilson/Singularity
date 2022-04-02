@@ -50,7 +50,7 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
           if(packet.amount() <= 0) continue itemRead;
           int amount = Math.min(packet.amount(), entry.entity.acceptStack(packet.get(), packet.amount(), handler));
 
-          remove(packet.get(), amount);
+          packet.remove(amount);
           entry.entity.handleStack(packet.get(), amount, handler);
         }
       }

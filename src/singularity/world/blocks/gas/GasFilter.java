@@ -10,7 +10,7 @@ import mindustry.world.blocks.ItemSelection;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.SglContents;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.GasBuildComp;
 
 public class GasFilter extends GasJunction{
   public boolean through = true;
@@ -31,7 +31,7 @@ public class GasFilter extends GasJunction{
   
     @Override
     public GasBuildComp getGasDestination(GasBuildComp source, Gas gas){
-      if(!enabled) return this;
+      if(!enabled || source.outputPressure() < gas.filterPressure) return this;
   
       int dir = source.getBuilding().relativeTo(tile.x, tile.y);
       dir = (dir + 4) % 4;
@@ -84,7 +84,12 @@ public class GasFilter extends GasJunction{
     
       return true;
     }
-  
+
+    @Override
+    public boolean acceptGas(GasBuildComp source, Gas gas){
+      return false;
+    }
+
     @Override
     public Gas config(){
       return gas;

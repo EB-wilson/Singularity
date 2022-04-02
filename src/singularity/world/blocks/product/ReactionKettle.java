@@ -28,9 +28,9 @@ import singularity.type.Gas;
 import singularity.type.Reaction;
 import singularity.ui.SglStyles;
 import singularity.world.SglFx;
-import singularity.world.blockComp.GasBuildComp;
-import singularity.world.blockComp.HeatBlockComp;
-import singularity.world.blockComp.HeatBuildComp;
+import singularity.world.components.GasBuildComp;
+import singularity.world.components.HeatBlockComp;
+import singularity.world.components.HeatBuildComp;
 import singularity.world.blocks.SglBlock;
 import singularity.world.blocks.gas.GasUnloader;
 import singularity.world.blocks.liquid.LiquidUnloader;
@@ -38,8 +38,8 @@ import singularity.world.meta.SglStatUnit;
 import singularity.world.modules.GasesModule;
 import singularity.world.modules.ReactionModule;
 import singularity.world.reaction.ReactContainer;
-import universeCore.annotations.Annotations;
-import universeCore.util.handler.FieldHandler;
+import universecore.annotations.Annotations;
+import universecore.util.handler.FieldHandler;
 
 import java.lang.reflect.Field;
 
@@ -91,7 +91,6 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   @Override
   public void setStats(){
     super.setStats();
-    setHeatStats(stats);
   }
   
   @Override
@@ -103,13 +102,6 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   
     bars.add("power", entity -> new Bar(() -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : UI.formatAmount((int)(entity.power.status * capacity))) :
         Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
-  
-    bars.add("temperature", (ReactionKettleBuild ent) -> new Bar(
-        () -> Core.bundle.get("misc.temperature") + ":" + Strings.autoFixed(ent.temperature(), 2) + SglStatUnit.temperature.localized() +
-            "-" + Core.bundle.get("misc.heat") + ":" + Strings.autoFixed(ent.heat/1000, 0) + SglStatUnit.kHeat.localized(),
-        () -> Pal.bar,
-        () -> ent.absTemperature()/maxTemperature
-    ));
   }
   
   @Annotations.ImplEntries
@@ -169,10 +161,10 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
         float leak = (pressure() - maxGasPressure)*gasCapacity*healthRate;
         float total = gases.total();
   
-        gases.each(stack -> {
-          float amount = leak*stack.amount/total;
-          gases.remove(stack.gas, amount);
-          Sgl.gasAreas.pour(tile, stack.gas, amount);
+        gases.each((gas, a) -> {
+          float amount = leak*a/total;
+          gases.remove(gas, amount);
+          Sgl.gasAreas.pour(tile, gas, amount);
         });
       }
       
@@ -268,7 +260,7 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   
     @Override
     public boolean acceptGas(GasBuildComp source, Gas gas){
-      return hasGases && source.getBuilding().team == this.team && pressure() < maxGasPressure && !(source.getBlock() instanceof GasUnloader);
+      return hasGases && source.getBuilding().interactable(this.team) && pressure() < maxGasPressure && !(source.getBlock() instanceof GasUnloader);
     }
   
     @Override

@@ -2,9 +2,9 @@ package singularity.core;
 
 import arc.util.Log;
 import singularity.Sgl;
-import universeCore.util.ini.Ini;
-import universeCore.util.ini.IniFile;
-import universeCore.util.ini.IniTypes;
+import universecore.util.ini.Ini;
+import universecore.util.ini.IniFile;
+import universecore.util.ini.IniTypes;
 
 import java.lang.reflect.Field;
 

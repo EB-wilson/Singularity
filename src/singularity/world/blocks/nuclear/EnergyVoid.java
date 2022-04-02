@@ -2,7 +2,7 @@ package singularity.world.blocks.nuclear;
 
 import arc.scene.ui.layout.Table;
 import mindustry.world.meta.Env;
-import singularity.world.blockComp.NuclearEnergyBuildComp;
+import singularity.world.components.NuclearEnergyBuildComp;
 
 public class EnergyVoid extends NuclearPipeNode{
   public EnergyVoid(String name){

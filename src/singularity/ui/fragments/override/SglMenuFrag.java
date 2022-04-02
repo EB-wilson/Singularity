@@ -39,7 +39,7 @@ import singularity.Sgl;
 import singularity.Singularity;
 import singularity.core.UpdatePool;
 import singularity.graphic.renders.SglPlanetRender;
-import universeCore.util.handler.FieldHandler;
+import universecore.util.handler.FieldHandler;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

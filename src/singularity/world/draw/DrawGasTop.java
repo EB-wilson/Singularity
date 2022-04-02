@@ -5,8 +5,8 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import mindustry.gen.Building;
 import mindustry.world.Block;
-import singularity.world.blockComp.DrawableComp;
-import singularity.world.blockComp.GasBuildComp;
+import singularity.world.components.DrawableComp;
+import singularity.world.components.GasBuildComp;
 
 public class DrawGasTop<T extends Building & GasBuildComp & DrawableComp> extends SglDrawBlock<T>{
   TextureRegion top;

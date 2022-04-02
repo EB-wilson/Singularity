@@ -23,8 +23,8 @@ import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
 import singularity.Sgl;
 import singularity.type.Gas;
-import singularity.world.blockComp.GasBlockComp;
-import singularity.world.blockComp.HeatBlockComp;
+import singularity.world.components.GasBlockComp;
+import singularity.world.components.HeatBlockComp;
 import singularity.world.modules.GasesModule;
 import singularity.world.modules.ReactionModule;
 
@@ -247,9 +247,9 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
     }
     
     if(gases.total() > 0.001){
-      gases.each(stack -> {
-        Sgl.gasAreas.pour(tile, stack.gas, stack.amount/2);
-        gases.remove(stack.gas, stack.amount/2);
+      gases.each((gas, amount) -> {
+        Sgl.gasAreas.pour(tile, gas, amount/2);
+        gases.remove(gas, amount/2);
       });
     }
     

@@ -85,11 +85,13 @@ public class GasBlocks implements ContentList{
   
     filter_valve = new GasFilter("filter_valve"){{
       requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 10, Items.metaglass, 10, Items.silicon, 8));
+      maxGasPressure = 24;
     }};
   
     negative_filter_valve = new GasFilter("negative_filter_valve"){{
       requirements(SglCategory.gases, ItemStack.with(SglItems.aerogel, 10, Items.metaglass, 10, Items.graphite, 8));
       through = false;
+      maxGasPressure = 24;
     }};
     
     supercharger = new GasCompressor("supercharger"){{
