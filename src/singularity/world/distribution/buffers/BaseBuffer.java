@@ -3,6 +3,7 @@ package singularity.world.distribution.buffers;
 import arc.math.WindowedMean;
 import arc.struct.IntMap;
 import arc.util.Interval;
+import arc.util.Time;
 import mindustry.world.modules.BlockModule;
 import org.jetbrains.annotations.NotNull;
 import singularity.world.distribution.DistributeNetwork;
@@ -22,7 +23,7 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
   protected IntMap<T> memory = new IntMap<>();
   
   public int space(){
-    return capacity - used;
+    return (int) Math.floor(capacity*Time.delta - used);//计算时均衡帧率控制单刻缓冲大小
   }
   
   public Number remainingCapacity(){

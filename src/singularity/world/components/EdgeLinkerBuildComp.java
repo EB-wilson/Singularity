@@ -10,7 +10,7 @@ import universecore.annotations.Annotations;
 import universecore.components.blockcomp.BuildCompBase;
 
 public interface EdgeLinkerBuildComp extends BuildCompBase{
-  @Annotations.BindField("edges")
+  @Annotations.BindField(value = "edges", initialize = "new singularity.world.blocks.distribute.matrixGrid.EdgeContainer()")
   default EdgeContainer getEdges(){
     return null;
   }
@@ -110,5 +110,9 @@ public interface EdgeLinkerBuildComp extends BuildCompBase{
   
   default Tile tile(){
     return getBuilding().tile();
+  }
+
+  default EdgeLinkerComp getEdgeBlock(){
+    return getBlock(EdgeLinkerComp.class);
   }
 }

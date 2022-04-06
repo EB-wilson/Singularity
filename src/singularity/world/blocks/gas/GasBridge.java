@@ -2,7 +2,6 @@ package singularity.world.blocks.gas;
 
 import arc.Core;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
 import arc.util.Strings;
 import mindustry.game.Team;
 import mindustry.gen.Building;
@@ -53,7 +52,6 @@ public class GasBridge extends ItemBridge implements GasBlockComp{
   @Annotations.ImplEntries
   public class GasBridgeBuild extends ItemBridgeBuild implements GasBuildComp{
     public GasesModule gases;
-    public ObjectMap<String, Heaps<?>> heaps = new ObjectMap<>();
   
     @Override
     public Building create(Block block, Team team){

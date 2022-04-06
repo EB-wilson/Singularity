@@ -170,4 +170,30 @@ public class SglDraw{
     Draw.draw(Draw.z(), () -> Vars.renderer.bloom.capturePause());
     Draw.z(Layer.blockOver);
   }
+
+  public static void dashCircle(float x, float y, float radius){
+    dashCircle(x, y, radius, 0);
+  }
+
+  public static void dashCircle(float x, float y, float radius, float rotate){
+    dashCircle(x, y, radius, 0.6f, rotate);
+  }
+
+  public static void dashCircle(float x, float y, float radius, float scaleFactor, float rotate){
+    int sides = 10 + (int)(radius * scaleFactor);
+    if(sides % 2 == 1) sides++;
+
+    Tmp.v1.set(0, 0);
+
+    for(int i = 0; i < sides; i++){
+      if(i % 2 == 0) continue;
+      Tmp.v1.set(radius, 0).setAngle(rotate + 360f / sides * i + 90);
+      float x1 = Tmp.v1.x;
+      float y1 = Tmp.v1.y;
+
+      Tmp.v1.set(radius, 0).setAngle(rotate + 360f / sides * (i + 1) + 90);
+
+      Lines.line(x1 + x, y1 + y, Tmp.v1.x + x, Tmp.v1.y + y);
+    }
+  }
 }

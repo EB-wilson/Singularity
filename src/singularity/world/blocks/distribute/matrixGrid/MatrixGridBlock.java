@@ -93,7 +93,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
 
       if(c.isClear){
         if(t instanceof IOPointBlock.IOPoint){
-          ((IOPointBlock.IOPoint) t).applyConfig(null);
+          ((IOPointBlock.IOPoint) t).config.clear();
         }
         TargetConfigure oldCfg = entity.configMap.remove(c.position);
         if(oldCfg != null) entity.configs.remove(oldCfg);

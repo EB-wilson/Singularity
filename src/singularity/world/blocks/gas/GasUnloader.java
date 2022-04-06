@@ -2,7 +2,6 @@ package singularity.world.blocks.gas;
 
 import arc.graphics.g2d.Draw;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
 import arc.util.Eachable;
 import arc.util.Nullable;
 import arc.util.io.Reads;
@@ -17,8 +16,8 @@ import mindustry.world.blocks.ItemSelection;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.SglContents;
-import singularity.world.components.GasBuildComp;
 import singularity.world.blocks.SglBlock;
+import singularity.world.components.GasBuildComp;
 import singularity.world.meta.SglBlockGroup;
 import singularity.world.modules.GasesModule;
 import universecore.annotations.Annotations;
@@ -61,7 +60,6 @@ public class GasUnloader extends GasBlock{
   
   @Annotations.ImplEntries
   public class GasUnloaderBuild extends SglBlock.SglBuilding implements Takeable{
-    public ObjectMap<String, Heaps<?>> heaps = new ObjectMap<>();
     public @Nullable Gas current = null;
     public GasesModule tempGases;
   

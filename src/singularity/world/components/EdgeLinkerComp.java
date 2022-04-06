@@ -117,7 +117,7 @@ public interface EdgeLinkerComp{
         Tile tile = origin.tile().nearby(dx*l, dy*l);
         if(tile == null) continue;
         Building build = tile.build;
-        if(canLink(origin, build)) tmpSeq.add((EdgeLinkerBuildComp) build);
+        if(build instanceof EdgeLinkerBuildComp && canLink(origin, (EdgeLinkerBuildComp) build)) tmpSeq.add((EdgeLinkerBuildComp) build);
       }
     }
     
@@ -138,16 +138,22 @@ public interface EdgeLinkerComp{
       else entity.link((EdgeLinkerBuildComp) build);
     }
   }
-  
-  default boolean canLink(EdgeLinkerBuildComp origin, Building other){
-    return other instanceof EdgeLinkerBuildComp && canLink(origin, (EdgeLinkerBuildComp) other);
-  }
-  
+
   default boolean canLink(EdgeLinkerBuildComp origin, EdgeLinkerBuildComp other){
-    int xDistance = Math.abs(origin.tile().x - other.tile().x),
-        yDistance = Math.abs(origin.tile().y - other.tile().y);
-    
-    return (yDistance < linkLength() + getBlock().size/2f + getBlock().offset && origin.tile().x == other.tile().x && origin.tile().y != other.tile().y)
-        || (xDistance < linkLength() + getBlock().size/2f + getBlock().offset && origin.tile().x != other.tile().x && origin.tile().y == other.tile().y);
+    return canLink(origin.tile(), origin.getEdgeBlock(), other.tile(), other.getEdgeBlock());
   }
+  
+  default boolean canLink(Tile origin, EdgeLinkerComp originBlock, Tile other, EdgeLinkerComp otherBlock){
+    if(!originBlock.linkable(otherBlock) || otherBlock.linkable(this)) return false;
+
+    int xDistance = Math.abs(origin.x - other.x),
+        yDistance = Math.abs(origin.y - other.y);
+
+    int linkLength = Math.min(originBlock.linkLength(), otherBlock.linkLength());
+    
+    return (yDistance < linkLength + getBlock().size/2f + getBlock().offset && origin.x == other.x && origin.y != other.y)
+        || (xDistance < linkLength + getBlock().size/2f + getBlock().offset && origin.x != other.x && origin.y == other.y);
+  }
+
+  boolean linkable(EdgeLinkerComp other);
 }

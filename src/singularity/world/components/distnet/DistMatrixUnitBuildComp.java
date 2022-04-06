@@ -20,7 +20,7 @@ import universecore.util.Empties;
 
 @SuppressWarnings("rawtypes")
 public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
-  @Annotations.BindField("grid")
+  @Annotations.BindField(value = "grid", initialize = "new singularity.world.distribution.MatrixGrid(this)")
   default MatrixGrid matrixGrid(){
     return null;
   }

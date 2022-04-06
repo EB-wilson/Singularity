@@ -79,66 +79,63 @@ public class DistTargetConfigTable extends Table{
             selected = Tmp.cr1.set(x, y, 45).contains(Core.input.mouse());
           }
         });
-    
-        if(Core.app.isAndroid()){
-          addCaptureListener(new ElementGestureListener(){
-            @Override
-            public void touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
-              super.touchDown(event, x, y, pointer, button);
-              selected = true;
-            }
-        
-            @Override
-            public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
-              super.touchUp(event, x, y, pointer, button);
-              selected = false;
-              valid = true;
-            }
-        
-            @Override
-            public void pan(InputEvent event, float x, float y, float dx, float dy){
-              if(valid){
-                deltaX += dx;
-                deltaY += dy;
-                if(deltaX > 90){
-                  setDireBit((byte) 1);
-                }
-                else if(deltaX < -90){
-                  setDireBit((byte) 4);
-                }
-                else if(deltaY > 90){
-                  setDireBit((byte) 2);
-                }
-                else if(deltaY < -90){
-                  setDireBit((byte) 8);
-                }
+
+        addCaptureListener(new ElementGestureListener(){
+          @Override
+          public void touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
+            super.touchDown(event, x, y, pointer, button);
+            selected = true;
+          }
+
+          @Override
+          public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
+            super.touchUp(event, x, y, pointer, button);
+            selected = false;
+            valid = true;
+          }
+
+          @Override
+          public void pan(InputEvent event, float x, float y, float dx, float dy){
+            if(valid){
+              deltaX += dx;
+              deltaY += dy;
+              if(deltaX > 90){
+                setDireBit((byte) 1);
               }
-              super.pan(event, x, y, deltaX, deltaY);
-            }
-          });
-        }
-        else{
-          addListener(new InputListener(){
-            @Override
-            public boolean keyDown(InputEvent event, KeyCode keycode){
-              if(selected){
-                if(keycode.equals(KeyCode.right)){
-                  setDireBit((byte) 1);
-                }
-                else if(keycode.equals(KeyCode.up)){
-                  setDireBit((byte) 2);
-                }
-                else if(keycode.equals(KeyCode.left)){
-                  setDireBit((byte) 4);
-                }
-                else if(keycode.equals(KeyCode.down)){
-                  setDireBit((byte) 8);
-                }
+              else if(deltaX < -90){
+                setDireBit((byte) 4);
               }
-              return super.keyDown(event, keycode);
+              else if(deltaY > 90){
+                setDireBit((byte) 2);
+              }
+              else if(deltaY < -90){
+                setDireBit((byte) 8);
+              }
             }
-          });
-        }
+            super.pan(event, x, y, deltaX, deltaY);
+          }
+        });
+
+        addListener(new InputListener(){
+          @Override
+          public boolean keyDown(InputEvent event, KeyCode keycode){
+            if(selected){
+              if(keycode.equals(KeyCode.right)){
+                setDireBit((byte) 1);
+              }
+              else if(keycode.equals(KeyCode.up)){
+                setDireBit((byte) 2);
+              }
+              else if(keycode.equals(KeyCode.left)){
+                setDireBit((byte) 4);
+              }
+              else if(keycode.equals(KeyCode.down)){
+                setDireBit((byte) 8);
+              }
+            }
+            return super.keyDown(event, keycode);
+          }
+        });
       }
   
       @Override

@@ -52,7 +52,6 @@ import singularity.world.modules.SglConsumeModule;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ConsumerBlockComp;
 import universecore.components.blockcomp.ConsumerBuildComp;
-import universecore.components.blockcomp.Takeable;
 import universecore.ui.table.RecipeTable;
 import universecore.util.DataPackable;
 import universecore.util.UncLiquidStack;
@@ -300,7 +299,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public boolean updateRecipe;
     
     public int select;
-    @Annotations.FieldKey("heaps") public ObjectMap<String, Takeable.Heaps<?>> dumpPairs = new ObjectMap<>();
 
     @SuppressWarnings("unchecked")
     public <T> T getVar(String field){
@@ -415,11 +413,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
     public boolean updateValid(){
       return true;
-    }
-
-    @Override
-    public void updateTile(){
-      super.updateTile();
     }
 
     @Override

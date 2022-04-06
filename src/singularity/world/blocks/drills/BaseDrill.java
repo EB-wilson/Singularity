@@ -41,10 +41,10 @@ public class BaseDrill extends SglBlock{
   public float drillTime = 300f;
   /**钻头预热速度，决定钻头提升到最大效率的速度*/
   public float warmupSpeed = 0.02f;
-  /**是否显示正在采掘的矿物*/
-  public boolean drawMiningOre = true;
   /**转子的旋转速度倍数*/
   public float rotatorSpeed = 2f;
+
+  public float hardMultiple = 50;
   
   /**轮缘(_rim后缀的贴图)的着色*/
   public Color heatColor = Color.valueOf("ff5512");
@@ -82,8 +82,7 @@ public class BaseDrill extends SglBlock{
     config(boolean[].class, (BaseDrillBuild entity, boolean[] b) -> entity.currentMines = b);
     configClear((BaseDrillBuild e) -> e.currentMines = new boolean[e.currentMines.length]);
   }
-  
-  @SuppressWarnings("CodeBlock2Expr")
+
   public BaseConsumers newBooster(float increase){
     return newOptionalConsume(
       (entity, cons) -> {
@@ -129,7 +128,7 @@ public class BaseDrill extends SglBlock{
       for(ItemStack stack: ores){
         float width = stack.item.hardness <= bitHardness?
           //可挖掘的矿物显示
-          drawPlaceText(Core.bundle.formatFloat("bar.drillspeed", 60f / (drillTime + stack.item.hardness*50f) * stack.amount, 2), x, y - line, true):
+          drawPlaceText(Core.bundle.formatFloat("bar.drillspeed", 60f / (drillTime + stack.item.hardness*hardMultiple) * stack.amount, 2), x, y - line, true):
           //不可挖掘的矿物显示
           drawPlaceText(Core.bundle.get("bar.drilltierreq"), x, y - line, false);
         float dx = x * Vars.tilesize + offset - width/2f - 4f, dy = y * Vars.tilesize + offset + size * Vars.tilesize / 2f + 5 - line*8f;
@@ -298,11 +297,11 @@ public class BaseDrill extends SglBlock{
         ItemStack ore = outputItems.get(index);
     
         if(updateValid()){
-          progress[index] += delta() * ore.amount * speed * warmup;
-          lastDrillSpeed[index] = (speed * ore.amount * warmup) / (drillTime + ore.item.hardness*50f);
+          progress[index] += edelta() * ore.amount * efficiencyIncrease * warmup;
+          lastDrillSpeed[index] = (speed * ore.amount * warmup) / (drillTime + ore.item.hardness*hardMultiple);
         }
         
-        float delay = drillTime + ore.item.hardness*50f;
+        float delay = drillTime + ore.item.hardness*hardMultiple;
         
         if(progress[index] >= delay){
           items.add(ore.item, 1);

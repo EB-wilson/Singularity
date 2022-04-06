@@ -110,7 +110,12 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     EdgeLinkerComp.super.link(entity, pos);
     ((MatrixGridCoreBuild)entity).linkLerp = 0;
   }
-  
+
+  @Override
+  public boolean linkable(EdgeLinkerComp other){
+    return other instanceof MatrixEdgeBlock;
+  }
+
   @Override
   public void init(){
     super.init();
@@ -174,7 +179,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     @Override
     public boolean onConfigureTileTapped(Building other){
       boolean result = super.onConfigureTileTapped(other);
-      if(canLink(this, other)){
+      if(other instanceof EdgeLinkerBuildComp && canLink(this, (EdgeLinkerBuildComp) other)){
         configure(other.pos());
         return false;
       }

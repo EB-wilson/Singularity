@@ -2,7 +2,6 @@ package singularity.world.blocks.liquid;
 
 import arc.graphics.g2d.Draw;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
 import arc.util.Eachable;
 import arc.util.Nullable;
 import arc.util.io.Reads;
@@ -62,8 +61,6 @@ public class LiquidUnloader extends Block{
   @Annotations.ImplEntries
   public class LiquidUnloadedBuild extends Building implements Takeable{
     public @Nullable Liquid current = null;
-
-    public ObjectMap<String, Heaps<?>> heaps = new ObjectMap<>();
 
     @Override
     public void updateTile(){

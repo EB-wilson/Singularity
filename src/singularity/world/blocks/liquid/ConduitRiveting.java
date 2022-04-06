@@ -60,7 +60,6 @@ public class ConduitRiveting extends ClusterConduit{
   public class ConduitRivetingBuild extends ClusterConduitBuild implements Takeable{
     public int index = -1;
     public boolean output;
-    public ObjectMap<String, Heaps<?>> heaps = new ObjectMap<>();
   
     @Override
     public void draw(){
