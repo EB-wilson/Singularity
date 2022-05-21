@@ -72,13 +72,13 @@ public class SglConsumeMedium<T extends Building & MediumBuildComp & ConsumerBui
   @Override
   public void build(T entity, Table table){
     table.add(new ReqImage(Singularity.getModAtlas("medium"),
-        () -> entity.mediumContains() > request*entity.consDelta(parent) + 0.0001f)).padRight(8);
+        () -> entity.mediumContains() > request*parent.delta(entity)*multiple(entity) + 0.0001f)).padRight(8);
   }
 
   @Override
   public boolean valid(T entity){
     return entity.mediumContains() >= request*(entity.getBlock().hasPower && entity.getBuilding().power.status != 0?
-        entity.delta()*entity.power.status: entity.getBuilding().delta())*entity.consumeMultiplier(this);
+        entity.delta()*entity.power.status: entity.getBuilding().delta())*multiple(entity);
   }
 
   @Override

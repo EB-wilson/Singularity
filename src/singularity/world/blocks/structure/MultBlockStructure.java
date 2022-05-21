@@ -11,7 +11,7 @@ import singularity.type.SglContents;
 import singularity.world.components.ChainsBuildComp;
 import singularity.world.components.StructBlockComp;
 import singularity.world.components.StructBuildComp;
-import singularity.world.blocks.chains.ChainContainer;
+import singularity.world.blocks.chains.ChainsContainer;
 
 public class MultBlockStructure extends UnlockableContent{
   StructBlockComp[][] structure;
@@ -32,7 +32,7 @@ public class MultBlockStructure extends UnlockableContent{
     return SglContents.structure;
   }
   
-  public boolean match(ChainContainer container){
+  public boolean match(ChainsContainer container){
     int currX = Vars.world.tiles.width, currY = Vars.world.tiles.height;
     for(ChainsBuildComp target: container.all){
       if(!(target instanceof StructBuildComp) || !structBlocks.contains((StructBlockComp)target.getChainsBlock())) continue;
@@ -44,7 +44,7 @@ public class MultBlockStructure extends UnlockableContent{
     return tile != null && match(container, tile);
   }
   
-  public boolean match(ChainContainer container, Tile origin){
+  public boolean match(ChainsContainer container, Tile origin){
     int ox = origin.x, oy = origin.y;
     
     for(int dx=0; dx<Sgl.maxStructureSize; dx++){

@@ -42,6 +42,10 @@ public class EdgeContainer{
     if(curr != null && !exclude.contains(curr)){
       closure = true;
       updatePoly();
+
+      for(EdgeLinkerBuildComp edge: all){
+        edge.edgeUpdated();
+      }
       return;
     }
     
@@ -52,6 +56,10 @@ public class EdgeContainer{
     }
     poly = null;
     closure = false;
+
+    for(EdgeLinkerBuildComp edge: all){
+      edge.edgeUpdated();
+    }
   }
   
   public boolean isClosure(){

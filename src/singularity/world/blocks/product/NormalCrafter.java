@@ -34,8 +34,8 @@ import singularity.Singularity;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglLiquidStack;
-import singularity.world.components.GasBuildComp;
 import singularity.world.blocks.SglBlock;
+import singularity.world.components.GasBuildComp;
 import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.draw.DrawFactory;
@@ -46,12 +46,13 @@ import singularity.world.products.ProduceGases;
 import singularity.world.products.Producers;
 import singularity.world.products.SglProduceType;
 import universecore.annotations.Annotations;
-import universecore.components.blockcomp.ProducerBlockComp;
-import universecore.components.blockcomp.ProducerBuildComp;
+import universecore.components.blockcomp.FactoryBlockComp;
+import universecore.components.blockcomp.FactoryBuildComp;
 import universecore.util.UncLiquidStack;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.UncConsumeLiquids;
 import universecore.world.consumers.UncConsumePower;
+import universecore.world.producers.BaseProduce;
 import universecore.world.producers.BaseProducers;
 import universecore.world.producers.ProduceItems;
 import universecore.world.producers.ProduceLiquids;
@@ -60,7 +61,7 @@ import java.util.ArrayList;
 
 /**常规的工厂类方块，具有强大的consume-produce制造系统的近乎全能的制造类方块*/
 @Annotations.ImplEntries
-public class NormalCrafter extends SglBlock implements ProducerBlockComp{
+public class NormalCrafter extends SglBlock implements FactoryBlockComp{
   public final ArrayList<BaseProducers> producers = new ArrayList<>();
   
   public float updateEffectChance = 0.05f;
@@ -115,8 +116,6 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     
     super.init();
   
-    initProduct();
-  
     if(producers.size() > 1) configurable = canSelect;
     if(shouldConfig) configurable = true;
   }
@@ -131,7 +130,6 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   @Override
   public void setStats() {
     super.setStats();
-    setProducerStats(stats);
     if(producers.size() > 1){
       stats.add(SglStat.autoSelect, autoSelect);
       stats.add(SglStat.controllable, canSelect);
@@ -144,7 +142,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
   }
 
   @Annotations.ImplEntries
-  public class NormalCrafterBuild extends SglBuilding implements ProducerBuildComp{
+  public class NormalCrafterBuild extends SglBuilding implements FactoryBuildComp{
     private final Seq<Liquid> tempLiquid = new Seq<>();
     
     public SglProductModule producer;
@@ -152,10 +150,6 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     public Seq<Item> outputItems;
     public Seq<Liquid> outputLiquids;
     public Seq<Gas> outputGases;
-
-    public float progress;
-    public float totalProgress;
-    public float warmup;
     
     public float powerProdEfficiency;
   
@@ -173,7 +167,7 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     @Override
     public void reset(){
       super.reset();
-      progress = 0;
+      progress(0);
     }
   
     @Override
@@ -196,14 +190,15 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
         if(! tempLiquid.contains(key) && val > 0.1f) displayLiquids.add(new SglLiquidStack(key, val));
       });
     }
-  
+
+    @SuppressWarnings("unchecked")
     @Override
     public void displayBars(Table bars){
       if(recipeCurrent != -1 && producer.current != null && block.hasPower && block.outputsPower && producer.current.get(SglProduceType.power) != null){
         float productPower = powerProdEfficiency*producer.current.get(SglProduceType.power).powerProduction;
-        UncConsumePower<?> cp;
-        float consPower = consumesPower && consumer.current != null && (cp = consumer.current.get(SglConsumeType.power)) != null?
-            cp.usage*consumeMultiplier(cp): 0;
+        UncConsumePower<NormalCrafterBuild> cp;
+        float consPower = consumesPower && consumer.current != null && (cp = (UncConsumePower<NormalCrafterBuild>) consumer.current.get(SglConsumeType.power)) != null?
+            cp.usage*cp.multiple(this): 0;
         Func<Building, Bar> bar = (entity -> new Bar(
           () -> Core.bundle.format("bar.poweroutput",Strings.fixed(Math.max(productPower-consPower, 0) * 60 * entity.timeScale(), 1)),
           () -> Pal.powerBar,
@@ -288,51 +283,13 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     }
   
     @Override
-    public float getProgressIncrease(float baseTime){
-      return 1/baseTime*consDelta(consumer.current);
-    }
-  
-    @Override
     public BlockStatus status(){
       if(autoSelect && !canSelect && recipeCurrent == -1) return BlockStatus.noInput;
       return super.status();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void updateTile() {
-      producer.update();
-      /*当未选择配方时不进行更新*/
-      if(recipeCurrent == -1 || producer.current == null){
-        warmup = Mathf.lerpDelta(warmup, 0, stopSpeed);
-        return;
-      }
-      super.updateTile();
-      
-      if(consValid()){
-        progress += getProgressIncrease(consumer.current.craftTime);
-        warmup = Mathf.lerpDelta(warmup, 1, warmupSpeed);
-        if(Mathf.chanceDelta(updateEffectChance)){
-          updateEffect.at(getX() + Mathf.range(effectRange * 4f), getY() + Mathf.range(effectRange * 4));
-        }
-        
-        if(crafting != null) ((Cons<NormalCrafterBuild>)crafting).get(this);
-      }
-      else{
-        warmup = Mathf.lerpDelta(warmup, 0, stopSpeed);
-      }
-      totalProgress += warmup*edelta();
-      
-      while(progress >= 1){
-        craftEffect.at(getX(), getY());
-        progress %= 1;
-        consume();
-        produce();
-  
-        if(craftTrigger != null) ((Cons<NormalCrafterBuild>)craftTrigger).get(this);
-        if(craftedSound != Sounds.none) craftedSound.at(x, y, 1, craftedSoundVolume);
-      }
-  
       if(updateRecipe){
         if(producer.current.get(SglProduceType.item) != null) outputItems = new Seq<>(producer.current.get(SglProduceType.item).items).map(e -> e.item);
         if(producer.current.get(SglProduceType.liquid) != null) outputLiquids = new Seq<>(producer.current.get(SglProduceType.liquid).liquids).map(e -> e.liquid);
@@ -345,16 +302,18 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
       super.onUpdateCurrent();
       producer.setCurrent();
     }
-  
+
+    @SuppressWarnings("unchecked")
     @Override
     public float getPowerProduction(){
       if(!outputsPower || producer.current == null || producer.current.get(SglProduceType.power) == null) return 0;
-      return producer.current.get(SglProduceType.power).powerProduction*(powerProdEfficiency = (Mathf.num(shouldConsume() && consValid())*productMultiplier(producer.current.get(SglProduceType.power))*efficiency()));
+      powerProdEfficiency = Mathf.num(shouldConsume() && consValid())*((BaseProduce<NormalCrafterBuild>)producer.current.get(SglProduceType.power)).multiple(this);
+      return producer.getPowerProduct()*efficiency();
     }
   
     @Override
     public float efficiency(){
-      return super.efficiency()*warmup;
+      return super.efficiency()*warmup();
     }
     
     @Override
@@ -423,18 +382,28 @@ public class NormalCrafter extends SglBlock implements ProducerBlockComp{
     public void write(Writes write) {
       super.write(write);
       write.bool(recipeSelected);
-      write.f(progress);
-      write.f(totalProgress);
-      write.f(warmup);
     }
   
     @Override
     public void read(Reads read, byte revision){
       super.read(read, revision);
       recipeSelected = read.bool();
-      progress = read.f();
-      totalProgress = read.f();
-      warmup = read.f();
+    }
+
+    @Override
+    public void crafted(){
+      craftEffect.at(getX(), getY());
+      if(craftTrigger != null) ((Cons<NormalCrafterBuild>)craftTrigger).get(this);
+      if(craftedSound != Sounds.none) craftedSound.at(x, y, 1, craftedSoundVolume);
+    }
+
+    @Override
+    public void crafting(){
+      if(Mathf.chanceDelta(updateEffectChance)){
+        updateEffect.at(getX() + Mathf.range(effectRange * 4f), getY() + Mathf.range(effectRange * 4));
+      }
+
+      if(crafting != null) ((Cons<NormalCrafterBuild>)crafting).get(this);
     }
   }
 }

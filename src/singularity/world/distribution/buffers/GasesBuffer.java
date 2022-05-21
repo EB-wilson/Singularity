@@ -1,9 +1,12 @@
 package singularity.world.distribution.buffers;
 
-import arc.math.WindowedMean;
+import arc.Core;
+import arc.graphics.Color;
+import arc.graphics.g2d.TextureRegion;
 import arc.struct.Seq;
 import mindustry.gen.Building;
 import mindustry.world.modules.BlockModule;
+import singularity.contents.Gases;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.world.components.GasBuildComp;
@@ -13,6 +16,7 @@ import singularity.world.distribution.MatrixGrid;
 
 public class GasesBuffer extends BaseBuffer<GasStack, Gas, GasesBuffer.GasPacket>{
   private static final Seq<MatrixGrid.BuildingEntry<GasBuildComp>> temp = new Seq<>();
+  private final GasPacket tmp = new GasPacket(Gases.O2, 0);
 
   public void put(Gas gas, float amount){
     put(new GasPacket(gas, amount));
@@ -32,6 +36,20 @@ public class GasesBuffer extends BaseBuffer<GasStack, Gas, GasesBuffer.GasPacket
   }
 
   @Override
+  public void deReadFlow(Gas ct, Number amount){
+    tmp.obj.gas = ct;
+    tmp.obj.amount = amount.floatValue();
+    deReadFlow(tmp);
+  }
+
+  @Override
+  public void dePutFlow(Gas ct, Number amount){
+    tmp.obj.gas = ct;
+    tmp.obj.amount = amount.floatValue();
+    dePutFlow(tmp);
+  }
+
+  @Override
   public void bufferContAssign(DistributeNetwork network){
     gasRead: for(GasPacket packet: this){
       for(MatrixGrid grid: network.grids){
@@ -44,13 +62,24 @@ public class GasesBuffer extends BaseBuffer<GasStack, Gas, GasesBuffer.GasPacket
           if(packet.amount() <= 0.001f) continue gasRead;
           float move = Math.min(packet.amount(), ((GasBuildComp) handler).getGasBlock().realCapacity() - ((GasBuildComp) handler).gases().get(packet.get()));
 
-          ((GasBuildComp) handler).gases().remove(packet.get(), move);
+          packet.remove(move);
+          packet.deRead(move);
           entry.entity.handleGas((GasBuildComp) handler, packet.get(), move);
         }
       }
     }
   }
-  
+
+  @Override
+  public void bufferContAssign(DistributeNetwork network, Gas ct){
+    //TODO: 实现
+  }
+
+  @Override
+  public void bufferContAssign(DistributeNetwork network, Gas ct, Number amount){
+    //TODO: 实现
+  }
+
   @Override
   public int unit(){
     return 2;
@@ -60,20 +89,32 @@ public class GasesBuffer extends BaseBuffer<GasStack, Gas, GasesBuffer.GasPacket
   public BlockModule generateBindModule(){
     return null;
   }
-  
+
+  @Override
+  public String localization(){
+    return Core.bundle.get("misc.gas");
+  }
+
+  @Override
+  public Color displayColor(){
+    return Color.white;
+  }
+
   public class GasPacket extends Packet<GasStack, Gas>{
-    WindowedMean putMean = new WindowedMean(6), readMean = new WindowedMean(6);
-    float putCaching, readCaching;
-    float putRate = -1, readRate= -1;
-    
     public GasPacket(Gas gas, float amount){
       obj = new GasStack(gas, amount);
       putCaching += amount;
     }
     
     public GasPacket(GasStack stack){
-      obj = stack;
+      obj = stack.copy();
       putCaching += obj.amount;
+    }
+
+    public void remove(float amount){
+      tmp.obj.gas = obj.gas;
+      tmp.obj.amount = amount;
+      GasesBuffer.this.remove(tmp);
     }
   
     @Override
@@ -85,7 +126,22 @@ public class GasesBuffer extends BaseBuffer<GasStack, Gas, GasesBuffer.GasPacket
     public Gas get(){
       return obj.gas;
     }
-  
+
+    @Override
+    public Color color(){
+      return obj.gas.color;
+    }
+
+    @Override
+    public String localization(){
+      return obj.gas.localizedName;
+    }
+
+    @Override
+    public TextureRegion icon(){
+      return obj.gas.fullIcon;
+    }
+
     @Override
     public int occupation(){
       return (int)Math.ceil(obj.amount*unit());
@@ -95,12 +151,18 @@ public class GasesBuffer extends BaseBuffer<GasStack, Gas, GasesBuffer.GasPacket
     public Float amount(){
       return obj.amount;
     }
-  
+
+    @Override
+    public void setZero(){
+      readCaching += occupation();
+      obj.amount = 0;
+    }
+
     @Override
     public void merge(Packet<GasStack, Gas> other){
       if(other.id() == id()){
         obj.amount += other.obj.amount;
-        putCaching += obj.amount;
+        putCaching += other.occupation();
       }
     }
     
@@ -108,24 +170,25 @@ public class GasesBuffer extends BaseBuffer<GasStack, Gas, GasesBuffer.GasPacket
     public void remove(Packet<GasStack, Gas> other){
       if(other.id() == id()){
         obj.amount -= other.obj.amount;
-        readCaching += obj.amount;
+        readCaching += other.occupation();
       }
     }
-    
-    @Override
-    public void calculateDelta(){
-      putMean.add(putCaching);
-      putCaching = 0;
-      if(putMean.hasEnoughData()) putRate = putMean.mean();
-      
-      readMean.add(readCaching);
-      readCaching = 0;
-      if(readMean.hasEnoughData()) readRate = readMean.mean();
+
+    public void deRead(float amount){
+      tmp.obj.gas = obj.gas;
+      tmp.obj.amount = amount;
+      GasesBuffer.this.deReadFlow(tmp);
     }
-    
+
+    public void dePut(float amount){
+      tmp.obj.gas = obj.gas;
+      tmp.obj.amount = amount;
+      GasesBuffer.this.dePutFlow(tmp);
+    }
+
     @Override
-    public float delta(){
-      return 0;
+    public Packet<GasStack, Gas> copy(){
+      return new GasPacket(obj);
     }
   }
 }

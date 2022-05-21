@@ -1,20 +1,20 @@
 package singularity.world.components.distnet;
 
 import arc.struct.IntMap;
-import arc.struct.ObjectMap;
+import arc.struct.OrderedMap;
 import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.gen.Building;
 import mindustry.world.Tile;
 import singularity.ui.tables.DistTargetConfigTable;
-import singularity.world.components.GasBuildComp;
 import singularity.world.blocks.distribute.IOPointBlock;
+import singularity.world.blocks.distribute.matrixGrid.RequestHandlers.RequestHandler;
+import singularity.world.components.GasBuildComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
 import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.request.DistRequestBase;
-import singularity.world.distribution.request.RequestFactories.RequestFactory;
 import universecore.annotations.Annotations;
 import universecore.util.Empties;
 
@@ -25,8 +25,8 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
     return null;
   }
   
-  @Annotations.BindField("buffers")
-  default ObjectMap<DistBuffers<?>, BaseBuffer<?, ?, ?>> buffers(){
+  @Annotations.BindField(value = "buffers", initialize = "new arc.struct.OrderedMap()")
+  default OrderedMap<DistBuffers<?>, BaseBuffer<?, ?, ?>> buffers(){
     return null;
   }
   
@@ -38,6 +38,11 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   @Annotations.MethodEntry(entryMethod = "update")
   default void updateGrid(){
     if(gridValid()) matrixGrid().update();
+  }
+
+  @SuppressWarnings("unchecked")
+  default <T extends BaseBuffer<?, ?, ?>> T getBuffer(DistBuffers<T> buff){
+    return (T) buffers().get(buff);
   }
   
   default void initBuffers(){
@@ -69,12 +74,12 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   }
   
   default void addConfig(GridChildType type, ContentType contType, DistTargetConfigTable.TargetConfigure cfg){
-    RequestFactory factory = getMatrixBlock().requestFactories().get(type, Empties.nilMapO()).get(contType);
+    RequestHandler factory = getMatrixBlock().requestFactories().get(type, Empties.nilMapO()).get(contType);
     if(factory != null) factory.addParseConfig(cfg);
   }
   
   default DistRequestBase createRequest(GridChildType type, ContentType contType){
-    RequestFactory factory = getMatrixBlock().requestFactories().get(type, Empties.nilMapO()).get(contType);
+    RequestHandler factory = getMatrixBlock().requestFactories().get(type, Empties.nilMapO()).get(contType);
     if(factory == null) return null;
     DistRequestBase result = factory.makeRequest(this);
     factory.reset();

@@ -1,13 +1,9 @@
 package singularity.world.components.distnet;
 
-import arc.func.Boolf;
-import arc.func.Func;
 import arc.struct.ObjectMap;
-import arc.struct.OrderedMap;
 import mindustry.ctype.ContentType;
+import singularity.world.blocks.distribute.matrixGrid.RequestHandlers;
 import singularity.world.distribution.GridChildType;
-import singularity.world.distribution.request.DistRequestBase;
-import singularity.world.distribution.request.RequestFactories;
 import universecore.annotations.Annotations;
 
 public interface DistMatrixUnitComp{
@@ -16,21 +12,12 @@ public interface DistMatrixUnitComp{
     return 0;
   }
   
-  @Annotations.BindField("requestFactories")
-  default ObjectMap<GridChildType, ObjectMap<ContentType, RequestFactories.RequestFactory>> requestFactories(){
+  @Annotations.BindField(value = "requestFactories", initialize = "new arc.struct.ObjectMap<>()")
+  default ObjectMap<GridChildType, ObjectMap<ContentType, RequestHandlers.RequestHandler>> requestFactories(){
     return null;
   }
   
-  @Annotations.BindField("transBackFactories")
-  default OrderedMap<Boolf<? extends DistMatrixUnitBuildComp>, Func<DistMatrixUnitBuildComp, ? extends DistRequestBase<?>>> transBackFactories(){
-    return null;
-  }
-  
-  default void setFactory(GridChildType type, ContentType contType, RequestFactories.RequestFactory factory){
+  default void setFactory(GridChildType type, ContentType contType, RequestHandlers.RequestHandler factory){
     requestFactories().get(type, ObjectMap::new).put(contType, factory);
-  }
-  
-  default void setTransBackFactory(Boolf<? extends DistMatrixUnitBuildComp> weaker, Func<DistMatrixUnitBuildComp, ? extends DistRequestBase<?>> prov){
-    transBackFactories().put(weaker, prov);
   }
 }

@@ -1,7 +1,7 @@
 package singularity.world.modules;
 
-import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
+import arc.struct.OrderedMap;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.world.modules.BlockModule;
@@ -26,7 +26,7 @@ public class DistCoreModule extends BlockModule{
   public int executingAddress;
   public final DistNetworkCoreComp core;
   
-  public ObjectMap<DistBuffers<?>, BaseBuffer<?, ?, ?>> buffers = new ObjectMap<>();
+  public OrderedMap<DistBuffers<?>, BaseBuffer<?, ?, ?>> buffers = new OrderedMap<>();
   
   public DistCoreModule(DistElementBuildComp entity){
     core = (DistNetworkCoreComp) entity;
@@ -56,12 +56,14 @@ public class DistCoreModule extends BlockModule{
           if(firstAddress == -1) firstAddress = executingAddress;
           tempQueue.addLast(taskStack[executingAddress]);
           taskStack[executingAddress].onExecute();
+          taskStack[executingAddress].checkWaking();
           runCounter--;
         }
       }
       
       for(DistRequestBase request: tempQueue){
         request.checkStatus();
+
         if(!request.sleeping()){
           if(!request.preHandle()){
             blocked.add(request);
@@ -88,8 +90,8 @@ public class DistCoreModule extends BlockModule{
       }
   
       for(BaseBuffer<?, ?, ?> buffer : buffers.values()){
-        buffer.update(core.updateState());
         buffer.bufferContAssign(core.distributor().network);
+        buffer.update();
       }
     }
   }

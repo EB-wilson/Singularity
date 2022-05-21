@@ -41,7 +41,7 @@ public class SglConsumeGases<T extends Building & GasBuildComp & ConsumerBuildCo
   @Override
   public void update(T entity){
     for(GasStack stack: gases){
-      entity.gases().remove(stack.gas, stack.amount*entity.consDelta(parent)*entity.consumeMultiplier(this));
+      entity.gases().remove(stack.gas, stack.amount*parent.delta(entity)*multiple(entity));
     }
   }
   
@@ -63,7 +63,7 @@ public class SglConsumeGases<T extends Building & GasBuildComp & ConsumerBuildCo
   public void build(T entity, Table table){
     for(GasStack stack : gases){
       table.add(new ReqImage(stack.gas.uiIcon,
-        () -> entity.gases() != null && entity.gases().get(stack.gas) > stack.amount*entity.consDelta(parent) + 0.0001f)).padRight(8);
+        () -> entity.gases() != null && entity.gases().get(stack.gas) > stack.amount*multiple(entity)*parent.delta(entity) + 0.0001f)).padRight(8);
     }
     table.row();
   }
@@ -71,8 +71,7 @@ public class SglConsumeGases<T extends Building & GasBuildComp & ConsumerBuildCo
   @Override
   public boolean valid(T entity){
     for(GasStack stack: gases){
-      if(entity.gases() == null || entity.gases().get(stack.gas) < stack.amount*(entity.getBlock().hasPower && entity.getBuilding().power.status != 0?
-          entity.delta()*entity.power.status: entity.getBuilding().delta())*entity.consumeMultiplier(this)) return false;
+      if(entity.gases() == null || entity.gases().get(stack.gas) < stack.amount*(parent.delta(entity) == 0? entity.delta(): parent.delta(entity))*multiple(entity)) return false;
     }
     return true;
   }

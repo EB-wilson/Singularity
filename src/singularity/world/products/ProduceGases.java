@@ -37,7 +37,7 @@ public class ProduceGases<T extends Building & GasBuildComp & ProducerBuildComp>
   @Override
   public void update(T entity){
     for(GasStack stack: gases){
-      entity.gases().add(stack.gas, stack.amount*entity.consDelta(parent)*entity.productMultiplier(this));
+      entity.gases().add(stack.gas, stack.amount*parent.delta(entity)*multiple(entity));
     }
   }
   

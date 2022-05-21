@@ -29,22 +29,19 @@ import singularity.contents.SglItems;
 import singularity.type.GasStack;
 import singularity.ui.tables.GasDisplay;
 import singularity.world.SglFx;
+import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.components.HeatBlockComp;
 import singularity.world.components.HeatBuildComp;
-import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.draw.DrawNuclearReactor;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
-import singularity.world.products.ProduceEnergy;
 import universecore.annotations.Annotations;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.UncConsumeItems;
 import universecore.world.consumers.UncConsumeLiquids;
 import universecore.world.consumers.UncConsumeType;
 import universecore.world.particles.Particle;
-import universecore.world.producers.BaseProduce;
-import universecore.world.producers.ProducePower;
 
 import static mindustry.Vars.state;
 import static mindustry.Vars.tilesize;
@@ -65,7 +62,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   public Effect explodeEffect = SglFx.reactorExplode;
   
   public Seq<BaseConsumers> coolants = new Seq<>();
-  public Seq<BaseConsumers> flues = new Seq<>();
+  public Seq<BaseConsumers> fuels = new Seq<>();
   
   ObjectSet<Item> consItems = new ObjectSet<>();
   
@@ -82,12 +79,24 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   public void newReact(Item fuel, float time, float output, boolean prodWaste){
     newConsume();
     consume.time(time);
-    consume.item(fuel, 1);
+    consume.item(fuel, 1).setMultiple((NuclearReactorBuild e) -> {
+      int total = 0;
+      for(BaseConsumers cons: fuels){
+        UncConsumeItems<?> ci = cons.get(UncConsumeType.item);
+        if(ci == null) return 1;
+
+        for(ItemStack stack : ci.items){
+          total += e.items.get(stack.item);
+        }
+      }
+      return e.lastMulti = (float)total/itemCapacity;
+    });
+
     newProduce();
     produce.energy(output);
     if(prodWaste) produce.item(SglItems.nuclear_waste, 1);
     
-    flues.add(consume);
+    fuels.add(consume);
   }
   
   public void addCoolant(float consHeat){
@@ -210,21 +219,6 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     }
   
     @Override
-    public float productMultiplier(BaseProduce<?> prod){
-      if(!(prod instanceof ProduceEnergy) && !(prod instanceof ProducePower)) return 1;
-      int total = 0;
-      for(BaseConsumers cons: consumer.get()){
-        UncConsumeItems<?> ci = cons.get(UncConsumeType.item);
-        if(ci == null) return 1;
-  
-        for(ItemStack stack : ci.items){
-          total += items.get(stack.item);
-        }
-      }
-      return lastMulti = (float)total/itemCapacity;
-    }
-  
-    @Override
     public void updateTile(){
       super.updateTile();
       if(!consValid()) lastMulti = 0;
@@ -258,7 +252,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     public void onDestroyed(){
       Sounds.explosionbig.at(tile);
       int fuel = 0;
-      for(BaseConsumers cons: flues){
+      for(BaseConsumers cons: fuels){
         for(ItemStack stack: cons.get(SglConsumeType.item).items){
           fuel += items.get(stack.item);
         }
@@ -280,7 +274,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     
     public int majorConsTotal(){
       int result = 0;
-      for(BaseConsumers cons: flues){
+      for(BaseConsumers cons: fuels){
         for(ItemStack stack: cons.get(SglConsumeType.item).items){
           result += items.get(stack.item);
         }

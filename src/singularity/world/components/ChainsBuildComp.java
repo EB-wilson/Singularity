@@ -4,6 +4,7 @@ import arc.func.Cons;
 import arc.struct.Seq;
 import mindustry.gen.Building;
 import mindustry.gen.Posc;
+import singularity.world.blocks.chains.ChainsContainer;
 import singularity.world.modules.ChainsModule;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.BuildCompBase;
@@ -21,28 +22,21 @@ public interface ChainsBuildComp extends BuildCompBase, Posc{
   @Annotations.MethodEntry(entryMethod = "onProximityAdded")
   default void onChainsUpdate(){
     for(ChainsBuildComp other : chainBuilds()){
-      other.chains().container.add(chains().container);
+      if(other.canChain(this)) other.chains().container.add(chains().container);
     }
   }
   
   default boolean canChain(ChainsBuildComp other){
-    return getChainsBlock().chainable(other.getChainsBlock());
-    /*ChainContainer container = chains().container, otherCont = other.chains().container;
-    if(container.inlerp(other.tileX(), other.tileY())) return true;
+    if(!getChainsBlock().chainable(other.getChainsBlock())) return false;
 
-    float offset = (other.getBlock().size + other.getBlock().offset)/2;
-    float offsetS = (getBlock().size + getBlock().offset)/2;
-    return Math.max(container.maxX(), (int)(other.tileX() + offset)) - Math.min(container.minX(), (int)(other.tileX() - offset)) <= getChainsBlock().maxWidth()
-    && Math.max(container.maxY(), (int)(other.tileY() + offset)) - Math.min(container.minY(), (int)(other.tileY() - offset)) <= getChainsBlock().maxWidth()
-    && Math.max(otherCont.maxX(), (int)(tileX() + offsetS)) - Math.min(otherCont.minX(), (int)(tileX() - offsetS)) <= other.getChainsBlock().maxWidth()
-    && Math.max(otherCont.maxY(), (int)(tileY() + offsetS)) - Math.min(otherCont.minY(), (int)(tileY() - offsetS)) <= other.getChainsBlock().maxWidth();*/
+    return chains().container.inlerp(this, other);
   }
   
   @Annotations.MethodEntry(entryMethod = "onProximityRemoved")
   default void onChainsRemoved(){
     chains().container.remove(this);
   }
-  
+
   default Seq<ChainsBuildComp> chainBuilds(){
     Seq<ChainsBuildComp> result = new Seq<>();
     for(Building other: getBuilding().proximity){
@@ -56,9 +50,12 @@ public interface ChainsBuildComp extends BuildCompBase, Posc{
   default void iterator(Cons<ChainsBuildComp> cons){
     chains().each(cons);
   }
-  
-  default void setChainsListeners(){
-    chains().setListeners(getChainsBlock().listeners());
-    chains().setGlobalListeners(getChainsBlock().globalListeners());
-  }
+
+  default void containerCreated(ChainsContainer old){}
+
+  default void chainsAdded(ChainsContainer old){}
+
+  default void chainsRemoved(Seq<ChainsBuildComp> children){}
+
+  default void chainsFlowed(ChainsContainer old){}
 }

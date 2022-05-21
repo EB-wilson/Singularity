@@ -129,7 +129,7 @@ public class CrafterBlocks implements ContentList{
           e.consData(2);
         }, (s, c) -> {
           s.add(SglStat.effect, t -> t.add(Core.bundle.get("misc.doConsValid")));
-        }).acceptOverdrive = false;
+        }).setDelta((NormalCrafterBuild e) -> e.efficiency()*Time.delta);
         consume.item(item, 1);
         consume.time(180);
         consume.power(0.4f);
@@ -152,7 +152,7 @@ public class CrafterBlocks implements ContentList{
         }
       };
       
-      draw = new DrawFactory<>(this){{
+      draw = new DrawFactory<NormalCrafterBuild>(this){{
         drawerType = e -> new DrawFactoryDrawer(e){
           float rotation;
           float warmup;
@@ -163,9 +163,9 @@ public class CrafterBlocks implements ContentList{
             Draw.rect(top, entity.x, entity.y, rotation += warmup*e.edelta());
             Lines.stroke(2);
             Draw.color(Pal.accent);
-            Draw.alpha(e.warmup);
+            Draw.alpha(e.warmup());
             Lines.lineAngleCenter(
-                entity.x + Mathf.sin(entity.totalProgress, 6, (float) Vars.tilesize/3*block.size),
+                entity.x + Mathf.sin(entity.totalProgress(), 6, (float) Vars.tilesize/3*block.size),
                 entity.y,
                 90,
                 (float) block.size*Vars.tilesize/2
@@ -283,7 +283,7 @@ public class CrafterBlocks implements ContentList{
       newProduce().color = SglLiquids.algae_mud.color;
       produce.item(SglItems.chlorella_block, 1);
       
-      draw = new SglDrawCultivator<>(this){
+      draw = new SglDrawCultivator<NormalCrafterBuild>(this){
         final Color trans = new Color(0, 0, 0, 0), temp = new Color();
         
         @Override
@@ -388,7 +388,7 @@ public class CrafterBlocks implements ContentList{
           Items.copper, 5
       )).random();
       
-      draw = new DrawFactory<>(this){
+      draw = new DrawFactory<NormalCrafterBuild>(this){
         public TextureRegion laser;
         
         final Color trans = new Color(0, 0, 0, 0);
@@ -412,8 +412,8 @@ public class CrafterBlocks implements ContentList{
                   e.producer.current != null? e.producer.current.color: trans);
               Draw.color();
               Draw.rect(region, entity.x(), entity.y());
-              Draw.alpha(entity.warmup);
-              Draw.rect(laser, entity.x(), entity.y(), rotation += entity.warmup*entity.edelta()*1.5f);
+              Draw.alpha(entity.warmup());
+              Draw.rect(laser, entity.x(), entity.y(), rotation += entity.warmup()*entity.edelta()*1.5f);
               Draw.color();
               Draw.rect(rotator, entity.x(), entity.y(), rotation);
               Draw.rect(top, entity.x(), entity.y());
@@ -469,11 +469,11 @@ public class CrafterBlocks implements ContentList{
       consume.power(1.8f);
       newProduce();
       produce.liquid(SglLiquids.FEX_liquid, 0.1f);
-      produce.items(ItemStack.with(Items.sand, 4, SglItems.crush_ore, 2, SglItems.crush_uranium_ore, 1)).random();
+      produce.items(ItemStack.with(Items.sand, 4, SglItems.crush_ore, 1, SglItems.crush_uranium_ore, 1)).random();
       
       craftEffect = Fx.pulverizeMedium;
       
-      draw = new DrawFactory<>(this){
+      draw = new DrawFactory<NormalCrafterBuild>(this){
         TextureRegion point;
   
         @Override
@@ -489,7 +489,7 @@ public class CrafterBlocks implements ContentList{
             Draw.alpha(entity.liquids.get(Liquids.water)/entity.block.liquidCapacity);
             Draw.rect(liquid, entity.x(), entity.y());
             Draw.color();
-            Drawf.spinSprite(rotator, entity.x(), entity.y(), entity.totalProgress*4.5f);
+            Drawf.spinSprite(rotator, entity.x(), entity.y(), entity.totalProgress()*4.5f);
             Draw.rect(top, entity.x(), entity.y());
             BaseConsume<?> cons = ((SglConsumers) (entity.consumer.current)).first();
             Color topColor;
@@ -530,7 +530,7 @@ public class CrafterBlocks implements ContentList{
       newProduce();
       produce.item(SglItems.crystal_FEX, 1);
 
-      draw = new SglDrawCultivator<>(this){
+      draw = new SglDrawCultivator<NormalCrafterBuild>(this){
         {
           plantColor = Color.valueOf("#C73A3A");
           plantColorLight = Color.valueOf("#E57D7D");
@@ -556,7 +556,7 @@ public class CrafterBlocks implements ContentList{
       newProduce();
       produce.liquid(SglLiquids.phase_FEX_liquid, 0.2f);
       
-      draw = new DrawFactory<>(this){{
+      draw = new DrawFactory<NormalCrafterBuild>(this){{
         drawDef = e -> {
           Draw.rect(bottom, e.x, e.y);
           Draw.color(SglLiquids.FEX_liquid.color, SglLiquids.phase_FEX_liquid.color, e.liquids.get(SglLiquids.phase_FEX_liquid)/liquidCapacity);
@@ -602,10 +602,10 @@ public class CrafterBlocks implements ContentList{
         {
           drawDef = entity -> {
             Draw.rect(region, entity.x, entity.y);
-            if(entity.items.get(SglItems.strengthening_alloy) > 0 || entity.progress > 0.4f)
+            if(entity.items.get(SglItems.strengthening_alloy) > 0 || entity.progress() > 0.4f)
               Draw.rect(frame, entity.x, entity.y);
             if(entity.consumer.current != null) Draw.color(entity.consumer.current.get(SglConsumeType.item).items[0].item.color);
-            Draw.alpha(entity.progress);
+            Draw.alpha(entity.progress());
             Draw.rect(top, entity.x, entity.y);
           };
         }
@@ -627,7 +627,7 @@ public class CrafterBlocks implements ContentList{
       
       craftEffect = Fx.smeltsmoke;
       
-      draw = new SglDrawSmelter<>(this){
+      draw = new SglDrawSmelter<NormalCrafterBuild>(this){
         {
           {
             flameRadius = 3.2f;
@@ -667,7 +667,7 @@ public class CrafterBlocks implements ContentList{
       updateEffectChance = 0.035f;
       craftEffect = SglFx.steamBreakOut;
       
-      draw = new DrawFactory<>(this){
+      draw = new DrawFactory<NormalCrafterBuild>(this){
         public TextureRegion liquidCenter, liquidSide, piston;
         
         @Override
@@ -697,9 +697,9 @@ public class CrafterBlocks implements ContentList{
             Draw.color(Liquids.water.color);
             Draw.alpha(entity.liquids.get(Liquids.water)/entity.block.liquidCapacity);
             Draw.rect(liquid, entity.x, entity.y);
-            Drawf.spinSprite(rotator, entity.x(), entity.y(), 90f + entity.totalProgress*2);
+            Drawf.spinSprite(rotator, entity.x(), entity.y(), 90f + entity.totalProgress()*2);
             
-            float pistonMove = -Mathf.absin(entity.totalProgress + Mathf.halfPi, 6f, 2.5f);
+            float pistonMove = -Mathf.absin(entity.totalProgress() + Mathf.halfPi, 6f, 2.5f);
             int sclx, scly;
             for(int dir=0; dir<4; dir++){
               UnlockableContent o = dir < ci.items.length? ci.items[dir].item:
@@ -716,7 +716,7 @@ public class CrafterBlocks implements ContentList{
               Draw.rect(piston, entity.x + pistonMove*sclx, entity.y + pistonMove*scly, dir*90);
             }
             Draw.color(pl.liquids[0].liquid.color);
-            Draw.alpha(entity.warmup*0.75f);
+            Draw.alpha(entity.warmup()*0.75f);
             Draw.rect(liquidCenter, entity.x(), entity.y());
             Draw.color();
             Draw.rect(region, entity.x(), entity.y());
@@ -758,7 +758,7 @@ public class CrafterBlocks implements ContentList{
         @Override
         public float alphaControl(int index, NormalCrafterBuild e){
           if(index == 1){
-            return e.warmup;
+            return e.warmup();
           }
           else return 1;
         }
@@ -815,7 +815,7 @@ public class CrafterBlocks implements ContentList{
       craftEffect = Fx.smeltsmoke;
       updateEffect = Fx.plasticburn;
       
-      draw = new DrawFactory<>(this){
+      draw = new DrawFactory<NormalCrafterBuild>(this){
         TextureRegion rim, topRotator;
         
         @Override
@@ -840,13 +840,13 @@ public class CrafterBlocks implements ContentList{
           drawDef = entity -> {
             Draw.rect(bottom, entity.x(), entity.y());
             Draw.color(Liquids.slag.color);
-            Draw.alpha(entity.warmup);
+            Draw.alpha(entity.warmup());
             Draw.rect(liquid, entity.x(), entity.y());
             Draw.color();
-            Drawf.spinSprite(rim, entity.x(), entity.y(), entity.totalProgress*0.8f);
+            Drawf.spinSprite(rim, entity.x(), entity.y(), entity.totalProgress()*0.8f);
             Draw.rect(region, entity.x(), entity.y());
-            Drawf.spinSprite(rotator, entity.x(), entity.y(), entity.totalProgress*1.8f);
-            Draw.rect(topRotator, entity.x(), entity.y(), -entity.totalProgress*1.2f);
+            Drawf.spinSprite(rotator, entity.x(), entity.y(), entity.totalProgress()*1.8f);
+            Draw.rect(topRotator, entity.x(), entity.y(), -entity.totalProgress()*1.2f);
             if(entity.consumer.current != null){
               BaseConsumers cons = entity.consumer.current;
               Color color;
@@ -863,7 +863,7 @@ public class CrafterBlocks implements ContentList{
               }
               Draw.color(color);
               Draw.alpha(alpha);
-              Draw.rect(top, entity.x(), entity.y(), - entity.totalProgress*1.2f);
+              Draw.rect(top, entity.x(), entity.y(), - entity.totalProgress()*1.2f);
             }
           };
         }
@@ -884,7 +884,7 @@ public class CrafterBlocks implements ContentList{
   
       craftEffect = SglFx.FEXsmoke;
   
-      draw = new DrawFactory<>(this){
+      draw = new DrawFactory<NormalCrafterBuild>(this){
         public TextureRegion framework, crystal, wave;
     
         @Override
@@ -903,14 +903,14 @@ public class CrafterBlocks implements ContentList{
             public void draw(){
               Draw.rect(bottom, e.x, e.y);
           
-              if(e.progress > 0.3 || e.items.has(SglItems.strengthening_alloy)) Draw.rect(framework, e.x, e.y);
+              if(e.progress() > 0.3 || e.items.has(SglItems.strengthening_alloy)) Draw.rect(framework, e.x, e.y);
           
-              Draw.alpha(e.progress);
+              Draw.alpha(e.progress());
               Draw.rect(crystal, e.x, e.y);
           
-              Draw.alpha(e.warmup);
+              Draw.alpha(e.warmup());
               Lines.lineAngleCenter(
-                  e.x + Mathf.sin(e.totalProgress, 6, (float) Vars.tilesize/3*block.size),
+                  e.x + Mathf.sin(e.totalProgress(), 6, (float) Vars.tilesize/3*block.size),
                   e.y,
                   90,
                   (float) block.size*Vars.tilesize/2
@@ -921,8 +921,8 @@ public class CrafterBlocks implements ContentList{
               Draw.z(Layer.effect);
               for(int dist=2; dist>=0; dist--){
                 Draw.color(Color.valueOf("FF756F"));
-                Draw.alpha((alphas[dist] <= 1? alphas[dist]: alphas[dist] <= 1.5? 1: 0)*e.warmup);
-                if(e.warmup > 0){
+                Draw.alpha((alphas[dist] <= 1? alphas[dist]: alphas[dist] <= 1.5? 1: 0)*e.warmup());
+                if(e.warmup() > 0){
                   if(alphas[dist] < 0.4) alphas[dist] += 0.6;
                   for(int i=0; i<4; i++){
                     Draw.rect(wave,
@@ -955,7 +955,7 @@ public class CrafterBlocks implements ContentList{
       
       craftEffect = SglFx.crystalConstructed;
       
-      draw = new DrawFactory<>(this){
+      draw = new DrawFactory<NormalCrafterBuild>(this){
         TextureRegion laser, crystal, crystalPower;
   
         @Override
@@ -973,20 +973,20 @@ public class CrafterBlocks implements ContentList{
             @Override
             public void draw(){
               Draw.rect(region, entity.x, entity.y);
-              Draw.rect(rotator, entity.x, entity.y, (rotation += e.warmup*e.edelta()*1.8f) + 45);
+              Draw.rect(rotator, entity.x, entity.y, (rotation += e.warmup()*e.edelta()*1.8f) + 45);
               Draw.rect(rotator, entity.x, entity.y, -rotation - 45);
               Draw.z(Layer.effect);
-              if(e.items.has(SglItems.crystal_FEX) || e.progress > 0.4f){
+              if(e.items.has(SglItems.crystal_FEX) || e.progress() > 0.4f){
                 Draw.rect(crystal, e.x, e.y);
-                Draw.alpha(e.progress);
+                Draw.alpha(e.progress());
                 Draw.rect(crystalPower, e.x, e.y);
                 Draw.color();
               }
               Draw.color(Color.white, Color.blue.cpy().lerp(Color.white, 0.4f), 0.45f*(float) Math.random());
-              Draw.alpha(e.warmup);
+              Draw.alpha(e.warmup());
               Draw.rect(laser, entity.x, entity.y, rotation + 45);
               Draw.color(Color.white, Color.red.cpy().lerp(Color.white, 0.4f), 0.45f*(float) Math.random());
-              Draw.alpha(e.warmup);
+              Draw.alpha(e.warmup());
               Draw.rect(laser, entity.x, entity.y, -rotation - 45);
               Draw.z(Layer.effect + 1);
             }
@@ -1009,7 +1009,7 @@ public class CrafterBlocks implements ContentList{
       
       craftEffect = Fx.smeltsmoke;
       
-      draw = new DrawFactory<>(this){
+      draw = new DrawFactory<NormalCrafterBuild>(this){
         TextureRegion alloy, laserEmitter;
   
         @Override
@@ -1027,14 +1027,14 @@ public class CrafterBlocks implements ContentList{
             @Override
             public void draw(){
               Draw.rect(region, e.x, e.y);
-              timeRow += e.warmup*e.edelta();
+              timeRow += e.warmup()*e.edelta();
               dx = 4*Mathf.sin(timeRow/6);
               dy = 4*Mathf.sin(timeRow/4);
               
               Draw.rect(laserEmitter, e.x, e.y + dy);
               Draw.rect(laserEmitter, e.x + dx, e.y, 90);
               Draw.color(Color.valueOf("FF756F"));
-              Draw.alpha(e.warmup);
+              Draw.alpha(e.warmup());
               Lines.stroke(0.6f);
               SglDraw.startBloom(31);
               Lines.line(e.x - 6, e.y + dy, e.x + 6, e.y + dy);
@@ -1068,7 +1068,7 @@ public class CrafterBlocks implements ContentList{
       
       craftEffect = SglFx.polymerConstructed;
       
-      draw = new DrawFactory<>(this){
+      draw = new DrawFactory<NormalCrafterBuild>(this){
         {
           drawerType = e -> new DrawFactoryDrawer(e){
             float rotation;
@@ -1078,10 +1078,10 @@ public class CrafterBlocks implements ContentList{
             public void draw(){
               Draw.rect(bottom, e.x, e.y);
               Draw.color(Color.valueOf("#D1D19F"));
-              Draw.alpha(e.warmup);
+              Draw.alpha(e.warmup());
               Draw.rect(liquid, e.x, e.y);
               Draw.color();
-              Draw.rect(rotator, e.x, e.y, rotation += e.warmup*e.edelta()*1.75f);
+              Draw.rect(rotator, e.x, e.y, rotation += e.warmup()*e.edelta()*1.75f);
               Draw.rect(rotator, e.x, e.y, -rotation);
               Draw.rect(region, e.x, e.y);
 
@@ -1091,7 +1091,7 @@ public class CrafterBlocks implements ContentList{
             void drawForceField(){
               Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);
-              Draw.alpha(e.warmup);
+              Draw.alpha(e.warmup());
               Lines.stroke(1.5f);
               Lines.square(e.x, e.y, 34, 45 + rotation/1.5f);
               Lines.square(e.x, e.y, 36, -rotation/1.5f);
@@ -1099,9 +1099,9 @@ public class CrafterBlocks implements ContentList{
               Lines.square(e.x, e.y, 3 + Mathf.random(-0.15f, 0.15f));
               Lines.square(e.x, e.y, 4 + Mathf.random(-0.15f, 0.15f), 45);
 
-              if(e.warmup > 0.01 && timer.get(30)){
-                SglFx.forceField.at(e.x, e.y, (45 + rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.warmup});
-                Time.run(15, () -> SglFx.forceField.at(e.x, e.y, (-rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.warmup}));
+              if(e.warmup() > 0.01 && timer.get(30)){
+                SglFx.forceField.at(e.x, e.y, (45 + rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.warmup()});
+                Time.run(15, () -> SglFx.forceField.at(e.x, e.y, (-rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.warmup()}));
               }
             }
           };
@@ -1129,7 +1129,7 @@ public class CrafterBlocks implements ContentList{
       newConsume();
       consume.item(SglItems.degenerate_neutron_polymer, 1);
       consume.energy(5);
-      consume.medium(3);
+      consume.medium(2.25f);
       consume.time(120);
       newProduce();
       produce.item(SglItems.anti_metter, 1);
@@ -1170,8 +1170,8 @@ public class CrafterBlocks implements ContentList{
       };
 
       crafting = (NormalCrafterBuild e) -> {
-        if(SglDraw.clipDrawable(e.x, e.y, clipSize) && Mathf.chanceDelta(e.warmup*0.1f)) e.<LightningContainer>getVar("lightningDrawer").create();
-        if(Mathf.chanceDelta(e.warmup*0.04f)) SglFx.randomLightning.at(e.x, e.y, 0, Pal.reactorPurple);
+        if(SglDraw.clipDrawable(e.x, e.y, clipSize) && Mathf.chanceDelta(e.warmup()*0.1f)) e.<LightningContainer>getVar("lightningDrawer").create();
+        if(Mathf.chanceDelta(e.warmup()*0.04f)) SglFx.randomLightning.at(e.x, e.y, 0, Pal.reactorPurple);
       };
 
       craftTrigger = e -> {
@@ -1199,11 +1199,11 @@ public class CrafterBlocks implements ContentList{
         Effect.shake(5.5f, 20f, e.x, e.y);
       };
 
-      draw = new DrawFactory<>(this){{
+      draw = new DrawFactory<NormalCrafterBuild>(this){{
         drawDef = e -> {
           Draw.rect(bottom, e.x, e.y);
           Draw.color(Pal.reactorPurple);
-          Draw.alpha(e.warmup);
+          Draw.alpha(e.warmup());
           SglDraw.startBloom(31);
           e.<LightningContainer>getVar("lightningDrawer").draw();
           SglDraw.endBloom();
@@ -1218,27 +1218,27 @@ public class CrafterBlocks implements ContentList{
 
           SglDraw.drawLightEdge(
               e.x, e.y,
-              (145 + offsetW)*e.warmup, 4*e.warmup,
-              (35 + offsetH)*e.warmup, 2.25f*e.warmup,
+              (145 + offsetW)*e.warmup(), 4*e.warmup(),
+              (35 + offsetH)*e.warmup(), 2.25f*e.warmup(),
               0
           );
 
-          Draw.alpha(0.4f*e.warmup);
-          Lines.stroke(5f + 3*e.warmup);
-          Lines.circle(e.x, e.y, 73*e.warmup);
-          Draw.alpha(0.6f*e.warmup);
-          Lines.stroke( + 5*e.warmup);
-          Lines.circle(e.x, e.y, 40*e.warmup);
-          Draw.alpha(0.7f*e.warmup);
+          Draw.alpha(0.4f*e.warmup());
+          Lines.stroke(5f + 3*e.warmup());
+          Lines.circle(e.x, e.y, 73*e.warmup());
+          Draw.alpha(0.6f*e.warmup());
+          Lines.stroke( + 5*e.warmup());
+          Lines.circle(e.x, e.y, 40*e.warmup());
+          Draw.alpha(0.7f*e.warmup());
           Lines.stroke(2f);
-          Lines.circle(e.x, e.y, 17*e.warmup);
+          Lines.circle(e.x, e.y, 17*e.warmup());
 
           Draw.z(Layer.effect - 10);
           Draw.alpha(0.55f);
           SglDraw.drawLightEdge(
               e.x, e.y,
-              (180 + offsetW)*e.warmup, 4*e.warmup,
-              (60 + offsetH)*e.warmup, 2.25f*e.warmup,
+              (180 + offsetW)*e.warmup(), 4*e.warmup(),
+              (60 + offsetH)*e.warmup(), 2.25f*e.warmup(),
               0
           );
         };
@@ -1260,14 +1260,14 @@ public class CrafterBlocks implements ContentList{
       
       craftEffect = SglFx.hadronReconstruct;
       
-      draw = new SglDrawPlasma<>(this, 4){{
+      draw = new SglDrawPlasma<NormalCrafterBuild>(this, 4){{
         plasma1 = Pal.reactorPurple;
         plasma2 = Pal.reactorPurple2;
         
         drawDef = e -> {
           Draw.rect(bottom, e.x, e.y);
           drawPlasma(e);
-          Draw.alpha(e.progress);
+          Draw.alpha(e.progress());
           if(e.producer.current != null) Draw.rect(e.producer.current.get(ProduceType.item).items[0].item.uiIcon, e.x, e.y, 4, 4);
           Draw.color();
           Draw.rect(region, e.x, e.y);

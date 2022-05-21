@@ -9,7 +9,6 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
-import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
@@ -25,7 +24,6 @@ import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.ui.Bar;
-import mindustry.ui.Styles;
 import mindustry.ui.fragments.PlacementFragment;
 import mindustry.world.Block;
 import mindustry.world.Tile;
@@ -629,36 +627,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     /**具有输出液体的方块返回可能输出的气体，没有则返回null*/
     public Seq<Gas> outputGases(){
       return null;
-    }
-    
-    @Override
-    public void buildConfiguration(Table table){
-      if(status == SglBlockStatus.broken) return;
-      if(consumers.size() > 1){
-        Table prescripts = new Table(Tex.buttonTrans);
-        prescripts.defaults().grow().marginTop(0).marginBottom(0).marginRight(5).marginRight(5);
-        prescripts.add(recipeIndfo).padLeft(5).padTop(5).padBottom(5);
-        prescripts.row();
-        
-        Table buttons = new Table();
-        for(int i=0; i<consumers.size(); i++){
-          int s = i;
-          BaseConsumers c = consumers.get(i);
-          
-          ImageButton button = new ImageButton(c.icon.get(), Styles.selecti);
-          button.clicked(() -> {
-            reset();
-            configure(s);
-          });
-          button.update(() -> button.setChecked(recipeCurrent == s));
-          buttons.add(button).size(50, 50);
-          if((i+1) % 4 == 0) buttons.row();
-        }
-        
-        prescripts.add(buttons);
-        table.add(prescripts);
-        table.row();
-      }
     }
     
     public boolean acceptAll(UncConsumeType<?> type){

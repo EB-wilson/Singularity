@@ -1,28 +1,33 @@
 package singularity.world.distribution.request;
 
 import arc.struct.Seq;
+import mindustry.Vars;
 import mindustry.gen.Building;
+import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
-import singularity.world.components.distnet.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
 import singularity.world.distribution.buffers.LiquidsBuffer;
 
+import java.util.Arrays;
+
 /**从网络中读取液体，此操作将液体从网络缓存读出并写入到目标缓存，网络缓存会优先提供已缓存液体，若不足则从网络子容器申请液体到网络缓存再分配*/
 public class ReadLiquidsRequest extends DistRequestBase<LiquidStack>{
   private static final Seq<MatrixGrid.BuildingEntry<Building>> temp = new Seq<>();
+  private static final float[] tempLiquid = new float[Vars.content.liquids().size];
+
   private final LiquidsBuffer destination;
   private LiquidsBuffer source;
 
   private final Seq<LiquidStack> reqLiquids;
-  private static final Seq<LiquidStack> tempLiquid = new Seq<>();
 
-  public ReadLiquidsRequest(DistMatrixUnitBuildComp sender, LiquidsBuffer destination, Seq<LiquidStack> req){
+  public ReadLiquidsRequest(DistElementBuildComp sender, LiquidsBuffer destination, Seq<LiquidStack> req){
     super(sender);
     this.destination = destination;
-    this.reqLiquids = req;
+    this.reqLiquids = req; 
   }
 
   @Override
@@ -37,31 +42,31 @@ public class ReadLiquidsRequest extends DistRequestBase<LiquidStack>{
   }
 
   @Override
-  public boolean preHandle(){
-    tempLiquid.clear();
+  public boolean preHandleTask(){
+    Arrays.fill(tempLiquid, 0);
     for(LiquidStack stack: reqLiquids){
-      float req = stack.amount - source.get(stack.liquid);
-      if(req > 0){
-        tempLiquid.add(new LiquidStack(stack.liquid, req));
-      }
+      tempLiquid[stack.liquid.id] = stack.amount - source.get(stack.liquid);
     }
 
-    liquidFor: for(LiquidStack stack: tempLiquid){
+    liquidFor: for(int id = 0; id<tempLiquid.length; id++){
+      if(tempLiquid[id] == 0) continue;
+      Liquid liquid = Vars.content.liquid(id);
       for(MatrixGrid grid: target.grids){
         for(MatrixGrid.BuildingEntry<Building> entry: grid.get(
             GridChildType.container,
-            (e, c) -> e.liquids.get(stack.liquid) > 0.001f && c.get(GridChildType.container, stack.liquid),
+            (e, c) -> e.liquids.get(liquid) > 0.001f && c.get(GridChildType.container, liquid),
             temp)){
-          if(stack.amount < 0.001f) continue liquidFor;
+          if(tempLiquid[id] < 0.001f) continue liquidFor;
           if(source.remainingCapacity().floatValue() < 0.001f) break liquidFor;
 
-          float cont = Math.min(stack.amount, entry.entity.liquids.get(stack.liquid));
-          cont = Math.min(cont, source.remainingCapacity().floatValue());
+          float move = Math.min(tempLiquid[id], entry.entity.liquids.get(liquid));
+          move = Math.min(move, source.remainingCapacity().floatValue());
 
-          if(cont > 0.001f){
-            entry.entity.liquids.remove(stack.liquid, cont);
-            source.put(stack.liquid, cont);
-            stack.amount -= cont;
+          if(move > 0.001f){
+            entry.entity.liquids.remove(liquid, move);
+            source.put(liquid, move);
+            source.dePutFlow(liquid, move);
+            tempLiquid[id] -= move;
           }
         }
       }
@@ -70,7 +75,7 @@ public class ReadLiquidsRequest extends DistRequestBase<LiquidStack>{
   }
 
   @Override
-  public boolean handle(){
+  public boolean handleTask(){
     boolean blockTest = false;
     for(LiquidStack stack : reqLiquids){
       float move = Math.min(stack.amount, source.get(stack.liquid));
@@ -82,6 +87,11 @@ public class ReadLiquidsRequest extends DistRequestBase<LiquidStack>{
       blockTest = true;
     }
     return blockTest;
+  }
+
+  @Override
+  protected boolean afterHandleTask(){
+    return true;
   }
 
   @Override

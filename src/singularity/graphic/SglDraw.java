@@ -8,13 +8,12 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.geom.Rect;
+import arc.util.Nullable;
 import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.graphics.Layer;
 import mindustry.world.Tile;
-
-import static mindustry.Vars.tilesize;
 
 public class SglDraw{
   private static boolean blooming;
@@ -22,11 +21,13 @@ public class SglDraw{
 
   static {
     Events.run(EventType.Trigger.drawOver, () -> {
-      Draw.draw(Layer.block + 0.02f, () -> {
-        Vars.renderer.bloom.capture();
-        Vars.renderer.bloom.capturePause();
-      });
-      Draw.draw(Layer.blockOver - 0.02f, () -> Vars.renderer.bloom.render());
+      if(Vars.renderer.bloom != null){
+        Draw.draw(Layer.block + 0.02f, () -> {
+          Vars.renderer.bloom.capture();
+          Vars.renderer.bloom.capturePause();
+        });
+        Draw.draw(Layer.blockOver - 0.02f, () -> Vars.renderer.bloom.render());
+      }
     });
   }
 
@@ -39,21 +40,30 @@ public class SglDraw{
     drawLink(origin, origin.block() != null? origin.block().offset: 0, other, other.block() != null? other.block().offset: 0, linkRegion, capRegion, lerp);
   }
   
-  public static void drawLink(Tile origin, float offsetO, Tile other, float offset, TextureRegion linkRegion, TextureRegion capRegion, float lerp){
-    float ox = origin.worldx() + offsetO;
-    float oy = origin.worldy() + offsetO;
-    float otx = other.worldx() + offset;
-    float oty = other.worldy() + offset;
+  public static void drawLink(Tile origin, float offsetO, Tile other, float offset, TextureRegion linkRegion, @Nullable TextureRegion capRegion, float lerp){
+    Tmp.v1.set(other.drawx() - origin.drawx(), other.drawy() - origin.drawy()).setLength(offsetO);
+    float ox = origin.drawx() + Tmp.v1.x;
+    float oy = origin.drawy() + Tmp.v1.y;
+    Tmp.v1.scl(-1).setLength(offset);
+    float otx = other.drawx() + Tmp.v1.x;
+    float oty = other.drawy() + Tmp.v1.y;
+
     Tmp.v1.set(otx, oty).sub(ox, oy);
-    Tmp.v2.set(Tmp.v1).scl(lerp).sub(Tmp.v1.setLength(origin.block().size - tilesize/2f).cpy().setLength(other.block().size - tilesize/2f));
-    Lines.stroke(8);
-    Lines.line(linkRegion, ox + Tmp.v1.x,
-        oy + Tmp.v1.y,
-        ox + Tmp.v2.x,
-        oy + Tmp.v2.y,
-        false);
+    Tmp.v2.set(Tmp.v1).scl(lerp);
+    Tmp.v3.set(0, 0);
     
-    if(capRegion != null) Draw.rect(capRegion, ox + Tmp.v2.x, oy + Tmp.v2.y, Tmp.v2.angle());
+    if(capRegion != null){
+      Tmp.v3.set(Tmp.v1).setLength(capRegion.width/4f);
+      Draw.rect(capRegion, ox + Tmp.v3.x/2, oy + Tmp.v3.y/2, Tmp.v2.angle());
+      Draw.rect(capRegion, ox + Tmp.v2.x - Tmp.v3.x/2, oy + Tmp.v2.y - Tmp.v3.y/2, Tmp.v2.angle() + 180);
+    }
+
+    Lines.stroke(8);
+    Lines.line(linkRegion,
+        ox + Tmp.v3.x, oy + Tmp.v3.y,
+        ox + Tmp.v2.x - Tmp.v3.x,
+        oy + Tmp.v2.y - Tmp.v3.y,
+        false);
   }
 
   public static void drawLightEdge(float x, float y, float width, float widthH, float height, float heightW, float rotation){
@@ -161,13 +171,13 @@ public class SglDraw{
     if(blooming) throw new IllegalStateException("current is blooming, please endBloom");
     blooming = true;
     Draw.z(z);
-    Draw.draw(z, () -> Vars.renderer.bloom.captureContinue());
+    if(Vars.renderer.bloom != null) Draw.draw(z, () -> Vars.renderer.bloom.captureContinue());
   }
 
   public static void endBloom(){
     if(!blooming) throw new IllegalStateException("current is not blooming, please statBloom");
     blooming = false;
-    Draw.draw(Draw.z(), () -> Vars.renderer.bloom.capturePause());
+    if(Vars.renderer.bloom != null) Draw.draw(Draw.z(), () -> Vars.renderer.bloom.capturePause());
     Draw.z(Layer.blockOver);
   }
 
@@ -195,5 +205,8 @@ public class SglDraw{
 
       Lines.line(x1 + x, y1 + y, Tmp.v1.x + x, Tmp.v1.y + y);
     }
+  }
+
+  public static void curve(){
   }
 }

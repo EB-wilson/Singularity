@@ -3,11 +3,8 @@ package singularity.world.blocks.distribute.matrixGrid;
 import arc.Core;
 import arc.func.Cons2;
 import arc.graphics.g2d.TextureRegion;
-import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.util.Eachable;
-import arc.util.io.Reads;
-import arc.util.io.Writes;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.world.Block;
@@ -21,8 +18,9 @@ import static mindustry.Vars.tilesize;
 @Annotations.ImplEntries
 public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
   public int linkLength = 16;
+  public float linkOffset;
   
-  public TextureRegion linkRegion;
+  public TextureRegion linkRegion, linkCapRegion;
   
   public MatrixEdgeBlock(String name){
     super(name);
@@ -36,7 +34,7 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
   @Override
   public void link(EdgeLinkerBuildComp entity, Integer pos){
     EdgeLinkerComp.super.link(entity, pos);
-    ((MatrixEdgeBuild)entity).linkLerp = 0;
+    entity.linkLerp(0);
   }
 
   @Override
@@ -54,6 +52,7 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
   public void load(){
     super.load();
     linkRegion = Core.atlas.find(name + "_link");
+    linkRegion = Core.atlas.find(name + "_link_cap");
   }
   
   @Override
@@ -72,18 +71,22 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
   
   @Annotations.ImplEntries
   public class MatrixEdgeBuild extends Building implements EdgeLinkerBuildComp{
-    public float linkLerp;
     public boolean loaded;
     public int nextPos = -1;
 
     @Override
     public void linked(EdgeLinkerBuildComp next){
-      if(loaded)linkLerp = 0;
+      if(loaded)linkLerp(0);
     }
 
     @Override
     public void delinked(EdgeLinkerBuildComp next){
-      if(loaded) linkLerp = 0;
+      if(loaded) linkLerp(0);
+    }
+
+    @Override
+    public void edgeUpdated(){
+
     }
 
     @Override
@@ -91,21 +94,10 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
       EdgeLinkerBuildComp.super.updateLinking();
       loaded = true;
     }
-
-    @Override
-    public void updateTile(){
-      if(nextPos != -1){
-        if(nextEdge() != null && !nextEdge().getBuilding().isAdded()) delink(nextEdge());
-        linkLerp = Mathf.lerpDelta(linkLerp, 1, 0.02f);
-      }
-      else{
-        linkLerp = 0;
-      }
-    }
   
     @Override
     public boolean onConfigureTileTapped(Building other){
-      if(other instanceof EdgeLinkerComp && canLink(this, (EdgeLinkerBuildComp) other)){
+      if(other instanceof EdgeLinkerBuildComp && canLink(this, (EdgeLinkerBuildComp) other)){
         configure(other.pos());
         return false;
       }
@@ -127,19 +119,6 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
     @Override
     public void draw(){
       super.draw();
-      if(nextEdge() != null) SglDraw.drawLink(tile, nextEdge().tile(), linkRegion(), null, linkLerp);
-    }
-  
-    @Override
-    public void read(Reads read, byte revision){
-      super.read(read, revision);
-      linkLerp = read.f();
-    }
-  
-    @Override
-    public void write(Writes write){
-      super.write(write);
-      write.f(linkLerp);
     }
   }
 }

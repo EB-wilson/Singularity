@@ -12,9 +12,10 @@ public interface SpliceBlockComp extends ChainsBlockComp{
     
     for(int i=0; i<8; i++){
       Tile other = Vars.world.tile(tile.x + Geometry.d8(i).x, tile.y + Geometry.d8(i).y);
-      if(other.block() instanceof ChainsBlockComp && chainable((ChainsBlockComp) other.block())){
-        result[i] = true;
-      }
+      if(other.block() instanceof ChainsBlockComp
+          && (tile.build instanceof SpliceBuildComp && other.build instanceof SpliceBuildComp?
+            (((SpliceBuildComp) tile.build).chains().container == ((SpliceBuildComp) other.build).chains().container)
+          : chainable((ChainsBlockComp) other.block()))) result[i] = true;
     }
     
     return result;

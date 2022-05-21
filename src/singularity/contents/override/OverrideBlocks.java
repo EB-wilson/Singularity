@@ -69,7 +69,7 @@ public class OverrideBlocks implements OverrideContentList{
           newProduce();
           produce.item(Items.sand, 1);
           
-          draw = new DrawFactory<>(this){
+          draw = new DrawFactory<NormalCrafterBuild>(this){
             {iconRotator = true;}
       
             @Override

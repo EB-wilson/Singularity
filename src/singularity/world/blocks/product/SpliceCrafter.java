@@ -29,10 +29,10 @@ import mindustry.world.modules.LiquidModule;
 import singularity.type.Gas;
 import singularity.type.GasStack;
 import singularity.type.SglLiquidStack;
-import singularity.world.components.*;
 import singularity.world.blocks.SglBlock;
-import singularity.world.blocks.chains.ChainContainer;
+import singularity.world.blocks.chains.ChainsContainer;
 import singularity.world.blocks.chains.ChainsEvents;
+import singularity.world.components.*;
 import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.draw.DrawSpliceBlock;
@@ -47,9 +47,7 @@ import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.components.blockcomp.ProducerBuildComp;
 import universecore.util.UncLiquidStack;
-import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.UncConsumeLiquids;
-import universecore.world.producers.BaseProduce;
 import universecore.world.producers.ProduceLiquids;
 
 import java.util.LinkedHashMap;
@@ -69,99 +67,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     super(name);
     
     draw = new DrawSpliceBlock<>(this);
-  }
-
-  @Override
-  public void setListeners(){
-    listenGlobal(ChainsEvents.AddedBlockEvent.class, e -> {
-      if(e.oldContainer != null && e.container != e.oldContainer){
-        if(e.target.getBlock().hasItems) e.container.<SpliceItemModule>getVar("items").add(e.oldContainer.<SpliceItemModule>getVar("items"));
-        if(e.target.getBlock().hasLiquids) e.container.<SpliceLiquidModule>getVar("liquids").add(e.oldContainer.getVar("liquids"));
-        if(e.target.getBlock(SglBlock.class).hasGases) e.container.<SpliceGasesModule>getVar("gases").add(e.oldContainer.<SpliceGasesModule>getVar("gases"));
-
-        SpliceCrafterBuild statDisplay;
-        if((statDisplay = e.container.getVar("build")) != e.target){
-          if(statDisplay.y >= e.target.getBuilding().y && statDisplay.x <= e.target.getBuilding().x) e.container.putVar("build", e.target);
-        }
-
-        e.target.getBuilding(SpliceCrafterBuild.class).updateModule = true;
-      }
-    }, "mergeModules");
-
-    listenGlobal(ChainsEvents.ConstructFlowEvent.class, e -> {
-      SpliceCrafterBuild statDisplay;
-      if((statDisplay = e.container.getVar("build")) != e.target){
-        if(statDisplay.y >= e.target.getBuilding().y && statDisplay.x <= e.target.getBuilding().x) e.container.putVar("build", e.target);
-      }
-      e.target.getBuilding(SpliceCrafterBuild.class).updateModule = true;
-    }, "updateController");
-
-    listenGlobal(ChainsEvents.RemovedBlockEvent.class, e -> {
-      SpliceItemModule items = e.target.chains().getVar("items");
-      SpliceLiquidModule liquids = e.target.chains().getVar("liquids");
-      SpliceGasesModule gases = e.target.chains().getVar("gases");
-
-      SpliceCrafter targetBlock = e.target.getBlock(SpliceCrafter.class);
-
-      ObjectSet<ChainContainer> handled = new ObjectSet<>();
-      int total = 0;
-
-      for(ChainsBuildComp other : e.target.chainBuilds()){
-        if(handled.add(other.chains().container)) total += other.chains().container.all.size;
-      }
-
-      for(ChainContainer otherContainer : handled){
-        float present = (float) otherContainer.all.size/total;
-        SpliceItemModule oItems = otherContainer.getVar("items");
-        SpliceLiquidModule oLiquids = otherContainer.getVar("liquids");
-        SpliceGasesModule oGases = otherContainer.getVar("gases");
-
-        if(targetBlock.hasItems){
-          oItems.allCapacity = (int) ((items.allCapacity - e.target.getBlock().itemCapacity)*present);
-          oItems.clear();
-          float totalPre = (float) items.total()/items.allCapacity;
-          items.each((item, amount) -> {
-            float pre = (float) amount/items.total();
-            oItems.set(item, (int) ((items.total() - targetBlock.itemCapacity*totalPre)*present*pre));
-          });
-        }
-
-        if(targetBlock.hasLiquids){
-          oLiquids.allCapacity = (liquids.allCapacity - targetBlock.tempLiquidCapacity)*present;
-          oLiquids.clear();
-          float totalPre = liquids.total()/liquids.allCapacity;
-          liquids.each((liquid, amount) -> {
-            float pre = amount/liquids.total();
-            oLiquids.set(liquid, ((liquids.total() - targetBlock.liquidCapacity*totalPre)*present*pre));
-          });
-        }
-
-        if(targetBlock.hasGases){
-          oGases.allCapacity = (gases.allCapacity - targetBlock.gasCapacity)*present;
-          oGases.clear();
-          float totalPre = gases.getPressure()/targetBlock.maxGasPressure;
-          gases.each((gas, amount) -> {
-            float pre = amount/gases.total();
-            oGases.set(gas, (gases.total() - targetBlock.maxGasPressure*targetBlock.gasCapacity*totalPre)*present*pre);
-          });
-        }
-      }
-    }, "resetModules");
-
-    listenGlobal(ChainsEvents.InitChainContainerEvent.class, e -> {
-      SpliceCrafter b = e.target.getBlock(SpliceCrafter.class);
-      SpliceCrafterBuild ent = e.target.getBuilding(SpliceCrafterBuild.class);
-
-      e.newContainer.putVar("consumer", new SpliceConsumeModule((ConsumerBuildComp) e.target));
-      e.newContainer.putVar("producer", new SpliceProduceModule((ProducerBuildComp) e.target));
-
-      if(b.hasItems) e.newContainer.putVar("items", new SpliceItemModule(b.itemCapacity, ent.firstInit));
-      if(b.hasLiquids) e.newContainer.putVar("liquids", new SpliceLiquidModule(b.tempLiquidCapacity, ent.firstInit));
-      if(b.hasGases) e.newContainer.putVar("gases", new SpliceGasesModule(e.target.getBuilding(GasBuildComp.class), ent.firstInit, b.gasCapacity));
-
-      e.newContainer.putVar("build", e.target);
-      if(ent.firstInit) ent.firstInit = false;
-    }, "assignModules");
   }
 
   @Override
@@ -192,7 +97,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   public boolean chainable(ChainsBlockComp other){
     return this == other;
   }
-  
+
   @Annotations.ImplEntries
   public class SpliceCrafterBuild extends NormalCrafterBuild implements SpliceBuildComp{
     public ChainsModule chains;
@@ -225,8 +130,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       consumer = new SpliceConsumeModule(this);
       cons(consumer);
       producer = new SpliceProduceModule(this);
-      
-      setChainsListeners();
 
       return this;
     }
@@ -238,16 +141,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       return this;
     }
 
-    @Override
-    public float consumeMultiplier(BaseConsume<?> cons){
-      return super.consumeMultiplier(cons)*chains.container.all.size;
-    }
-  
-    @Override
-    public float productMultiplier(BaseProduce<?> prod){
-      return super.productMultiplier(prod)*chains.container.all.size;
-    }
-  
     @Override
     public void displayBars(Table bars){
       if(recipeCurrent != -1 && producer.current != null && block.hasPower && block.outputsPower && producer.current.get(SglProduceType.power) != null){
@@ -434,7 +327,9 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
           tProd.loaded = true;
         }
         if(producer != tProd) producer = tProd;
-        
+
+        splice = getRegionBits(tile, interCorner);
+
         updateModule = false;
       }
   
@@ -492,6 +387,96 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     @Override
     public int[] spliceData(){
       return splice;
+    }
+
+    @Override
+    public void containerCreated(ChainsContainer old){
+      chains.container.putVar("consumer", new SpliceConsumeModule(this));
+      chains.container.putVar("producer", new SpliceProduceModule(this));
+
+      if(hasItems) chains.container.putVar("items", new SpliceItemModule(itemCapacity, firstInit));
+      if(hasLiquids) chains.container.putVar("liquids", new SpliceLiquidModule(tempLiquidCapacity, firstInit));
+      if(hasGases) chains.container.putVar("gases", new SpliceGasesModule(this, firstInit, gasCapacity));
+
+      chains.container.putVar("build", this);
+      if(firstInit) firstInit = false;
+    }
+
+    @Override
+    public void chainsAdded(ChainsContainer old){
+      if(old == chains.container) return;
+      if(getBlock().hasItems) chains.container.<SpliceItemModule>getVar("items").add(old.<SpliceItemModule>getVar("items"));
+      if(getBlock().hasLiquids) chains.container.<SpliceLiquidModule>getVar("liquids").add(old.getVar("liquids"));
+      if(getBlock(SglBlock.class).hasGases) chains.container.<SpliceGasesModule>getVar("gases").add(old.<SpliceGasesModule>getVar("gases"));
+
+      SpliceCrafterBuild statDisplay;
+      if((statDisplay = chains.container.getVar("build")) != this){
+        if(statDisplay.y >= getBuilding().y && statDisplay.x <= getBuilding().x) chains.container.putVar("build", this);
+      }
+
+      updateModule = true;
+    }
+
+    @Override
+    public void chainsRemoved(Seq<ChainsBuildComp> children){
+      SpliceItemModule items = chains.getVar("items");
+      SpliceLiquidModule liquids = chains.getVar("liquids");
+      SpliceGasesModule gases = chains.getVar("gases");
+
+      SpliceCrafter targetBlock = getBlock(SpliceCrafter.class);
+
+      ObjectSet<ChainsContainer> handled = new ObjectSet<>();
+      int total = 0;
+
+      for(ChainsBuildComp child : children){
+        if(handled.add(child.chains().container)) total += child.chains().container.all.size;
+      }
+
+      for(ChainsContainer otherContainer : handled){
+        float present = (float) otherContainer.all.size/total;
+        SpliceItemModule oItems = otherContainer.getVar("items");
+        SpliceLiquidModule oLiquids = otherContainer.getVar("liquids");
+        SpliceGasesModule oGases = otherContainer.getVar("gases");
+
+        if(targetBlock.hasItems){
+          oItems.allCapacity = (int) ((items.allCapacity - getBlock().itemCapacity)*present);
+          oItems.clear();
+          float totalPre = (float) items.total()/items.allCapacity;
+          items.each((item, amount) -> {
+            float pre = (float) amount/items.total();
+            oItems.set(item, (int) ((items.total() - targetBlock.itemCapacity*totalPre)*present*pre));
+          });
+        }
+
+        if(targetBlock.hasLiquids){
+          oLiquids.allCapacity = (liquids.allCapacity - targetBlock.tempLiquidCapacity)*present;
+          oLiquids.clear();
+          float totalPre = liquids.total()/liquids.allCapacity;
+          liquids.each((liquid, amount) -> {
+            float pre = amount/liquids.total();
+            oLiquids.set(liquid, ((liquids.total() - targetBlock.liquidCapacity*totalPre)*present*pre));
+          });
+        }
+
+        if(targetBlock.hasGases){
+          oGases.allCapacity = (gases.allCapacity - targetBlock.gasCapacity)*present;
+          oGases.clear();
+          float totalPre = gases.getPressure()/targetBlock.maxGasPressure;
+          gases.each((gas, amount) -> {
+            float pre = amount/gases.total();
+            oGases.set(gas, (gases.total() - targetBlock.maxGasPressure*targetBlock.gasCapacity*totalPre)*present*pre);
+          });
+        }
+      }
+    }
+
+    @Override
+    public void chainsFlowed(ChainsContainer old){
+      SpliceCrafterBuild statDisplay;
+      if((statDisplay = chains.container.getVar("build")) != this){
+        if(statDisplay.y >= y && statDisplay.x <= getBuilding().x) chains.container.putVar("build", this);
+      }
+      updateModule = true;
     }
   }
   
@@ -577,7 +562,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
     
     public void set(SpliceGasesModule otherModule){
-      otherModule.each((gas, amount) -> set(gas, amount));
+      otherModule.each(this::set);
     }
     
     public void add(SpliceGasesModule otherModule){

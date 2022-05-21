@@ -7,16 +7,24 @@ import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
+import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.meta.BuildVisibility;
 import mindustry.world.meta.Stat;
+import mindustry.world.modules.ItemModule;
+import mindustry.world.modules.LiquidModule;
 import singularity.type.Gas;
 import singularity.type.SglContents;
 import singularity.ui.tables.DistTargetConfigTable;
+import singularity.world.blocks.SglBlock;
 import singularity.world.components.GasBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
-import singularity.world.blocks.SglBlock;
+import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.GridChildType;
+import singularity.world.distribution.buffers.GasesBuffer;
+import singularity.world.distribution.buffers.ItemsBuffer;
+import singularity.world.distribution.buffers.LiquidsBuffer;
+import singularity.world.modules.GasesModule;
 
 import static mindustry.Vars.*;
 
@@ -67,17 +75,31 @@ public class IOPointBlock extends SglBlock{
   public class IOPoint extends SglBuilding{
     public DistMatrixUnitBuildComp parent;
     public DistTargetConfigTable.TargetConfigure config;
-    
+
+    public ItemModule outItems;
+    public LiquidModule outLiquid;
+    public GasesModule outGases;
+
     protected boolean siphoning;
     
     public IOPoint(){
       this.parent = currPlacement;
     }
-  
+
     @Override
-    public void onProximityAdded(){
-      super.onProximityAdded();
+    public Building create(Block block, Team team){
+      super.create(block, team);
+      outItems = new ItemModule();
+      outLiquid = new LiquidModule();
+      outGases = new GasesModule(this);
+      return this;
+    }
+
+    @Override
+    public Building init(Tile tile, Team team, boolean shouldAdd, int rotation){
+      super.init(tile, team, shouldAdd, rotation);
       if(parent != null) parent.ioPoints().put(pos(), this);
+      return this;
     }
   
     @Override
@@ -98,6 +120,24 @@ public class IOPointBlock extends SglBlock{
         transBack();
       }
     }
+
+    public int output(Item item, int amount){
+      int add = Math.min(amount, itemCapacity - outItems.get(item));
+      outItems.add(item, add);
+      return add;
+    }
+
+    public float output(Liquid liquid, float amount){
+      float add = Math.min(amount, liquidCapacity - outLiquid.get(liquid));
+      outLiquid.add(liquid, add);
+      return add;
+    }
+
+    public float output(Gas gas, float amount){
+      float add = Math.min(amount, gasCapacity - outGases.get(gas));
+      outGases.add(gas, add);
+      return add;
+    }
     
     public byte getDirectBit(Building other){
       byte result = 1;
@@ -113,6 +153,7 @@ public class IOPointBlock extends SglBlock{
     }
   
     public void resourcesDump(){
+      if(config == null) return;
       for(UnlockableContent item : config.get(GridChildType.output, ContentType.item)){
         dump((Item) item);
       }
@@ -126,7 +167,7 @@ public class IOPointBlock extends SglBlock{
   
     @Override
     public boolean dump(Item toDump){
-      if(!block.hasItems || items.total() == 0 || (toDump != null && !items.has(toDump))) return false;
+      if(config == null || !block.hasItems || outItems.total() == 0 || (toDump != null && !outItems.has(toDump))) return false;
       if(proximity.size == 0) return false;
       
       Building other;
@@ -137,13 +178,13 @@ public class IOPointBlock extends SglBlock{
         
           other = getNext("dumpItem",
               e -> e.interactable(team)
-                  && items.has(item)
+                  && outItems.has(item)
                   && e.acceptItem(this, item)
                   && canDump(e, item)
                   && config.directValid(GridChildType.output, item, getDirectBit(e)));
           if(other != null){
             other.handleItem(this, item);
-            items.remove(item, 1);
+            outItems.remove(item, 1);
             incrementDump(proximity.size);
             return true;
           }
@@ -151,13 +192,14 @@ public class IOPointBlock extends SglBlock{
       }
       else{
         other = getNext("dumpItem",
-            e -> e.interactable(team) && items.has(toDump)
+            e -> e.interactable(team)
+                && outItems.has(toDump)
                 && e.acceptItem(this, toDump)
                 && canDump(e, toDump)
                 && config.directValid(GridChildType.output, toDump, getDirectBit(e)));
         if(other != null){
           other.handleItem(this, toDump);
-          items.remove(toDump, 1);
+          outItems.remove(toDump, 1);
           incrementDump(proximity.size);
           return true;
         }
@@ -169,7 +211,7 @@ public class IOPointBlock extends SglBlock{
     public void dumpLiquid(Liquid liquid, float scaling){
       int dump = this.cdump;
     
-      if(liquids.get(liquid) <= 0.0001f) return;
+      if(config == null || outLiquid.get(liquid) <= 0.0001f) return;
       if(!net.client() && state.isCampaign() && team == state.rules.defaultTeam) liquid.unlock();
     
       for(int i = 0; i < proximity.size; i++){
@@ -180,26 +222,59 @@ public class IOPointBlock extends SglBlock{
         if(other != null && other.interactable(team) && other.block.hasLiquids && canDumpLiquid(other, liquid) && other.liquids != null
             && config.directValid(GridChildType.output, liquid, getDirectBit(other))){
           float ofract = other.liquids.get(liquid) / other.block.liquidCapacity;
-          float fract = liquids.get(liquid) / block.liquidCapacity;
+          float fract = outLiquid.get(liquid) / block.liquidCapacity;
         
-          if(ofract < fract) transferLiquid(other, (fract - ofract) * block.liquidCapacity / scaling, liquid);
+          if(ofract < fract) outputLiquid(other, (fract - ofract) * block.liquidCapacity / scaling, liquid);
         }
       }
+    }
+
+    public float outputLiquid(Building next, float amount, Liquid liquid) {
+      float flow = Math.min(next.block.liquidCapacity - next.liquids.get(liquid), amount);
+      if (next.acceptLiquid(this, liquid)) {
+        next.handleLiquid(this, liquid, flow);
+        outLiquid.remove(liquid, flow);
+      }
+
+      return flow;
     }
     
     @Override
     public void dumpGas(Gas gas){
+      if(config == null) return;
       GasBuildComp other = (GasBuildComp) this.getNext("gases",
           e -> e instanceof GasBuildComp
               && e.interactable(team) && gases.get(gas) > 0
               && ((GasBuildComp) e).acceptGas(this, gas)
               && config.directValid(GridChildType.output, gas, getDirectBit(e)));
       
-      if(other != null) moveGas(other, gas);
+      if(other != null) outputGas(other, gas);
+    }
+
+    public float outputGas(GasBuildComp other, Gas gas){
+      if(!other.getGasBlock().hasGases() || outGases.get(gas) <= 0) return 0;
+
+      other = other.getGasDestination(this, gas);
+      float present = outGases.get(gas)/outGases.total();
+
+      float diff = outGases.getPressure() - other.pressure();
+      if(diff < 0.001f) return 0;
+      float fract = diff*getGasBlock().gasCapacity();
+      float oFract = diff*other.getGasBlock().gasCapacity();
+
+      float flowRate = Math.min(Math.min(Math.min(fract, oFract)/other.swellCoff(this), outGases.total()),
+          (other.getGasBlock().maxGasPressure() - other.pressure())*other.getGasBlock().gasCapacity())*present;
+      if(flowRate > 0 && fract > 0 && other.acceptGas(this, gas)){
+        other.handleGas(this, gas, flowRate);
+        outGases.remove(gas, flowRate);
+      }
+
+      return flowRate;
     }
   
     public void resourcesSiphon(){
       siphoning = true;
+      if(config == null) return;
       for(UnlockableContent item : config.get(GridChildType.input, ContentType.item)){
         siphonItem((Item) item);
       }
@@ -213,23 +288,55 @@ public class IOPointBlock extends SglBlock{
     }
     
     public void transBack(){
+      if(config == null) return;
+
       Building parentBuild = parent.getBuilding();
+      ItemsBuffer itsB = parent.getBuffer(DistBuffers.itemBuffer);
+      LiquidsBuffer lisB = parent.getBuffer(DistBuffers.liquidBuffer);
+      GasesBuffer gasB = parent.getBuffer(DistBuffers.gasBuffer);
+
       items.each((item, amount) -> {
-        int accept = parentBuild.acceptItem(this, item)? Math.min(parentBuild.getMaximumAccepted(item) - parentBuild.items.get(item), amount): 0;
-        if(accept > 0){
-          removeStack(item, accept);
-          parentBuild.handleStack(item, accept, this);
+        int move = parentBuild.acceptItem(this, item)? Math.min(parentBuild.getMaximumAccepted(item) - parentBuild.items.get(item), amount): 0;
+        if(move > 0){
+          removeStack(item, move);
+          parentBuild.handleStack(item, move, this);
+          itsB.dePutFlow(item, move);
         }
       });
       
       liquids.each((liquid, amount) -> {
-        moveLiquid(parentBuild, liquid);
+        lisB.dePutFlow(liquid, moveLiquid(parentBuild, liquid));
       });
       
-      if(parent instanceof GasBuildComp) moveGas(parent.getBuilding(GasBuildComp.class));
+      if(parent instanceof GasBuildComp){
+        gases.each((gas, amount) -> {
+          gasB.dePutFlow(gas, moveGas(parent.getBuilding(GasBuildComp.class), gas));
+        });
+      }
+
+      outItems.each((item, amount) -> {
+        if(config.get(GridChildType.output, ContentType.item).contains(item)) return;
+        int accept = parentBuild.acceptItem(this, item)? Math.min(parentBuild.getMaximumAccepted(item) - parentBuild.items.get(item), amount): 0;
+        if(accept > 0){
+          outItems.remove(item, accept);
+          parentBuild.handleStack(item, accept, this);
+          itsB.dePutFlow(item, accept);
+        }
+      });
+
+      outLiquid.each((liquid, amount) -> {
+        if(config.get(GridChildType.output, ContentType.liquid).contains(liquid)) return;
+        lisB.dePutFlow(liquid, outputLiquid(parentBuild, amount, liquid));
+      });
+
+      if(parent instanceof GasBuildComp) outGases.each((gas, amount) -> {
+        if(config.get(GridChildType.output, SglContents.gas).contains(gas)) return;
+        gasB.dePutFlow(gas, outputGas((GasBuildComp) parentBuild, gas));
+      });
     }
   
     public void siphonItem(Item item){
+      if(config == null) return;
       Building next;
       next = getNext("siphonItem",
           e -> e.block.hasItems
@@ -241,6 +348,7 @@ public class IOPointBlock extends SglBlock{
     }
   
     public void siphonLiquid(Liquid liquid){
+      if(config == null) return;
       Building next;
       next = getNext("siphonLiquid",
           e -> e.block.hasLiquids
@@ -251,6 +359,7 @@ public class IOPointBlock extends SglBlock{
     }
   
     public void siphonGas(Gas gas){
+      if(config == null) return;
       GasBuildComp next;
       next = (GasBuildComp) getNext("siphonGas",
           e -> e instanceof GasBuildComp
@@ -270,8 +379,8 @@ public class IOPointBlock extends SglBlock{
           && super.acceptItem(source, item);
     }
     
-    public final boolean acceptItemSuper(Building source, Item item){
-      return super.acceptItem(source, item);
+    public final boolean acceptItemOut(Building source, Item item){
+      return interactable(source.team) && outItems.get(item) < itemCapacity;
     }
   
     @Override
@@ -283,8 +392,8 @@ public class IOPointBlock extends SglBlock{
           && super.acceptLiquid(source, liquid);
     }
     
-    public final boolean acceptLiquidSuper(Building source, Liquid liquid){
-      return super.acceptLiquid(source, liquid);
+    public final boolean acceptLiquidOut(Building source, Liquid liquid){
+      return interactable(source.team) && outLiquid.get(liquid) < liquidCapacity;
     }
     
     @Override
@@ -296,8 +405,8 @@ public class IOPointBlock extends SglBlock{
           && super.acceptGas(source, gas);
     }
   
-    public final boolean acceptGasSuper(GasBuildComp source, Gas gas){
-      return super.acceptGas(source, gas);
+    public final boolean acceptGasOut(GasBuildComp source, Gas gas){
+      return source.getBuilding().interactable(getBuilding().team) && hasGases && outGases.getPressure() < maxGasPressure;
     }
   }
 }

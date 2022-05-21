@@ -7,14 +7,16 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.util.Time;
+import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.world.Block;
-import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.components.DrawableComp;
+import universecore.components.blockcomp.FactoryBuildComp;
 
 import static mindustry.Vars.tilesize;
 
-public class SglDrawPlasma<T extends NormalCrafter.NormalCrafterBuild> extends DrawFactory<T>{
+public class SglDrawPlasma<T extends Building & FactoryBuildComp & DrawableComp> extends DrawFactory<T>{
   public TextureRegion[] plasmas;
   public Color plasma1 = Color.valueOf("ffd06b"), plasma2 = Color.valueOf("ff361b");
   public float lightRadius = 60f;
@@ -39,16 +41,12 @@ public class SglDrawPlasma<T extends NormalCrafter.NormalCrafterBuild> extends D
       float r = block.size * tilesize - 3f + Mathf.absin(Time.time, 2f + i * 1f, 5f - i * 0.5f);
       
       Draw.color(plasma1, plasma2, (float)i / plasmas.length);
-      Draw.alpha((0.3f + Mathf.absin(Time.time, 2f + i * 2f, 0.3f + i * 0.05f)) * warmup(entity));
+      Draw.alpha((0.3f + Mathf.absin(Time.time, 2f + i * 2f, 0.3f + i * 0.05f)) * entity.warmup());
       Draw.blend(Blending.additive);
-      Draw.rect(plasmas[i], entity.x, entity.y, r, r, Time.time * (12 + i * 6f) * warmup(entity));
+      Draw.rect(plasmas[i], entity.x, entity.y, r, r, Time.time * (12 + i * 6f) * entity.warmup());
       Draw.blend();
     }
     Draw.color();
-  }
-  
-  public float warmup(T entity){
-    return entity.warmup;
   }
   
   public class SglDrawPlasmaDrawer extends DrawFactoryDrawer{
@@ -65,7 +63,7 @@ public class SglDrawPlasma<T extends NormalCrafter.NormalCrafterBuild> extends D
 
     @Override
     public void drawLight(){
-      Drawf.light(entity.team, entity.x(), entity.y(), lightRadius * entity.warmup * block.size, lightColor, lightAlpha);
+      Drawf.light(entity.team, entity.x(), entity.y(), lightRadius * entity.warmup() * block.size, lightColor, lightAlpha);
     }
   }
 }

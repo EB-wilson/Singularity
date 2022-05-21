@@ -5,11 +5,13 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
 import arc.math.Rand;
 import arc.util.Time;
+import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.world.Block;
-import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.components.DrawableComp;
+import universecore.components.blockcomp.FactoryBuildComp;
 
-public class SglDrawCultivator<T extends NormalCrafter.NormalCrafterBuild> extends DrawFactory<T>{
+public class SglDrawCultivator<T extends Building & FactoryBuildComp & DrawableComp> extends DrawFactory<T>{
   public Color plantColor = Color.valueOf("5541b1");
   public Color plantColorLight = Color.valueOf("7457ce");
   
@@ -23,7 +25,7 @@ public class SglDrawCultivator<T extends NormalCrafter.NormalCrafterBuild> exten
   
   @Override
   public float liquidAlpha(T entity){
-    return entity.warmup;
+    return entity.warmup();
   }
   
   @Override
@@ -55,13 +57,13 @@ public class SglDrawCultivator<T extends NormalCrafter.NormalCrafterBuild> exten
       Drawf.liquid(liquid, entity.x, entity.y, liquidAlpha(entity), liquidColor(entity));
   
       Draw.color(liquidColorLight(entity));
-      Draw.alpha(entity.warmup);
+      Draw.alpha(entity.warmup());
       for(int i = 0; i < bubbles; i++){
         float x = rand.range(spread), y = rand.range(spread);
         float life = 1f - ((Time.time / timeScl + rand.random(recurrence)) % recurrence);
     
         if(life > 0){
-          Lines.stroke(entity.warmup * (life + strokeMin));
+          Lines.stroke(entity.warmup() * (life + strokeMin));
           Lines.poly(entity.x + x, entity.y + y, sides, (1f - life) * radius);
         }
       }

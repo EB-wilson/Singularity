@@ -8,10 +8,14 @@ import mindustry.content.Liquids;
 import mindustry.ctype.ContentList;
 import mindustry.graphics.Drawf;
 import mindustry.type.Category;
+import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
+import singularity.Singularity;
 import singularity.world.blocks.drills.BaseDrill;
+import singularity.world.blocks.drills.MatrixMiner;
+import singularity.world.blocks.drills.MatrixMinerEdge;
 import singularity.world.blocks.product.SglAttributeCrafter;
 import singularity.world.draw.DrawFactory;
 import singularity.world.meta.SglAttribute;
@@ -22,7 +26,11 @@ public class CollectBlocks implements ContentList {
   /**速旋钻头*/
   public static Block fast_spin_drill,
   /**岩层钻井机*/
-  rock_drill;
+  rock_drill,
+  /**矩阵矿床*/
+  matrix_miner,
+  /**矿床框架*/
+  matrix_miner_node;
 
   @Override
   public void load() {
@@ -90,7 +98,7 @@ public class CollectBlocks implements ContentList {
         }
       };
       
-      draw = new DrawFactory<>(this){{
+      draw = new DrawFactory<NormalCrafterBuild>(this){{
         iconRotator = true;
         drawDef = e -> {
           Color color = Liquids.water.color;
@@ -98,7 +106,7 @@ public class CollectBlocks implements ContentList {
           
           Draw.rect(bottom, e.x, e.y);
           Draw.rect(region, e.x, e.y);
-          Drawf.spinSprite(rotator, e.x, e.y, e.totalProgress*1.5f);
+          Drawf.spinSprite(rotator, e.x, e.y, e.totalProgress()*1.5f);
           Draw.color(color);
           Draw.alpha(alpha);
           Draw.rect(liquid, e.x, e.y);
@@ -107,5 +115,26 @@ public class CollectBlocks implements ContentList {
         };
       }};
     }};
+
+    matrix_miner = new MatrixMiner("matrix_miner"){{
+      requirements(Category.production, ItemStack.with());
+      size = 5;
+      linkOffset = 10.75f;
+    }};
+
+    matrix_miner_node = new MatrixMinerEdge("matrix_miner_node"){
+      {
+        requirements(Category.production, ItemStack.with());
+        size = 3;
+        linkOffset = 5.5f;
+      }
+
+      @Override
+      public void load(){
+        super.load();
+        linkRegion = Singularity.getModAtlas("matrix_miner_linking");
+        linkCapRegion = Singularity.getModAtlas("matrix_miner_link_cap");
+      }
+    };
   }
 }

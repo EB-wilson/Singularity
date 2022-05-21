@@ -145,7 +145,7 @@ public class SglFx{
     Lines.circle(e.x, e.y, radius);
 
     Draw.z(Layer.effect + 10);
-    SglDraw.gradientCircle(e.x, e.y, radius, -(size/6)*(1 - e.fin(Interp.pow3)), Draw.getColor().cpy().a(0));
+    SglDraw.gradientCircle(e.x, e.y, radius-3*e.fout(), -(size/6)*(1 - e.fin(Interp.pow3)), Draw.getColor().cpy().a(0));
     Draw.z(Layer.effect);
 
     float h, w;

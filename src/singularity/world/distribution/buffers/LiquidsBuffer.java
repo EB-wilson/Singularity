@@ -1,6 +1,8 @@
 package singularity.world.distribution.buffers;
 
-import arc.math.WindowedMean;
+import arc.Core;
+import arc.graphics.Color;
+import arc.graphics.g2d.TextureRegion;
 import arc.struct.IntMap;
 import arc.struct.Seq;
 import arc.util.io.Reads;
@@ -9,7 +11,6 @@ import mindustry.content.Liquids;
 import mindustry.gen.Building;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
-import mindustry.world.modules.BlockModule;
 import mindustry.world.modules.LiquidModule;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
@@ -41,6 +42,20 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
   }
 
   @Override
+  public void deReadFlow(Liquid ct, Number amount){
+    tmp.obj.liquid = ct;
+    tmp.obj.amount = amount.floatValue();
+    deReadFlow(tmp);
+  }
+
+  @Override
+  public void dePutFlow(Liquid ct, Number amount){
+    tmp.obj.liquid = ct;
+    tmp.obj.amount = amount.floatValue();
+    dePutFlow(tmp);
+  }
+
+  @Override
   public void bufferContAssign(DistributeNetwork network){
     liquidRead: for(LiquidPacket packet: this){
       for(MatrixGrid grid: network.grids){
@@ -53,34 +68,51 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
           float move = Math.min(packet.amount(), handler.block.liquidCapacity - handler.liquids.get(packet.get()));
 
           packet.remove(move);
+          packet.deRead(move);
           entry.entity.handleLiquid(handler, packet.get(), move);
         }
       }
     }
   }
-  
+
+  @Override
+  public void bufferContAssign(DistributeNetwork network, Liquid ct){
+    //TODO: 实现
+  }
+
+  @Override
+  public void bufferContAssign(DistributeNetwork network, Liquid ct, Number amount){
+    //TODO: 实现
+  }
+
   @Override
   public int unit(){
     return 4;
   }
   
   @Override
-  public BlockModule generateBindModule(){
+  public BufferLiquidModule generateBindModule(){
     return new BufferLiquidModule();
   }
 
+  @Override
+  public String localization(){
+    return Core.bundle.get("misc.liquid");
+  }
+
+  @Override
+  public Color displayColor(){
+    return Liquids.water.color;
+  }
+
   public class LiquidPacket extends Packet<LiquidStack, Liquid>{
-    WindowedMean putMean = new WindowedMean(6), readMean = new WindowedMean(6);
-    float putCaching, readCaching;
-    float putRate = -1, readRate= -1;
-    
     public LiquidPacket(Liquid liquid, float amount){
       obj = new LiquidStack(liquid, amount);
       putCaching += amount;
     }
     
     public LiquidPacket(LiquidStack stack){
-      obj = stack;
+      obj = stack.copy();
       putCaching += obj.amount;
     }
 
@@ -99,7 +131,22 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
     public Liquid get(){
       return obj.liquid;
     }
-  
+
+    @Override
+    public Color color(){
+      return obj.liquid.color;
+    }
+
+    @Override
+    public String localization(){
+      return obj.liquid.localizedName;
+    }
+
+    @Override
+    public TextureRegion icon(){
+      return obj.liquid.fullIcon;
+    }
+
     @Override
     public int occupation(){
       return (int)Math.ceil(obj.amount*unit());
@@ -109,12 +156,18 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
     public Float amount(){
       return obj.amount;
     }
+
+    @Override
+    public void setZero(){
+      readCaching += occupation();
+      obj.amount = 0;
+    }
   
     @Override
     public void merge(Packet<LiquidStack, Liquid> other){
       if(other.id() == id()){
         obj.amount += other.obj.amount;
-        putCaching += obj.amount;
+        putCaching += other.occupation();
       }
     }
   
@@ -122,24 +175,25 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
     public void remove(Packet<LiquidStack, Liquid> other){
       if(other.id() == id()){
         obj.amount -= other.obj.amount;
-        readCaching += obj.amount;
+        readCaching += other.occupation();
       }
     }
-  
-    @Override
-    public void calculateDelta(){
-      putMean.add(putCaching);
-      putCaching = 0;
-      if(putMean.hasEnoughData()) putRate = putMean.mean();
-      
-      readMean.add(readCaching);
-      readCaching = 0;
-      if(readMean.hasEnoughData()) readRate = readMean.mean();
+
+    public void deRead(float amount){
+      tmp.obj.liquid = obj.liquid;
+      tmp.obj.amount = amount;
+      LiquidsBuffer.this.deReadFlow(tmp);
     }
-  
+
+    public void dePut(float amount){
+      tmp.obj.liquid = obj.liquid;
+      tmp.obj.amount = amount;
+      LiquidsBuffer.this.dePutFlow(tmp);
+    }
+
     @Override
-    public float delta(){
-      return 0;
+    public Packet<LiquidStack, Liquid> copy(){
+      return new LiquidPacket(obj);
     }
   }
 

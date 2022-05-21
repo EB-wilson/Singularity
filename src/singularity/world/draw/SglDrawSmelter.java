@@ -7,12 +7,14 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.util.Time;
+import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.world.Block;
-import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.components.DrawableComp;
+import universecore.components.blockcomp.FactoryBuildComp;
 
-public class SglDrawSmelter<Target extends NormalCrafter.NormalCrafterBuild> extends DrawFactory<Target>{
+public class SglDrawSmelter<Target extends Building & FactoryBuildComp & DrawableComp> extends DrawFactory<Target>{
   public Color flameColor = Color.valueOf("ffc999");
   public TextureRegion top;
   public float lightRadius = 60f, lightAlpha = 0.65f, lightSinScl = 10f, lightSinMag = 5;
@@ -51,18 +53,18 @@ public class SglDrawSmelter<Target extends NormalCrafter.NormalCrafterBuild> ext
     public void draw(){
       Draw.rect(region, entity.x(), entity.y(), block.rotate ? entity.rotation()*90 : 0);
     
-      if(entity.warmup > 0f && flameColor.a > 0.001f){
+      if(entity.warmup() > 0f && flameColor.a > 0.001f){
         float g = 0.3f;
         float r = 0.06f;
         float cr = Mathf.random(0.1f);
       
         Draw.z(Layer.block + 0.01f);
       
-        Draw.alpha(((1f - g) + Mathf.absin(Time.time, 8f, g) + Mathf.random(r) - r) * entity.warmup);
+        Draw.alpha(((1f - g) + Mathf.absin(Time.time, 8f, g) + Mathf.random(r) - r) * entity.warmup());
       
         Draw.tint(flameColor);
         Fill.circle(entity.x(), entity.y(), flameRadius + Mathf.absin(Time.time, flameRadiusScl, flameRadiusMag) + cr);
-        Draw.color(1f, 1f, 1f, entity.warmup);
+        Draw.color(1f, 1f, 1f, entity.warmup());
         Draw.rect(top, entity.x(), entity.y());
         Fill.circle(entity.x(), entity.y(), flameRadiusIn + Mathf.absin(Time.time, flameRadiusScl, flameRadiusInMag) + cr);
       
@@ -72,7 +74,7 @@ public class SglDrawSmelter<Target extends NormalCrafter.NormalCrafterBuild> ext
   
     @Override
     public void drawLight(){
-      Drawf.light(entity.team, entity.x(), entity.y(), (lightRadius + Mathf.absin(lightSinScl, lightSinMag)) * entity.warmup * block.size, flameColor, lightAlpha);
+      Drawf.light(entity.team, entity.x(), entity.y(), (lightRadius + Mathf.absin(lightSinScl, lightSinMag)) * entity.warmup() * block.size, flameColor, lightAlpha);
     }
   }
 }

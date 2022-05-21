@@ -24,9 +24,19 @@ public interface EdgeLinkerComp{
   default int linkLength(){
     return 0;
   }
+
+  @Annotations.BindField("linkOffset")
+  default float linkOffset(){
+    return 0;
+  }
   
   @Annotations.BindField("linkRegion")
   default TextureRegion linkRegion(){
+    return null;
+  }
+
+  @Annotations.BindField("linkCapRegion")
+  default TextureRegion linkCapRegion(){
     return null;
   }
   
@@ -144,7 +154,7 @@ public interface EdgeLinkerComp{
   }
   
   default boolean canLink(Tile origin, EdgeLinkerComp originBlock, Tile other, EdgeLinkerComp otherBlock){
-    if(!originBlock.linkable(otherBlock) || otherBlock.linkable(this)) return false;
+    if(!originBlock.linkable(otherBlock) || !otherBlock.linkable(this)) return false;
 
     int xDistance = Math.abs(origin.x - other.x),
         yDistance = Math.abs(origin.y - other.y);

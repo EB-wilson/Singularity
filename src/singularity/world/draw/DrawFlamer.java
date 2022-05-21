@@ -9,11 +9,13 @@ import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.struct.Queue;
 import arc.util.Time;
+import mindustry.gen.Building;
 import mindustry.graphics.Pal;
 import mindustry.world.Block;
-import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.components.DrawableComp;
+import universecore.components.blockcomp.FactoryBuildComp;
 
-public class DrawFlamer<Target extends NormalCrafter.NormalCrafterBuild> extends DrawFactory<Target>{
+public class DrawFlamer<Target extends Building & FactoryBuildComp & DrawableComp> extends DrawFactory<Target>{
   public Color flameColor = Pal.darkPyraFlame;
   public float alpha = 0.45f;
   public float flameSize = 5, minFlameSize = 3;

@@ -2,24 +2,24 @@ package singularity.world.distribution.request;
 
 import arc.struct.Seq;
 import mindustry.type.LiquidStack;
-import singularity.world.components.distnet.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.buffers.LiquidsBuffer;
 
 /**向网络中写入液体，这一操作液体写入网络的缓存中，处理结束由网络将缓存分配给网络中的子容器*/
 public class PutLiquidsRequest extends DistRequestBase<LiquidStack>{
-  private final LiquidsBuffer source;
-  private LiquidsBuffer destination;
+  protected final LiquidsBuffer source;
+  protected LiquidsBuffer destination;
 
-  private final Seq<LiquidStack> reqLiquids;
-  private final boolean all;
+  protected final Seq<LiquidStack> reqLiquids;
+  protected final boolean all;
 
-  public PutLiquidsRequest(DistMatrixUnitBuildComp sender, LiquidsBuffer source){
+  public PutLiquidsRequest(DistElementBuildComp sender, LiquidsBuffer source){
     this(sender, source, null);
   }
 
-  public PutLiquidsRequest(DistMatrixUnitBuildComp sender, LiquidsBuffer source, Seq<LiquidStack> req){
+  public PutLiquidsRequest(DistElementBuildComp sender, LiquidsBuffer source, Seq<LiquidStack> req){
     super(sender);
     this.source = source;
     this.reqLiquids = req;
@@ -38,7 +38,12 @@ public class PutLiquidsRequest extends DistRequestBase<LiquidStack>{
   }
 
   @Override
-  public boolean handle(){
+  protected boolean preHandleTask(){
+    return true;
+  }
+
+  @Override
+  protected boolean handleTask(){
     boolean test = false;
     if(all){
       for(LiquidsBuffer.LiquidPacket packet: source){
@@ -51,8 +56,7 @@ public class PutLiquidsRequest extends DistRequestBase<LiquidStack>{
     }
     else{
       for(LiquidStack stack: reqLiquids){
-        float move = Math.min(stack.amount, source.get(stack.liquid));
-        move = Math.min(move, destination.remainingCapacity().floatValue());
+        float move = Math.min(source.get(stack.liquid), destination.remainingCapacity().floatValue());
 
         if(move < 0.001f) continue;
         source.remove(stack.liquid, move);
@@ -61,6 +65,11 @@ public class PutLiquidsRequest extends DistRequestBase<LiquidStack>{
       }
     }
     return test;
+  }
+
+  @Override
+  protected boolean afterHandleTask(){
+    return true;
   }
 
   @Override

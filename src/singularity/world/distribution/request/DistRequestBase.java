@@ -1,19 +1,25 @@
 package singularity.world.distribution.request;
 
 import arc.Core;
+import arc.func.Boolf;
+import arc.func.Boolp;
 import arc.struct.Seq;
-import singularity.world.components.distnet.DistMatrixUnitBuildComp;
+import org.jetbrains.annotations.Nullable;
+import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistributeNetwork;
 
 public abstract class DistRequestBase<S>{
   private long updateMark, executeMark;
   
   protected boolean initialized, sleeping, killed, blocked;
-  
-  public final DistMatrixUnitBuildComp sender;
+
+  public Boolf<? extends DistElementBuildComp> waker;
+  public final DistElementBuildComp sender;
   public DistributeNetwork target;
+
+  @Nullable RequestTask preHandleCallback, handleCallBack, afterHandleCallBack;
   
-  public DistRequestBase(DistMatrixUnitBuildComp sender){
+  public DistRequestBase(DistElementBuildComp sender){
     this.sender = sender;
   }
   
@@ -57,7 +63,32 @@ public abstract class DistRequestBase<S>{
     this.target = target;
     initialized = true;
   }
-  
+
+  public void update(RequestTask handle){
+    update(null, handle, null);
+  }
+
+  public void update(RequestTask pre, RequestTask after){
+    update(pre, null, after);
+  }
+
+  public void update(RequestTask pre, RequestTask handle, RequestTask after){
+    preHandleCallback = pre;
+    handleCallBack = handle;
+    afterHandleCallBack = after;
+    update();
+  }
+
+  @SuppressWarnings("unchecked")
+  public void checkWaking(){
+    if(waker != null){
+      if(((Boolf<DistElementBuildComp>)waker).get(sender)){
+        if(sleeping) weak();
+      }
+      else if(!sleeping) sleep();
+    }
+  }
+
   public void update(){
     updateMark = Core.graphics.getFrameId();
   }
@@ -71,15 +102,38 @@ public abstract class DistRequestBase<S>{
   }
   
   public boolean preHandle(){
-    return true;
+    if(preHandleCallback != null){
+      boolean res = preHandleCallback.run(this::preHandleTask);
+      preHandleCallback = null;
+      return res;
+    }
+    else return preHandleTask();
+  }
+
+  public boolean handle(){
+    if(handleCallBack != null){
+      boolean res = handleCallBack.run(this::handleTask);
+      handleCallBack = null;
+      return res;
+    }
+    else return handleTask();
   }
   
   public boolean afterHandle(){
-    return true;
+    if(afterHandleCallBack != null){
+      boolean res = afterHandleCallBack.run(this::afterHandleTask);
+      afterHandleCallBack = null;
+      return res;
+    }
+    else return afterHandleTask();
   }
   
-  public abstract boolean handle();
-  
+
+
+  protected abstract boolean preHandleTask();
+  protected abstract boolean handleTask();
+  protected abstract boolean afterHandleTask();
+
   public abstract Seq<S> getList();
   
   public void onExecute(){
@@ -90,5 +144,9 @@ public abstract class DistRequestBase<S>{
     public RequestStatusException(String info){
       super(info);
     }
+  }
+
+  public interface RequestTask{
+    boolean run(Boolp callTask);
   }
 }

@@ -20,7 +20,7 @@ import java.util.Arrays;
 import static mindustry.Vars.tilesize;
 
 @Annotations.ImplEntries
-public class MediumConduit extends Block implements MediumComp, ChainsBlockComp, Autotiler{
+public class MediumConduit extends Block implements MediumComp, Autotiler{
   public TextureRegion[] regions = new TextureRegion[5], tops = new TextureRegion[5];
 
   public float mediumCapacity = 16;
@@ -36,11 +36,6 @@ public class MediumConduit extends Block implements MediumComp, ChainsBlockComp,
     conveyorPlacement = true;
     noUpdateDisabled = true;
     unloadable = false;
-  }
-
-  @Override
-  public void setListeners(){
-
   }
 
   @Override

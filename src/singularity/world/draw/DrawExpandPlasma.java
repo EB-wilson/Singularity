@@ -4,12 +4,14 @@ import arc.graphics.Blending;
 import arc.graphics.g2d.Draw;
 import arc.math.Mathf;
 import arc.util.Time;
+import mindustry.gen.Building;
 import mindustry.world.Block;
-import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.components.DrawableComp;
+import universecore.components.blockcomp.FactoryBuildComp;
 
 import static mindustry.Vars.tilesize;
 
-public class DrawExpandPlasma<T extends NormalCrafter.NormalCrafterBuild> extends SglDrawPlasma<T>{
+public class DrawExpandPlasma<T extends Building & FactoryBuildComp & DrawableComp> extends SglDrawPlasma<T>{
   public float rotationSpeed = 1f;
   public float cycle = 15;
   
@@ -24,10 +26,10 @@ public class DrawExpandPlasma<T extends NormalCrafter.NormalCrafterBuild> extend
       float rd = block.size*tilesize*(2f/3f) + ((Time.time*1.72f%cycle)/cycle)*block.size*tilesize*(2f/3);
     
       Draw.color(plasma1, plasma2, (float)i / plasmas.length);
-      Draw.alpha((0.3f + Mathf.absin(Time.time, 2f + i * 2f, 0.3f + i * 0.05f)) * warmup(entity));
+      Draw.alpha((0.3f + Mathf.absin(Time.time, 2f + i * 2f, 0.3f + i * 0.05f)) * entity.warmup());
       Draw.blend(Blending.additive);
-      Draw.rect(plasmas[i], entity.x, entity.y, r, r, Time.time * (3 + i * 6f) * warmup(entity) * rotationSpeed);
-      Draw.rect(plasmas[(i+1)%plasmas.length], entity.x, entity.y, rd, rd, Time.time * (3 + i * 6f) * warmup(entity) * rotationSpeed);
+      Draw.rect(plasmas[i], entity.x, entity.y, r, r, Time.time * (3 + i * 6f) * entity.warmup() * rotationSpeed);
+      Draw.rect(plasmas[(i+1)%plasmas.length], entity.x, entity.y, rd, rd, Time.time * (3 + i * 6f) * entity.warmup() * rotationSpeed);
       Draw.blend();
     }
     Draw.color();

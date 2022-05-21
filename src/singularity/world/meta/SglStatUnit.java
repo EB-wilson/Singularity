@@ -23,5 +23,7 @@ public class SglStatUnit{
       temperature = handler.addEnumItemTail("temperature"),
       heatCapacity = handler.addEnumItemTail("heatCapacity"),
       kPascal = handler.addEnumItemTail("kPascal"),
-      MPascal = handler.addEnumItemTail("MPascal");
+      MPascal = handler.addEnumItemTail("MPascal"),
+      byteUnit = handler.addEnumItemTail("byte"),
+      bytePreSecond = handler.addEnumItemTail("bytePreSec");
 }

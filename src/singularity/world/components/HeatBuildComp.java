@@ -87,10 +87,7 @@ public interface HeatBuildComp extends BuildCompBase, Takeable{
     
     float atmoTemp = atmospheres.current.getAbsTemperature();
     float moveHeat = getBlock().size*getBlock().size*getMoveCoff(null)*getSwapRate(absTemperature(), atmoTemp)*getBuilding().delta();
-    
-    if(Float.isNaN(moveHeat)){
-      moveHeat = 0;
-    }
+
     handleHeat(-moveHeat);
     if(Vars.state.isCampaign()) atmospheres.current.handleHeat(moveHeat);
   }
@@ -100,7 +97,9 @@ public interface HeatBuildComp extends BuildCompBase, Takeable{
     float lowTemp = Math.min(temp1, temp2);
   
     if(highTemp - lowTemp < 0.01f) return 0;
-    return lowTemp == 0? 1: (temp1 - temp2)/(float)Math.log(highTemp/lowTemp)/60;
+    float result = lowTemp == 0? 1: (temp1 - temp2)/(float)Math.log(highTemp/lowTemp)/60;
+    if(Float.isNaN(result)) return 0;
+    return result;
   }
   
   default float getMoveCoff(HeatBuildComp other){

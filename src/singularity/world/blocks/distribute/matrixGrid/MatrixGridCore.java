@@ -46,7 +46,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   public int linkLength = 16;
   public int maxEdges = 8;
   
-  public TextureRegion linkRegion;
+  public TextureRegion linkRegion, linkCapRegion;
   
   public MatrixGridCore(String name){
     super(name);
@@ -67,6 +67,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   public void load(){
     super.load();
     linkRegion = Core.atlas.find(name + "_link");
+    linkCapRegion = Core.atlas.find(name + "link_cap");
   }
 
   @Override
@@ -108,7 +109,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   @Override
   public void link(EdgeLinkerBuildComp entity, Integer pos){
     EdgeLinkerComp.super.link(entity, pos);
-    ((MatrixGridCoreBuild)entity).linkLerp = 0;
+    entity.linkLerp(0);
   }
 
   @Override
@@ -131,7 +132,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     
     protected int nextPos = -1;
     public boolean loaded;
-    protected float alpha, linkLerp;
+    protected float alpha;
   
     @Override
     public void updateTile(){
@@ -151,23 +152,21 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       }
       
       alpha = Mathf.lerpDelta(alpha, configIOPoint? 1: 0, 0.02f);
-      if(nextPos != -1){
-        if(nextEdge() != null && !nextEdge().getBuilding().isAdded()) delink(nextEdge());
-        linkLerp = Mathf.lerpDelta(linkLerp, 1, 0.02f);
-      }
-      else{
-        linkLerp = 0;
-      }
     }
 
     @Override
     public void linked(EdgeLinkerBuildComp next){
-      if(loaded)linkLerp = 0;
+      if(loaded)linkLerp(0);
     }
 
     @Override
     public void delinked(EdgeLinkerBuildComp next){
-      if(loaded) linkLerp = 0;
+      if(loaded) linkLerp(0);
+    }
+
+    @Override
+    public void edgeUpdated(){
+
     }
 
     @Override
@@ -209,14 +208,6 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
           Tmp.v2.rotate(90);
         }
       }
-      
-      drawConfiguring(this);
-    }
-  
-    @Override
-    public void draw(){
-      super.draw();
-      if(nextEdge() != null) SglDraw.drawLink(tile, nextEdge().tile(), linkRegion(), null, linkLerp);
     }
   
     @Override
@@ -243,20 +234,6 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       pair.configs = configMap;
       pair.linking = nextPos;
       return pair.pack();
-    }
-  
-    @Override
-    public void read(Reads read, byte revision){
-      super.read(read, revision);
-      nextPos = read.i();
-      linkLerp = read.f();
-    }
-  
-    @Override
-    public void write(Writes write){
-      super.write(write);
-      write.i(nextPos);
-      write.f(linkLerp);
     }
   
     protected class LinkPair extends MatrixGridBuild.PosCfgPair{

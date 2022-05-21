@@ -1,6 +1,8 @@
 package singularity.world.distribution.buffers;
 
-import arc.math.WindowedMean;
+import arc.Core;
+import arc.graphics.Color;
+import arc.graphics.g2d.TextureRegion;
 import arc.struct.IntMap;
 import arc.struct.Seq;
 import arc.util.Nullable;
@@ -9,8 +11,10 @@ import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.content.Items;
 import mindustry.gen.Building;
+import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
+import mindustry.world.blocks.storage.CoreBlock;
 import mindustry.world.modules.ItemModule;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
@@ -19,14 +23,19 @@ import singularity.world.distribution.MatrixGrid;
 import static mindustry.Vars.content;
 
 public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPacket>{
-  private static final Seq<MatrixGrid.BuildingEntry<Building>> temp = new Seq<>();
+  private final ItemPacket tmp = new ItemPacket(Items.copper, 0);
+  Seq<MatrixGrid.BuildingEntry<CoreBlock.CoreBuild>> cores = new Seq<>();
 
   public void put(Item item, int amount){
-    put(new ItemsBuffer.ItemPacket(item, amount));
+    tmp.obj.item = item;
+    tmp.obj.amount = amount;
+    put(tmp);
   }
   
   public void remove(Item item, int amount){
-    remove(new ItemsBuffer.ItemPacket(item, amount));
+    tmp.obj.item = item;
+    tmp.obj.amount = amount;
+    remove(tmp);
   }
   
   public void remove(Item item){
@@ -37,26 +46,97 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     ItemPacket p = get(item.id);
     return p != null? p.amount(): 0;
   }
-  
+
+  @Override
+  public void deReadFlow(Item ct, Number amount){
+    tmp.obj.item = ct;
+    tmp.obj.amount = amount.intValue();
+    deReadFlow(tmp);
+  }
+
+  @Override
+  public void dePutFlow(Item ct, Number amount){
+    tmp.obj.item = ct;
+    tmp.obj.amount = amount.intValue();
+    dePutFlow(tmp);
+  }
+
+  @SuppressWarnings("unchecked")
   @Override
   public void bufferContAssign(DistributeNetwork network){
     itemRead: for(ItemPacket packet : this){
+      cores.clear();
       for(MatrixGrid grid : network.grids){
         Building handler = grid.handler.getBuilding();
-        for(MatrixGrid.BuildingEntry<Building> entry: grid.get(
+        for(MatrixGrid.BuildingEntry<? extends Building> entry: grid.<Building>get(
             GridChildType.container,
-            (e, c) -> e.acceptStack(packet.get(), packet.amount(), handler) > 0 && c.get(GridChildType.container, packet.get()),
-            temp)){
+            (e, c) -> e.acceptItem(handler, packet.get()) && c.get(GridChildType.container, packet.get()))){
+          if(entry.entity instanceof CoreBlock.CoreBuild) cores.add((MatrixGrid.BuildingEntry<CoreBlock.CoreBuild>) entry);
+
           if(packet.amount() <= 0) continue itemRead;
           int amount = Math.min(packet.amount(), entry.entity.acceptStack(packet.get(), packet.amount(), handler));
 
           packet.remove(amount);
+          packet.deRead(amount);
           entry.entity.handleStack(packet.get(), amount, handler);
         }
       }
+
+      //最后，分配额外的核心物资用来统计地区资源增量
+      for(MatrixGrid.BuildingEntry<CoreBlock.CoreBuild> core: cores){
+        if(packet.amount() <= 0) return;
+        int amount = Math.min(packet.amount(), core.entity.acceptStack(packet.get(), packet.amount(), network.getCore().getBuilding()));
+        core.entity.handleStack(packet.get(), amount, network.getCore().getBuilding());
+        packet.remove(amount);
+        packet.deRead(amount);
+      }
     }
   }
-  
+
+  @Override
+  public void bufferContAssign(DistributeNetwork network, Item ct){
+    bufferContAssign(network, ct, get(ct));
+  }
+
+  @SuppressWarnings({"unchecked"})
+  @Override
+  public void bufferContAssign(DistributeNetwork network, Item ct, Number amount){
+    cores.clear();
+    int counter = amount.intValue();
+
+    ItemPacket packet = get(ct.id);
+    if(packet == null) return;
+    for(MatrixGrid grid: network.grids){
+      for(MatrixGrid.BuildingEntry<? extends Building> entry: grid.<Building>get(GridChildType.container, (e, c) -> c.get(GridChildType.container, ct)
+          && e.acceptItem(grid.handler.getBuilding(), ct))){
+
+        if(entry.entity instanceof CoreBlock.CoreBuild) cores.add((MatrixGrid.BuildingEntry<CoreBlock.CoreBuild>) entry);
+
+        if(packet.amount() <= 0 || counter <= 0) return;
+        int move = Math.min(packet.amount(), entry.entity.acceptStack(packet.get(), packet.amount(), grid.handler.getBuilding()));
+        move = Math.min(move, counter);
+
+        packet.remove(move);
+        packet.deRead(move);
+        counter -= move;
+        entry.entity.handleStack(packet.get(), move, grid.handler.getBuilding());
+      }
+    }
+
+    //最后，分配额外的核心物资用来统计地区资源增量
+    if(counter > 0){
+      for(MatrixGrid.BuildingEntry<CoreBlock.CoreBuild> entry: cores){
+        if(counter <= 0) return;
+        int rem = Math.min(packet.amount(), counter);
+        rem = Math.min(entry.entity.acceptStack(packet.get(), packet.amount(), network.getCore().getBuilding()), rem);
+        entry.entity.handleStack(ct, rem, network.getCore().getBuilding());
+        packet.remove(rem);
+        packet.deRead(rem);
+        counter -= rem;
+      }
+    }
+  }
+
   @Override
   public int unit(){
     return 8;
@@ -66,14 +146,18 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
   public ItemModule generateBindModule(){
     return new BufferItemModule();
   }
-  
-  private final ItemPacket tmp = new ItemPacket(Items.copper, 0);
-  
+
+  @Override
+  public String localization(){
+    return Core.bundle.get("misc.item");
+  }
+
+  @Override
+  public Color displayColor(){
+    return Pal.accent;
+  }
+
   public class ItemPacket extends Packet<ItemStack, Item>{
-    WindowedMean putMean = new WindowedMean(6), readMean = new WindowedMean(6);
-    float putCaching, readCaching;
-    float putRate = -1, readRate= -1;
-    
     public ItemPacket(Item item, int amount){
       obj = new ItemStack(item, amount);
       putCaching += amount;
@@ -88,7 +172,22 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     public Item get(){
       return obj.item;
     }
-  
+
+    @Override
+    public Color color(){
+      return obj.item.color;
+    }
+
+    @Override
+    public String localization(){
+      return obj.item.localizedName;
+    }
+
+    @Override
+    public TextureRegion icon(){
+      return obj.item.fullIcon;
+    }
+
     @Override
     public int occupation(){
       return obj.amount*unit();
@@ -98,13 +197,25 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     public Integer amount(){
       return obj.amount;
     }
+
+    @Override
+    public void setZero(){
+      readCaching += occupation();
+      obj.amount = 0;
+    }
   
     @Override
     public void merge(Packet<ItemStack, Item> other){
       if(other.id() == id()){
         obj.amount += other.obj.amount;
-        putCaching += obj.amount;
+        putCaching += other.occupation();
       }
+    }
+
+    public void put(int amount){
+      tmp.obj.item = obj.item;
+      tmp.obj.amount = amount;
+      ItemsBuffer.this.put(tmp);
     }
     
     public void remove(int amount){
@@ -117,24 +228,25 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     public void remove(Packet<ItemStack, Item> other){
       if(other.id() == id()){
         obj.amount -= other.obj.amount;
-        readCaching += obj.amount;
+        readCaching += other.occupation();
       }
     }
-    
-    @Override
-    public void calculateDelta(){
-      putMean.add(putCaching);
-      putCaching = 0;
-      if(putMean.hasEnoughData()) putRate = putMean.mean();
-      
-      readMean.add(readCaching);
-      readCaching = 0;
-      if(readMean.hasEnoughData()) readRate = readMean.mean();
+
+    public void deRead(int amount){
+      tmp.obj.item = obj.item;
+      tmp.obj.amount = amount;
+      ItemsBuffer.this.deReadFlow(tmp);
     }
-    
+
+    public void dePut(int amount){
+      tmp.obj.item = obj.item;
+      tmp.obj.amount = amount;
+      ItemsBuffer.this.dePutFlow(tmp);
+    }
+
     @Override
-    public float delta(){
-      return 0;
+    public Packet<ItemStack, Item> copy(){
+      return new ItemPacket(obj.item, obj.amount);
     }
   }
   

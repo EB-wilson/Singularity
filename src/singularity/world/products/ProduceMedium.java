@@ -37,7 +37,7 @@ public class ProduceMedium<T extends Building & ProducerBuildComp & MediumBuildC
 
   @Override
   public void update(T entity){
-    entity.mediumContains(entity.mediumContains() + Math.min(entity.remainingMediumCapacity(), product*entity.consDelta(parent)));
+    entity.mediumContains(entity.mediumContains() + Math.min(entity.remainingMediumCapacity(), product*parent.delta(entity)*multiple(entity)));
   }
 
   @Override

@@ -5,12 +5,14 @@ import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.struct.Seq;
+import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.world.Block;
 import singularity.Singularity;
-import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.components.DrawableComp;
+import universecore.components.blockcomp.FactoryBuildComp;
 
-public class DrawFactory<Target extends NormalCrafter.NormalCrafterBuild> extends SglDrawBlock<Target>{
+public class DrawFactory<Target extends Building & FactoryBuildComp & DrawableComp> extends SglDrawBlock<Target>{
   public TextureRegion rotator, top, bottom, liquid;
   
   public float rotationScl;
@@ -58,7 +60,7 @@ public class DrawFactory<Target extends NormalCrafter.NormalCrafterBuild> extend
       Draw.rect(region, entity.x(), entity.y(), block.rotate ? entity.rotation()*90 : 0);
       if(liquid != null) Drawf.liquid(liquid, entity.x, entity.y,
           liquidAlpha(entity), liquidColor(entity), block.rotate ? entity.rotation()*90 : 0);
-      if(rotator != null) Drawf.spinSprite(rotator, entity.x(), entity.y(), entity.totalProgress*rotationScl);
+      if(rotator != null) Drawf.spinSprite(rotator, entity.x(), entity.y(), entity.totalProgress()*rotationScl);
       if(top != null) Draw.rect(top, entity.x(), entity.y());
       Draw.blend();
     }

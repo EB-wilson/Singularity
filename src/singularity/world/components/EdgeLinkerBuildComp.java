@@ -1,10 +1,13 @@
 package singularity.world.components;
 
+import arc.graphics.g2d.Draw;
+import arc.math.Mathf;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.gen.Building;
 import mindustry.world.Tile;
+import singularity.graphic.SglDraw;
 import singularity.world.blocks.distribute.matrixGrid.EdgeContainer;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.BuildCompBase;
@@ -39,14 +42,22 @@ public interface EdgeLinkerBuildComp extends BuildCompBase{
     getEdges().remove(this);
   }
   
-  @Annotations.BindField("nextPos")
+  @Annotations.BindField(value = "nextPos", initialize = "-1")
   default int nextPos(){
     return 0;
   }
   
   @Annotations.BindField("nextPos")
   default void nextPos(int pos){}
-  
+
+  @Annotations.BindField("linkLerp")
+  default float linkLerp(){
+    return 0;
+  }
+
+  @Annotations.BindField("linkLerp")
+  default void linkLerp(float lerp){}
+
   @Annotations.MethodEntry(entryMethod = "update")
   default void updateLinking(){
     if(nextPos() != -1 && (nextEdge() == null || !nextEdge().getBuilding().isAdded() || nextEdge().tile().pos() != nextPos())){
@@ -60,6 +71,14 @@ public interface EdgeLinkerBuildComp extends BuildCompBase{
     }
     else if(nextPos() == -1 && nextEdge() != null){
       delink(nextEdge());
+    }
+
+    if(nextPos() != -1){
+      if(nextEdge() != null && !nextEdge().getBuilding().isAdded()) delink(nextEdge());
+      linkLerp(Mathf.lerpDelta(linkLerp(), 1, 0.02f));
+    }
+    else{
+      linkLerp(0);
     }
   }
   
@@ -97,15 +116,35 @@ public interface EdgeLinkerBuildComp extends BuildCompBase{
     new EdgeContainer().flow(this);
     delinked(other);
   }
+
+  @Annotations.MethodEntry(entryMethod = "draw")
+  default void drawLink(){
+    float l;
+    Draw.z((l = Draw.z()) + 5f);
+    if(nextEdge() != null) SglDraw.drawLink(
+        tile(), getEdgeBlock().linkOffset(),
+        nextEdge().tile(), nextEdge().getEdgeBlock().linkOffset(),
+        getEdgeBlock().linkRegion(), getEdgeBlock().linkCapRegion(),
+        linkLerp()
+    );
+    Draw.z(l);
+  }
+
+  @Annotations.MethodEntry(entryMethod = "drawConfigure")
+  default void drawLinkConfig(){
+    getEdgeBlock().drawConfiguring(this);
+  }
   
   @Annotations.MethodEntry(entryMethod = "read", paramTypes = {"arc.util.io.Reads -> read", "byte"})
   default void readLink(Reads read){
     nextPos(read.i());
+    linkLerp(read.f());
   }
   
   @Annotations.MethodEntry(entryMethod = "write", paramTypes = {"arc.util.io.Writes -> write"})
   default void writeLink(Writes write){
     write.i(nextPos());
+    write.f(linkLerp());
   }
   
   default Tile tile(){
@@ -115,4 +154,7 @@ public interface EdgeLinkerBuildComp extends BuildCompBase{
   default EdgeLinkerComp getEdgeBlock(){
     return getBlock(EdgeLinkerComp.class);
   }
+
+  /**当边缘连接结构发生变化时调用此方法*/
+  void edgeUpdated();
 }

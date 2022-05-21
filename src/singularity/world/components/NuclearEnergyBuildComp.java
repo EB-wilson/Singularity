@@ -12,13 +12,7 @@ import universecore.annotations.Annotations;
 import universecore.components.blockcomp.BuildCompBase;
 import universecore.components.blockcomp.Takeable;
 
-/**这个接口表明此Building是具有核能的方块，需要在create当中初始化一个NuclearEnergyModule
- * 必须创建的变量：
- * <pre>{@code
- *   NuclearEnergyModule [energy]
- *   Seq<NuclearEnergyBuildComp> [energyLinked]
- * }<pre/>
- * 若使用非默认命名则需要重写调用方法*/
+/**这个接口表明此Building是具有核能的方块，需要在create当中初始化一个NuclearEnergyModule*/
 public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
   /**获得该块的NuclearEnergyBlock*/
   default NuclearEnergyBlockComp getNuclearBlock(){
@@ -194,7 +188,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
       moveEnergy(dump);
     }
   }
-  
+
   /**当能压过载以后触发的方法
    * @param energyPressure 此时的方块间核势能差值
    */

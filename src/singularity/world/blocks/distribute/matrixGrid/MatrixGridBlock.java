@@ -1,14 +1,11 @@
 package singularity.world.blocks.distribute.matrixGrid;
 
 import arc.Core;
-import arc.func.Boolf;
-import arc.func.Func;
 import arc.math.geom.Point2;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntMap;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
-import arc.struct.OrderedMap;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -19,27 +16,22 @@ import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.Tile;
-import mindustry.world.modules.ItemModule;
-import mindustry.world.modules.LiquidModule;
 import singularity.Sgl;
 import singularity.type.Gas;
 import singularity.type.SglContents;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.ui.tables.DistTargetConfigTable.TargetConfigure;
+import singularity.world.blocks.distribute.DistNetBlock;
+import singularity.world.blocks.distribute.IOPointBlock;
+import singularity.world.blocks.distribute.matrixGrid.RequestHandlers.RequestHandler;
 import singularity.world.components.GasBuildComp;
 import singularity.world.components.SecondableConfigBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitComp;
-import singularity.world.blocks.distribute.DistNetBlock;
-import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
-import singularity.world.distribution.buffers.BaseBuffer;
-import singularity.world.distribution.buffers.ItemsBuffer;
-import singularity.world.distribution.buffers.LiquidsBuffer;
-import singularity.world.distribution.request.*;
-import singularity.world.distribution.request.RequestFactories.RequestFactory;
+import singularity.world.distribution.request.DistRequestBase;
 import universecore.annotations.Annotations;
 import universecore.util.DataPackable;
 import universecore.util.colletion.TreeSeq;
@@ -54,9 +46,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   static {
     DataPackable.assignType(typeID, param -> ((MatrixGridBuild)param[0]).new PosCfgPair());
   }
-  
-  public ObjectMap<GridChildType, ObjectMap<ContentType, RequestFactory>> requestFactories = new ObjectMap<>();
-  public OrderedMap<Boolf<? extends DistMatrixUnitBuildComp>, Func<DistMatrixUnitBuildComp, ? extends DistRequestBase<?>>> transBackFactories = new OrderedMap<>();
+
   public int bufferCapacity = 256;
   
   public MatrixGridBlock(String name){
@@ -91,13 +81,13 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       Building t = Vars.world.build(c.position);
       if(t == null) return;
 
-      if(c.isClear){
+      if(c.isClear()){
         if(t instanceof IOPointBlock.IOPoint){
-          ((IOPointBlock.IOPoint) t).config.clear();
+          ((IOPointBlock.IOPoint) t).config = null;
         }
         TargetConfigure oldCfg = entity.configMap.remove(c.position);
         if(oldCfg != null) entity.configs.remove(oldCfg);
-        if(! (t instanceof IOPointBlock.IOPoint)){
+        if(!(t instanceof IOPointBlock.IOPoint)){
           entity.grid.remove(t);
         }
       }
@@ -105,6 +95,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
         if(t instanceof IOPointBlock.IOPoint){
           ((IOPointBlock.IOPoint) t).applyConfig(c);
         }
+
         TargetConfigure oldCfg = entity.configMap.put(c.position, c);
         if(oldCfg != null) entity.configs.remove(oldCfg);
         entity.configs.add(c);
@@ -151,30 +142,14 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   
   public void assignFactory(){
     //items
-    setFactory(GridChildType.output, ContentType.item, new RequestFactories.ReadItemRequestFactory());
-    setFactory(GridChildType.input, ContentType.item, new RequestFactories.PutItemRequestFactory());
-    setFactory(GridChildType.acceptor, ContentType.item, new RequestFactories.AcceptItemRequestFactory());
-    setTransBackFactory((MatrixGridBuild e) -> {
-      for(DistRequestBase<?> request : e.requests){
-        if(request instanceof ReadItemsRequest){
-          if(request.isBlocked()) return true;
-        }
-      }
-      return false;
-    }, e -> new PutItemsRequest(e, (ItemsBuffer) e.buffers().get(DistBuffers.itemBuffer)));
+    setFactory(GridChildType.output, ContentType.item, new RequestHandlers.ReadItemRequestHandler());
+    setFactory(GridChildType.input, ContentType.item, new RequestHandlers.PutItemRequestHandler());
+    setFactory(GridChildType.acceptor, ContentType.item, new RequestHandlers.AcceptItemRequestHandler());
 
     //liquids
-    setFactory(GridChildType.output, ContentType.liquid, new RequestFactories.ReadLiquidRequestFactory());
-    setFactory(GridChildType.input, ContentType.liquid, new RequestFactories.PutItemRequestFactory());
-    setFactory(GridChildType.acceptor, ContentType.liquid, new RequestFactories.AcceptLiquidRequestFactory());
-    setTransBackFactory((MatrixGridBuild e) -> {
-      for(DistRequestBase<?> request : e.requests){
-        if(request instanceof ReadLiquidsRequest){
-          if(request.isBlocked()) return true;
-        }
-      }
-      return false;
-    }, e -> new PutLiquidsRequest(e, (LiquidsBuffer) e.buffers().get(DistBuffers.liquidBuffer)));
+    setFactory(GridChildType.output, ContentType.liquid, new RequestHandlers.ReadLiquidRequestHandler());
+    setFactory(GridChildType.input, ContentType.liquid, new RequestHandlers.PutLiquidRequestHandler());
+    setFactory(GridChildType.acceptor, ContentType.liquid, new RequestHandlers.AcceptLiquidRequestHandler());
   }
   
   @SuppressWarnings("rawtypes")
@@ -186,12 +161,11 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
     protected IntMap<TargetConfigure> configMap = new IntMap<>();
     protected IntMap<IOPointBlock.IOPoint> ioPoints = new IntMap<>();
 
+    protected ObjectMap<DistRequestBase<?>, RequestHandler<?>> requestHandlerMap = new ObjectMap<>();
+
     public boolean configIOPoint = false, shouldUpdateTask = true;
-  
-    public ObjectMap<DistBuffers<?>, BaseBuffer<?, ?, ?>> buffers = new ObjectMap<>();
     
     public ObjectSet<DistRequestBase> requests = new ObjectSet<>();
-    public ObjectMap<Boolf<DistMatrixUnitBuildComp>, DistRequestBase> transBackRequest = new ObjectMap<>();
 
     private double frameID;
     
@@ -200,14 +174,13 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       super.create(block, team);
       initBuffers();
       
-      items = (ItemModule) buffers.get(DistBuffers.itemBuffer).generateBindModule();
-      liquids = (LiquidModule) buffers.get(DistBuffers.liquidBuffer).generateBindModule();
+      items = getBuffer(DistBuffers.itemBuffer).generateBindModule();
+      liquids = getBuffer(DistBuffers.liquidBuffer).generateBindModule();
       return this;
     }
   
     @Override
     public void networkValided(){
-      releaseTransBackRequest();
       shouldUpdateTask = true;
     }
   
@@ -269,23 +242,6 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
         entry.value.remove();
       }
     }
-    
-    @SuppressWarnings("unchecked")
-    public void releaseTransBackRequest(){
-      for(DistRequestBase req : transBackRequest.values()){
-        req.kill();
-      }
-      transBackRequest.clear();
-      
-      DistRequestBase<?> req;
-      for(ObjectMap.Entry<Boolf<? extends DistMatrixUnitBuildComp>, Func<DistMatrixUnitBuildComp, ? extends DistRequestBase<?>>> prov : transBackFactories()){
-        req = prov.value.get(this);
-        req.init(distributor.network);
-        req.sleep();
-        distributor.assign(req);
-        transBackRequest.put((Boolf<DistMatrixUnitBuildComp>) prov.key, req);
-      }
-    }
   
     public void releaseRequest(){
       for(DistRequestBase request : requests){
@@ -301,12 +257,14 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
         });
       }
   
-      for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, RequestFactory>> entry : requestFactories()){
-        for(ContentType cType : entry.value.keys()){
-          DistRequestBase request = createRequest(entry.key, cType);
+      for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, RequestHandler>> entry : requestFactories()){
+        for(ObjectMap.Entry<ContentType, RequestHandler> e: entry.value){
+          DistRequestBase request = createRequest(entry.key, e.key);
           if(request == null) continue;
           requests.add(request);
           distributor.assign(request);
+
+          requestHandlerMap.put(request, e.value);
         }
       }
   
@@ -354,25 +312,14 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           releaseRequest();
           shouldUpdateTask = false;
         }
-        
-        for(ObjectMap<ContentType, RequestFactory> value: requestFactories().values()){
-          for(RequestFactory factory : value.values()){
-            factory.updateIO(this);
-          }
-        }
-        
+
         for(DistRequestBase request : requests){
-          request.update();
-        }
-  
-        for(ObjectMap.Entry<Boolf<DistMatrixUnitBuildComp>, DistRequestBase> entry : transBackRequest){
-          if(entry.key.get(this)){
-            entry.value.weak();
-            entry.value.update();
-          }
-          else{
-            entry.value.sleep();
-          }
+          RequestHandler handler = requestHandlerMap.get(request);
+          request.update(
+              t -> handler.preCallBack(this, request, t),
+              t -> handler.callBack(this, request, t),
+              t -> handler.afterCallBack(this, request, t)
+          );
         }
       }
       
@@ -453,7 +400,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       write.i(bytes.length);
       write.b(bytes);
     }
-    
+
     protected class PosCfgPair implements DataPackable{
       public static final long typeID = 1679658234266591164L;
     

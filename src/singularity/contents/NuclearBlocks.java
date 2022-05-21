@@ -104,7 +104,7 @@ public class NuclearBlocks implements ContentList{
       updateEffect = Fx.generatespark;
       updateEffectChance = 0.01f;
       
-      draw = new DrawFactory<>(this){
+      draw = new DrawFactory<NormalCrafterBuild>(this){
         @Override
         public TextureRegion[] icons(){
           return new TextureRegion[]{
@@ -136,7 +136,7 @@ public class NuclearBlocks implements ContentList{
       newProduce();
       produce.power(50);
       
-      draw = new SglDrawPlasma<>(this, 4){{
+      draw = new SglDrawPlasma<NormalCrafterBuild>(this, 4){{
         plasma1 = Pal.reactorPurple;
         plasma2 = Pal.reactorPurple2;
   
@@ -169,7 +169,7 @@ public class NuclearBlocks implements ContentList{
           particle.remove();
         }
         Effect.shake(4f, 18f, e.x, e.y);
-        Angles.randLenVectors(System.nanoTime(), Mathf.random(8, 12), 4.75f, 6.25f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(5f, 7f)).setAttenuate(0.125f).deflect().setDest(new Vec2(e.x, e.y), 0.15f*e.warmup, false));
+        Angles.randLenVectors(System.nanoTime(), Mathf.random(8, 12), 4.75f, 6.25f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(5f, 7f)).setAttenuate(0.125f).deflect().setDest(new Vec2(e.x, e.y), 0.15f*e.warmup(), false));
       };
       crafting = e -> {
         if(Mathf.chanceDelta(0.02f)) Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(3.25f, 4f)));
@@ -263,10 +263,10 @@ public class NuclearBlocks implements ContentList{
       consume.liquid(SglLiquids.phase_FEX_liquid, 0.4f);
       
       crafting = e -> {
-        if(Mathf.chanceDelta(0.15f*e.warmup)) Angles.randVectors(System.nanoTime(), 1, 15, (x, y) -> {
-          float iff = Mathf.random(0.4f, Math.max(0.4f, e.warmup));
+        if(Mathf.chanceDelta(0.15f*e.warmup())) Angles.randVectors(System.nanoTime(), 1, 15, (x, y) -> {
+          float iff = Mathf.random(0.4f, Math.max(0.4f, e.warmup()));
           Tmp.v1.set(x, y).scl(0.5f*iff/2);
-          Particle.create(e.x + x, e.y + y, Tmp.v1.x, Tmp.v1.y, iff*6.5f*e.warmup);
+          Particle.create(e.x + x, e.y + y, Tmp.v1.x, Tmp.v1.y, iff*6.5f*e.warmup());
         });
       };
       
@@ -293,8 +293,8 @@ public class NuclearBlocks implements ContentList{
             SglDraw.startBloom(31);
             Drawf.liquid(liquid, e.x, e.y, e.liquids.smoothAmount()/liquidCapacity, e.liquids.current().color.cpy().lerp(Color.white, 0.3f));
             SglDraw.endBloom();
-            Draw.rect(rotatorA, e.x, e.y, e.totalProgress*5);
-            Draw.rect(rotatorB, e.x, e.y, -e.totalProgress*5);
+            Draw.rect(rotatorA, e.x, e.y, e.totalProgress()*5);
+            Draw.rect(rotatorB, e.x, e.y, -e.totalProgress()*5);
             Draw.rect(region, e.x, e.y);
   
             Draw.color(coolColor, hotColor, e.temperature()/e.block().maxTemperature);
@@ -303,22 +303,22 @@ public class NuclearBlocks implements ContentList{
             Draw.z(Layer.effect);
             Draw.color(Pal.reactorPurple);
             
-            float shake = Mathf.random(-0.4f, 0.4f)*e.warmup;
-            Tmp.v1.set(19 + shake, 0).rotate(e.totalProgress*2);
-            Tmp.v2.set(0, 19 + shake).rotate(e.totalProgress*2);
-            Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, e.totalProgress*2);
-            Fill.poly(e.x + Tmp.v2.x, e.y + Tmp.v2.y, 3, 3f, e.totalProgress*2 + 90);
-            Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, e.totalProgress*2 + 180);
-            Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, e.totalProgress*2 + 270);
+            float shake = Mathf.random(-0.4f, 0.4f)*e.warmup();
+            Tmp.v1.set(19 + shake, 0).rotate(e.totalProgress()*2);
+            Tmp.v2.set(0, 19 + shake).rotate(e.totalProgress()*2);
+            Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, e.totalProgress()*2);
+            Fill.poly(e.x + Tmp.v2.x, e.y + Tmp.v2.y, 3, 3f, e.totalProgress()*2 + 90);
+            Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, e.totalProgress()*2 + 180);
+            Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, e.totalProgress()*2 + 270);
             
-            Tmp.v1.set(16, 0).rotate(-e.totalProgress*2);
-            Tmp.v2.set(0, 16).rotate(-e.totalProgress*2);
-            Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, -e.totalProgress*2 - 180);
-            Fill.poly(e.x + Tmp.v2.x, e.y + Tmp.v2.y, 3, 3f, -e.totalProgress*2 - 90);
-            Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, -e.totalProgress*2);
-            Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, -e.totalProgress*2 + 90);
+            Tmp.v1.set(16, 0).rotate(-e.totalProgress()*2);
+            Tmp.v2.set(0, 16).rotate(-e.totalProgress()*2);
+            Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, -e.totalProgress()*2 - 180);
+            Fill.poly(e.x + Tmp.v2.x, e.y + Tmp.v2.y, 3, 3f, -e.totalProgress()*2 - 90);
+            Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, -e.totalProgress()*2);
+            Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, -e.totalProgress()*2 + 90);
             
-            Lines.stroke(1.8f*e.warmup);
+            Lines.stroke(1.8f*e.warmup());
             Lines.circle(e.x, e.y, 18 + shake);
           };
         }

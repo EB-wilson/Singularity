@@ -76,7 +76,7 @@ public class DrawNuclearReactor extends DrawFactory<NuclearReactor.NuclearReacto
   
     @Override
     public void drawLight(){
-      Drawf.light(entity.team, entity.x(), entity.y(), lightRadius * entity.warmup * block.size, lightColor, lightAlpha);
+      Drawf.light(entity.team, entity.x(), entity.y(), lightRadius * entity.warmup() * block.size, lightColor, lightAlpha);
     }
   }
 }

@@ -43,7 +43,7 @@ public class MatrixGrid{
 
   public <T> Seq<BuildingEntry<T>> get(GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req, Seq<BuildingEntry<T>> temp){
     temp.clear();
-    each(type, req, (e, entry) -> temp.add(new BuildingEntry<>(e, entry)));
+    each(type, req, (e, entry) -> temp.add((BuildingEntry<T>) all.get((Building) e)));
     return temp;
   }
 

@@ -6,6 +6,7 @@ import singularity.world.components.EdgeLinkerComp;
 public class MatrixMinerEdge extends MatrixEdgeBlock{
   public MatrixMinerEdge(String name){
     super(name);
+    linkLength = 25;
   }
 
   @Override

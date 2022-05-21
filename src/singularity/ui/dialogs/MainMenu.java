@@ -8,6 +8,7 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.Element;
 import arc.scene.ui.Label;
+import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.content.Liquids;
 import mindustry.gen.Tex;
@@ -62,7 +63,7 @@ public class MainMenu extends BaseDialog {
             b.add(new Element(){
               @Override
               public void draw(){
-                Draw.color(entry.color.get().cpy().lerp(Color.black, 0.3f));
+                Draw.color(Tmp.c1.set(entry.color.get()).lerp(Color.black, 0.3f));
                 Draw.alpha(parentAlpha);
                 Fill.square(x + width/2, y + height/2 - 6, width/8, 45);
                 Draw.color(entry.color.get());

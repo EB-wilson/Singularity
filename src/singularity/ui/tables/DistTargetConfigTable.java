@@ -263,8 +263,6 @@ public class DistTargetConfigTable extends Table{
       DataPackable.assignType(typeID, p -> new TargetConfigure());
     }
     
-    public boolean isClear = false;
-    
     public int position;
     public int priority;
     
@@ -298,7 +296,12 @@ public class DistTargetConfigTable extends Table{
     
     public void eachChildType(Cons2<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> cons){
       for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> entry : data){
-        if(!entry.value.isEmpty()) cons.get(entry.key, entry.value);
+        for(ObjectSet<UnlockableContent> value: entry.value.values()){
+          if(!value.isEmpty()){
+            cons.get(entry.key, entry.value);
+            break;
+          }
+        }
       }
     }
     
@@ -352,7 +355,6 @@ public class DistTargetConfigTable extends Table{
     public void write(Writes write){
       write.i(position);
       write.i(priority);
-      write.bool(isClear);
       
       write.i(data.size);
       for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> entry : data){
@@ -383,7 +385,6 @@ public class DistTargetConfigTable extends Table{
     public void read(Reads read){
       position = read.i();
       priority = read.i();
-      isClear = read.bool();
       
       data = new ObjectMap<>();
       int count = read.i(), count2, amount;
@@ -415,7 +416,26 @@ public class DistTargetConfigTable extends Table{
     public void clear(){
       priority = 0;
       data.clear();
-      isClear = true;
+    }
+
+    public boolean isClear(){
+      if(data.isEmpty()) return true;
+      for(ObjectMap<ContentType, ObjectSet<UnlockableContent>> map: data.values()){
+        for(ObjectSet<UnlockableContent> value: map.values()){
+          if(!value.isEmpty()) return false;
+        }
+      }
+      return true;
+    }
+
+    @Override
+    public String toString(){
+      return "TargetConfigure{" +
+          "position=" + position +
+          ", priority=" + priority +
+          ", data=" + data +
+          ", directBits=" + directBits +
+          '}';
     }
   }
 }
