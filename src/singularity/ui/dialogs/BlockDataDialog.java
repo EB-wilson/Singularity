@@ -75,7 +75,7 @@ public class BlockDataDialog extends BaseDialog{
             });
             button.clicked(() -> {
               String preString = text.getText().toString();
-              Object result = FieldHandler.getValue(targets, "items");
+              Object result = FieldHandler.getValueDefault(targets, "items");
               BlockDataDialog.this.monitor.setFlag.show(text, preString, result == null? new ObjectDataMonitor.ObjectStructure(true): new ObjectDataMonitor.ArrayStructure(result, temp));
             });
             button.add(text);

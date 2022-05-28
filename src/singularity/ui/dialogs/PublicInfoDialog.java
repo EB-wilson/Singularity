@@ -27,6 +27,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 
 public class PublicInfoDialog extends BaseListDialog{
+  private static final FieldHandler<Http> fieldHandler = new FieldHandler<>(Http.class);
+
   private static final String titlesUrl = "https://raw.githubusercontent.com/EB-wilson/Singularity/master/publicInfo/titles.hjson";
   private static final String langRegex = "#locale#";
   private static final Pattern imagePattern = Pattern.compile("<image *=.*>");
@@ -83,7 +85,7 @@ public class PublicInfoDialog extends BaseListDialog{
   public void refresh(){
     Log.info("loading message");
   
-    ExecutorService exec = FieldHandler.getValue(Http.class, "exec", null);
+    ExecutorService exec = fieldHandler.getValue(null, "exec");
     exec.shutdown();
     Http.setMaxConcurrent(8);
     
@@ -288,7 +290,7 @@ public class PublicInfoDialog extends BaseListDialog{
           UncCore.cellActions.clear();
           UncCore.cellActions.add(new CellChangeColorAction(cell, this, t.color.cpy().a(0), 60));
   
-          ExecutorService exec = FieldHandler.getValue(Http.class, "exec", null);
+          ExecutorService exec = fieldHandler.getValue(null, "exec");
           exec.shutdown();
           Http.setMaxConcurrent(8);
           

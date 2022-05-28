@@ -273,6 +273,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   @Annotations.ImplEntries
   public class SglBuilding extends Building implements ConsumerBuildComp, GasBuildComp, NuclearEnergyBuildComp, DrawableComp{
+    private static FieldHandler<PlacementFragment> fieldHandler = new FieldHandler<>(PlacementFragment.class);
+
     public SglConsumeModule consumer;
     public NuclearEnergyModule energy;
     public GasesModule gases;
@@ -441,7 +443,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       if(lastRecipe != recipeCurrent) updateRecipe = true;
       lastRecipe = recipeCurrent;
 
-      if(updateRecipe) FieldHandler.setValue(PlacementFragment.class, "wasHovered", ui.hudfrag.blockfrag, false);
+      if(updateRecipe) fieldHandler.setValue(ui.hudfrag.blockfrag, "wasHovered", false);
   
       super.update();
     }
@@ -482,7 +484,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public void display(Table table){
       super.display(table);
       displayEnergy(table);
-  
+
       if(gases != null && showGasFlow){
         table.row();
         table.table(l -> {

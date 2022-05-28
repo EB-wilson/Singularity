@@ -2,18 +2,13 @@ package singularity.world.meta;
 
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatCat;
+
 import universecore.util.handler.EnumHandler;
-import universecore.util.handler.FieldHandler;
+
+import java.util.logging.FileHandler;
 
 public class SglStat{
-  private static final EnumHandler<Stat> handler = new EnumHandler<>(Stat.class, (inst, param) -> {
-    if(param.length == 0){
-      FieldHandler.setValue(Stat.class, "category", inst, StatCat.general);
-    }
-    else{
-      FieldHandler.setValue(Stat.class, "category", inst, param[0]);
-    }
-  });
+  private static final EnumHandler<Stat> handler = new EnumHandler<>(Stat.class);
   
   public static final Stat
       compressible = handler.addEnumItemTail("compressible", SglStatCat.gas),

@@ -1,42 +1,25 @@
-import java.util.Arrays;
+import universecore.util.handler.MethodHandler;
 
 public class Test{
-  private static int cursor;
-  private static float[] values = new float[10];
-  private static float[] displayValues = new float[10];
-
   public static void main(String[] args){
-    float lerpTime = 0.1f;
+    Test1 t = new Test1();
 
-    Arrays.fill(values, Float.NaN);
-    Arrays.fill(displayValues, Float.NaN);
-
-
-
-    for(int i = 0; i < 30; i++){
-      putValue(i);
-      for(int l = 0; l < values.length; l++){
-        if(Float.isNaN(displayValues[l]) && !Float.isNaN(values[l])){
-          System.out.println("mod");
-          displayValues[l] = 0;
-        }
-        displayValues[l] = lerpDelta(displayValues[l], values[l], lerpTime);
-      }
-      System.out.println(Arrays.toString(displayValues));
-    }
+    MethodHandler.invokeDefault(t, "run1", Void.class);
+    MethodHandler.invokeDefault(t, "run2", Void.class, "testing");
+    MethodHandler.invokeDefault(Test1.class, "runStatic", Void.class, "static testing");
   }
 
-  private static float lerpDelta(float fromValue, float toValue, float progress){
-    return fromValue + (toValue - fromValue) * progress;
-  }
-
-  public static void putValue(int value){
-    if(cursor > values.length - 1){
-      System.arraycopy(values, 1, values, 0, values.length - 1);
-      values[cursor - 1] = value;
+  static class Test1{
+    public void run1(){
+      System.out.println("run1");
     }
-    else{
-      values[cursor++] = value;
+
+    public void run2(String inf){
+      System.out.println("run2: " + inf);
+    }
+
+    public static void runStatic(Object p){
+      System.out.println(p);
     }
   }
 }

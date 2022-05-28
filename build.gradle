@@ -1,3 +1,6 @@
+import java.util.jar.JarEntry
+import java.util.jar.JarOutputStream
+
 plugins {
     id 'java'
 }
@@ -11,15 +14,15 @@ repositories{
     maven{ url 'https://www.jitpack.io' }
 }
 
+"java SyncBundles.java".execute().waitForProcessOutput(System.out, System.err)
+
 ext{
     //the build number that this mod is made for
     mindustryVersion = 'v135'
     //version of SDK you will be using
-    sdkVersion = '30.0.3'
-    //version of build-tools you installed
-    sdkRoot = '/home/EBwilson/android_sdk'
-    System.out.println(sdkRoot)
-    modOutputDir = '/home/EBwilson/sd/Android/data/io.anuke.mindustry/files/mods'
+    minSdkAPI = 30
+
+    sdkRoot = System.getenv("ANDROID_HOME")
 
     doExec = { cmd ->
         def proc = cmd.execute(null, new File("$buildDir/libs"))
@@ -27,24 +30,30 @@ ext{
     }
 }
 
-//java 8 backwards compatibility flag
 allprojects{
-    sourceCompatibility = 11
-    targetCompatibility = 11
-
     tasks.withType(JavaCompile){
-        if(JavaVersion.current() != JavaVersion.VERSION_11){
-            options.compilerArgs.addAll(['--release', '11'])
-        }
+        options.fork = true
+        options.forkOptions.jvmArgs.addAll([
+            "--add-opens", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+            "--add-opens", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+            "--add-opens", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+            "--add-opens", "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+            "--add-opens", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+            "--add-opens", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+        ])
+        options.compilerArgs.addAll(['--release', '11'])
     }
 }
 
 dependencies{
-    implementation 'org.jetbrains:annotations:22.0.0'
-    compileOnly files("lib/UniverseCore-lib.jar")
-    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+    implementation 'org.jetbrains:annotations:23.0.0'
+    implementation "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+    implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
+
+    implementation files("lib/UniverseCore-lib.jar")
     annotationProcessor files("lib/UniverseCore-lib.jar")
+
+    annotationProcessor "com.github.Anuken:jabel:0.7.0"
 }
 
 tasks.withType(JavaCompile) {  
@@ -55,25 +64,54 @@ task jarAndroid{
     dependsOn "jar"
 
     doLast{
-        def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find{ f -> new File(f, "android.jar").exists()}
-    
-        //collect dependencies needed for desugaring
-        def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect{ "--classpath $it.path" }.join(" ")
-    
-        //dex and desugar files - this requires d8 in your PATH
-        "$sdkRoot/build-tools/$sdkVersion/d8 $dependencies --min-api 14 --output ${project.archivesBaseName}Android.jar ${project.archivesBaseName}Desktop.jar"
-            .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
+        try {
+            def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find { f -> new File(f, "android.jar").exists() }
+
+            //collect dependencies needed for desugaring
+            def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect { "--classpath $it.path" }.join(" ")
+
+            try{
+                System.out.println("build android dex,,,")
+
+                //dex and desugar files - this requires d8 in your PATH
+                "d8 $dependencies --min-api $minSdkAPI --output ${rootProject.name}-android.jar ${project.archivesBaseName}-desktop.jar"
+                    .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
+            }
+            catch(Throwable ignored) {
+                def d8 = new File("$sdkRoot/build-tools/").listFiles().find {
+                    it.listFiles().any {
+                        it.name.contains("d8")
+                    } && Integer.valueOf(it.name.substring(0, 2)) >= minSdkAPI
+                }.listFiles().find { it.name.contains("d8") }
+
+                "$d8 $dependencies --min-api $minSdkAPI --output ${rootProject.name}-android.jar ${project.archivesBaseName}-desktop.jar"
+                    .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
+            }
+        } catch (Throwable ignored) {
+            System.out.println("[WARNING] d8 tool or platform tools was not found, if you was installed android SDK, please check your environment variable")
+
+            delete(
+                files("${rootProject.buildDir}/libs/${rootProject.name}-android.jar")
+            )
+
+            def out = new JarOutputStream(new FileOutputStream("${rootProject.buildDir}/libs/${rootProject.name}-android.jar"))
+            out.putNextEntry(new JarEntry("non-androidMod.txt"))
+            StringReader reader = new StringReader(
+                "this mod is don't have classes.dex for android, please consider recompile with a SDK or run this mod on desktop only"
+            )
+
+            int r
+            while((r = reader.read()) != -1){
+                out.write(r)
+                out.flush()
+            }
+            out.close()
+        }
     }
 }
 
 jar{
-    archiveFileName = "${project.archivesBaseName}Desktop.jar"
-
-    "java SyncBundles.java ${project.rootDir}".execute().waitForProcessOutput(System.out, System.err)
-
-    from{
-        configurations.runtimeClasspath.collect{ it.isDirectory() ? it : zipTree(it) }
-    }
+    archiveFileName = "${project.archivesBaseName}-desktop.jar"
 
     from(rootDir){
         include "mod.hjson"
@@ -91,15 +129,18 @@ task deploy(type: Jar){
     dependsOn jar
     archiveFileName = "${project.archivesBaseName}.jar"
 
-    from{ [zipTree("$buildDir/libs/${project.archivesBaseName}Desktop.jar"), zipTree("$buildDir/libs/${project.archivesBaseName}Android.jar")] }
+    from{[
+        zipTree("$buildDir/libs/${project.archivesBaseName}-desktop.jar"),
+        zipTree("$buildDir/libs/${project.archivesBaseName}-android.jar")
+    ]}
 
     doLast{
-        delete{ delete "$buildDir/libs/${project.archivesBaseName}Desktop.jar" }
-        delete{ delete "$buildDir/libs/${project.archivesBaseName}Android.jar" }
+        delete{ delete "$buildDir/libs/${project.archivesBaseName}-desktop.jar" }
+        delete{ delete "$buildDir/libs/${project.archivesBaseName}-android.jar" }
     
-        if(modOutputDir != null){
+        if(properties.get("modOutputDir") != null){
             copy {
-                into("$modOutputDir/")
+                into("${properties.get("modOutputDir")}/")
                 from("$buildDir/libs/${rootProject.name}.jar")
             }
         }

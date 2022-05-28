@@ -179,7 +179,7 @@ public interface HeatBuildComp extends BuildCompBase, Takeable{
   default void setLiquidModule(Field liquids){
     if(!LiquidModule.class.isAssignableFrom(liquids.getType())) throw new RuntimeException("error of set module to a non-LiquidModule var");
     
-    FieldHandler.setValue(liquids, this, new LiquidModule(){
+    FieldHandler.setValueDefault(this, liquids.getName(), new LiquidModule(){
       @Override
       public void add(Liquid liquid, float amount){
         super.add(liquid, amount);
@@ -192,7 +192,7 @@ public interface HeatBuildComp extends BuildCompBase, Takeable{
   default void setGasesModule(Field gases){
     if(! GasesModule.class.isAssignableFrom(gases.getType())) throw new RuntimeException("error of set module to a non-LiquidModule var");
     
-    FieldHandler.setValue(gases, this, new GasesModule((GasBuildComp)this, true){
+    FieldHandler.setValueDefault(this, gases.getName(), new GasesModule((GasBuildComp)this, true){
       @Override
       public void add(Gas gas, float amount){
         super.add(gas, amount);
@@ -205,7 +205,7 @@ public interface HeatBuildComp extends BuildCompBase, Takeable{
   default void setItemModule(Field items){
     if(!ItemModule.class.isAssignableFrom(items.getType())) throw new RuntimeException("error of set module to a non-ItemModule var");
   
-    FieldHandler.setValue(items, this, new ItemModule(){
+    FieldHandler.setValueDefault(this, items.getName(), new ItemModule(){
       @Override
       public void add(Item item, int amount){
         super.add(item, amount);

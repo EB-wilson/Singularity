@@ -128,7 +128,7 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   
     @Override
     public void setGasesModule(Field gases){
-      FieldHandler.setValue(gases, this, new GasesModule(this, false){
+      FieldHandler.setValueDefault(this, gases.getName(), new GasesModule(this, false){
         @Override
         public void add(Gas gas, float amount){
           super.add(gas, amount);

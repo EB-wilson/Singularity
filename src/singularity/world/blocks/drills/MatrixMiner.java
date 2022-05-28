@@ -482,7 +482,14 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
         bit.draw();
       }
 
-      Draw.z(Layer.bullet - 3);
+      Draw.z(Layer.block);
+    }
+
+    @Override
+    public void drawLink(){
+      EdgeLinkerBuildComp.super.drawLink();
+      Draw.reset();
+      Draw.z(Layer.block);
     }
 
     public void drawArm(){

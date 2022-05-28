@@ -1,25 +1,29 @@
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class SyncBundles{
-  private static final String sourceLocale = "zh_CN";
-  private static final String[] locales = {
-      "zh_TW", "(待翻譯)",
-      "", "(waitToTranslate)"
-  };
-
-  private static final String bundlesDir = File.separator + "assets" + File.separator + "bundles" + File.separator;
-
   public static void main(String[] args){
-    String folder = args[0] + bundlesDir;
-    File source = new File(folder, "bundle_" + sourceLocale + ".properties");
+    Properties info = new Properties(new File("bundleInfo.properties"));
+    String sourceLocale = info.get("source");
+    String bundlesDir = info.get("bundlesDir").replace("/", File.separator);
+    Properties loc = new Properties();
+    loc.read(info.get("targetLocales").replace("[", "").replace("]", ""));
+    String[] locales = new String[loc.map.size()*2];
+    int index = 0;
+    for(Pair entry: loc.map.values()){
+      locales[index] = entry.key.replace("en_US", "");
+      locales[index+1] = entry.value;
+      index += 2;
+    }
+
+    File source = new File(bundlesDir, "bundle_" + sourceLocale + ".properties");
     Properties sourceBundle = new Properties();
     sourceBundle.read(source);
 
     for(int i = 0; i < locales.length; i += 2){
       String locale = locales[i], mark = locales[i + 1];
-      File file = new File(folder, "bundle" + (locale.isBlank() ? "": "_" + locale) + ".properties");
+      File file = new File(bundlesDir, "bundle" + (locale.isBlank() ? "": "_" + locale) + ".properties");
       Properties bundle = new Properties(sourceBundle, mark);
       if(file.exists()) bundle.read(file);
       bundle.write(file);
@@ -28,9 +32,13 @@ public class SyncBundles{
 
   public static class Properties{
     ArrayList<Line> lines = new ArrayList<>();
-    HashMap<String, Pair> map = new HashMap<>();
+    LinkedHashMap<String, Pair> map = new LinkedHashMap<>();
 
     public Properties(){}
+
+    public Properties(File file){
+      read(file);
+    }
 
     public Properties(Properties source, String mark){
       for(Line line: source.lines){
@@ -44,19 +52,47 @@ public class SyncBundles{
       }
     }
 
+    public String get(String key){
+      return map.containsKey(key)? map.get(key).value: null;
+    }
+
+    public void read(String content){
+      read(new BufferedReader(new StringReader(content)));
+    }
+
     public void read(File file){
       try{
-        BufferedReader reader = new BufferedReader(new FileReader(file));
+        read(new BufferedReader(new FileReader(file)));
+      }catch(FileNotFoundException e){
+        e.printStackTrace();
+      }
+    }
+
+    public void read(BufferedReader reader){
+      try{
         String line;
         boolean init = lines.isEmpty();
-        while((line = reader.readLine()) != null){
-          String[] strs = line.trim().split("=", 2);
+        Pair last = null;
 
+        while((line = reader.readLine()) != null){
+          if(last != null){
+            if(line.endsWith("\\")){
+              last.value = last.value + line.substring(0, line.length() - 1) + System.lineSeparator();
+              continue;
+            }
+            else last = null;
+          }
+
+          String[] strs = line.trim().split("=", 2);
           if(init){
             if(!strs[0].startsWith("#") && strs.length == 2){
               Pair p;
               lines.add(p = new Pair(line, strs[0].trim(), strs[1].trim()));
               map.put(p.key, p);
+              if(strs[1].endsWith("\\")){
+                last = p;
+                p.value = p.value.substring(0, p.value.length()-1) + System.lineSeparator();
+              }
             }
             else{
               lines.add(new Line(line));

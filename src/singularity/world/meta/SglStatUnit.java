@@ -2,17 +2,9 @@ package singularity.world.meta;
 
 import mindustry.world.meta.StatUnit;
 import universecore.util.handler.EnumHandler;
-import universecore.util.handler.FieldHandler;
 
 public class SglStatUnit{
-  private static final EnumHandler<StatUnit> handler = new EnumHandler<>(StatUnit.class, (inst, param) -> {
-    if(param.length == 0){
-      FieldHandler.setValue(StatUnit.class, "space", inst, true);
-    }
-    else{
-      FieldHandler.setValue(StatUnit.class, "space", inst, param[0]);
-    }
-  });
+  private static final EnumHandler<StatUnit> handler = new EnumHandler<>(StatUnit.class);
   
   public static final StatUnit neutronFlux = handler.addEnumItemTail("neutronFlux"),
       neutronFluxSecond = handler.addEnumItemTail("neutronFluxSecond"),

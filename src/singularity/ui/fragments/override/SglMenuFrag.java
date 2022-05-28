@@ -165,7 +165,7 @@ public class SglMenuFrag extends MenuFragment{
   
     group.fill(c -> {
       c.visibility = () -> shown;
-      FieldHandler.setValue(MenuFragment.class, "container", this, c);
+      FieldHandler.setValueTemp(ui.menufrag, "container", c);
       c.name = "menu container";
       
       try{
@@ -176,7 +176,7 @@ public class SglMenuFrag extends MenuFragment{
           try{
             met.invoke(this);
           }catch(IllegalAccessException | InvocationTargetException e){
-            e.printStackTrace();
+            Log.err(e);
           }
         });
       }
