@@ -52,7 +52,7 @@ public class SglMenuFrag extends MenuFragment{
   
   private final PlanetRenderer renderer = new SglPlanetRender();
   
-  private Universe universe = new Universe();
+  private final Universe universe = new Universe();
   private final Universe varsUniverse = Vars.universe;
   
   WindowedMean dxMean = new WindowedMean(10), dyMean = new WindowedMean(10);

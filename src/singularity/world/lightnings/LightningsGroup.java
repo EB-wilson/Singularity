@@ -20,6 +20,7 @@ import singularity.world.lightnings.generator.LightningGenerator;
 
 /**闪电容器的实体实现，通常大范围的闪电绘制需要使用这个实体，只在局部的draw中使用前容器实现
  * 注意这个容器应当被保存并持续使用，不应该随时回收，尽管实现了{@link arc.util.pooling.Pool.Poolable}接口，但这个对象通常情况应当被重复使用而不是不断的释放又创建*/
+@SuppressWarnings("unchecked")
 public class LightningsGroup extends LightningContainer implements Drawc, Pool.Poolable{
   public Cons<LightningsGroup> perDraw;
   public Cons2<LightningVertex, LightningVertex> lightningPathUpdate;
@@ -178,8 +179,7 @@ public class LightningsGroup extends LightningContainer implements Drawc, Pool.P
   }
 
   public boolean isLocal() {
-    if(this instanceof Unitc) {
-      Unitc u = (Unitc)this;
+    if(this instanceof Unitc u) {
       return u.controller() != Vars.player;
     }
     else{
@@ -188,11 +188,10 @@ public class LightningsGroup extends LightningContainer implements Drawc, Pool.P
   }
 
   public boolean isRemote() {
-    if(!(this instanceof Unitc)) {
+    if(!(this instanceof Unitc u)) {
       return false;
     }
     else{
-      Unitc u = (Unitc)this;
       return u.isPlayer() && !this.isLocal();
     }
   }

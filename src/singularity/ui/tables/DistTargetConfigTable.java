@@ -186,7 +186,7 @@ public class DistTargetConfigTable extends Table{
       topBar.add(Core.bundle.get("misc.priority")).right().padRight(4);
       topBar.field(Integer.toString(config.priority),
           (f, c) -> numbers.contains(c),
-          str -> config.priority = Integer.valueOf(str)).right().width(75).padRight(4);
+          str -> config.priority = Integer.parseInt(str)).right().width(75).padRight(4);
     }).fillY().expandX();
 
     row();

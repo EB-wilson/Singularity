@@ -5,8 +5,6 @@ import mindustry.world.meta.StatCat;
 
 import universecore.util.handler.EnumHandler;
 
-import java.util.logging.FileHandler;
-
 public class SglStat{
   private static final EnumHandler<Stat> handler = new EnumHandler<>(Stat.class);
   

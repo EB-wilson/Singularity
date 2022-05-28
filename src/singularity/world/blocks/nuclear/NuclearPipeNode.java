@@ -67,8 +67,7 @@ public class NuclearPipeNode extends NuclearBlock{
     config(Point2.class, (e, value) -> {
       NuclearEnergyBuildComp entity = (NuclearEnergyBuildComp)e;
       Tile tile = Vars.world.tile(value.x, value.y);
-      if(tile == null || !(tile.build instanceof NuclearEnergyBuildComp) || !((NuclearEnergyBuildComp)tile.build).getNuclearBlock().hasEnergy()) return;
-      NuclearEnergyBuildComp other = (NuclearEnergyBuildComp)tile.build;
+      if(tile == null || !(tile.build instanceof NuclearEnergyBuildComp other) || !((NuclearEnergyBuildComp)tile.build).getNuclearBlock().hasEnergy()) return;
 
       value.x = tile.x;
       value.y = tile.y;
@@ -100,8 +99,7 @@ public class NuclearPipeNode extends NuclearBlock{
   
   @Override
   public void drawRequestConfigTop(BuildPlan req, Eachable<BuildPlan> list){
-    if(req.config instanceof Point2[]){
-      Point2[] plans = (Point2[])req.config;
+    if(req.config instanceof Point2[] plans){
       for(Point2 point : plans){
         int px = req.x + point.x, py = req.y + point.y;
         otherReq = null;

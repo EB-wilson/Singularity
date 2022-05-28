@@ -11,6 +11,7 @@ import singularity.ui.tables.DistTargetConfigTable;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import universecore.util.colletion.TreeSeq;
 
+@SuppressWarnings("unchecked")
 public class MatrixGrid{
   private static final Seq tmp = new Seq();
 
@@ -49,14 +50,13 @@ public class MatrixGrid{
 
   @SuppressWarnings("unchecked")
   public <T> void each(GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req, Cons2<T, DistTargetConfigTable.TargetConfigure> cons){
-    TreeSeq<BuildingEntry<?>> temp = null;
-    switch(type){
-      case output: temp = output; break;
-      case input: temp = input; break;
-      case container: temp = container; break;
-      case acceptor: temp = acceptor; break;
-    }
-    
+    TreeSeq<BuildingEntry<?>> temp = switch(type){
+      case output -> output;
+      case input -> input;
+      case container -> container;
+      case acceptor -> acceptor;
+    };
+
     for(BuildingEntry<?> entry: temp){
       if(req.get((T)entry.entity, entry.config)) cons.get((T) entry.entity, entry.config);
     }
@@ -69,21 +69,12 @@ public class MatrixGrid{
     BuildingEntry<?> entry = all.get(t, new BuildingEntry<>(t, c));
 
     c.eachChildType((type, map) -> {
-      TreeSeq<BuildingEntry<?>> temp = null;
-
-      switch(type){
-        case output:
-          temp = output;
-          break;
-        case input:
-          temp = input;
-          break;
-        case container:
-          temp = container;
-          break;
-        case acceptor:
-          temp = acceptor;
-      }
+      TreeSeq<BuildingEntry<?>> temp = switch(type){
+        case output -> output;
+        case input -> input;
+        case container -> container;
+        case acceptor -> acceptor;
+      };
 
       if(existed){
         entry.config.priority = priority;

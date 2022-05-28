@@ -30,6 +30,7 @@ import singularity.world.modules.ReactionModule;
 
 import static singularity.Sgl.atmospheres;
 
+@SuppressWarnings("unchecked")
 public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   public Tile tile;
   
@@ -279,8 +280,7 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   
   @Override
   public boolean isLocal(){
-    if(this instanceof Unitc){
-      Unitc u = (Unitc) this;
+    if(this instanceof Unitc u){
       return u.controller() != Vars.player;
     }
     
@@ -289,8 +289,7 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   
   @Override
   public boolean isRemote(){
-    if (this instanceof Unitc) {
-      Unitc u = (Unitc)this;
+    if (this instanceof Unitc u) {
       return u.isPlayer() && !this.isLocal();
     }
     return false;

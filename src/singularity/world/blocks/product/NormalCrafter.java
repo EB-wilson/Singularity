@@ -141,6 +141,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     return draw.icons();
   }
 
+  @SuppressWarnings("unchecked")
   @Annotations.ImplEntries
   public class NormalCrafterBuild extends SglBuilding implements FactoryBuildComp{
     private final Seq<Liquid> tempLiquid = new Seq<>();

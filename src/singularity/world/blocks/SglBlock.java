@@ -223,9 +223,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       Tile tile = world.tile(x, y);
       if(tile != null){
         NuclearPipeNode.getNodeLinks(tile, this, player.team()).each(e -> {
-          if(!(e.getBlock() instanceof NuclearPipeNode)) return;
-          NuclearPipeNode node = (NuclearPipeNode)e.getBlock();
-          
+          if(!(e.getBlock() instanceof NuclearPipeNode node)) return;
+
           Draw.color(node.linkColor, Renderer.laserOpacity * 0.5f);
           node.drawLink(tile.worldx() + offset, tile.worldy() + offset, size, e.getBuilding().tile.drawx(), e.getBuilding().tile.drawy(), e.getBlock().size);
           Drawf.square(e.getBuilding().x, e.getBuilding().y, e.getBlock().size * tilesize / 2f + 2f, Pal.place);

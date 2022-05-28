@@ -220,8 +220,7 @@ public class LeakGasArea implements Pool.Poolable, Drawc, GasBuildComp{
   
   @Override
   public boolean isLocal(){
-    if(this instanceof Unitc){
-      Unitc u = (Unitc) this;
+    if(this instanceof Unitc u){
       return u.controller() != Vars.player;
     }
     
@@ -230,8 +229,7 @@ public class LeakGasArea implements Pool.Poolable, Drawc, GasBuildComp{
   
   @Override
   public boolean isRemote(){
-    if (this instanceof Unitc) {
-      Unitc u = (Unitc)this;
+    if (this instanceof Unitc u) {
       return u.isPlayer() && !this.isLocal();
     }
     return false;

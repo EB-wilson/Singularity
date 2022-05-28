@@ -54,8 +54,7 @@ public class SglItemModule extends ItemModule{
   
   @Override
   public void set(ItemModule module){
-    if(module instanceof SglItemModule){
-      SglItemModule other = (SglItemModule) module;
+    if(module instanceof SglItemModule other){
       total = other.total;
       takeRotation = other.takeRotation;
       inventory = other.inventory.copy();

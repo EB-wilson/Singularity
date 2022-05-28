@@ -1227,7 +1227,7 @@ public class CrafterBlocks implements ContentList{
           Lines.stroke(5f + 3*e.warmup());
           Lines.circle(e.x, e.y, 73*e.warmup());
           Draw.alpha(0.6f*e.warmup());
-          Lines.stroke( + 5*e.warmup());
+          Lines.stroke( 5*e.warmup());
           Lines.circle(e.x, e.y, 40*e.warmup());
           Draw.alpha(0.7f*e.warmup());
           Lines.stroke(2f);

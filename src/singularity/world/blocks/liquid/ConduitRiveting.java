@@ -5,7 +5,6 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
 import arc.util.Eachable;
 import mindustry.entities.Puddles;
 import mindustry.entities.units.BuildPlan;

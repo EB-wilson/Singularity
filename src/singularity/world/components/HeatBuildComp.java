@@ -118,8 +118,7 @@ public interface HeatBuildComp extends BuildCompBase, Takeable{
     float[] gasHeatCapacity = {0};
     float[] baseHeatCapacity = {getHeatBlock().baseHeatCapacity()};
     
-    if(this instanceof GasBuildComp){
-      GasBuildComp gasComp = (GasBuildComp) this;
+    if(this instanceof GasBuildComp gasComp){
       if(gasComp.getGasBlock().hasGases()){
         gasComp.gases().each((gas, amount) -> {
           gasHeatCapacity[0] += gas.heatCapacity*amount;

@@ -150,8 +150,7 @@ public class GasCompressor extends GasBlock{
   }
   
   public boolean hasGas(Tile tile){
-    if(!(tile.overlay() instanceof SglOverlay)) return false;
-    SglOverlay gFloor = (SglOverlay) tile.overlay();
+    if(!(tile.overlay() instanceof SglOverlay gFloor)) return false;
     return gFloor.gas != null && gFloor.pumpable;
   }
   

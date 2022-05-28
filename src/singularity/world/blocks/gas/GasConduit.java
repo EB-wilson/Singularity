@@ -83,8 +83,7 @@ public class GasConduit extends GasBlock implements Autotiler{
   
   @Override
   public boolean blends(Tile tile, int rotation, int otherx, int othery, int otherrot, Block otherblock){
-    if(!(otherblock instanceof GasBlockComp)) return false;
-    GasBlockComp blockComp = (GasBlockComp)otherblock;
+    if(!(otherblock instanceof GasBlockComp blockComp)) return false;
     return blockComp.hasGases() && (blockComp.outputGases() || (lookingAt(tile, rotation, otherx, othery, otherblock))) && lookingAtEither(tile, rotation, otherx, othery, otherrot, otherblock);
   }
   

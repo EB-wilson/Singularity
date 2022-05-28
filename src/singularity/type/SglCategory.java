@@ -1,6 +1,5 @@
 package singularity.type;
 
-import arc.util.Log;
 import mindustry.type.Category;
 import universecore.UncCore;
 

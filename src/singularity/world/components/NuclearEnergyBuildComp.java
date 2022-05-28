@@ -95,8 +95,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
     
     for(int i=0; i<energy().linked.size; i++){
       Tile tile = Vars.world.tile(energy().linked.get(i));
-      if(!(tile.build instanceof NuclearEnergyBuildComp)) continue;
-      NuclearEnergyBuildComp other = (NuclearEnergyBuildComp)tile.build;
+      if(!(tile.build instanceof NuclearEnergyBuildComp other)) continue;
       deLink(other);
     }
     energy().linked.clear();
@@ -130,8 +129,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
     Seq<NuclearEnergyBuildComp> linked = energyLinked();
     linked.clear();
     for(Building entity: getBuilding().proximity){
-      if(!(entity instanceof NuclearEnergyBuildComp)) continue;
-      NuclearEnergyBuildComp other = (NuclearEnergyBuildComp)entity;
+      if(!(entity instanceof NuclearEnergyBuildComp other)) continue;
       if(entity.interactable(getBuilding().team) && other.getNuclearBlock().hasEnergy()
           && !(getNuclearBlock().consumeEnergy() && other.getNuclearBlock().consumeEnergy()
           && !getNuclearBlock().outputEnergy() && !other.getNuclearBlock().outputEnergy())) linked.add(other);

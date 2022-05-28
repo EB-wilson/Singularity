@@ -75,8 +75,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   @Override
   public void parseConfigObjects(SglBuilding e, Object obj){
     MatrixGridBuild entity = (MatrixGridBuild) e;
-    if(obj instanceof TargetConfigure){
-      TargetConfigure c = (TargetConfigure) obj;
+    if(obj instanceof TargetConfigure c){
 
       Building t = Vars.world.build(c.position);
       if(t == null) return;
@@ -105,8 +104,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   
       entity.shouldUpdateTask = true;
     }
-    else if(obj instanceof MatrixGridBuild.PosCfgPair){
-      MatrixGridBuild.PosCfgPair pair = (MatrixGridBuild.PosCfgPair) obj;
+    else if(obj instanceof MatrixGridBuild.PosCfgPair pair){
       for(IntMap.Entry<IOPointBlock.IOPoint> ent : entity.ioPoints){
         ent.value.remove();
       }
