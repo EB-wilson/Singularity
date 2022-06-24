@@ -1,14 +1,18 @@
 import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.regex.Pattern;
 
 public class SyncBundles{
+  private static final Pattern matcher = Pattern.compile("\\\\\\n");
+  public static final char SEP = '\\';
+
   public static void main(String[] args){
     Properties info = new Properties(new File("bundleInfo.properties"));
     String sourceLocale = info.get("source");
     String bundlesDir = info.get("bundlesDir").replace("/", File.separator);
     Properties loc = new Properties();
-    loc.read(info.get("targetLocales").replace("[", "").replace("]", ""));
+    loc.read(info.getOrigin("targetLocales").replace("[", "").replace("]", "").replace(SEP + System.lineSeparator(), System.lineSeparator()));
     String[] locales = new String[loc.map.size()*2];
     int index = 0;
     for(Pair entry: loc.map.values()){
@@ -17,7 +21,7 @@ public class SyncBundles{
       index += 2;
     }
 
-    File source = new File(bundlesDir, "bundle_" + sourceLocale + ".properties");
+    File source = new File(bundlesDir, "bundle" + (sourceLocale.isBlank() ? "": "_" + sourceLocale) + ".properties");
     Properties sourceBundle = new Properties();
     sourceBundle.read(source);
 
@@ -53,6 +57,17 @@ public class SyncBundles{
     }
 
     public String get(String key){
+      String str = map.containsKey(key)? map.get(key).value: null;
+      StringBuilder result = new StringBuilder();
+
+      for(String res: matcher.split(str)){
+        result.append(res);
+      }
+
+      return result.toString();
+    }
+
+    public String getOrigin(String key){
       return map.containsKey(key)? map.get(key).value: null;
     }
 
@@ -76,11 +91,14 @@ public class SyncBundles{
 
         while((line = reader.readLine()) != null){
           if(last != null){
-            if(line.endsWith("\\")){
-              last.value = last.value + line.substring(0, line.length() - 1) + System.lineSeparator();
-              continue;
+            last.value = last.value + line;
+
+            if(line.endsWith(String.valueOf(SEP))){
+              last.value += System.lineSeparator();
             }
             else last = null;
+
+            continue;
           }
 
           String[] strs = line.trim().split("=", 2);
@@ -89,9 +107,9 @@ public class SyncBundles{
               Pair p;
               lines.add(p = new Pair(line, strs[0].trim(), strs[1].trim()));
               map.put(p.key, p);
-              if(strs[1].endsWith("\\")){
+              if(strs[1].endsWith(String.valueOf(SEP))){
                 last = p;
-                p.value = p.value.substring(0, p.value.length()-1) + System.lineSeparator();
+                p.value = p.value + System.lineSeparator();
               }
             }
             else{
@@ -99,9 +117,15 @@ public class SyncBundles{
             }
           }
           else {
+            if(strs.length != 2)
+              continue;
             Pair pair = map.get(strs[0].trim());
             if(pair != null){
               pair.value = strs[1].trim();
+              if(strs[1].endsWith(String.valueOf(SEP))){
+                last = pair;
+                pair.value += System.lineSeparator();
+              }
             }
           }
         }

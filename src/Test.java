@@ -1,25 +1,19 @@
-import universecore.util.handler.MethodHandler;
+import mindustry.mod.Mod;
 
-public class Test{
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@AnnoTest(87)
+public class Test extends Mod{
   public static void main(String[] args){
-    Test1 t = new Test1();
 
-    MethodHandler.invokeDefault(t, "run1", Void.class);
-    MethodHandler.invokeDefault(t, "run2", Void.class, "testing");
-    MethodHandler.invokeDefault(Test1.class, "runStatic", Void.class, "static testing");
   }
+}
 
-  static class Test1{
-    public void run1(){
-      System.out.println("run1");
-    }
-
-    public void run2(String inf){
-      System.out.println("run2: " + inf);
-    }
-
-    public static void runStatic(Object p){
-      System.out.println(p);
-    }
-  }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@interface AnnoTest{
+  int value();
 }

@@ -2,10 +2,7 @@ package singularity.world.blocks.chains;
 
 import arc.Core;
 import arc.func.Boolf;
-import arc.struct.ObjectMap;
-import arc.struct.ObjectSet;
-import arc.struct.Queue;
-import arc.struct.Seq;
+import arc.struct.*;
 import singularity.world.components.ChainsBuildComp;
 
 import static mindustry.Vars.tilesize;
@@ -16,7 +13,7 @@ public class ChainsContainer{
   
   public ObjectMap<String, Object> localVars = new ObjectMap<>();
   
-  public final ObjectSet<ChainsBuildComp> all = new ObjectSet<>();
+  public final OrderedSet<ChainsBuildComp> all = new OrderedSet<>();
 
   private int minX, minY;
   private int maxX, maxY;

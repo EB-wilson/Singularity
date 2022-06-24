@@ -1,11 +1,11 @@
 package singularity.world.components;
 
-import singularity.world.blocks.structure.MultBlockStructure;
+import singularity.world.blocks.structure.BlockStructure;
 import universecore.annotations.Annotations;
 
 public interface StructCoreComp extends StructBlockComp{
   @Annotations.BindField("structure")
-  default MultBlockStructure structure(){
+  default BlockStructure structure(){
     return null;
   }
 }

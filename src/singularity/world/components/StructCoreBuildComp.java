@@ -9,6 +9,5 @@ public interface StructCoreBuildComp extends StructBuildComp{
 
   @Override
   default void chainsAdded(ChainsContainer old){
-    getStructCore().structure().match(chains().container);
   }
 }

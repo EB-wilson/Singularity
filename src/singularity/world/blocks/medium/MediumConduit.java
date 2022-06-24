@@ -85,11 +85,6 @@ public class MediumConduit extends Block implements MediumComp, Autotiler{
     }
 
     @Override
-    public boolean canChain(ChainsBuildComp other){
-      return ChainsBuildComp.super.canChain(other);
-    }
-
-    @Override
     public void onProximityUpdate(){
       super.onProximityUpdate();
 

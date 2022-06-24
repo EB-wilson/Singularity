@@ -60,7 +60,7 @@ public class Singularity extends Mod{
     //载入所有新内容类型
     SglContentType.load();
     
-    Log.info("[Singularity] Singularity mod is loading!\nThanks for use this mod.\nauthor: EBwilson\nVisit the GitHub project about this mod: > " + Sgl.githubProject + " <");
+    Log.info("[Singularity] Singularity mod is loading!\nThanks for your play.\nauthor: EBwilson\nVisit the GitHub project about this mod: > " + Sgl.githubProject + " <");
     
     Events.on(ClientLoadEvent.class, e -> {
       Sgl.ui.mainMenu.show();

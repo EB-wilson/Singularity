@@ -1,6 +1,5 @@
 package singularity.world.components;
 
-import arc.func.Cons;
 import arc.struct.Seq;
 import mindustry.gen.Building;
 import mindustry.gen.Posc;
@@ -9,7 +8,9 @@ import singularity.world.modules.ChainsModule;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.BuildCompBase;
 
-public interface ChainsBuildComp extends BuildCompBase, Posc{
+import java.util.Iterator;
+
+public interface ChainsBuildComp extends BuildCompBase, Posc, Iterable<ChainsBuildComp>{
   @Annotations.BindField("chains")
   default ChainsModule chains(){
     return null;
@@ -47,8 +48,8 @@ public interface ChainsBuildComp extends BuildCompBase, Posc{
     return result;
   }
   
-  default void iterator(Cons<ChainsBuildComp> cons){
-    chains().each(cons);
+  default Iterator<ChainsBuildComp> iterator(){
+    return chains().container.all.iterator();
   }
 
   default void containerCreated(ChainsContainer old){}
