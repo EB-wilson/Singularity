@@ -1,36 +1,48 @@
 package singularity.world.meta;
 
+import arc.struct.Seq;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatCat;
-
-import universecore.util.handler.EnumHandler;
+import universecore.util.handler.FieldHandler;
 
 public class SglStat{
-  private static final EnumHandler<Stat> handler = new EnumHandler<>(Stat.class);
-  
   public static final Stat
-      compressible = handler.addEnumItemTail("compressible", SglStatCat.gas),
-      compressor = handler.addEnumItemTail("compressor", SglStatCat.gas),
-      gasCapacity = handler.addEnumItemTail("gasCapacity", SglStatCat.gas),
-      maxGasPressure = handler.addEnumItemTail("maxGasPressure", SglStatCat.gas),
+      compressible = create("compressible", SglStatCat.gas),
+      compressor = create("compressor", SglStatCat.gas),
+      gasCapacity = create("gasCapacity", SglStatCat.gas),
+      maxGasPressure = create("maxGasPressure", SglStatCat.gas),
   
-      consumeEnergy = handler.addEnumItemTail("consumeEnergy", SglStatCat.nuclear),
-      productEnergy = handler.addEnumItemTail("productEnergy", SglStatCat.nuclear),
+      consumeEnergy = create("consumeEnergy", SglStatCat.nuclear),
+      productEnergy = create("productEnergy", SglStatCat.nuclear),
   
-      heatProduct = handler.addEnumItemTail("heatProduct", SglStatCat.heat),
-      baseHeatCapacity = handler.addEnumItemTail("baseHeatCapacity", SglStatCat.heat),
-      maxTemperature = handler.addEnumItemTail("maxTemperature", SglStatCat.heat),
-      heatCoefficient = handler.addEnumItemTail("heatCoefficient", SglStatCat.heat),
+      heatProduct = create("heatProduct", SglStatCat.heat),
+      baseHeatCapacity = create("baseHeatCapacity", SglStatCat.heat),
+      maxTemperature = create("maxTemperature", SglStatCat.heat),
+      heatCoefficient = create("heatCoefficient", SglStatCat.heat),
   
-      deltaHeat = handler.addEnumItemTail("deltaHeat", SglStatCat.reaction),
-      requirePressure = handler.addEnumItemTail("requirePressure", SglStatCat.reaction),
-      requireTemperature = handler.addEnumItemTail("requireTemperature", SglStatCat.reaction),
-      consume = handler.addEnumItemTail("consume", SglStatCat.reaction),
-      product = handler.addEnumItemTail("product", SglStatCat.reaction),
+      deltaHeat = create("deltaHeat", SglStatCat.reaction),
+      requirePressure = create("requirePressure", SglStatCat.reaction),
+      requireTemperature = create("requireTemperature", SglStatCat.reaction),
+      consume = create("consume", SglStatCat.reaction),
+      product = create("product", SglStatCat.reaction),
 
-      autoSelect = handler.addEnumItem("autoSelect", 46, StatCat.crafting),
-      controllable = handler.addEnumItem("controllable", 47, StatCat.crafting),
-      special = handler.addEnumItem("special", 50, StatCat.crafting),
+      autoSelect = create("autoSelect", 46, StatCat.crafting),
+      controllable = create("controllable", 47, StatCat.crafting),
+      special = create("special", 50, StatCat.crafting),
   
-      effect = handler.addEnumItemTail("effect", StatCat.function);
+      effect = create("effect", StatCat.function);
+
+  private static Stat create(String name, StatCat cat){
+    return create(name, Stat.all.size, cat);
+  }
+
+  private static Stat create(String name, int index, StatCat cat){
+    Seq<Stat> all = Stat.all;
+    Stat res = new Stat(name, cat);
+
+    FieldHandler.setValueDefault(res, "id", index);
+    all.insert(index, res);
+
+    return res;
+  }
 }

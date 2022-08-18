@@ -58,7 +58,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
 
   @Annotations.MethodEntry(entryMethod = "update", insert = Annotations.InsertPosition.HEAD)
   default void updateEnergy(){
-    if(getNuclearBlock().hasEnergy()) energy().update(getBuilding().updateFlow);
+    if(getNuclearBlock().hasEnergy()) energy().update();
   }
   
   default NuclearEnergyNet getEnergyNetwork(){

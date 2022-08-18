@@ -30,7 +30,7 @@ public interface GasBuildComp extends BuildCompBase, Takeable{
   @Annotations.MethodEntry(entryMethod = "update", insert = Annotations.InsertPosition.HEAD)
   default void updateGases(){
     if(getGasBlock().hasGases()){
-      gases().update(getBuilding().updateFlow, compressing());
+      gases().update(compressing());
       smoothPressure(Mathf.lerpDelta(smoothPressure(), outputPressure(), 0.02f));
     }
   }

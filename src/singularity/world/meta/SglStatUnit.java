@@ -1,21 +1,18 @@
 package singularity.world.meta;
 
 import mindustry.world.meta.StatUnit;
-import universecore.util.handler.EnumHandler;
 
 public class SglStatUnit{
-  private static final EnumHandler<StatUnit> handler = new EnumHandler<>(StatUnit.class);
-  
-  public static final StatUnit neutronFlux = handler.addEnumItemTail("neutronFlux"),
-      neutronFluxSecond = handler.addEnumItemTail("neutronFluxSecond"),
-      pascal = handler.addEnumItemTail("pascal"),
-      heat = handler.addEnumItemTail("heat"),
-      absTemperature = handler.addEnumItemTail("absTemperature"),
-      kHeat = handler.addEnumItemTail("kHeat"),
-      temperature = handler.addEnumItemTail("temperature"),
-      heatCapacity = handler.addEnumItemTail("heatCapacity"),
-      kPascal = handler.addEnumItemTail("kPascal"),
-      MPascal = handler.addEnumItemTail("MPascal"),
-      byteUnit = handler.addEnumItemTail("byte"),
-      bytePreSecond = handler.addEnumItemTail("bytePreSec");
+  public static final StatUnit neutronFlux = new StatUnit("neutronFlux"),
+      neutronFluxSecond = new StatUnit("neutronFluxSecond"),
+      pascal = new StatUnit("pascal"),
+      heat = new StatUnit("heat"),
+      absTemperature = new StatUnit("absTemperature"),
+      kHeat = new StatUnit("kHeat"),
+      temperature = new StatUnit("temperature"),
+      heatCapacity = new StatUnit("heatCapacity"),
+      kPascal = new StatUnit("kPascal"),
+      MPascal = new StatUnit("MPascal"),
+      byteUnit = new StatUnit("byte"),
+      bytePreSecond = new StatUnit("bytePreSec");
 }

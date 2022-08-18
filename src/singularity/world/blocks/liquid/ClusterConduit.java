@@ -68,7 +68,7 @@ public class ClusterConduit extends MultLiquidBlock{
   }
   
   @Override
-  public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list){
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
     boolean corner = cornerIng(req, list);
     
     if(corner){
@@ -143,7 +143,7 @@ public class ClusterConduit extends MultLiquidBlock{
         for(int i=0; i<conduitAmount; i++){
           Draw.color(botColor);
           Draw.rect(botRegions[i], x, y, rotation*90);
-          Drawf.liquid(botRegions[i], x, y, liquidsBuffer[i].smoothAmount()/liquidCapacity, liquidsBuffer[i].current().color, rotation*90);
+          Drawf.liquid(botRegions[i], x, y, liquidsBuffer[i].currentAmount()/liquidCapacity, liquidsBuffer[i].current().color, rotation*90);
         }
   
         Draw.rect(region, x, y, rotation*90);

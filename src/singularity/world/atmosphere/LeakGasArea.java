@@ -13,10 +13,7 @@ import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.core.World;
 import mindustry.entities.EntityGroup;
-import mindustry.gen.Drawc;
-import mindustry.gen.Entityc;
-import mindustry.gen.Groups;
-import mindustry.gen.Unitc;
+import mindustry.gen.*;
 import mindustry.io.TypeIO;
 import mindustry.ui.Fonts;
 import mindustry.world.Block;
@@ -134,7 +131,7 @@ public class LeakGasArea implements Pool.Poolable, Drawc, GasBuildComp{
       }
     });
   
-    gases.update(false, false);
+    gases.update(false);
     
     if(timing>0){
       timing--;
@@ -311,7 +308,12 @@ public class LeakGasArea implements Pool.Poolable, Drawc, GasBuildComp{
     Tile tile = this.tileOn();
     return tile != null && tile.block() == Blocks.air ? tile.floor() : (Floor)Blocks.air;
   }
-  
+
+  @Override
+  public Building buildOn(){
+    return tile.build;
+  }
+
   @Override
   public Block blockOn(){
     Tile tile = this.tileOn();

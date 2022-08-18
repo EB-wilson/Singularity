@@ -50,12 +50,12 @@ public class GasUnloader extends GasBlock{
   @Override
   public void setBars(){
     super.setBars();
-    bars.remove("gasPressure");
+    removeBar("gasPressure");
   }
 
   @Override
-  public void drawRequestConfig(BuildPlan req, Eachable<BuildPlan> list){
-    drawRequestConfigCenter(req, req.config, "center");
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
+    drawPlanConfigCenter(req, req.config, "center");
   }
   
   @Annotations.ImplEntries
@@ -115,7 +115,7 @@ public class GasUnloader extends GasBlock{
     }
 
     @Override
-    public boolean onConfigureTileTapped(Building other){
+    public boolean onConfigureBuildTapped(Building other){
       if(this == other){
         deselect();
         configure(null);

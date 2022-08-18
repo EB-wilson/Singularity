@@ -106,7 +106,7 @@ public class MatrixBridge extends DistNetBlock{
   }
   
   @Override
-  public void drawRequestConfigTop(BuildPlan req, Eachable<BuildPlan> list){
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
     IntSeq seq = (IntSeq) req.config;
     if(seq == null) return;
     Point2[] p = new Point2[]{
@@ -253,7 +253,7 @@ public class MatrixBridge extends DistNetBlock{
     }
   
     @Override
-    public boolean onConfigureTileTapped(Building other){
+    public boolean onConfigureBuildTapped(Building other){
       if(other == null) return true;
       
       if(other == this){

@@ -4,7 +4,6 @@ import arc.graphics.g2d.Draw;
 import arc.math.Mathf;
 import arc.util.Time;
 import arc.util.Tmp;
-import mindustry.ctype.ContentList;
 import mindustry.graphics.Pal;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;

@@ -4,7 +4,7 @@ import arc.Core;
 import arc.util.Strings;
 import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
-import mindustry.world.meta.BlockBars;
+import mindustry.world.Block;
 import mindustry.world.meta.StatUnit;
 import mindustry.world.meta.Stats;
 import singularity.world.meta.SglStat;
@@ -50,16 +50,18 @@ public interface GasBlockComp{
     stats.add(SglStat.maxGasPressure, maxGasPressure()*100, SglStatUnit.kPascal);
   }
 
-  @Annotations.MethodEntry(entryMethod = "setBars", context = "bars -> bars")
-  default void setGasBars(BlockBars bars){
+  @Annotations.MethodEntry(entryMethod = "setBars")
+  default void setGasBars(){
     if(!hasGases()) return;
-    bars.add("gasPressure", ent -> {
-      GasBuildComp entity = (GasBuildComp) ent;
+    if(this instanceof Block b){
+      b.addBar("gasPressure", ent -> {
+        GasBuildComp entity = (GasBuildComp) ent;
 
-      return new Bar(
-          () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.smoothPressure()*100, 0) + "kPa",
-          () -> Pal.accent,
-          () -> Math.min(entity.smoothPressure() / maxGasPressure(), 1));
-    });
+        return new Bar(
+            () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.smoothPressure()*100, 0) + "kPa",
+            () -> Pal.accent,
+            () -> Math.min(entity.smoothPressure()/maxGasPressure(), 1));
+      });
+    }
   }
 }

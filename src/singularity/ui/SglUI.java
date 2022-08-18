@@ -34,7 +34,7 @@ public class SglUI{
     contributors.build();
     bufferStat.build();
     
-    Group overlay = FieldHandler.getValueTemp(Vars.control.input.frag, "group");
+    Group overlay = FieldHandler.getValueTemp(Vars.control.input, "group");
     secConfig.build(overlay);
     
     //override

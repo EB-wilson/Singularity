@@ -9,6 +9,7 @@ import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
 import mindustry.entities.EntityGroup;
+import mindustry.gen.Building;
 import mindustry.gen.Drawc;
 import mindustry.gen.Groups;
 import mindustry.gen.Unitc;
@@ -21,7 +22,7 @@ import singularity.world.lightnings.generator.LightningGenerator;
 /**闪电容器的实体实现，通常大范围的闪电绘制需要使用这个实体，只在局部的draw中使用前容器实现
  * 注意这个容器应当被保存并持续使用，不应该随时回收，尽管实现了{@link arc.util.pooling.Pool.Poolable}接口，但这个对象通常情况应当被重复使用而不是不断的释放又创建*/
 @SuppressWarnings("unchecked")
-public class LightningsGroup extends LightningContainer implements Drawc, Pool.Poolable{
+public class LightningsGroup extends LightningContainer implements Drawc, Pool.Poolable{//TODO 未完成
   public Cons<LightningsGroup> perDraw;
   public Cons2<LightningVertex, LightningVertex> lightningPathUpdate;
 
@@ -84,6 +85,11 @@ public class LightningsGroup extends LightningContainer implements Drawc, Pool.P
   @Override
   public Floor floorOn(){
     return tile.floor();
+  }
+
+  @Override
+  public Building buildOn(){
+    return tile.build;
   }
 
   @Override

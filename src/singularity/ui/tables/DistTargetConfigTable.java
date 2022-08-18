@@ -175,7 +175,7 @@ public class DistTargetConfigTable extends Table{
       topBar.add(Core.bundle.get("fragments.configs.gridConfig")).left().padLeft(4);
       topBar.button(
           t -> t.add("").update(l -> l.setText(Core.bundle.format("misc.mode", IOTypes[index].locale()))),
-          Styles.clearPartialt,
+          Styles.cleart,
           () -> {
             index = (index + 1)%IOTypes.length;
             currConfig = config.getOrNew(IOTypes[index], currType);
@@ -234,12 +234,12 @@ public class DistTargetConfigTable extends Table{
           }
         }).size(120, 80);
         sideBar.row();
-        sideBar.button(Core.bundle.get("misc.sure"), Icon.ok, Styles.clearPartialt, () -> {
+        sideBar.button(Core.bundle.get("misc.sure"), Icon.ok, Styles.cleart, () -> {
           cons.get(config);
           close.run();
         }).size(120, 40);
         sideBar.row();
-        sideBar.button(Core.bundle.get("misc.reset"), Icon.cancel, Styles.clearPartialt, () -> {
+        sideBar.button(Core.bundle.get("misc.reset"), Icon.cancel, Styles.cleart, () -> {
           config.clear();
           cons.get(config);
           close.run();

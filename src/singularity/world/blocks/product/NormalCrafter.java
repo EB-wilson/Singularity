@@ -209,7 +209,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
         bars.row();
       }
       super.displayBars(bars);
-      if(recipeCurrent == -1 || producer.current == null) return;
+      if(recipeCurrent == -1 || producer.current == null || consumer.current == null) return;
   
       UncConsumeLiquids<?> cl = consumer.current.get(SglConsumeType.liquid);
       SglConsumeGases<?> cg = consumer.current.get(SglConsumeType.gas);

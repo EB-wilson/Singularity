@@ -16,7 +16,6 @@ import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
-import mindustry.ctype.ContentList;
 import mindustry.ctype.UnlockableContent;
 import mindustry.entities.Effect;
 import mindustry.gen.Sounds;
@@ -231,7 +230,7 @@ public class CrafterBlocks implements ContentList{
       @Override
       public void setBars(){
         super.setBars();
-        bars.add("efficiency", (SglBuilding entity) ->
+        addBar("efficiency", (SglBuilding entity) ->
           new Bar(() ->
             Core.bundle.format("bar.efficiency", (int)(entity.efficiency() * 100)),
             () -> Pal.lightOrange,
@@ -300,7 +299,7 @@ public class CrafterBlocks implements ContentList{
   
         @Override
         public float liquidAlpha(NormalCrafterBuild entity){
-          return entity.liquids.smoothAmount()/liquidCapacity;
+          return entity.liquids.currentAmount()/liquidCapacity;
         }
       };
     }};
@@ -538,7 +537,7 @@ public class CrafterBlocks implements ContentList{
   
         @Override
         public float liquidAlpha(NormalCrafterBuild entity){
-          return entity.liquids.smoothAmount()/entity.block.liquidCapacity;
+          return entity.liquids.currentAmount()/entity.block.liquidCapacity;
         }
       };
     }};

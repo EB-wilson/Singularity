@@ -9,6 +9,7 @@ import singularity.core.*;
 import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
 import singularity.world.blocks.distribute.IOPointBlock;
+import universecore.util.handler.ClassHandler;
 import universecore.util.mods.ModGetter;
 import universecore.util.mods.ModInfo;
 
@@ -71,6 +72,8 @@ public class Sgl{
   
   /**模组配置存储器*/
   public static ModConfig config = new ModConfig();
+  /**模组配置存储器*/
+  public static ClassHandler classes;
   /**ui类存放对象*/
   public static SglUI ui;
   /**所有大气的全局存储对象，提供了关于大气层的一些参数与操作*/
@@ -91,7 +94,7 @@ public class Sgl{
   public static void init(){
     //载入风格
     SglStyles.load();
-    
+
     ui = new SglUI();
     atmospheres = new Atmospheres();
     gasAreas = new GasAreas();

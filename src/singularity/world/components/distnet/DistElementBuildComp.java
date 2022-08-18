@@ -19,7 +19,13 @@ public interface DistElementBuildComp extends BuildCompBase{
   Seq<DistElementBuildComp> netLinked();
   
   default void networkValided(){}
-  
+
+  default void networkUpdated(){}
+
+  default void linked(DistElementBuildComp target){}
+
+  default void delinked(DistElementBuildComp target){}
+
   default DistElementBlockComp getDistBlock(){
     return getBlock(DistElementBlockComp.class);
   }
@@ -32,6 +38,9 @@ public interface DistElementBuildComp extends BuildCompBase{
     target.updateNetLinked();
   
     distributor().network.add(target.distributor().network);
+
+    target.linked(this);
+    linked(target);
   }
   
   default void deLink(DistElementBuildComp target){
@@ -43,6 +52,9 @@ public interface DistElementBuildComp extends BuildCompBase{
     
     new DistributeNetwork().flow(this);
     new DistributeNetwork().flow(target);
+
+    target.delinked(this);
+    delinked(target);
   }
   
   default void updateNetLinked(){

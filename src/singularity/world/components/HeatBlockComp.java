@@ -4,7 +4,7 @@ import arc.Core;
 import arc.util.Strings;
 import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
-import mindustry.world.meta.BlockBars;
+import mindustry.world.Block;
 import mindustry.world.meta.Stats;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
@@ -36,17 +36,19 @@ public interface HeatBlockComp{
     return 0;
   }
 
-  @Annotations.MethodEntry(entryMethod = "setBars", context = "bars -> bars")
-  default void setHeatBars(BlockBars bars){
-    bars.add("temperature", entity -> {
-      HeatBuildComp ent = (HeatBuildComp) entity;
-      return new Bar(
-          () -> Core.bundle.get("misc.temperature") + ":" + Strings.autoFixed(ent.temperature(), 2) + SglStatUnit.temperature.localized() +
-              "-" + Core.bundle.get("misc.heat") + ":" + Strings.autoFixed(ent.heat()/1000, 0) + SglStatUnit.kHeat.localized(),
-          () -> Pal.bar,
-          () -> ent.absTemperature()/maxTemperature()
-      );
-    });
+  @Annotations.MethodEntry(entryMethod = "setBars")
+  default void setHeatBars(){
+    if(this instanceof Block b){
+      b.addBar("temperature", entity -> {
+        HeatBuildComp ent = (HeatBuildComp) entity;
+        return new Bar(
+            () -> Core.bundle.get("misc.temperature") + ":" + Strings.autoFixed(ent.temperature(), 2) + SglStatUnit.temperature.localized() +
+                "-" + Core.bundle.get("misc.heat") + ":" + Strings.autoFixed(ent.heat()/1000, 0) + SglStatUnit.kHeat.localized(),
+            () -> Pal.bar,
+            () -> ent.absTemperature()/maxTemperature()
+        );
+      });
+    }
   }
   
   /**设置Stats统计信息*/

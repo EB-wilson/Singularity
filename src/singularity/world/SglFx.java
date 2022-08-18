@@ -339,36 +339,36 @@ public class SglFx{
     protected Object data;
 
     public void at(Position pos){
-      create(this, pos.getX(), pos.getY(), 0, Color.white, createLightning(pos.getX(), pos.getY()));
+      create(pos.getX(), pos.getY(), 0, Color.white, createLightning(pos.getX(), pos.getY()));
     }
 
     public void at(Position pos, boolean parentize){
-      create(this, pos.getX(), pos.getY(), 0, Color.white, createLightning(pos.getX(), pos.getY()));
+      create(pos.getX(), pos.getY(), 0, Color.white, createLightning(pos.getX(), pos.getY()));
     }
 
     public void at(Position pos, float rotation){
-      create(this, pos.getX(), pos.getY(), rotation, Color.white, createLightning(pos.getX(), pos.getY()));
+      create(pos.getX(), pos.getY(), rotation, Color.white, createLightning(pos.getX(), pos.getY()));
     }
 
     public void at(float x, float y){
-      create(this, x, y, 0, Color.white, createLightning(x, y));
+      create(x, y, 0, Color.white, createLightning(x, y));
     }
 
     public void at(float x, float y, float rotation){
-      create(this, x, y, rotation, Color.white, createLightning(x, y));
+      create(x, y, rotation, Color.white, createLightning(x, y));
     }
 
     public void at(float x, float y, float rotation, Color color){
-      create(this, x, y, rotation, color, createLightning(x, y));
+      create(x, y, rotation, color, createLightning(x, y));
     }
 
     public void at(float x, float y, Color color){
-      create(this, x, y, 0, color, createLightning(x, y));
+      create(x, y, 0, color, createLightning(x, y));
     }
 
     public void at(float x, float y, float rotation, Color color, Object data){
       this.data = data;
-      create(this, x, y, rotation, color, createLightning(x, y));
+      create(x, y, rotation, color, createLightning(x, y));
     }
 
     public abstract LightningContainer createLightning(float x, float y);

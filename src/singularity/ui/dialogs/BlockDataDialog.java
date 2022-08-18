@@ -16,8 +16,6 @@ import universecore.debugs.ObjectDataMonitor;
 import universecore.debugs.ObjectDataMonitor.VarStructure;
 import universecore.util.handler.FieldHandler;
 
-import java.util.Objects;
-
 public class BlockDataDialog extends BaseDialog{
   private static final ObjectMap<String, VarStructure> emptyVars = new ObjectMap<>(0);
   
@@ -71,7 +69,7 @@ public class BlockDataDialog extends BaseDialog{
             Label text = new Label("[gray]flag");
             text.update(() -> {
               String flag = vars.findKey(target, true);
-              text.setText(Objects.requireNonNullElse(flag, "[gray]flag"));
+              text.setText(flag == null? "[gray]flag": flag);
             });
             button.clicked(() -> {
               String preString = text.getText().toString();

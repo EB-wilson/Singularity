@@ -5,7 +5,6 @@ import arc.graphics.g2d.Draw;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
-import mindustry.ctype.ContentList;
 import mindustry.graphics.Drawf;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;

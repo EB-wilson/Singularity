@@ -63,7 +63,7 @@ public class SglDrawPlasma<T extends Building & FactoryBuildComp & DrawableComp>
 
     @Override
     public void drawLight(){
-      Drawf.light(entity.team, entity.x(), entity.y(), lightRadius * entity.warmup() * block.size, lightColor, lightAlpha);
+      Drawf.light(entity.x(), entity.y(), lightRadius * entity.warmup() * block.size, lightColor, lightAlpha);
     }
   }
 }

@@ -82,7 +82,7 @@ public class BlockDataMonitor extends Block{
     }
   
     @Override
-    public boolean onConfigureTileTapped(Building other){
+    public boolean onConfigureBuildTapped(Building other){
       if(other == this){
         targets.clear();
         return false;

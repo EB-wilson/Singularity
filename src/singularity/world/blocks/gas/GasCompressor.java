@@ -23,14 +23,13 @@ import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.Tile;
-import mindustry.world.consumers.ConsumePower;
 import singularity.Sgl;
 import singularity.Singularity;
 import singularity.type.Gas;
 import singularity.type.SglContents;
 import singularity.ui.SglStyles;
-import singularity.world.components.GasBuildComp;
 import singularity.world.blocks.environment.SglOverlay;
+import singularity.world.components.GasBuildComp;
 
 import java.util.Arrays;
 
@@ -84,12 +83,8 @@ public class GasCompressor extends GasBlock{
   
   @Override
   public void initPower(float powerCapacity){
-    consumes.add(new ConsumePower(1, powerCapacity, false){
-      @Override
-      public float requestedPower(Building e){
-        GasCompressorBuild entity = (GasCompressorBuild) e;
-        return compressPowerCons.get(entity);
-      }
+    consumePowerDynamic((GasCompressorBuild e) -> {
+      return compressPowerCons.get(e);
     });
   }
   
@@ -97,13 +92,14 @@ public class GasCompressor extends GasBlock{
   public void setBars(){
     super.setBars();
 
-    if(hasPower && consumes.hasPower()){
-      ConsumePower cons = consumes.getPower();
-      boolean buffered = cons.buffered;
-      float capacity = cons.capacity;
+    if(hasPower && consPower != null){
+      boolean buffered = consPower.buffered;
+      float capacity = consPower.capacity;
 
-      bars.add("power", entity -> new Bar(() -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : UI.formatAmount((int)(entity.power.status * capacity))) :
-          Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
+      addBar("power", entity -> new Bar(
+          () -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : UI.formatAmount((int)(entity.power.status * capacity))) : Core.bundle.get("bar.power"),
+          () -> Pal.powerBar,
+          () -> Mathf.zero(consPower.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
     }
   }
   

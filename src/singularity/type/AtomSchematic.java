@@ -9,6 +9,7 @@ import mindustry.game.Objectives;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import singularity.world.consumers.SglConsumers;
+import universecore.util.TechTreeConstructor;
 import universecore.world.consumers.BaseConsumers;
 
 public class AtomSchematic extends UnlockableContent{
@@ -34,8 +35,8 @@ public class AtomSchematic extends UnlockableContent{
   }
 
   public void setTechTree(){
-    TechTree.TechNode node = new TechTree.TechNode(TechTree.get(dependence), this, ITEM_STACKS);
-    node.objectives.and(new Objectives.Objective(){
+    TechTree.TechNode node = new TechTree.TechNode(TechTreeConstructor.get(dependence), this, ITEM_STACKS);
+    node.objectives.add(new Objectives.Objective(){
       @Override
       public boolean complete(){
         return false;

@@ -36,7 +36,7 @@ public class Destructor extends NormalCrafter{
   @Override
   public void setBars(){
     super.setBars();
-    bars.add("progress", (NormalCrafterBuild e) -> {
+    addBar("progress", (NormalCrafterBuild e) -> {
       AtomSchematic schematic = e.consumeCurrent() == -1? null: SglContents.atomSchematics().get(e.consumeCurrent());
       return new Bar(
           () -> schematic != null? Core.bundle.format("bar.destructProgress", schematic.destructed(), schematic.researchConsume)

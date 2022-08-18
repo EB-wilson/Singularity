@@ -56,7 +56,7 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
   }
   
   @Override
-  public void drawRequestConfigTop(BuildPlan req, Eachable<BuildPlan> list){
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
     Point2 pos = (Point2) req.config;
     if(pos == null) return;
     
@@ -96,7 +96,7 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
     }
   
     @Override
-    public boolean onConfigureTileTapped(Building other){
+    public boolean onConfigureBuildTapped(Building other){
       if(other instanceof EdgeLinkerBuildComp && canLink(this, (EdgeLinkerBuildComp) other)){
         configure(other.pos());
         return false;

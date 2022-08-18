@@ -98,7 +98,7 @@ public class NuclearEnergyNet{
       
       other.energy().setNet();
       tmp.clear();
-      other.energy().energyNet.flow(other, tmp.and(removed));
+      other.energy().energyNet.flow(other, tmp.add(removed));
     }
   }
   

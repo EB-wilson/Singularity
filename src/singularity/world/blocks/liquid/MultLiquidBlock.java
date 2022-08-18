@@ -2,8 +2,6 @@ package singularity.world.blocks.liquid;
 
 import arc.Core;
 import arc.math.Mathf;
-import arc.math.WindowedMean;
-import arc.util.Interval;
 import arc.util.Strings;
 import arc.util.Time;
 import arc.util.io.Reads;
@@ -28,17 +26,17 @@ public class MultLiquidBlock extends LiquidBlock{
   @Override
   public void setBars(){
     super.setBars();
-    bars.remove("liquid");
+    removeBar("liquid");
     for(int i=0; i<conduitAmount; i++){
       int index = i;
-      bars.add("liquid#" + index, (MultLiquidBuild e) -> {
+      addBar("liquid#" + index, (MultLiquidBuild e) -> {
         LiquidModule current = e.liquidsBuffer[index];
         return new Bar(
-            () -> current.smoothAmount() <= 0.001f ?
+            () -> current.currentAmount() <= 0.001f ?
                 Core.bundle.get("bar.liquid") + " #" + index:
-                current.current().localizedName + "     " + (current.getFlowRate() >= 0? Strings.autoFixed(current.getFlowRate(), 0): "...") + Core.bundle.get("misc.preSecond"),
+                current.current().localizedName + "     " + (current.getFlowRate(current.current()) >= 0? Strings.autoFixed(current.getFlowRate(current.current()), 0): "...") + Core.bundle.get("misc.preSecond"),
             () -> current.current().barColor(),
-            () -> current.smoothAmount() /liquidCapacity
+            () -> current.currentAmount() /liquidCapacity
         );
       });
     }
@@ -87,58 +85,7 @@ public class MultLiquidBlock extends LiquidBlock{
       super.create(block, team);
       liquidsBuffer = new LiquidModule[conduitAmount];
       for(int i=0; i<liquidsBuffer.length; i++){
-        liquidsBuffer[i] = new LiquidModule(){
-          private final Interval flowTimer = new Interval(2);
-          private float smoothLiquid;
-          private WindowedMean flow;
-          private float lastAdded, currentFlowRate;
-          private boolean hadFlow;
-        
-          @Override
-          public void update(boolean showFlow){
-            smoothLiquid = Mathf.lerpDelta(smoothLiquid, currentAmount(), 0.1f);
-            if(showFlow){
-              if(flowTimer.get(1, 20)){
-      
-                if(flow == null) flow = new WindowedMean(3);
-                if(lastAdded > 0.0001f) hadFlow = true;
-      
-                flow.add(lastAdded);
-                lastAdded = 0;
-                if(currentFlowRate < 0 || flowTimer.get(60)){
-                  currentFlowRate = flow.hasEnoughData() ? flow.mean() / 20 : -1f;
-                }
-              }
-            }else{
-              currentFlowRate = -1f;
-              flow = null;
-              hadFlow = false;
-            }
-          }
-  
-          @Override
-          public float getFlowRate(){
-            return currentFlowRate * 60;
-          }
-  
-          @Override
-          public boolean hadFlow(){
-            return hadFlow;
-          }
-  
-          @Override
-          public void add(Liquid liquid, float amount){
-            super.add(liquid, amount);
-            if(flow != null){
-              lastAdded += Math.max(amount, 0);
-            }
-          }
-  
-          @Override
-          public float smoothAmount(){
-            return smoothLiquid;
-          }
-        };
+        liquidsBuffer[i] = new LiquidModule();
       }
       liquids = liquidsBuffer[0];
       cacheLiquids = liquids;
@@ -155,7 +102,7 @@ public class MultLiquidBlock extends LiquidBlock{
     public void updateTile(){
       super.updateTile();
       for(LiquidModule liquids: liquidsBuffer){
-        liquids.update(updateFlow);
+        liquids.updateFlow();
       }
       liquids = liquidsBuffer[current = (current + 1)%conduitAmount];
       cacheLiquids = liquids;

@@ -1,9 +1,8 @@
 package singularity.contents;
 
+import arc.graphics.Color;
 import mindustry.graphics.Pal;
 import singularity.type.Gas;
-import arc.graphics.Color;
-import mindustry.ctype.ContentList;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class Gases implements ContentList{

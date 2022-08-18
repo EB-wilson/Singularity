@@ -12,7 +12,7 @@ public class GasVoid extends GasBlock{
   @Override
   public void setBars(){
     super.setBars();
-    bars.remove("gasPressure");
+    removeBar("gasPressure");
   }
   
   public class LiquidVoidBuild extends SglBuilding{

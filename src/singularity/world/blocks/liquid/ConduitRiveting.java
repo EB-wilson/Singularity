@@ -42,7 +42,7 @@ public class ConduitRiveting extends ClusterConduit{
   }
   
   @Override
-  public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list){
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
     Draw.rect(region, req.drawx(), req.drawy());
     Draw.rect(arrow, req.drawx(), req.drawy(), req.rotation * 90);
   }

@@ -13,19 +13,17 @@ import mindustry.content.Blocks;
 import mindustry.game.EventType;
 import mindustry.gen.Building;
 import mindustry.ui.fragments.BlockConfigFragment;
-import mindustry.ui.fragments.Fragment;
 import singularity.world.components.SecondableConfigBuildComp;
 
 import static mindustry.Vars.state;
 
-public class SecondaryConfigureFragment extends Fragment{
-  protected BlockConfigFragment config = Vars.control.input.frag.config;
+public class SecondaryConfigureFragment{
+  protected BlockConfigFragment config = Vars.control.input.config;
   protected Table table = new Table();
   
   protected Building configCurrent;
   protected SecondableConfigBuildComp configuring;
-  
-  @Override
+
   public void build(Group parent){
     parent.addChild(table);
   
@@ -40,7 +38,7 @@ public class SecondaryConfigureFragment extends Fragment{
         else{
           table.visible = config.isShown() && configCurrent != null;
           if(!table.visible) table.clearChildren();
-          Building b = config.getSelectedTile();
+          Building b = config.getSelected();
           configuring = b instanceof SecondableConfigBuildComp? (SecondableConfigBuildComp) b: null;
         }
       }

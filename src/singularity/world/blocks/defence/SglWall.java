@@ -3,8 +3,9 @@ package singularity.world.blocks.defence;
 import arc.Core;
 import arc.Events;
 import arc.graphics.Color;
+import arc.math.geom.Point2;
 import arc.math.geom.Vec2;
-import arc.struct.ObjectMap;
+import arc.struct.*;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.content.Fx;
@@ -12,7 +13,7 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Bullet;
-import mindustry.world.Block;
+import mindustry.world.Tile;
 import mindustry.world.blocks.defense.Wall;
 import universecore.UncCore;
 import universecore.annotations.Annotations;
@@ -20,6 +21,10 @@ import universecore.math.gravity.GravityField;
 import universecore.math.gravity.GravitySystem;
 import universecore.util.aspect.EntityAspect;
 import universecore.util.aspect.triggers.TriggerEntry;
+import universecore.util.path.BFSPathFinder;
+import universecore.util.path.IPath;
+import universecore.util.path.PathFindFunc;
+import universecore.util.path.PathVertices;
 
 @Annotations.ImplEntries
 public class SglWall extends Wall{
@@ -74,10 +79,15 @@ public class SglWall extends Wall{
     }
   }
 
-  @Annotations.ImplEntries
-  public class SglWallBuild extends WallBuild implements GravitySystem{
-    private final Vec2 position = new Vec2();
-    private final GravityField gravityField = new GravityField(this);
+  public class SglWallBuild extends WallBuild implements PathVertices<SglWallBuild>{
+    private static final ObjectSet<GravityGroup> ITERATED = new ObjectSet<>();
+
+    protected GravityGroup gravGroup;
+    private final OrderedSet<SglWallBuild> proximityGrav = new OrderedSet<>();
+
+    static{
+      Events.run(EventType.Trigger.update, ITERATED::clear);
+    }
 
     @Override
     public SglWall block(){
@@ -85,21 +95,39 @@ public class SglWall extends Wall{
     }
 
     @Override
-    public Building create(Block block, Team team){
-      super.create(block, team);
-      return this;
-    }
+    public Building init(Tile tile, Team team, boolean shouldAdd, int rotation){
+      super.init(tile, team, shouldAdd, rotation);
+      new GravityGroup().add(this);
 
-    @Override
-    public void remove(){
-      super.remove();
-      field().remove();
+      return this;
     }
 
     @Override
     public void onProximityAdded(){
       super.onProximityAdded();
-      position.set(x, y);
+
+      proximityGrav.clear();
+      for(Building building: proximity){
+        if(building instanceof SglWallBuild w && w.block().mass > 256){
+          proximityGrav.add(w);
+        }
+      }
+
+      for(SglWallBuild build: proximityGrav){
+        gravGroup.add(build.gravGroup);
+      }
+      gravGroup.clip(16);
+    }
+
+    @Override
+    public void onProximityRemoved(){
+      super.onProximityRemoved();
+
+      for(ClipGravitySystem system: gravGroup.childGroup){
+        Pools.free(system);
+      }
+      gravGroup.childGroup.clear();
+      gravGroup.remove(this);
     }
 
     @Override
@@ -107,12 +135,22 @@ public class SglWall extends Wall{
       super.updateTile();
 
       if(Core.graphics.getFrameId() - bulletsMark <= 1){
-        field().setAssociatedFields(bulletMap.values(),
-            e -> e.bullet.team != team && (e.bullet.type.collides || e.bullet.type.absorbable || e.bullet.type.hittable),
-            GravitySystem::field);
+        if(!ITERATED.add(gravGroup)) return;
+
+        for(ClipGravitySystem system: gravGroup.childGroup){
+          system.field().setAssociatedFields(
+              bulletMap.values(),
+              this::gravitable,
+              GravitySystem::field
+          );
+        }
       }
     }
-  
+
+    private boolean gravitable(BulletGravitySystem e){
+      return e.bullet.team != team && (e.bullet.type.collides || e.bullet.type.absorbable || e.bullet.type.hittable);
+    }
+
     @Override
     public boolean collision(Bullet bullet){
       if(bullet.type.absorbable && bullet.type.reflectable && bullet.damage < damageFilter){
@@ -123,6 +161,158 @@ public class SglWall extends Wall{
         return true;
       }
       return super.collision(bullet);
+    }
+
+    public float mass(){
+      return mass;
+    }
+
+    @Override
+    public Iterable<SglWallBuild> getLinkVertices(){
+      return proximityGrav;
+    }
+  }
+
+  @Annotations.ImplEntries
+  protected static class GravityGroup implements BFSPathFinder<SglWallBuild>{
+    private static final ObjectSet<SglWallBuild> added = new ObjectSet<>();
+    private static final Queue<SglWallBuild> queue = new Queue<>();
+
+    private static final IntMap<OrderedSet<SglWallBuild>> clips = new IntMap<>();
+
+    OrderedSet<SglWallBuild> child = new OrderedSet<>();
+    Seq<ClipGravitySystem> childGroup = new Seq<>();
+
+    public void clip(int clipStep){
+      clips.clear();
+
+      for(SglWallBuild build: child){
+        int pos = Point2.pack(build.tileX()/clipStep, build.tileY()/clipStep);
+        OrderedSet<SglWallBuild> clip = clips.get(pos, OrderedSet::new);
+        clip.add(build);
+      }
+
+      for(ClipGravitySystem clip: childGroup){
+        Pools.free(clip);
+      }
+      childGroup.clear();
+
+      added.clear();
+
+      ClipGravitySystem clip;
+      for(OrderedSet<SglWallBuild> value: clips.values()){
+        for(SglWallBuild build: value){
+          if(added.contains(build)) break;
+          clip = ClipGravitySystem.make();
+
+          queue.clear();
+
+          queue.addFirst(build);
+          added.add(build);
+          clip.add(build);
+
+          while(!queue.isEmpty()){
+            for(SglWallBuild vertex: queue.removeFirst().getLinkVertices()){
+              if(!value.contains(vertex)) continue;
+
+              if(added.add(vertex)){
+                queue.addFirst(vertex);
+                clip.add(vertex);
+              }
+            }
+          }
+
+          childGroup.add(clip);
+        }
+      }
+    }
+
+    public void add(GravityGroup other){
+      if(other == this) return;
+
+      for(SglWallBuild build: other.child){
+        add(build);
+      }
+    }
+
+    public void add(SglWallBuild build){
+      child.add(build);
+      build.gravGroup = this;
+    }
+
+    public void remove(SglWallBuild build){
+      for(SglWallBuild other: build.getLinkVertices()){
+        if(other.gravGroup != this) continue;
+        other.proximityGrav.remove(build);
+
+        new GravityGroup(){{
+          eachVertices(other, this::add);
+        }};
+        other.gravGroup.clip(16);
+      }
+    }
+
+    @Override
+    public void reset(){
+      added.clear();
+      queue.clear();
+    }
+
+    @Override
+    public boolean relateToPointer(SglWallBuild sglWallBuild, PathPointer<SglWallBuild> pathPointer){
+      return added.add(sglWallBuild);
+    }
+
+    @Override
+    public PathPointer<SglWallBuild> getPointer(SglWallBuild sglWallBuild){
+      return null;
+    }
+
+    @Override
+    public SglWallBuild queueNext(){
+      return queue.isEmpty()? null: queue.removeFirst();
+    }
+
+    @Override
+    public void queueAdd(SglWallBuild sglWallBuild){
+      queue.addFirst(sglWallBuild);
+    }
+
+    @Override
+    public IPath<SglWallBuild> createPath(){
+      return null;
+    }
+
+    @Override
+    public boolean isDestination(SglWallBuild sglWallBuild, SglWallBuild vert1){
+      return false;
+    }
+
+    @Override
+    public void findPath(SglWallBuild origin, PathFindFunc.PathAcceptor<SglWallBuild> pathConsumer){
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  @Annotations.ImplEntries
+  protected static class ClipGravitySystem implements GravitySystem, Pool.Poolable{
+    float mass;
+    float argX, argY;
+    Vec2 position = new Vec2();
+
+    private final GravityField gravityField = new GravityField(this);
+    private long curr;
+
+    public static ClipGravitySystem make(){
+      return Pools.obtain(ClipGravitySystem.class, ClipGravitySystem::new);
+    }
+
+    public void add(SglWallBuild build){
+      mass += build.mass();
+      argX += build.mass()*build.x;
+      argY += build.mass()*build.y;
+
+      position.set(argX/mass, argY/mass);
     }
 
     @Override
@@ -138,6 +328,15 @@ public class SglWall extends Wall{
     @Override
     public void gravityUpdate(Vec2 vec2){
       //no actions
+    }
+
+    @Override
+    public void reset(){
+      mass = 0;
+      position.setZero();
+      argX = argY = 0;
+
+      field().remove();
     }
   }
 

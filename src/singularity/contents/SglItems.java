@@ -1,7 +1,6 @@
 package singularity.contents;
 
 import arc.graphics.Color;
-import mindustry.ctype.ContentList;
 import mindustry.type.Item;
 import singularity.Sgl;
 

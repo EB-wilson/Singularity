@@ -44,7 +44,7 @@ public class LiquidUnloader extends Block{
   @Override
   public void setBars(){
     super.setBars();
-    bars.remove("liquid");
+    removeBar("liquid");
   }
 
   @Override
@@ -54,8 +54,8 @@ public class LiquidUnloader extends Block{
   }
 
   @Override
-  public void drawRequestConfig(BuildPlan req, Eachable<BuildPlan> list){
-    drawRequestConfigCenter(req, req.config, "center");
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
+    drawPlanConfigCenter(req, req.config, "center", true);
   }
 
   @Annotations.ImplEntries
@@ -98,7 +98,7 @@ public class LiquidUnloader extends Block{
     }
 
     @Override
-    public boolean onConfigureTileTapped(Building other){
+    public boolean onConfigureBuildTapped(Building other){
       if(this == other){
         deselect();
         configure(null);

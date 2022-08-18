@@ -16,6 +16,8 @@ import arc.scene.event.InputEvent;
 import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
 import arc.scene.ui.Image;
+import arc.scene.ui.ImageButton;
+import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.WidgetGroup;
 import arc.util.Align;
@@ -33,7 +35,6 @@ import mindustry.graphics.Pal;
 import mindustry.graphics.g3d.PlanetParams;
 import mindustry.graphics.g3d.PlanetRenderer;
 import mindustry.ui.Fonts;
-import mindustry.ui.Styles;
 import mindustry.ui.fragments.MenuFragment;
 import singularity.Sgl;
 import singularity.Singularity;
@@ -45,6 +46,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static mindustry.Vars.*;
+import static mindustry.gen.Tex.discordBanner;
+import static mindustry.gen.Tex.infoBanner;
 
 public class SglMenuFrag extends MenuFragment{
   private final PlanetParams params = new PlanetParams();
@@ -192,8 +195,14 @@ public class SglMenuFrag extends MenuFragment{
         t.image().update(i -> i.setDrawable(shown? Icon.eye: Icon.eyeOff));
         t.clicked(() -> shown = !shown);
       }).size(84, 45).name("shown"));
-      group.fill(c -> c.bottom().left().button("", Styles.infot, ui.about::show).size(84, 45).name("info"));
-      group.fill(c -> c.bottom().right().button("", Styles.discordt, ui.discord::show).size(84, 45).name("discord"));
+      group.fill(c -> c.bottom().left().button("", new TextButton.TextButtonStyle(){{
+        font = Fonts.def;
+        fontColor = Color.white;
+        up = infoBanner;
+      }}, ui.about::show).size(84, 45).name("info"));
+      group.fill(c -> c.bottom().right().button(Icon.discord, new ImageButton.ImageButtonStyle(){{
+        up = discordBanner;
+      }}, ui.discord::show).size(84, 45).name("discord"));
     }else if(becontrol.active()){
       group.fill(c -> c.bottom().right().button("@be.check", Icon.refresh, () -> {
         ui.loadfrag.show();

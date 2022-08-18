@@ -11,6 +11,7 @@ import mindustry.content.Blocks;
 import mindustry.ctype.UnlockableContent;
 import mindustry.entities.EntityGroup;
 import mindustry.entities.Puddles;
+import mindustry.gen.Building;
 import mindustry.gen.Entityc;
 import mindustry.gen.Groups;
 import mindustry.gen.Unitc;
@@ -27,6 +28,7 @@ import singularity.world.components.GasBlockComp;
 import singularity.world.components.HeatBlockComp;
 import singularity.world.modules.GasesModule;
 import singularity.world.modules.ReactionModule;
+import singularity.world.modules.SglLiquidModule;
 
 import static singularity.Sgl.atmospheres;
 
@@ -97,7 +99,7 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   };
   
   public ItemModule items;
-  public LiquidModule liquids;
+  public SglLiquidModule liquids;
   public GasesModule gases;
   
   private ReactionPoint(){
@@ -126,15 +128,11 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
   
   @Override
   public void setModules(){
-    try{
-      setItemModule(this.getClass().getField("items"));
-      setLiquidModule(this.getClass().getField("liquids"));
-      setGasesModule(this.getClass().getField("gases"));
-      
-      heat(atmospheres.current.getTemperature()*heatCapacity());
-    }catch(NoSuchFieldException e){
-      Log.info(e);
-    }
+    setItemModule(i -> items = i);
+    setLiquidModule(l -> liquids = (SglLiquidModule) l);
+    setGasesModule(g -> gases = g);
+
+    heat(atmospheres.current.getTemperature()*heatCapacity());
   }
   
   @Override
@@ -363,7 +361,12 @@ public class ReactionPoint implements Entityc, Pool.Poolable, ReactContainer{
     Tile tile = this.tileOn();
     return tile != null && tile.block() == Blocks.air ? tile.floor() : (Floor)Blocks.air;
   }
-  
+
+  @Override
+  public Building buildOn(){
+    return tile.build;
+  }
+
   @Override
   public Block blockOn(){
     Tile tile = this.tileOn();

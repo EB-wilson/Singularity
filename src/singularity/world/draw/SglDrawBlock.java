@@ -28,19 +28,9 @@ public class SglDrawBlock<Target extends DrawableComp> extends SglDrawBase<Targe
     return new TextureRegion[]{region};
   }
   
-  public class SglDrawBlockDrawer extends SglBaseDrawer<Target>{
+  public class SglDrawBlockDrawer extends SglBaseDrawer{
     public SglDrawBlockDrawer(Target entity){
       super(entity);
-    }
-  
-    @Override
-    public void doDraw(){
-      if(drawDef == null){
-        draw();
-      }
-      else drawDef.get(entity);
-      
-      Draw.reset();
     }
   
     public void draw(){

@@ -5,7 +5,7 @@ plugins {
     id 'java'
 }
 
-version 'alpha-0.1'
+version 'alpha-0.6.1'
 
 sourceSets.main.java.srcDirs = ["src"]
 
@@ -18,7 +18,7 @@ repositories{
 
 ext{
     //the build number that this mod is made for
-    mindustryVersion = 'v135'
+    mindustryVersion = 'v137'
     //version of SDK you will be using
     minSdkAPI = 30
 
@@ -41,7 +41,7 @@ allprojects{
             "--add-opens", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
             "--add-opens", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
         ])
-        options.compilerArgs.addAll(['--release', '11'])
+        options.compilerArgs.addAll(['--release', '8'])
     }
 }
 
@@ -71,10 +71,10 @@ task jarAndroid{
             def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect { "--classpath $it.path" }.join(" ")
 
             try{
-                System.out.println("build android dex,,,")
+                System.out.println("build android dex...")
 
                 //dex and desugar files - this requires d8 in your PATH
-                "d8 $dependencies --min-api $minSdkAPI --output ${rootProject.name}-android.jar ${project.archivesBaseName}-desktop.jar"
+                "d8 $dependencies --min-api 14 --output ${rootProject.name}-android.jar ${project.archivesBaseName}-desktop.jar"
                     .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
             }
             catch(Throwable ignored) {
@@ -84,7 +84,7 @@ task jarAndroid{
                     } && Integer.valueOf(it.name.substring(0, 2)) >= minSdkAPI
                 }.listFiles().find { it.name.contains("d8") }
 
-                "$d8 $dependencies --min-api $minSdkAPI --output ${rootProject.name}-android.jar ${project.archivesBaseName}-desktop.jar"
+                "$d8 $dependencies --min-api 14 --output ${rootProject.name}-android.jar ${project.archivesBaseName}-desktop.jar"
                     .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
             }
         } catch (Throwable ignored) {

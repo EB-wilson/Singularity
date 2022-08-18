@@ -13,7 +13,6 @@ import arc.util.Tmp;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
-import mindustry.ctype.ContentList;
 import mindustry.entities.Effect;
 import mindustry.gen.Sounds;
 import mindustry.graphics.Drawf;
@@ -286,40 +285,47 @@ public class NuclearBlocks implements ContentList{
         {
           plasma1 = Pal.reactorPurple;
           plasma2 = Pal.reactorPurple2;
-  
-          drawDef = e -> {
-            Draw.rect(bottom, e.x, e.y);
-            drawPlasma(e);
-            SglDraw.startBloom(31);
-            Drawf.liquid(liquid, e.x, e.y, e.liquids.smoothAmount()/liquidCapacity, e.liquids.current().color.cpy().lerp(Color.white, 0.3f));
-            SglDraw.endBloom();
-            Draw.rect(rotatorA, e.x, e.y, e.totalProgress()*5);
-            Draw.rect(rotatorB, e.x, e.y, -e.totalProgress()*5);
-            Draw.rect(region, e.x, e.y);
-  
-            Draw.color(coolColor, hotColor, e.temperature()/e.block().maxTemperature);
-            Fill.rect(e.x, e.y, e.block.size * tilesize, e.block.size * tilesize);
-            
-            Draw.z(Layer.effect);
-            Draw.color(Pal.reactorPurple);
-            
-            float shake = Mathf.random(-0.4f, 0.4f)*e.warmup();
-            Tmp.v1.set(19 + shake, 0).rotate(e.totalProgress()*2);
-            Tmp.v2.set(0, 19 + shake).rotate(e.totalProgress()*2);
-            Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, e.totalProgress()*2);
-            Fill.poly(e.x + Tmp.v2.x, e.y + Tmp.v2.y, 3, 3f, e.totalProgress()*2 + 90);
-            Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, e.totalProgress()*2 + 180);
-            Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, e.totalProgress()*2 + 270);
-            
-            Tmp.v1.set(16, 0).rotate(-e.totalProgress()*2);
-            Tmp.v2.set(0, 16).rotate(-e.totalProgress()*2);
-            Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, -e.totalProgress()*2 - 180);
-            Fill.poly(e.x + Tmp.v2.x, e.y + Tmp.v2.y, 3, 3f, -e.totalProgress()*2 - 90);
-            Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, -e.totalProgress()*2);
-            Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, -e.totalProgress()*2 + 90);
-            
-            Lines.stroke(1.8f*e.warmup());
-            Lines.circle(e.x, e.y, 18 + shake);
+
+          drawerType = e -> new SglBaseDrawer(e){
+            float smooth;
+
+            @Override
+            public void draw(){
+              smooth = Mathf.lerpDelta(smooth, e.liquids.currentAmount(), 0.02f);
+
+              Draw.rect(bottom, e.x, e.y);
+              drawPlasma(e);
+              SglDraw.startBloom(31);
+              Drawf.liquid(liquid, e.x, e.y, smooth/liquidCapacity, e.liquids.current().color.cpy().lerp(Color.white, 0.3f));
+              SglDraw.endBloom();
+              Draw.rect(rotatorA, e.x, e.y, e.totalProgress()*5);
+              Draw.rect(rotatorB, e.x, e.y, -e.totalProgress()*5);
+              Draw.rect(region, e.x, e.y);
+
+              Draw.color(coolColor, hotColor, e.temperature()/e.block().maxTemperature);
+              Fill.rect(e.x, e.y, e.block.size * tilesize, e.block.size * tilesize);
+
+              Draw.z(Layer.effect);
+              Draw.color(Pal.reactorPurple);
+
+              float shake = Mathf.random(-0.4f, 0.4f)*e.warmup();
+              Tmp.v1.set(19 + shake, 0).rotate(e.totalProgress()*2);
+              Tmp.v2.set(0, 19 + shake).rotate(e.totalProgress()*2);
+              Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, e.totalProgress()*2);
+              Fill.poly(e.x + Tmp.v2.x, e.y + Tmp.v2.y, 3, 3f, e.totalProgress()*2 + 90);
+              Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, e.totalProgress()*2 + 180);
+              Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, e.totalProgress()*2 + 270);
+
+              Tmp.v1.set(16, 0).rotate(-e.totalProgress()*2);
+              Tmp.v2.set(0, 16).rotate(-e.totalProgress()*2);
+              Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, -e.totalProgress()*2 - 180);
+              Fill.poly(e.x + Tmp.v2.x, e.y + Tmp.v2.y, 3, 3f, -e.totalProgress()*2 - 90);
+              Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, -e.totalProgress()*2);
+              Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, -e.totalProgress()*2 + 90);
+
+              Lines.stroke(1.8f*e.warmup());
+              Lines.circle(e.x, e.y, 18 + shake);
+            }
           };
         }
       };

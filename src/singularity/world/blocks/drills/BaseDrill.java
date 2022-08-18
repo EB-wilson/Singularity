@@ -103,7 +103,7 @@ public class BaseDrill extends SglBlock{
   }
   
   @Override
-  public boolean canPlaceOn(Tile tile, Team team){
+  public boolean canPlaceOn(Tile tile, Team team, int rotate){
     if(isMultiblock()){
       boolean re = false;
       for(Tile other : tile.getLinkedTilesAs(this, tempTiles)){

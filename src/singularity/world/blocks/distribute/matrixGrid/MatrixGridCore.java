@@ -71,7 +71,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   }
 
   @Override
-  public void drawRequestConfigTop(BuildPlan req, Eachable<BuildPlan> list){
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
     byte[] bytes = (byte[]) req.config;
     if(bytes == null) return;
     Reads r = new Reads(new DataInputStream(new ByteArrayInputStream(bytes)));
@@ -92,7 +92,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     for(int i = 0; i < configs.size; i++){
       Tile tile = world.tile(configs.get(i));
       if(tile != null){
-        Sgl.ioPoint.drawRequestRegion(new BuildPlan(tile.x, tile.y, 0, Sgl.ioPoint), list);
+        Sgl.ioPoint.drawPlanConfigTop(new BuildPlan(tile.x, tile.y, 0, Sgl.ioPoint), list);
       }
     }
     
@@ -176,8 +176,8 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     }
   
     @Override
-    public boolean onConfigureTileTapped(Building other){
-      boolean result = super.onConfigureTileTapped(other);
+    public boolean onConfigureBuildTapped(Building other){
+      boolean result = super.onConfigureBuildTapped(other);
       if(other instanceof EdgeLinkerBuildComp && canLink(this, (EdgeLinkerBuildComp) other)){
         configure(other.pos());
         return false;

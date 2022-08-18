@@ -10,7 +10,6 @@ import arc.util.Tmp;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
-import mindustry.game.Team;
 import mindustry.graphics.Drawf;
 import singularity.world.lightnings.generator.LightningGenerator;
 
@@ -139,7 +138,7 @@ public class Lightning implements Pool.Poolable{
             Lines.line(last.x, last.y, last.x + Tmp.v2.x, last.y + Tmp.v2.y);
           }
         }
-        Drawf.light(Team.derelict,last.x, last.y, vertex.x, vertex.y, hstroke*4.5f, Draw.getColor(), 0.7f*lerp);
+        Drawf.light(last.x, last.y, vertex.x, vertex.y, hstroke*4.5f, Draw.getColor(), 0.7f*lerp);
         if(vertex.valid) vertex.draw();
       }
 

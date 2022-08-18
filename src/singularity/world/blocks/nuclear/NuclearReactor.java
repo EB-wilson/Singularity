@@ -136,7 +136,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     newOptionalConsume((e, c) -> {}, (e, s) -> {
       e.add(Stat.output, StatValues.items(s.craftTime, output));
     });
-    consume.valid = ent -> ent.getBuilding().consValid();
+    consume.valid = ent -> ent.getBuilding(SglBuilding.class).consValid();
     consume.trigger = ent -> {
       for(int i = 0; i < output.amount; i++){
         ent.getBuilding().handleItem(ent.getBuilding(), output.item);
@@ -151,7 +151,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     }, (e, s) -> {
       e.add(Stat.output, StatValues.liquid(output.liquid, output.amount*60, true));
     });
-    consume.valid = ent -> ent.getBuilding().consValid();
+    consume.valid = ent -> ent.getBuilding(SglBuilding.class).consValid();
   }
   
   public void addTransfer(GasStack output){
@@ -161,7 +161,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     }, (e, s) -> {
       e.add(Stat.output, t -> t.add(new GasDisplay(output.gas, output.amount*60, true, true)));
     });
-    consume.valid = ent -> ent.getBuilding().consValid();
+    consume.valid = ent -> ent.getBuilding(SglBuilding.class).consValid();
   }
   
   @Override
@@ -173,7 +173,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   @Override
   public void setBars(){
     super.setBars();
-    bars.add("efficiency", (NuclearReactorBuild e) -> new Bar(
+    addBar("efficiency", (NuclearReactorBuild e) -> new Bar(
         () -> Core.bundle.get("misc.efficiency") + ": " + Strings.autoFixed(e.smoothEfficiency*100, 0) + "%",
         () -> Pal.accent,
         () -> e.smoothEfficiency

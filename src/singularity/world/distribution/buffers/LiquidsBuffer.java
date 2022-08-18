@@ -11,10 +11,10 @@ import mindustry.content.Liquids;
 import mindustry.gen.Building;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
-import mindustry.world.modules.LiquidModule;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
+import singularity.world.modules.SglLiquidModule;
 
 import static mindustry.Vars.content;
 
@@ -197,7 +197,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
     }
   }
 
-  public class BufferLiquidModule extends LiquidModule{
+  public class BufferLiquidModule extends SglLiquidModule{
     Liquid current;
 
     @Override

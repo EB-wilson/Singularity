@@ -1,14 +1,28 @@
 package singularity.world.meta;
 
+import arc.struct.Seq;
+import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatCat;
-import universecore.util.handler.EnumHandler;
+import universecore.util.handler.FieldHandler;
 
 public class SglStatCat{
-  private static final EnumHandler<StatCat> handler = new EnumHandler<>(StatCat.class);
-  
   public static final StatCat
-      nuclear = handler.addEnumItem("nuclear", 2),
-      gas = handler.addEnumItem("gas", 5),
-      heat = handler.addEnumItem("heat", 6),
-      reaction = handler.addEnumItemTail("reaction");
+      nuclear = create("nuclear", 2),
+      gas = create("gas", 5),
+      heat = create("heat", 6),
+      reaction = create("reaction");
+
+  private static StatCat create(String name){
+    return create(name, Stat.all.size);
+  }
+
+  private static StatCat create(String name, int index){
+    Seq<StatCat> all = StatCat.all;
+    StatCat res = new StatCat(name);
+
+    FieldHandler.setValueDefault(res, "id", index);
+    all.insert(index, res);
+
+    return res;
+  }
 }

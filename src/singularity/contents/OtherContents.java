@@ -1,7 +1,6 @@
 package singularity.contents;
 
 import mindustry.content.Items;
-import mindustry.ctype.ContentList;
 import singularity.type.AtomSchematic;
 
 public class OtherContents implements ContentList{

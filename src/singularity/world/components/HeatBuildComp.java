@@ -1,7 +1,7 @@
 package singularity.world.components;
 
+import arc.func.Cons;
 import arc.math.geom.Point2;
-import arc.util.Log;
 import mindustry.Vars;
 import mindustry.ctype.MappableContent;
 import mindustry.type.Item;
@@ -12,12 +12,11 @@ import mindustry.world.modules.LiquidModule;
 import singularity.contents.SglItems;
 import singularity.type.Gas;
 import singularity.world.modules.GasesModule;
+import singularity.world.modules.SglLiquidModule;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.BuildCompBase;
 import universecore.components.blockcomp.Takeable;
 import universecore.util.handler.FieldHandler;
-
-import java.lang.reflect.Field;
 
 import static mindustry.Vars.world;
 import static singularity.Sgl.atmospheres;
@@ -175,10 +174,8 @@ public interface HeatBuildComp extends BuildCompBase, Takeable{
     return getTemperature(absTemperature());
   }
   
-  default void setLiquidModule(Field liquids){
-    if(!LiquidModule.class.isAssignableFrom(liquids.getType())) throw new RuntimeException("error of set module to a non-LiquidModule var");
-    
-    FieldHandler.setValueDefault(this, liquids.getName(), new LiquidModule(){
+  default void setLiquidModule(Cons<LiquidModule> setter){
+    setter.get(new SglLiquidModule(){
       @Override
       public void add(Liquid liquid, float amount){
         super.add(liquid, amount);
@@ -188,10 +185,8 @@ public interface HeatBuildComp extends BuildCompBase, Takeable{
     });
   }
   
-  default void setGasesModule(Field gases){
-    if(! GasesModule.class.isAssignableFrom(gases.getType())) throw new RuntimeException("error of set module to a non-LiquidModule var");
-    
-    FieldHandler.setValueDefault(this, gases.getName(), new GasesModule((GasBuildComp)this, true){
+  default void setGasesModule(Cons<GasesModule> setter){
+    setter.get(new GasesModule((GasBuildComp)this, true){
       @Override
       public void add(Gas gas, float amount){
         super.add(gas, amount);
@@ -201,10 +196,8 @@ public interface HeatBuildComp extends BuildCompBase, Takeable{
     });
   }
   
-  default void setItemModule(Field items){
-    if(!ItemModule.class.isAssignableFrom(items.getType())) throw new RuntimeException("error of set module to a non-ItemModule var");
-  
-    FieldHandler.setValueDefault(this, items.getName(), new ItemModule(){
+  default void setItemModule(Cons<ItemModule> setter){
+    setter.get(new ItemModule(){
       @Override
       public void add(Item item, int amount){
         super.add(item, amount);
@@ -239,14 +232,10 @@ public interface HeatBuildComp extends BuildCompBase, Takeable{
   /**重设所有物质存储模块用于更新比热容以及物质热
    * */
   default void setModules(){
-    try{
-      if(getBlock().hasItems) setItemModule(this.getClass().getField("items"));
-      if(getBlock().hasLiquids) setLiquidModule(this.getClass().getField("liquids"));
-      if(getBlock() instanceof GasBlockComp && getBlock(GasBlockComp.class).hasGases()) setGasesModule(this.getClass().getField("gases"));
-      
-      heat(atmospheres.current.getTemperature()*heatCapacity());
-    }catch(NoSuchFieldException e){
-      Log.info(e);
-    }
+    if(getBlock().hasItems) setItemModule(i -> FieldHandler.setValueDefault(this, "items", i));
+    if(getBlock().hasLiquids) setLiquidModule(l -> FieldHandler.setValueDefault(this, "liquids", l));
+    if(getBlock() instanceof GasBlockComp && getBlock(GasBlockComp.class).hasGases()) setGasesModule(g -> FieldHandler.setValueDefault(this, "gases", g));
+
+    heat(atmospheres.current.getTemperature()*heatCapacity());
   }
 }

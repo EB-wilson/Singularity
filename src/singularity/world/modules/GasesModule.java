@@ -1,5 +1,6 @@
 package singularity.world.modules;
 
+import arc.Events;
 import arc.func.Cons2;
 import arc.graphics.Color;
 import arc.math.WindowedMean;
@@ -11,6 +12,7 @@ import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.ctype.UnlockableContent;
 import mindustry.entities.Puddles;
+import mindustry.game.EventType;
 import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
@@ -21,10 +23,21 @@ import singularity.type.GasStack;
 import singularity.type.SglContents;
 import singularity.world.atmosphere.Atmosphere;
 import singularity.world.components.GasBuildComp;
+import universecore.util.handler.FieldHandler;
 
 import java.util.Arrays;
 
 public class GasesModule extends BlockModule{
+  static {
+    Events.run(EventType.Trigger.update, () -> {
+      Building nextFlowBuild = FieldHandler.getValueDefault(Vars.ui.hudfrag.blockfrag, "nextFlowBuild");
+
+      if(nextFlowBuild instanceof GasBuildComp gasBuild){
+        if(gasBuild.gases() != null) gasBuild.gases().updateFlow();
+      }
+    });
+  }
+
   private static final Color tempColor = new Color();
   private static final int windowSize = 3, updateInterval = 60;
   private static final int gasesLength = SglContents.gases().size;
@@ -32,7 +45,6 @@ public class GasesModule extends BlockModule{
   private static final float pollScl = 20f;
   
   protected final GasBuildComp entity;
-  protected final Building build;
   
   protected float[] itemComp = new float[Vars.content.items().size];
   protected float[] gases = new float[gasesLength];
@@ -47,7 +59,6 @@ public class GasesModule extends BlockModule{
   
   public GasesModule(GasBuildComp entity, boolean initContains){
     this.entity = entity;
-    build = entity.getBuilding();
     
     if(initContains) distributeAtmo();
   }
@@ -55,8 +66,26 @@ public class GasesModule extends BlockModule{
   public GasesModule(GasBuildComp entity){
     this(entity, true);
   }
+
+  public void updateFlow(){
+    if(flowTimer.get(1, pollScl)){
+      if(flowMeans == null) flowMeans = new WindowedMean[gasesLength];
+      boolean inTime = flowTimer.get(updateInterval);
+
+      for(int id=0; id<gases.length; id++){
+        if(flowMeans[id] == null) flowMeans[id] = new WindowedMean(windowSize);
+        flowMeans[id].add(cacheFlow[id]);
+        if(cacheFlow[id] > 0) flows.add(id);
+        cacheFlow[id] = 0;
+
+        if(inTime){
+          flowRate[id] = flowMeans[id].hasEnoughData()? flowMeans[id].mean()*3: -1;
+        }
+      }
+    }
+  }
   
-  public void update(boolean showFlow, boolean compress){
+  public void update(boolean compress){
     if(compress) each((gas, amount) -> {
       if(gas.compressible()){
         doCompress(gas);
@@ -70,28 +99,6 @@ public class GasesModule extends BlockModule{
     gasColor.a(getPressure()/entity.getGasBlock().maxGasPressure()*0.75f);
     
     smoothColor.lerp(gasColor, 0.15f*Time.delta);
-  
-    if(showFlow){
-      if(flowTimer.get(1, pollScl)){
-        if(flowMeans == null) flowMeans = new WindowedMean[gasesLength];
-        boolean inTime = flowTimer.get(updateInterval);
-        
-        for(int id=0; id<gases.length; id++){
-          if(flowMeans[id] == null) flowMeans[id] = new WindowedMean(windowSize);
-          flowMeans[id].add(cacheFlow[id]);
-          if(cacheFlow[id] > 0) flows.add(id);
-          cacheFlow[id] = 0;
-  
-          if(inTime){
-            flowRate[id] = flowMeans[id].hasEnoughData()? flowMeans[id].mean()*3: -1;
-          }
-        }
-      }
-    }
-    else{
-      flowMeans = null;
-      flows.clear();
-    }
   }
   
   public void doCompress(Gas gas){
@@ -109,9 +116,9 @@ public class GasesModule extends BlockModule{
       Gas.CompressItem item = gas.getCompressItem();
 
       if(getPressure() > item.requirePressure){
-        if(gas.multiComp() && build.block.hasLiquids){
-          if(build.liquids.get(item.liquid) > item.consumeLiquid/item.compTime){
-            build.liquids.remove(item.liquid, item.consumeLiquid/item.compTime*delta);
+        if(gas.multiComp() && entity.liquids() != null){
+          if(entity.liquids().get(item.liquid) > item.consumeLiquid/item.compTime){
+            entity.liquids().remove(item.liquid, item.consumeLiquid/item.compTime*delta);
             itemComp[item.item.id] += item.consumeLiquid/item.compTime*delta;
       
             if(itemComp[item.item.id] >= item.consumeLiquid){
@@ -136,16 +143,16 @@ public class GasesModule extends BlockModule{
   public void produce(UnlockableContent object){
     float delta = Time.delta;
     if(object instanceof Item){
-      if(build.block.hasItems && build.items.get((Item)object) < build.block.itemCapacity){
-        build.items.add((Item)object, 1);
+      if(entity.items() != null && entity.items().get((Item)object) < entity.getBlock().itemCapacity){
+        entity.items().add((Item)object, 1);
       }
     }
     else if(object instanceof Liquid){
-      if(build.block.hasLiquids && build.liquids.get((Liquid)object) < build.block.liquidCapacity){
-        build.liquids.add((Liquid)object, delta);
+      if(entity.liquids() != null && entity.liquids().get((Liquid)object) < entity.getBlock().liquidCapacity){
+        entity.liquids().add((Liquid)object, delta);
       }
       else{
-        Puddles.deposit(build.tile, (Liquid)object, delta);
+        Puddles.deposit(entity.getBuilding().tile, (Liquid)object, delta);
       }
     }
   }

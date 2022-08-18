@@ -321,7 +321,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
         }
       }
       
-      if((control.input.frag.config.getSelectedTile() != this && configIOPoint && control.input.block == Sgl.ioPoint)
+      if((control.input.config.getSelected() != this && configIOPoint && control.input.block == Sgl.ioPoint)
           || (configIOPoint && control.input.block != Sgl.ioPoint)){
         configIOPoint =  false;
         Sgl.ioPoint.resetCurrPlacement();
@@ -330,7 +330,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
     }
   
     @Override
-    public boolean onConfigureTileTapped(Building other){
+    public boolean onConfigureBuildTapped(Building other){
       if(other == this){
         if(control.input.block == Sgl.ioPoint){
           configIOPoint = false;

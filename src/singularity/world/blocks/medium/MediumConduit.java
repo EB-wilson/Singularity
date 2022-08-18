@@ -48,7 +48,7 @@ public class MediumConduit extends Block implements MediumComp, Autotiler{
   }
 
   @Override
-  public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list){
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
     int[] bits = getTiling(req, list);
 
     if(bits == null) return;

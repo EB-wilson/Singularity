@@ -35,12 +35,12 @@ public class GasSource extends GasBlock{
   public void setBars(){
     super.setBars();
     
-    bars.remove("gasPressure");
+    removeBar("gasPressure");
   }
   
   @Override
-  public void drawRequestConfig(BuildPlan req, Eachable<BuildPlan> list){
-    drawRequestConfigCenter(req, req.config, "center", true);
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
+    drawPlanConfigCenter(req, req.config, "center", true);
   }
   
   public class GasSourceBuild extends SglBuilding{
@@ -86,7 +86,7 @@ public class GasSource extends GasBlock{
     }
     
     @Override
-    public boolean onConfigureTileTapped(Building other){
+    public boolean onConfigureBuildTapped(Building other){
       if(this == other){
         deselect();
         configure(null);

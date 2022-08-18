@@ -3,7 +3,6 @@ package singularity.contents;
 import arc.graphics.g2d.TextureRegion;
 import arc.util.Time;
 import mindustry.content.Items;
-import mindustry.ctype.ContentList;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
@@ -63,7 +62,7 @@ public class GasBlocks implements ContentList{
       pulse = true;
       health = 80;
       
-      consumes.power(0.30f);
+      consumePower(0.30f);
     }};
     
     iridium_gas_bridge_conduit = new GasBridge("iridium_gas_bridge_conduit"){{
@@ -76,7 +75,7 @@ public class GasBlocks implements ContentList{
       pulse = true;
       health = 120;
       
-      consumes.power(0.45f);
+      consumePower(0.45f);
     }};
     
     gas_junction = new GasJunction("gas_junction"){{

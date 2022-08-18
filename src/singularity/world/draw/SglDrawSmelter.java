@@ -74,7 +74,7 @@ public class SglDrawSmelter<Target extends Building & FactoryBuildComp & Drawabl
   
     @Override
     public void drawLight(){
-      Drawf.light(entity.team, entity.x(), entity.y(), (lightRadius + Mathf.absin(lightSinScl, lightSinMag)) * entity.warmup() * block.size, flameColor, lightAlpha);
+      Drawf.light( entity.x(), entity.y(), (lightRadius + Mathf.absin(lightSinScl, lightSinMag)) * entity.warmup() * block.size, flameColor, lightAlpha);
     }
   }
 }

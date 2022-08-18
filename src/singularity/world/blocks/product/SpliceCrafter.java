@@ -23,7 +23,6 @@ import mindustry.type.Liquid;
 import mindustry.ui.Bar;
 import mindustry.world.Block;
 import mindustry.world.Tile;
-import mindustry.world.consumers.ConsumePower;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
 import singularity.type.Gas;
@@ -37,10 +36,7 @@ import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.draw.DrawSpliceBlock;
 import singularity.world.meta.SglBlockStatus;
-import singularity.world.modules.ChainsModule;
-import singularity.world.modules.GasesModule;
-import singularity.world.modules.SglConsumeModule;
-import singularity.world.modules.SglProductModule;
+import singularity.world.modules.*;
 import singularity.world.products.ProduceGases;
 import singularity.world.products.SglProduceType;
 import universecore.annotations.Annotations;
@@ -79,20 +75,20 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   public void setBars(){
     super.setBars();
     if(hasGases){
-      bars.remove("gasPressure");
-      bars.add("gasPressure", (SpliceCrafterBuild entity) -> new Bar(
+      removeBar("gasPressure");
+      addBar("gasPressure", (SpliceCrafterBuild entity) -> new Bar(
           () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.smoothPressure*100, 0) + "kPa",
           () -> Pal.accent,
           () -> Math.min(entity.smoothPressure / maxGasPressure, 1)));
     }
   }
-  
+
   @Override
-  @SuppressWarnings("all")
-  public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list){
-    ((DrawSpliceBlock) draw).drawRequest(req, list, interCorner);
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public void drawPlanConfigTop(BuildPlan plan, Eachable<BuildPlan> list){
+    ((DrawSpliceBlock) draw).drawRequest(plan, list, interCorner);
   }
-  
+
   @Override
   public boolean chainable(ChainsBlockComp other){
     return this == other;
@@ -128,7 +124,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       if(hasLiquids) liquids = new SpliceLiquidModule(liquidCapacity, true);
       if(hasGases) gases = new SpliceGasesModule(this, true, tempLiquidCapacity);
       consumer = new SpliceConsumeModule(this);
-      cons(consumer);
       producer = new SpliceProduceModule(this);
 
       return this;
@@ -175,12 +170,13 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   
       if(recipeCurrent == -1 || consumer.current == null) return;
   
-      if(hasPower && consumes.hasPower()){
-        ConsumePower cons = block().consumes.getPower();
-        boolean buffered = cons.buffered;
-        float capacity = cons.capacity;
-        Func<Building, Bar> bar = (entity -> new Bar(() -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : (int)(entity.power.status * capacity)) :
-            Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
+      if(hasPower && consPower != null){
+        boolean buffered = consPower.buffered;
+        float capacity = consPower.capacity;
+        Func<Building, Bar> bar = (entity -> new Bar(
+            () -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : (int)(entity.power.status * capacity)): Core.bundle.get("bar.power"),
+            () -> Pal.powerBar,
+            () -> Mathf.zero(consPower.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
         bars.add(bar.get(this)).growX();
         bars.row();
       }
@@ -318,7 +314,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         }
         if(consumer != tCons){
           consumer = tCons;
-          cons(tCons);
         }
         
         SpliceProduceModule tProd = chains.getVar("producer");
@@ -501,18 +496,18 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         allCapacity += otherModule.allCapacity;
       }
     }
-    
+
     @Override
-    public void update(boolean showFlow){
+    public void updateFlow(){
       if(lastFrameId == Core.graphics.getFrameId()) return;
       lastFrameId = Core.graphics.getFrameId();
-      
-      super.update(showFlow);
+
+      super.updateFlow();
       added.clear();
     }
   }
   
-  public static class SpliceLiquidModule extends LiquidModule{
+  public static class SpliceLiquidModule extends SglLiquidModule{
     protected ObjectSet<LiquidModule> added = new ObjectSet<>();
     public float allCapacity;
     public boolean loaded;
@@ -540,11 +535,11 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
     
     @Override
-    public void update(boolean showFlow){
+    public void updateFlow(){
       if(lastFrameId == Core.graphics.getFrameId()) return;
       lastFrameId = Core.graphics.getFrameId();
       
-      super.update(showFlow);
+      super.updateFlow();
       added.clear();
     }
   }
@@ -578,11 +573,11 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
     
     @Override
-    public void update(boolean showFlow, boolean comp){
+    public void update(boolean comp){
       if(lastFrameId == Core.graphics.getFrameId()) return;
       lastFrameId = Core.graphics.getFrameId();
       
-      super.update(showFlow, comp);
+      super.update(comp);
       added.clear();
     }
   }

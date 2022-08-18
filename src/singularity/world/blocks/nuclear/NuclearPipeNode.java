@@ -16,6 +16,7 @@ import arc.struct.ObjectSet;
 import arc.struct.Seq;
 import arc.util.*;
 import mindustry.Vars;
+import mindustry.content.Blocks;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
@@ -26,6 +27,7 @@ import mindustry.input.Placement;
 import mindustry.world.Block;
 import mindustry.world.Edges;
 import mindustry.world.Tile;
+import mindustry.world.blocks.power.PowerNode;
 import mindustry.world.meta.Env;
 import singularity.contents.NuclearBlocks;
 import singularity.world.components.NuclearEnergyBlockComp;
@@ -96,9 +98,9 @@ public class NuclearPipeNode extends NuclearBlock{
     linkStart = Core.atlas.find(name + "_start", (TextureRegion)null);
     linkEnd = Core.atlas.find(name + "_end", ((NuclearPipeNode)NuclearBlocks.nuclear_pipe_node).linkEnd);
   }
-  
+
   @Override
-  public void drawRequestConfigTop(BuildPlan req, Eachable<BuildPlan> list){
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
     if(req.config instanceof Point2[] plans){
       for(Point2 point : plans){
         int px = req.x + point.x, py = req.y + point.y;
@@ -145,7 +147,7 @@ public class NuclearPipeNode extends NuclearBlock{
   public void changePlacementPath(Seq<Point2> points, int rotation){
     Placement.calculateNodes(points, this, rotation, (point, other) -> inRange(world.tile(point.x, point.y), world.tile(other.x, other.y), linkRange*tilesize));
   }
-  
+
   @Override
   public void drawPlace(int x, int y, int rotation, boolean valid){
     Tile tile = world.tile(x, y);
@@ -322,9 +324,9 @@ public class NuclearPipeNode extends NuclearBlock{
   
     @Override
     public void displayEnergy(Table table){}
-  
+
     @Override
-    public boolean onConfigureTileTapped(Building other){
+    public boolean onConfigureBuildTapped(Building other){
       if(!(other instanceof NuclearEnergyBuildComp)) return true;
       
       if(canLink(this, (NuclearEnergyBuildComp)other)){
@@ -388,7 +390,7 @@ public class NuclearPipeNode extends NuclearBlock{
         Draw.alpha(smoothAlpha * laserOpacity);
         Tmp.v1.set(x, y).sub(entity.tile.worldx(), entity.tile.worldy()).setLength(size*tilesize/2f - 1.5f).scl(-1);
         Tmp.v2.set(entity.x, entity.y).sub(tile.worldx(), tile.worldy()).setLength(entity.block.size*tilesize/2f - 1.5f).scl(-1);
-        Drawf.laser(team, linkLeaser, linkLeaser,
+        Drawf.laser(((PowerNode)Blocks.powerNode).laser, linkLeaser, linkLeaser,
             x + Tmp.v1.x, y + Tmp.v1.y,
             entity.x() + Tmp.v2.x, entity.y() + Tmp.v2.y,
             0.45f);

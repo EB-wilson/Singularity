@@ -11,12 +11,14 @@ public interface DistMatrixUnitComp{
   default int bufferCapacity(){
     return 0;
   }
-  
+
+  @SuppressWarnings("rawtypes")
   @Annotations.BindField(value = "requestFactories", initialize = "new arc.struct.ObjectMap<>()")
   default ObjectMap<GridChildType, ObjectMap<ContentType, RequestHandlers.RequestHandler>> requestFactories(){
     return null;
   }
-  
+
+  @SuppressWarnings("rawtypes")
   default void setFactory(GridChildType type, ContentType contType, RequestHandlers.RequestHandler factory){
     requestFactories().get(type, ObjectMap::new).put(contType, factory);
   }

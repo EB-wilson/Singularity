@@ -87,7 +87,6 @@ public class PublicInfoDialog extends BaseListDialog{
   
     ExecutorService exec = fieldHandler.getValue(null, "exec");
     exec.shutdown();
-    Http.setMaxConcurrent(8);
     
     titleLoaded = false;
     Http.get(titlesUrl, req -> {
@@ -259,17 +258,21 @@ public class PublicInfoDialog extends BaseListDialog{
     float time;
     boolean timeout, lastTest = false, connectSucceed;
   
-    public Cons<Label> buildLoading = t -> t.setText(Core.bundle.get("misc.loading") + Strings.autoFixed(time/60, 0) + getLoading(3, 30));
+    public Cons<Label> buildLoading = t -> t.setText(Core.bundle.get("misc.loading") + Strings.autoFixed(time/60, 0) + getLoadingStr(3, 30));
     Runnable refreshDef;
   
     Cell<Table> cell;
     
-    public static String getLoading(int length, float interval){
+    public static String getLoadingStr(int length, float interval){
       float time = Time.time % interval;
       int amount = (int)Math.ceil((time/interval)*length);
-      
-      String result = ".".repeat(amount);
-      return result + " ".repeat(length - amount);
+
+      StringBuilder result = new StringBuilder();
+      for(int i = 0; i < length; i++){
+        if(i <= amount) result.append(".");
+        else result.append(" ");
+      }
+      return result.toString();
     }
     
     public LoadTable(Runnable refresh){
@@ -292,7 +295,6 @@ public class PublicInfoDialog extends BaseListDialog{
   
           ExecutorService exec = fieldHandler.getValue(null, "exec");
           exec.shutdown();
-          Http.setMaxConcurrent(8);
           
           refreshDef.run();
         }).get().touchable(() -> timeout? Touchable.enabled: Touchable.disabled);

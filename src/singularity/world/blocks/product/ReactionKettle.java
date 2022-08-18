@@ -1,6 +1,7 @@
 package singularity.world.blocks.product;
 
 import arc.Core;
+import arc.func.Cons;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.util.Strings;
@@ -21,27 +22,23 @@ import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.blocks.storage.Unloader;
 import mindustry.world.consumers.ConsumePower;
-import mindustry.world.consumers.ConsumeType;
 import singularity.Sgl;
 import singularity.Singularity;
 import singularity.type.Gas;
 import singularity.type.Reaction;
 import singularity.ui.SglStyles;
 import singularity.world.SglFx;
-import singularity.world.components.GasBuildComp;
-import singularity.world.components.HeatBlockComp;
-import singularity.world.components.HeatBuildComp;
 import singularity.world.blocks.SglBlock;
 import singularity.world.blocks.gas.GasUnloader;
 import singularity.world.blocks.liquid.LiquidUnloader;
+import singularity.world.components.GasBuildComp;
+import singularity.world.components.HeatBlockComp;
+import singularity.world.components.HeatBuildComp;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.modules.GasesModule;
 import singularity.world.modules.ReactionModule;
 import singularity.world.reaction.ReactContainer;
 import universecore.annotations.Annotations;
-import universecore.util.handler.FieldHandler;
-
-import java.lang.reflect.Field;
 
 @Annotations.ImplEntries
 public class ReactionKettle extends SglBlock implements HeatBlockComp{
@@ -79,12 +76,9 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   
   @Override
   public void initPower(float powerCapacity){
-    consumes.add(new ConsumePower(0, powerCapacity, false){
-      @Override
-      public float requestedPower(Building e){
-        ReactionKettleBuild entity = (ReactionKettleBuild) e;
-        return Math.max(0, productHeat/500*entity.heatScl);
-      }
+    consumePowerDynamic(e -> {
+      ReactionKettleBuild entity = (ReactionKettleBuild) e;
+      return Math.max(0, productHeat/500*entity.heatScl);
     });
   }
   
@@ -96,11 +90,12 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
   @Override
   public void setBars(){
     super.setBars();
-    ConsumePower cons = consumes.getPower();
+    ConsumePower cons = consPower;
     boolean buffered = cons.buffered;
     float capacity = cons.capacity;
   
-    bars.add("power", entity -> new Bar(() -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : UI.formatAmount((int)(entity.power.status * capacity))) :
+    addBar("power", entity -> new Bar(() -> buffered ? Core.bundle.format("bar.poweramount",
+        Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : UI.formatAmount((int)(entity.power.status * capacity))) :
         Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
   }
   
@@ -127,8 +122,8 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
     }
   
     @Override
-    public void setGasesModule(Field gases){
-      FieldHandler.setValueDefault(this, gases.getName(), new GasesModule(this, false){
+    public void setGasesModule(Cons<GasesModule> setter){
+      setter.get(new GasesModule(this, false){
         @Override
         public void add(Gas gas, float amount){
           super.add(gas, amount);
@@ -144,7 +139,7 @@ public class ReactionKettle extends SglBlock implements HeatBlockComp{
         return 0;
       }
       else{
-        return this.power != null && this.block.consumes.has(ConsumeType.power) && !this.block.consumes.getPower().buffered ? this.power.status : 1;
+        return power != null && block.consPower != null && !block.consPower.buffered? power.status: 1;
       }
     }
   

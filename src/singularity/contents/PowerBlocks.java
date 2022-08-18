@@ -1,7 +1,6 @@
 package singularity.contents;
 
 import mindustry.content.Items;
-import mindustry.ctype.ContentList;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;

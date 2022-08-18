@@ -27,7 +27,6 @@ import mindustry.ui.Bar;
 import mindustry.ui.fragments.PlacementFragment;
 import mindustry.world.Block;
 import mindustry.world.Tile;
-import mindustry.world.consumers.ConsumePower;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 import mindustry.world.meta.StatValues;
@@ -41,12 +40,13 @@ import singularity.world.consumers.SglConsumeEnergy;
 import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
-import singularity.world.draw.SglBaseDrawer;
+import singularity.world.draw.SglDrawBase;
 import singularity.world.draw.SglDrawBlock;
 import singularity.world.meta.SglBlockStatus;
 import singularity.world.modules.GasesModule;
 import singularity.world.modules.NuclearEnergyModule;
 import singularity.world.modules.SglConsumeModule;
+import singularity.world.modules.SglLiquidModule;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ConsumerBlockComp;
 import universecore.components.blockcomp.ConsumerBuildComp;
@@ -262,14 +262,14 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   @Override
   public void setBars(){
-    bars.add("health", entity -> new Bar("stat.health", Pal.health, entity::healthf).blink(Color.white));
+    addBar("health", entity -> new Bar("stat.health", Pal.health, entity::healthf).blink(Color.white));
   }
   
   @Override
   public TextureRegion[] icons(){
     return draw.icons();
   }
-  
+
   @Annotations.ImplEntries
   public class SglBuilding extends Building implements ConsumerBuildComp, GasBuildComp, NuclearEnergyBuildComp, DrawableComp{
     private static FieldHandler<PlacementFragment> fieldHandler = new FieldHandler<>(PlacementFragment.class);
@@ -277,12 +277,13 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public SglConsumeModule consumer;
     public NuclearEnergyModule energy;
     public GasesModule gases;
-  
+    public SglLiquidModule liquids;
+
     public boolean recipeSelected;
     
     public float smoothPressure = 0;
     
-    public SglBaseDrawer<? extends SglBuilding> drawer;
+    public SglDrawBase<? extends SglBuilding>.SglBaseDrawer drawer;
 
     protected final ObjectMap<String, Object> vars = new ObjectMap<>();
     
@@ -313,11 +314,13 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public Building create(Block block, Team team) {
       super.create(block, team);
+
+      liquids = new SglLiquidModule();
+      super.liquids = liquids;
       
       if(consumers.size() == 1) recipeCurrent = 0;
       
       consumer = new SglConsumeModule(this);
-      cons(consumer);
       
       if(hasEnergy){
         energy = new NuclearEnergyModule(this, basicPotentialEnergy, energyBuffered);
@@ -398,13 +401,12 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       }
     }
 
-    @Override
     public boolean consValid() {
       if(status == SglBlockStatus.broken) return false;
       if(consumer != null && consumer.hasConsume()) return consumer.valid() && enabled;
       return enabled;
     }
-    
+
     @Override
     public void consume(){
       consumer.trigger();
@@ -541,12 +543,13 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
       if(recipeCurrent == -1 || consumer.current == null) return;
 
-      if(hasPower && consumes.hasPower()){
-        ConsumePower cons = block().consumes.getPower();
-        boolean buffered = cons.buffered;
-        float capacity = cons.capacity;
-        Func<Building, Bar> bar = (entity -> new Bar(() -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : (int)(entity.power.status * capacity)) :
-            Core.bundle.get("bar.power"), () -> Pal.powerBar, () -> Mathf.zero(cons.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
+      if(hasPower && consPower != null){
+        boolean buffered = consPower.buffered;
+        float capacity = consPower.capacity;
+        Func<Building, Bar> bar = (entity -> new Bar(
+            () -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : (int)(entity.power.status * capacity)) :
+            Core.bundle.get("bar.power"), () -> Pal.powerBar,
+            () -> Mathf.zero(consPower.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
         bars.add(bar.get(this)).growX();
         bars.row();
       }

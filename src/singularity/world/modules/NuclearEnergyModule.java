@@ -1,6 +1,7 @@
 package singularity.world.modules;
 
 import arc.Core;
+import arc.Events;
 import arc.func.Func;
 import arc.graphics.Color;
 import arc.math.WindowedMean;
@@ -9,15 +10,28 @@ import arc.struct.IntSeq;
 import arc.util.Interval;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import mindustry.Vars;
+import mindustry.game.EventType;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
 import mindustry.ui.Bar;
 import mindustry.world.modules.BlockModule;
-import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.blocks.SglBlock.SglBuilding;
 import singularity.world.blocks.nuclear.NuclearEnergyNet;
+import singularity.world.components.NuclearEnergyBuildComp;
+import universecore.util.handler.FieldHandler;
 
 public class NuclearEnergyModule extends BlockModule {
+  static {
+    Events.run(EventType.Trigger.update, () -> {
+      Building nextFlowBuild = FieldHandler.getValueDefault(Vars.ui.hudfrag.blockfrag, "nextFlowBuild");
+
+      if(nextFlowBuild instanceof NuclearEnergyBuildComp nuclearBuild){
+        if(nuclearBuild.energy() != null) nuclearBuild.energy().updateFlow();
+      }
+    });
+  }
+
   public final NuclearEnergyBuildComp entity;
   public final float baseAcceptPres;
   public final boolean buffered;
@@ -39,17 +53,16 @@ public class NuclearEnergyModule extends BlockModule {
     this.baseAcceptPres = base;
     this.buffered = buffered;
   }
-  
-  public void update(boolean showFlow){
-    if(showFlow){
-      if(flowTimer.get(1, 20f)){
-        moveMean.add(added);
-        added = 0;
-        displayMoving = moveMean.hasEnoughData() ? moveMean.mean()/20 : - 1;
-      }
+
+  public void updateFlow(){
+    if(flowTimer.get(1, 20f)){
+      moveMean.add(added);
+      added = 0;
+      displayMoving = moveMean.hasEnoughData() ? moveMean.mean()/20 : - 1;
     }
-    else moveMean.clear();
-    
+  }
+  
+  public void update(){
     energyNet.update();
   }
   

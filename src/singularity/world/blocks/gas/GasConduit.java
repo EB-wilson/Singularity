@@ -54,7 +54,7 @@ public class GasConduit extends GasBlock implements Autotiler{
   }
   
   @Override
-  public void drawRequestRegion(BuildPlan req, Eachable<BuildPlan> list){
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
     int[] bits = getTiling(req, list);
     
     if(bits == null) return;
@@ -65,7 +65,7 @@ public class GasConduit extends GasBlock implements Autotiler{
     Draw.rect(tops[bits[0]], req.drawx(), req.drawy(), req.rotation * 90);
     Draw.scl();
   }
-  
+
   @Override
   public Block getReplacement(BuildPlan req, Seq<BuildPlan> requests){
     Boolf<Point2> cont = p -> requests.contains(o -> o.x == req.x + p.x && o.y == req.y + p.y && o.rotation == req.rotation && (req.block instanceof GasConduit || req.block instanceof GasJunction));

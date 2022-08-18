@@ -18,7 +18,7 @@ import static mindustry.Vars.tilesize;
 public class EnergySource extends NuclearPipeNode{
   public EnergySource(String name){
     super(name);
-    energyCapacity = 1024;
+    energyCapacity = 8192;
     outputEnergy = true;
     consumeEnergy = false;
     energyBuffered = true;

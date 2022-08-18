@@ -1,6 +1,5 @@
 package singularity.contents;
 
-import mindustry.ctype.ContentList;
 import mindustry.world.Block;
 import singularity.world.blocks.environment.SglOverlay;
 

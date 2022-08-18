@@ -6,7 +6,6 @@ import arc.graphics.g2d.TextureRegion;
 import arc.util.Log;
 import arc.util.Time;
 import mindustry.Vars;
-import mindustry.ctype.ContentList;
 import mindustry.mod.Mod;
 import singularity.contents.*;
 import singularity.contents.override.OverrideBlocks;
@@ -15,6 +14,7 @@ import singularity.core.Init;
 import singularity.type.SglCategory;
 import singularity.type.SglContentType;
 import singularity.world.meta.SglAttribute;
+import universecore.UncCore;
 import universecore.annotations.Annotations;
 import universecore.util.OverrideContentList;
 
@@ -52,6 +52,7 @@ public class Singularity extends Mod{
   public Singularity(){
     //加载模组配置数据
     Sgl.config.load();
+    Sgl.classes = UncCore.classes.newInstance(Singularity.class);
 
     //加载属性类型
     SglAttribute.load();
@@ -60,7 +61,13 @@ public class Singularity extends Mod{
     //载入所有新内容类型
     SglContentType.load();
     
-    Log.info("[Singularity] Singularity mod is loading!\nThanks for your play.\nauthor: EBwilson\nVisit the GitHub project about this mod: > " + Sgl.githubProject + " <");
+    Log.info(
+       """
+       [Singularity] Singularity mod is loading!
+       Thanks for your play.
+       author: EBwilson
+       Visit the GitHub project about this mod: >
+       """ + Sgl.githubProject + " <");
     
     Events.on(ClientLoadEvent.class, e -> {
       Sgl.ui.mainMenu.show();

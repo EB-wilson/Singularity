@@ -53,7 +53,7 @@ public class IOPointBlock extends SglBlock{
   }
   
   @Override
-  public boolean canPlaceOn(Tile tile, Team team){
+  public boolean canPlaceOn(Tile tile, Team team, int rotate){
     return currPlacement != null && currPlacement.tileValid(tile);
   }
 

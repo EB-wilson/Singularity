@@ -43,7 +43,7 @@ public class GasBridge extends ItemBridge implements GasBlockComp{
   @Override
   public void setBars(){
     super.setBars();
-    bars.add("gasPressure", (GasBridgeBuild entity) -> new Bar(
+    addBar("gasPressure", (GasBridgeBuild entity) -> new Bar(
         () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.gases.getPressure()*100, 0) + "kPa",
         () -> Pal.accent,
         () -> Math.min(entity.gases.getPressure() / maxGasPressure, 1)));

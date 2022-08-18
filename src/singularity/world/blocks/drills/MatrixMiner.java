@@ -275,7 +275,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
     }
 
     @Override
-    public boolean onConfigureTileTapped(Building other){
+    public boolean onConfigureBuildTapped(Building other){
       if(other == this && updateValid()){
         configuring = !configuring;
         switchController();
@@ -430,8 +430,8 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
             setBounds(Tmp.v1.x, Tmp.v1.y, Tmp.v2.x - Tmp.v1.x, Tmp.v2.y - Tmp.v1.y);
 
             if(!configuring
-                || !Vars.control.input.frag.config.isShown()
-                || Vars.control.input.frag.config.getSelectedTile() != MatrixMinerBuild.this) Vars.ui.hudGroup.removeChild(this);
+                || !Vars.control.input.config.isShown()
+                || Vars.control.input.config.getSelected() != MatrixMinerBuild.this) Vars.ui.hudGroup.removeChild(this);
           }
         });
       }

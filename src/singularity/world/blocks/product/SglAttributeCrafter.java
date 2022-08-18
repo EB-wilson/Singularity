@@ -115,7 +115,7 @@ public class SglAttributeCrafter extends NormalCrafter{
   @Override
   public void setBars(){
     super.setBars();
-    bars.add("efficiency", (SglAttributeCrafterBuild e) -> new Bar(
+    addBar("efficiency", (SglAttributeCrafterBuild e) -> new Bar(
         () -> Core.bundle.get("misc.efficiency") + ": " + Strings.autoFixed(e.efficiency()*100, 0) + "%",
         () -> Pal.accent,
         () -> Mathf.clamp(e.efficiency())
@@ -160,9 +160,9 @@ public class SglAttributeCrafter extends NormalCrafter{
       table.table(Tex.pane, t -> t.add(boost).grow());
     });
   }
-  
+
   @Override
-  public boolean canPlaceOn(Tile tile, Team team){
+  public boolean canPlaceOn(Tile tile, Team team, int rotate){
     return efficiencyIncrease(tile.x, tile.y) > 0;
   }
   
