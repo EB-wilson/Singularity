@@ -5,5 +5,6 @@ main: "singularity.Singularity"
 description: "A large tech mod, creative things that gases, atmosphere system, and the nuclear energy system, and more things you can interested\n\n大型科技向mod，创新的气体与大气机制，核能量系统以及更多你会感兴趣的东西"
 version: "0.6.1"
 minGameVersion: 137
+hideBrowser: true
 
 dependencies: ["universe-core"]
