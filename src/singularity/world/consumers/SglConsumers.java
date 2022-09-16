@@ -1,8 +1,6 @@
 package singularity.world.consumers;
 
 import arc.struct.ObjectMap;
-import singularity.type.Gas;
-import singularity.type.GasStack;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.UncConsumeType;
@@ -10,14 +8,6 @@ import universecore.world.consumers.UncConsumeType;
 public class SglConsumers extends BaseConsumers{
   public SglConsumers(boolean optional){
     super(optional);
-  }
-  
-  public SglConsumeGases<?> gas(Gas gas, float amount){
-    return add(new SglConsumeGases<>(new GasStack[]{new GasStack(gas, amount)}));
-  }
-  
-  public SglConsumeGases<?> gases(GasStack[] stack){
-    return add(new SglConsumeGases<>(stack));
   }
   
   public SglConsumeEnergy<?> energy(float usage){

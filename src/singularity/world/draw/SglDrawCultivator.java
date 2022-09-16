@@ -25,7 +25,7 @@ public class SglDrawCultivator<T extends Building & FactoryBuildComp & DrawableC
   
   @Override
   public float liquidAlpha(T entity){
-    return entity.warmup();
+    return entity.workEfficiency();
   }
   
   @Override
@@ -57,13 +57,13 @@ public class SglDrawCultivator<T extends Building & FactoryBuildComp & DrawableC
       Drawf.liquid(liquid, entity.x, entity.y, liquidAlpha(entity), liquidColor(entity));
   
       Draw.color(liquidColorLight(entity));
-      Draw.alpha(entity.warmup());
+      Draw.alpha(entity.workEfficiency());
       for(int i = 0; i < bubbles; i++){
         float x = rand.range(spread), y = rand.range(spread);
         float life = 1f - ((Time.time / timeScl + rand.random(recurrence)) % recurrence);
     
         if(life > 0){
-          Lines.stroke(entity.warmup() * (life + strokeMin));
+          Lines.stroke(entity.workEfficiency() * (life + strokeMin));
           Lines.poly(entity.x + x, entity.y + y, sides, (1f - life) * radius);
         }
       }

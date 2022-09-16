@@ -8,7 +8,6 @@ import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Angles;
 import arc.math.Mathf;
-import arc.math.geom.Vec2;
 import arc.util.Tmp;
 import mindustry.content.Fx;
 import mindustry.content.Items;
@@ -33,7 +32,9 @@ import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.draw.DrawExpandPlasma;
 import singularity.world.draw.DrawFactory;
 import singularity.world.draw.SglDrawPlasma;
+import singularity.world.particles.SglParticleModels;
 import universecore.world.particles.Particle;
+import universecore.world.particles.ParticleModel;
 
 import static mindustry.Vars.tilesize;
 
@@ -154,7 +155,7 @@ public class NuclearBlocks implements ContentList{
       itemCapacity = 30;
       liquidCapacity = 35;
       
-      craftEffect = SglFx.explodeImpWave;
+      craftEffect = SglFx.explodeImpWaveBig;
       updateEffect = SglFx.impWave;
       effectRange = 2;
       updateEffectChance = 0.025f;
@@ -162,16 +163,26 @@ public class NuclearBlocks implements ContentList{
       ambientSoundVolume = 0.6f;
       craftedSound = Sounds.explosionbig;
       craftedSoundVolume = 1f;
+
+      ParticleModel model = new ParticleModel().setDefault().resetCloudUpdate()
+          .setTailFade(f -> Mathf.lerpDelta(f, 0, 0.04f))
+          .tailGradient(Pal.lightishGray, 0.04f)
+          .setColor(Pal.reactorPurple);
   
       craftTrigger = e -> {
+        model.resetDeflect();
+        model.setDest(e.x, e.y, 0.15f*e.consEfficiency());
+        model.setDeflect(90, 0.125f);
         for(Particle particle : Particle.get(p -> p.x < e.x + 20 && p.x > e.x - 20 && p.y < e.y + 20 && p.y > e.y - 20)){
           particle.remove();
         }
         Effect.shake(4f, 18f, e.x, e.y);
-        Angles.randLenVectors(System.nanoTime(), Mathf.random(8, 12), 4.75f, 6.25f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(5f, 7f)).setAttenuate(0.125f).deflect().setDest(new Vec2(e.x, e.y), 0.15f*e.warmup(), false));
+        Angles.randLenVectors(System.nanoTime(), Mathf.random(8, 12), 4.75f, 6.25f,
+            (x, y) -> model.create(e.x, e.y, x, y, Mathf.random(5f, 7f)));
       };
       crafting = e -> {
-        if(Mathf.chanceDelta(0.02f)) Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f, (x, y) -> Particle.create(e.x, e.y, x, y, Mathf.random(3.25f, 4f)));
+        if(Mathf.chanceDelta(0.02f)) Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f,
+            (x, y) -> SglParticleModels.nuclearParticle.create(e.x, e.y, x, y, Mathf.random(3.25f, 4f)));
       };
       
       warmupSpeed = 0.00065f;
@@ -207,7 +218,7 @@ public class NuclearBlocks implements ContentList{
       newReact(SglItems.concentration_uranium_235, 450, 8, true);
       newReact(SglItems.concentration_plutonium_239, 450, 8, true);
       
-      addCoolant(2600f);
+      addCoolant(0.25f);
       consume.liquid(Liquids.cryofluid, 0.2f);
   
       addTransfer(new ItemStack(SglItems.plutonium_239, 1));
@@ -225,13 +236,13 @@ public class NuclearBlocks implements ContentList{
       explosionDamageBase = 260;
       explosionRadius = 12;
       
-      productHeat = 800;
+      productHeat = 0.1f;
       
       newReact(SglItems.uranium_235, 1200, 6f, false);
       newReact(SglItems.plutonium_239, 1200, 6f, false);
       newReact(Items.thorium, 900, 5f, false);
   
-      addCoolant(2600f);
+      addCoolant(0.25f);
       consume.liquid(Liquids.cryofluid, 0.2f);
   
       addTransfer(new ItemStack(SglItems.plutonium_239, 1));
@@ -249,7 +260,7 @@ public class NuclearBlocks implements ContentList{
       explosionDamageBase = 580;
       explosionRadius = 32;
       
-      productHeat = 2800;
+      productHeat = 0.35f;
       
       warmupSpeed = 0.0015f;
       
@@ -258,14 +269,14 @@ public class NuclearBlocks implements ContentList{
       newReact(SglItems.concentration_uranium_235, 240, 22, false);
       newReact(SglItems.concentration_plutonium_239, 240, 22, false);
       
-      addCoolant(3000f);
+      addCoolant(0.4f);
       consume.liquid(SglLiquids.phase_FEX_liquid, 0.4f);
       
       crafting = e -> {
-        if(Mathf.chanceDelta(0.15f*e.warmup())) Angles.randVectors(System.nanoTime(), 1, 15, (x, y) -> {
-          float iff = Mathf.random(0.4f, Math.max(0.4f, e.warmup()));
+        if(Mathf.chanceDelta(0.06f*e.workEfficiency())) Angles.randVectors(System.nanoTime(), 1, 15, (x, y) -> {
+          float iff = Mathf.random(0.4f, Math.max(0.4f, e.workEfficiency()));
           Tmp.v1.set(x, y).scl(0.5f*iff/2);
-          Particle.create(e.x + x, e.y + y, Tmp.v1.x, Tmp.v1.y, iff*6.5f*e.warmup());
+          SglParticleModels.nuclearParticle.create(e.x + x, e.y + y, Tmp.v1.x, Tmp.v1.y, iff*6.5f*e.workEfficiency());
         });
       };
       
@@ -302,13 +313,13 @@ public class NuclearBlocks implements ContentList{
               Draw.rect(rotatorB, e.x, e.y, -e.totalProgress()*5);
               Draw.rect(region, e.x, e.y);
 
-              Draw.color(coolColor, hotColor, e.temperature()/e.block().maxTemperature);
+              Draw.color(coolColor, hotColor, e.heat/e.block().maxHeat);
               Fill.rect(e.x, e.y, e.block.size * tilesize, e.block.size * tilesize);
 
               Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);
 
-              float shake = Mathf.random(-0.4f, 0.4f)*e.warmup();
+              float shake = Mathf.random(-0.3f, 0.3f)*e.workEfficiency();
               Tmp.v1.set(19 + shake, 0).rotate(e.totalProgress()*2);
               Tmp.v2.set(0, 19 + shake).rotate(e.totalProgress()*2);
               Fill.poly(e.x + Tmp.v1.x, e.y + Tmp.v1.y, 3, 3f, e.totalProgress()*2);
@@ -323,7 +334,7 @@ public class NuclearBlocks implements ContentList{
               Fill.poly(e.x - Tmp.v1.x, e.y - Tmp.v1.y, 3, 3f, -e.totalProgress()*2);
               Fill.poly(e.x - Tmp.v2.x, e.y - Tmp.v2.y, 3, 3f, -e.totalProgress()*2 + 90);
 
-              Lines.stroke(1.8f*e.warmup());
+              Lines.stroke(1.8f*e.workEfficiency());
               Lines.circle(e.x, e.y, 18 + shake);
             }
           };

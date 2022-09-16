@@ -1,15 +1,14 @@
 package singularity.world.components.distnet;
 
 import arc.struct.IntMap;
+import arc.struct.ObjectMap;
 import arc.struct.OrderedMap;
 import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.gen.Building;
 import mindustry.world.Tile;
 import singularity.ui.tables.DistTargetConfigTable;
-import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers.RequestHandler;
-import singularity.world.components.GasBuildComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
@@ -20,18 +19,23 @@ import universecore.util.Empties;
 
 @SuppressWarnings("rawtypes")
 public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
+  @Annotations.BindField(value = "tempFactories", initialize = "new arc.struct.ObjectMap<>()")
+  default ObjectMap<GridChildType, ObjectMap<ContentType, RequestHandler>> tempFactories(){
+    return null;
+  }
+
   @Annotations.BindField(value = "grid", initialize = "new singularity.world.distribution.MatrixGrid(this)")
   default MatrixGrid matrixGrid(){
     return null;
   }
-  
+
   @Annotations.BindField(value = "buffers", initialize = "new arc.struct.OrderedMap()")
   default OrderedMap<DistBuffers<?>, BaseBuffer<?, ?, ?>> buffers(){
     return null;
   }
   
   @Annotations.BindField("ioPoints")
-  default IntMap<IOPointBlock.IOPoint> ioPoints(){
+  default IntMap<IOPointComp> ioPoints(){
     return null;
   }
 
@@ -67,19 +71,29 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   }
   
   default boolean configValid(Building entity){
-    if(entity instanceof IOPointBlock.IOPoint && ((IOPointBlock.IOPoint) entity).parent == this) return true;
-    return (entity.block.hasItems)
-        || (entity.block.hasLiquids)
-        || (entity instanceof GasBuildComp && ((GasBuildComp) entity).getGasBlock().hasGases());
+    if(entity instanceof IOPointComp && ((IOPointComp) entity).parent() == this) return true;
+    return entity.block.hasItems || entity.block.hasLiquids;
   }
-  
+
+  default void resetFactories(){
+    tempFactories().clear();
+  }
+
   default void addConfig(GridChildType type, ContentType contType, DistTargetConfigTable.TargetConfigure cfg){
-    RequestHandler factory = getMatrixBlock().requestFactories().get(type, Empties.nilMapO()).get(contType);
-    if(factory != null) factory.addParseConfig(cfg);
+    Building build = Vars.world.build(cfg.position);
+
+    RequestHandler factory = build instanceof IOPointComp comp?
+        comp.getIOBlock().requestFactories().get(type, Empties.nilMapO()).get(contType): null;
+
+    if(factory != null){
+      ObjectMap<ContentType, RequestHandler> map = tempFactories().get(type, ObjectMap::new);
+      if(!map.containsKey(contType)) map.put(contType, factory);
+      factory.addParseConfig(cfg);
+    }
   }
-  
+
   default DistRequestBase createRequest(GridChildType type, ContentType contType){
-    RequestHandler factory = getMatrixBlock().requestFactories().get(type, Empties.nilMapO()).get(contType);
+    RequestHandler factory = tempFactories().get(type, Empties.nilMapO()).get(contType);
     if(factory == null) return null;
     DistRequestBase result = factory.makeRequest(this);
     factory.reset();
@@ -90,7 +104,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
     return getBlock(DistMatrixUnitComp.class);
   }
   
-  void ioPointConfigBackEntry(IOPointBlock.IOPoint ioPoint);
+  void ioPointConfigBackEntry(IOPointComp ioPoint);
   
   boolean tileValid(Tile tile);
   

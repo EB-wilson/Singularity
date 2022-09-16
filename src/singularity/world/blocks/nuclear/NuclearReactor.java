@@ -7,13 +7,11 @@ import arc.math.Mathf;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
 import arc.util.Strings;
-import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.content.Fx;
 import mindustry.entities.Damage;
 import mindustry.entities.Effect;
 import mindustry.game.EventType;
-import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Sounds;
 import mindustry.graphics.Pal;
@@ -21,41 +19,28 @@ import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.LiquidStack;
 import mindustry.ui.Bar;
-import mindustry.world.Block;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatValues;
-import singularity.Sgl;
 import singularity.contents.SglItems;
-import singularity.type.GasStack;
-import singularity.ui.tables.GasDisplay;
 import singularity.world.SglFx;
 import singularity.world.blocks.product.NormalCrafter;
-import singularity.world.components.HeatBlockComp;
-import singularity.world.components.HeatBuildComp;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.draw.DrawNuclearReactor;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
+import singularity.world.particles.SglParticleModels;
 import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.UncConsumeItems;
-import universecore.world.consumers.UncConsumeLiquids;
-import universecore.world.consumers.UncConsumeType;
-import universecore.world.particles.Particle;
 
 import static mindustry.Vars.state;
 import static mindustry.Vars.tilesize;
-import static singularity.world.components.HeatBuildComp.getItemAbsTemperature;
-import static singularity.world.components.HeatBuildComp.getLiquidAbsTemperature;
 
 @Annotations.ImplEntries
-public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
-  public float maxTemperature = 1273.15f;
-  public float heatCoefficient = 1f;
-  public float blockHeatCoff = 12f;
-  public float baseHeatCapacity = 1250;
-  public float productHeat = 1400f;
-  public float smokeThreshold = 500;
+public class NuclearReactor extends NormalCrafter{
+  public float maxHeat = 100f;
+  public float productHeat = 0.2f;
+  public float smokeThreshold = 50;
   public int explosionRadius = 19;
   public int explosionDamageBase = 350;
   
@@ -79,18 +64,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   public void newReact(Item fuel, float time, float output, boolean prodWaste){
     newConsume();
     consume.time(time);
-    consume.item(fuel, 1).setMultiple((NuclearReactorBuild e) -> {
-      int total = 0;
-      for(BaseConsumers cons: fuels){
-        UncConsumeItems<?> ci = cons.get(UncConsumeType.item);
-        if(ci == null) return 1;
-
-        for(ItemStack stack : ci.items){
-          total += e.items.get(stack.item);
-        }
-      }
-      return e.lastMulti = (float)total/itemCapacity;
-    });
+    consume.item(fuel, 1);
 
     newProduce();
     produce.energy(output);
@@ -102,32 +76,18 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   public void addCoolant(float consHeat){
     BaseConsumers cons = newOptionalConsume((e, c) -> {
       NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
-      entity.handleHeat(-consHeat*e.getBuilding().delta());
+      entity.heat -= consHeat*entity.delta();
+      entity.heat = Math.max(entity.heat, 0);
     }, (s, c) -> {
       s.add(SglStat.effect, t -> {
         t.row();
         t.add(Core.bundle.get("misc.absorbHeat") + ": " + consHeat*60/1000 + SglStatUnit.kHeat.localized() + Core.bundle.get("misc.preSecond"));
       });
     });
-    
-    Time.run(0, () -> {
-      UncConsumeItems<?> ci = cons.get(UncConsumeType.item);
-      UncConsumeLiquids<?> cl = cons.get(UncConsumeType.liquid);
-      
-      float lowTemp = 0;
-      if(ci != null) for(ItemStack items: ci.items){
-        lowTemp = Math.min(lowTemp, getItemAbsTemperature(items.item));
-      }
-      if(cl != null) for(LiquidStack liquids: cl.liquids){
-        lowTemp = Math.min(lowTemp, getLiquidAbsTemperature(liquids.liquid));
-      }
-      
-      float lowTempF = lowTemp;
-      cons.valid = e -> {
-        NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
-        return entity.heat > 0 && entity.absTemperature() > lowTempF;
-      };
-    });
+
+    cons.setConsDelta(e -> e.getBuilding().delta())
+        .consValidCondition((NuclearReactorBuild e) -> e.heat > 0)
+        .optionalAlwaysValid = true;
     
     coolants.add(consume);
   }
@@ -136,7 +96,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     newOptionalConsume((e, c) -> {}, (e, s) -> {
       e.add(Stat.output, StatValues.items(s.craftTime, output));
     });
-    consume.valid = ent -> ent.getBuilding(SglBuilding.class).consValid();
+    consume.consValidCondition(ConsumerBuildComp::consumeValid);
     consume.trigger = ent -> {
       for(int i = 0; i < output.amount; i++){
         ent.getBuilding().handleItem(ent.getBuilding(), output.item);
@@ -151,23 +111,13 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
     }, (e, s) -> {
       e.add(Stat.output, StatValues.liquid(output.liquid, output.amount*60, true));
     });
-    consume.valid = ent -> ent.getBuilding(SglBuilding.class).consValid();
-  }
-  
-  public void addTransfer(GasStack output){
-    newOptionalConsume((e, c) -> {
-      NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
-      entity.handleGas(entity, output.gas, output.amount);
-    }, (e, s) -> {
-      e.add(Stat.output, t -> t.add(new GasDisplay(output.gas, output.amount*60, true, true)));
-    });
-    consume.valid = ent -> ent.getBuilding(SglBuilding.class).consValid();
+    consume.valid = ent -> ent.getBuilding(SglBuilding.class).consumeValid();
   }
   
   @Override
   public void setStats(){
     super.setStats();
-    stats.add(SglStat.heatProduct, productHeat*60/1000 + SglStatUnit.kHeat.localized() + Core.bundle.get("misc.preSecond"));
+    stats.add(SglStat.heatProduct, productHeat*60 + SglStatUnit.heat.localized() + Core.bundle.get("misc.preSecond"));
   }
   
   @Override
@@ -191,58 +141,42 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   }
   
   @Annotations.ImplEntries
-  public class NuclearReactorBuild extends NormalCrafterBuild implements HeatBuildComp{
+  public class NuclearReactorBuild extends NormalCrafterBuild{
     public float heat;
-    public float lastMulti;
     
     public float smoothEfficiency;
-  
-    @Override
-    public NormalCrafterBuild create(Block block, Team team){
-      super.create(block, team);
-      heat = Sgl.atmospheres.current.getAbsTemperature()*heatCapacity();
-      
-      return this;
-    }
   
     @Override
     public NuclearReactor block(){
       return (NuclearReactor)block;
     }
-  
+
     @Override
-    public void heatCapacity(float value){}
-    
-    @Override
-    public float heatCapacity(){
-      return 10000;
+    public float consEfficiency(){
+      return (float) fuelItemsTotal()/itemCapacity*super.consEfficiency();
     }
-  
+
     @Override
     public void updateTile(){
       super.updateTile();
-      if(!consValid()) lastMulti = 0;
-      smoothEfficiency = Mathf.lerpDelta(smoothEfficiency, lastMulti*efficiency(), 0.02f);
-      heat += lastMulti*productHeat*delta();
+      smoothEfficiency = Mathf.lerpDelta(smoothEfficiency, consEfficiency(), 0.02f);
+      heat += productHeat*consumer.consDelta();
       
-      if(absTemperature() > maxTemperature){
+      if(heat > maxHeat){
         onOverTemperature();
       }
       
       dump(SglItems.nuclear_waste);
   
-      if(absTemperature() > smokeThreshold){
-        float smoke = 1.0f + (absTemperature() - smokeThreshold) / (maxTemperature - smokeThreshold);
+      if(heat > smokeThreshold){
+        float smoke = 1.0f + (heat - smokeThreshold) / (maxHeat - smokeThreshold);
         if(Mathf.chance(smoke / 20.0 * delta())){
           Fx.reactorsmoke.at(x + Mathf.range(size * tilesize / 2f),
               y + Mathf.range(size * tilesize / 2f));
         }
       }
-      
-      swapHeat();
     }
-  
-    @Override
+
     public void onOverTemperature(){
       Events.fire(EventType.Trigger.thoriumReactorOverheat);
       kill();
@@ -259,7 +193,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
       }
       super.onDestroyed();
       
-      if((fuel < itemCapacity/3f && absTemperature() < maxTemperature/2) || !state.rules.reactorExplosions) return;
+      if((fuel < itemCapacity/3f && heat < maxHeat/2) || !state.rules.reactorExplosions) return;
     
       Effect.shake(8f, 120f, x, y);
       float strength = explosionDamageBase*fuel;
@@ -268,11 +202,11 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
       explodeEffect.at(x, y, 0, (float) explosionRadius*tilesize);
       Angles.randLenVectors(System.nanoTime(), Mathf.random(28, 36), 3f, 7.5f, (x, y) -> {
         float len = Tmp.v1.set(x, y).len();
-        Particle.create(this.x, this.y, x, y, Mathf.random(5f, 7f)*((len - 3)/4.5f));
+        SglParticleModels.nuclearParticle.create(this.x, this.y, x, y, Mathf.random(5f, 7f)*((len - 3)/4.5f));
       });
     }
     
-    public int majorConsTotal(){
+    public int fuelItemsTotal(){
       int result = 0;
       for(BaseConsumers cons: fuels){
         for(ItemStack stack: cons.get(SglConsumeType.item).items){
@@ -284,7 +218,7 @@ public class NuclearReactor extends NormalCrafter implements HeatBlockComp{
   
     @Override
     public boolean acceptItem(Building source, Item item){
-      return super.acceptItem(source, item) && (!consItems.contains(item) || (consItems.contains(item) && majorConsTotal() < itemCapacity));
+      return super.acceptItem(source, item) && (!consItems.contains(item) || (consItems.contains(item) && fuelItemsTotal() < itemCapacity));
     }
   }
 }

@@ -3,11 +3,8 @@ package singularity.ui;
 import arc.scene.Group;
 import mindustry.Vars;
 import singularity.ui.dialogs.*;
-import singularity.ui.dialogs.override.SglPlanetsDialog;
 import singularity.ui.fragments.SecondaryConfigureFragment;
 import universecore.util.handler.FieldHandler;
-
-import static mindustry.Vars.ui;
 
 public class SglUI{
   //ui相关
@@ -36,8 +33,5 @@ public class SglUI{
     
     Group overlay = FieldHandler.getValueTemp(Vars.control.input, "group");
     secConfig.build(overlay);
-    
-    //override
-    if(!Vars.net.server()) ui.planet = new SglPlanetsDialog();
   }
 }

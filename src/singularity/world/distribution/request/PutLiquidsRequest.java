@@ -47,7 +47,7 @@ public class PutLiquidsRequest extends DistRequestBase<LiquidStack>{
     boolean test = false;
     if(all){
       for(LiquidsBuffer.LiquidPacket packet: source){
-        float move = Math.min(packet.amount(), destination.remainingCapacity().floatValue());
+        float move = Math.min(packet.amount(), destination.remainingCapacity());
 
         if(move < 0.001f) continue;
         packet.remove(move);
@@ -56,7 +56,7 @@ public class PutLiquidsRequest extends DistRequestBase<LiquidStack>{
     }
     else{
       for(LiquidStack stack: reqLiquids){
-        float move = Math.min(source.get(stack.liquid), destination.remainingCapacity().floatValue());
+        float move = Math.min(source.get(stack.liquid), destination.remainingCapacity());
 
         if(move < 0.001f) continue;
         source.remove(stack.liquid, move);
@@ -70,10 +70,5 @@ public class PutLiquidsRequest extends DistRequestBase<LiquidStack>{
   @Override
   protected boolean afterHandleTask(){
     return true;
-  }
-
-  @Override
-  public Seq<LiquidStack> getList(){
-    return reqLiquids;
   }
 }

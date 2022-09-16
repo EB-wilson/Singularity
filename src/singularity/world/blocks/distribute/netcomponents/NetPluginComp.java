@@ -1,15 +1,22 @@
 package singularity.world.blocks.distribute.netcomponents;
 
+import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
+import arc.math.Mathf;
+import arc.math.geom.Point2;
 import arc.struct.ObjectMap;
-import arc.util.Tmp;
 import mindustry.gen.Building;
-import mindustry.world.Block;
+import singularity.world.DirEdges;
+import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.components.distnet.DistComponent;
+import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistributeNetwork;
 
-public class NetPluginComp extends Block{
+import java.util.Arrays;
+
+public class NetPluginComp extends DistNetBlock{
   public static final byte RIGHT = 0b0001;
   public static final byte UP = 0b0010;
   public static final byte LEFT = 0b0100;
@@ -24,34 +31,41 @@ public class NetPluginComp extends Block{
    *       0b1000
    * }</pre>
    * 按位作或运算取链接位置组合，比如上下，则为{@code 0b0010 | 0b1000 = 0b1010}
+   *
+   * 若为-1则表明可任意连接
    * */
-  public byte connectReq = 0;
+  public byte connectReq = -1;
 
   public int computingPower = 0;
 
   protected ObjectMap<DistBuffers<?>, Integer> buffersSize = new ObjectMap<>();
 
-  public TextureRegion interfaceLight, interfaceDark;
+  public TextureRegion interfaceLinker;
 
   public NetPluginComp(String name){
     super(name);
     rotate = true;
+    rotateDraw = false;
     update = true;
   }
 
   @Override
   public void load(){
     super.load();
-
+    interfaceLinker = Core.atlas.find(name + "_interface");
   }
 
   public void setBufferSize(DistBuffers<?> buffer, int size){
     buffersSize.put(buffer, size);
   }
 
-  public class NetPluginCompBuild extends Building implements DistComponent{
-    CompBusGroup[] linked = new CompBusGroup[4];
-    CompBusGroup linkedGroup;
+  public class NetPluginCompBuild extends DistNetBuild implements DistComponent{
+    DistributeNetwork[] linked = new DistributeNetwork[4];
+
+    @Override
+    public NetPluginComp block(){
+      return (NetPluginComp) block;
+    }
 
     @Override
     public int computingPower(){
@@ -64,53 +78,38 @@ public class NetPluginComp extends Block{
     }
 
     @Override
-    public void onProximityUpdate(){
-      super.onProximityUpdate();
-
-      linkedGroup = null;
-
-      Tmp.v1.set(0, block.size/2f + 0.5f);
-      float x = tile.x + block.offset, y = tile.y + block.offset;
-      tag: for(int i = 0; i < linked.length; i++){
-        CompBusGroup group = null;
+    public void networkUpdated(){
+      tag: for(int i = 0; i < 4; i++){
+        DistributeNetwork otherNet = null;
         linked[i] = null;
 
-        for(float off = -block.size/2f + 0.5f; off <= block.size/2f - 0.5f; off++){
-          Tmp.v2.set(Tmp.v1);
-          Tmp.v2.add(0, off);
-          Tmp.v2.rotate90(i);
-
-          if(nearby((int)(x + Tmp.v2.x), (int)(y + Tmp.v2.y)) instanceof ComponentBus.ComponentBusBuild bus && bus.linkable(tile)){
-            if(group == null){
-              group = bus.busGroup;
+        for(Point2 p: DirEdges.get(block.size, i)){
+          if(nearby(p.x, p.y) instanceof ComponentBus.ComponentBusBuild bus && bus.linkable(tile)){
+            if(otherNet == null){
+              otherNet = bus.distributor.network;
             }
-            else if(group != bus.busGroup) continue tag;
+            else if(otherNet != bus.distributor.network) continue tag;
           }
           else continue tag;
         }
 
-        linked[i] = group;
-        linkedGroup = group;
+        linked[i] = otherNet;
       }
 
-      if(!connectValid()) linkedGroup = null;
+      if(!componentValid()) Arrays.fill(linked, null);
     }
 
-    public CompBusGroup connectBus(){
-      return linkedGroup;
-    }
-
-    public boolean connectValid(){
-      CompBusGroup group = null;
+    @Override
+    public boolean componentValid(){
+      DistributeNetwork group = null;
       for(int i = 0; i < linked.length; i++){
-        if(group != null && group != linked[i]) return false;
+        if((0b0001 << Mathf.mod(i - rotation, 4) & connectReq) == 0) continue;
 
-        if((0b0001 << (i - rotation) & connectReq) == 0) continue;
-
+        if(linked[i] == null) return false;
         if(group == null){
-          if(linked[i] == null) return false;
           group = linked[i];
         }
+        else if(group != linked[i]) return false;
       }
 
       return true;
@@ -119,11 +118,30 @@ public class NetPluginComp extends Block{
     @Override
     public void draw(){
       Draw.rect(region, x, y);
-      if(!connectValid()) return;
+      if(!componentValid()) return;
 
       for(int i = 0; i < linked.length; i++){
-        if(linked[i] != null) Draw.rect((i + rotation)%4 <= 1? interfaceLight: interfaceDark, x, y, 90*(i + rotation));
+        if((0b0001 << Mathf.mod(i - rotation, 4) & connectReq) == 0) continue;
+        int r = (i + rotation)%4;
+        Draw.scl(1, r == 1 || r == 2? -1: 1);
+        if(linked[i] != null) Draw.rect(interfaceLinker, x, y, 90*(i + rotation));
       }
+    }
+
+    @Override
+    public void onProximityAdded(){
+      if (this.power != null) this.updatePowerGraph();
+
+      for(Building building: proximity){
+        if(building instanceof ComponentBus.ComponentBusBuild bus){
+          bus.distributor.network.add((DistElementBuildComp) this);
+        }
+      }
+    }
+
+    @Override
+    public void updateNetLinked(){
+      netLinked.clear();
     }
   }
 }

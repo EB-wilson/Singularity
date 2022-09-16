@@ -1,6 +1,7 @@
 package singularity.world.blocks.distribute;
 
 import arc.util.Nullable;
+import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.game.Team;
@@ -13,43 +14,51 @@ import mindustry.world.meta.BuildVisibility;
 import mindustry.world.meta.Stat;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
-import singularity.type.Gas;
-import singularity.type.SglContents;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.world.blocks.SglBlock;
-import singularity.world.components.GasBuildComp;
+import singularity.world.blocks.distribute.matrixGrid.RequestHandlers;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.IOPointBlockComp;
+import singularity.world.components.distnet.IOPointComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.GridChildType;
-import singularity.world.distribution.buffers.GasesBuffer;
 import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.buffers.LiquidsBuffer;
-import singularity.world.modules.GasesModule;
+import universecore.annotations.Annotations;
 
 import static mindustry.Vars.*;
 
 /**非content类，方块标记，不进入contents，用于创建矩阵网络IO接口点的标记类型*/
-public class IOPointBlock extends SglBlock{
+@Annotations.ImplEntries
+public class IOPointBlock extends SglBlock implements IOPointBlockComp{
+  public GridChildType[] configTypes = {GridChildType.output, GridChildType.input, GridChildType.acceptor};
+  public ContentType[] supportContentType = {ContentType.item, ContentType.liquid};
   @Nullable protected DistMatrixUnitBuildComp currPlacement;
   
   public IOPointBlock(String name){
     super(name);
     size = 1;
     update = true;
-    hasItems = hasLiquids = hasGases = true;
+    hasItems = hasLiquids = true;
     displayFlow = false;
-    showGasFlow = false;
     
-    outputItems = outputsLiquid = outputGases = true;
+    outputItems = outputsLiquid = true;
     
     allowConfigInventory = false;
     
     itemCapacity = 16;
     liquidCapacity = 16;
-    gasCapacity = 8;
-    maxGasPressure = 8;
 
     buildCostMultiplier = 0;
+
+    setFactory(GridChildType.output, ContentType.item, new RequestHandlers.ReadItemRequestHandler());
+    setFactory(GridChildType.input, ContentType.item, new RequestHandlers.PutItemRequestHandler());
+    setFactory(GridChildType.acceptor, ContentType.item, new RequestHandlers.AcceptItemRequestHandler());
+
+    //liquids
+    setFactory(GridChildType.output, ContentType.liquid, new RequestHandlers.ReadLiquidRequestHandler());
+    setFactory(GridChildType.input, ContentType.liquid, new RequestHandlers.PutLiquidRequestHandler());
+    setFactory(GridChildType.acceptor, ContentType.liquid, new RequestHandlers.AcceptLiquidRequestHandler());
   }
   
   @Override
@@ -71,14 +80,14 @@ public class IOPointBlock extends SglBlock{
     currPlacement = parent;
     buildVisibility = BuildVisibility.shown;
   }
-  
-  public class IOPoint extends SglBuilding{
+
+  @Annotations.ImplEntries
+  public class IOPoint extends SglBuilding implements IOPointComp{
     public DistMatrixUnitBuildComp parent;
     public DistTargetConfigTable.TargetConfigure config;
 
     public ItemModule outItems;
     public LiquidModule outLiquid;
-    public GasesModule outGases;
 
     protected boolean siphoning;
     
@@ -87,11 +96,15 @@ public class IOPointBlock extends SglBlock{
     }
 
     @Override
+    public Object config(){
+      return super.config();
+    }
+
+    @Override
     public Building create(Block block, Team team){
       super.create(block, team);
       outItems = new ItemModule();
       outLiquid = new LiquidModule();
-      outGases = new GasesModule(this);
       return this;
     }
 
@@ -132,12 +145,6 @@ public class IOPointBlock extends SglBlock{
       outLiquid.add(liquid, add);
       return add;
     }
-
-    public float output(Gas gas, float amount){
-      float add = Math.min(amount, gasCapacity - outGases.get(gas));
-      outGases.add(gas, add);
-      return add;
-    }
     
     public byte getDirectBit(Building other){
       byte result = 1;
@@ -151,7 +158,19 @@ public class IOPointBlock extends SglBlock{
     public void applyConfig(DistTargetConfigTable.TargetConfigure config){
       this.config = config;
     }
-  
+
+    @Override
+    public boolean valid(DistMatrixUnitBuildComp unit, GridChildType type, Content content){
+      if(content instanceof Item item){
+        return config.get(GridChildType.output, item) && acceptItemOut(unit.getBuilding(), item);
+      }
+      else if(content instanceof Liquid liquid){
+        return config.get(GridChildType.output, liquid) && acceptLiquid(unit.getBuilding(), liquid);
+      }
+
+      return false;
+    }
+
     public void resourcesDump(){
       if(config == null) return;
       for(UnlockableContent item : config.get(GridChildType.output, ContentType.item)){
@@ -159,9 +178,6 @@ public class IOPointBlock extends SglBlock{
       }
       for(UnlockableContent liquid : config.get(GridChildType.output, ContentType.liquid)){
         dumpLiquid((Liquid) liquid);
-      }
-      for(UnlockableContent gas : config.get(GridChildType.output, SglContents.gas)){
-        dumpGas((Gas) gas);
       }
     }
   
@@ -238,39 +254,6 @@ public class IOPointBlock extends SglBlock{
 
       return flow;
     }
-    
-    @Override
-    public void dumpGas(Gas gas){
-      if(config == null) return;
-      GasBuildComp other = (GasBuildComp) this.getNext("gases",
-          e -> e instanceof GasBuildComp
-              && e.interactable(team) && gases.get(gas) > 0
-              && ((GasBuildComp) e).acceptGas(this, gas)
-              && config.directValid(GridChildType.output, gas, getDirectBit(e)));
-      
-      if(other != null) outputGas(other, gas);
-    }
-
-    public float outputGas(GasBuildComp other, Gas gas){
-      if(!other.getGasBlock().hasGases() || outGases.get(gas) <= 0) return 0;
-
-      other = other.getGasDestination(this, gas);
-      float present = outGases.get(gas)/outGases.total();
-
-      float diff = outGases.getPressure() - other.pressure();
-      if(diff < 0.001f) return 0;
-      float fract = diff*getGasBlock().gasCapacity();
-      float oFract = diff*other.getGasBlock().gasCapacity();
-
-      float flowRate = Math.min(Math.min(Math.min(fract, oFract)/other.swellCoff(this), outGases.total()),
-          (other.getGasBlock().maxGasPressure() - other.pressure())*other.getGasBlock().gasCapacity())*present;
-      if(flowRate > 0 && fract > 0 && other.acceptGas(this, gas)){
-        other.handleGas(this, gas, flowRate);
-        outGases.remove(gas, flowRate);
-      }
-
-      return flowRate;
-    }
   
     public void resourcesSiphon(){
       siphoning = true;
@@ -281,9 +264,6 @@ public class IOPointBlock extends SglBlock{
       for(UnlockableContent liquid : config.get(GridChildType.input, ContentType.liquid)){
         siphonLiquid((Liquid) liquid);
       }
-      for(UnlockableContent gas : config.get(GridChildType.input, SglContents.gas)){
-        siphonGas((Gas) gas);
-      }
       siphoning = false;
     }
     
@@ -293,7 +273,6 @@ public class IOPointBlock extends SglBlock{
       Building parentBuild = parent.getBuilding();
       ItemsBuffer itsB = parent.getBuffer(DistBuffers.itemBuffer);
       LiquidsBuffer lisB = parent.getBuffer(DistBuffers.liquidBuffer);
-      GasesBuffer gasB = parent.getBuffer(DistBuffers.gasBuffer);
 
       items.each((item, amount) -> {
         int move = parentBuild.acceptItem(this, item)? Math.min(parentBuild.getMaximumAccepted(item) - parentBuild.items.get(item), amount): 0;
@@ -307,12 +286,6 @@ public class IOPointBlock extends SglBlock{
       liquids.each((liquid, amount) -> {
         lisB.dePutFlow(liquid, moveLiquid(parentBuild, liquid));
       });
-      
-      if(parent instanceof GasBuildComp){
-        gases.each((gas, amount) -> {
-          gasB.dePutFlow(gas, moveGas(parent.getBuilding(GasBuildComp.class), gas));
-        });
-      }
 
       outItems.each((item, amount) -> {
         if(config.get(GridChildType.output, ContentType.item).contains(item)) return;
@@ -328,46 +301,29 @@ public class IOPointBlock extends SglBlock{
         if(config.get(GridChildType.output, ContentType.liquid).contains(liquid)) return;
         lisB.dePutFlow(liquid, outputLiquid(parentBuild, amount, liquid));
       });
-
-      if(parent instanceof GasBuildComp) outGases.each((gas, amount) -> {
-        if(config.get(GridChildType.output, SglContents.gas).contains(gas)) return;
-        gasB.dePutFlow(gas, outputGas((GasBuildComp) parentBuild, gas));
-      });
     }
   
     public void siphonItem(Item item){
       if(config == null) return;
-      Building next;
-      next = getNext("siphonItem",
+      Building other;
+      other = getNext("siphonItem",
           e -> e.block.hasItems
               && e.items.has(item)
               && config.directValid(GridChildType.input, item, getDirectBit(e)));
-      if(next == null || next.team != team || !acceptItem(next, item)) return;
-      next.removeStack(item, 1);
-      handleItem(next, item);
+      if(other == null || !interactable(other.team) || !acceptItem(other, item)) return;
+      other.removeStack(item, 1);
+      handleItem(other, item);
     }
   
     public void siphonLiquid(Liquid liquid){
       if(config == null) return;
-      Building next;
-      next = getNext("siphonLiquid",
+      Building other;
+      other = getNext("siphonLiquid",
           e -> e.block.hasLiquids
               && e.liquids.get(liquid) > 0
               && config.directValid(GridChildType.input, liquid, getDirectBit(e)));
-      if(next == null) return;
-      next.moveLiquid(this, liquid);
-    }
-  
-    public void siphonGas(Gas gas){
-      if(config == null) return;
-      GasBuildComp next;
-      next = (GasBuildComp) getNext("siphonGas",
-          e -> e instanceof GasBuildComp
-              && ((GasBuildComp) e).getGasBlock().hasGases()
-              && ((GasBuildComp) e).gases().get(gas) > 0
-              && config.directValid(GridChildType.input, gas, getDirectBit(e)));
-      if(next == null) return;
-      next.moveGas(this, gas);
+      if(other == null || !acceptLiquid(other, liquid)) return;
+      other.moveLiquid(this, liquid);
     }
   
     @Override
@@ -395,18 +351,13 @@ public class IOPointBlock extends SglBlock{
     public final boolean acceptLiquidOut(Building source, Liquid liquid){
       return interactable(source.team) && outLiquid.get(liquid) < liquidCapacity;
     }
-    
-    @Override
-    public boolean acceptGas(GasBuildComp source, Gas gas){
-      if(siphoning) return super.acceptGas(source, gas);
-      return config != null
-          && config.directValid(GridChildType.acceptor, gas, getDirectBit(source.getBuilding()))
-          && config.get(GridChildType.acceptor, SglContents.gas).contains(gas)
-          && super.acceptGas(source, gas);
+
+    public GridChildType[] configTypes(){
+      return configTypes;
     }
-  
-    public final boolean acceptGasOut(GasBuildComp source, Gas gas){
-      return source.getBuilding().interactable(getBuilding().team) && hasGases && outGases.getPressure() < maxGasPressure;
+
+    public ContentType[] configContentTypes(){
+      return supportContentType;
     }
   }
 }

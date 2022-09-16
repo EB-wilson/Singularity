@@ -100,37 +100,11 @@ public class SglFx{
     Lines.circle(e.x, e.y, Mathf.randomSeed(e.id, 8, 10)*e.fin());
   }),
 
-  explodeImpWave = new Effect(50f, e -> {
-    Draw.color(Pal.reactorPurple);
-    float rate = Mathf.pow(e.fout(), 2);
-    float h = 30f*rate;
-    float w = 6f*rate;
+  explodeImpWave = impactExplode(32, Pal.reactorPurple, 50f),
 
-    Drawf.light(e.x, e.y, e.fout()*30, Pal.reactorPurple, 0.7f);
+  explodeImpWaveBig = impactExplode(40, Pal.reactorPurple, 65f),
 
-    Fill.quad(
-        e.x + h, e.y,
-        e.x, e.y + w,
-        e.x - h, e.y,
-        e.x, e.y - w
-    );
-    Fill.quad(
-        e.x + w, e.y,
-        e.x, e.y + h,
-        e.x - w, e.y,
-        e.x, e.y - h
-    );
-    Lines.stroke(2f*e.fout());
-    Lines.circle(e.x, e.y, 14*e.fout());
-    Lines.stroke(5f*e.fout());
-    Lines.circle(e.x, e.y, 38*(1 - Mathf.pow(e.fout(), 3)));
-
-    int[] counter = {0};
-    randLenVectors(e.id, 12, 26, (x, y) -> {
-      float size = Mathf.randomSeed(e.id + counter[0]++, 4f, 7f);
-      Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), size*e.fout());
-    });
-  }),
+  explodeImpWaveLarge = impactExplode(50, Pal.reactorPurple, 75f),
 
   reactorExplode = new Effect(180, e -> {
     if(e.time <= 2) Fx.reactorExplosion.at(e.x, e.y);
@@ -335,6 +309,40 @@ public class SglFx{
     }
   };
 
+  private static Effect impactExplode(float size, Color color, float lifeTime){
+    return new Effect(lifeTime, e -> {
+      Draw.color(color);
+      float rate = Mathf.pow(e.fout(), 2);
+      float h = size*1.15f*rate;
+      float w = size*0.15f*rate;
+
+      Drawf.light(e.x, e.y, e.fout()*size*1.15f, color, 0.7f);
+
+      Fill.quad(
+          e.x + h, e.y,
+          e.x, e.y + w,
+          e.x - h, e.y,
+          e.x, e.y - w
+      );
+      Fill.quad(
+          e.x + w, e.y,
+          e.x, e.y + h,
+          e.x - w, e.y,
+          e.x, e.y - h
+      );
+      Lines.stroke(size*0.08f*e.fout());
+      Lines.circle(e.x, e.y, size*0.55f*e.fout());
+      Lines.stroke(size*0.175f*e.fout());
+      Lines.circle(e.x, e.y, size*1.25f*(1 - e.fout(Interp.pow3In)));
+
+      int[] counter = {0};
+      randLenVectors(e.id, 12, 26, (x, y) -> {
+        float s = Mathf.randomSeed(e.id + counter[0]++, 4f, 8f);
+        Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), s*e.fout());
+      });
+    });
+  }
+
   private static abstract class LightningEffect extends Effect{
     protected Object data;
 
@@ -373,4 +381,6 @@ public class SglFx{
 
     public abstract LightningContainer createLightning(float x, float y);
   }
+
+
 }

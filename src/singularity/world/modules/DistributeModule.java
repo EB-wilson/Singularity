@@ -29,11 +29,11 @@ public class DistributeModule extends BlockModule{
       new DistributeNetwork().add(entity);
     }
     else network = net;
-    if(network.netValid()) entity.networkValided();
+    if(network.netStructValid()) entity.networkValided();
   }
   
   public void assign(DistRequestBase<?> request){
-    if(network.netValid()){
+    if(network.netStructValid()){
       DistCoreModule core = core().distCore();
       core.receive(request);
       lastAssign = request;

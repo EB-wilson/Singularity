@@ -11,6 +11,7 @@ import arc.graphics.g2d.Lines;
 import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
+import arc.math.geom.Point2;
 import arc.scene.Element;
 import arc.scene.event.ElementGestureListener;
 import arc.scene.event.InputEvent;
@@ -200,7 +201,7 @@ public class DistTargetConfigTable extends Table{
           Seq<UnlockableContent> itemSeq = Vars.content.getBy(currType);
           int counter = 0;
           for(UnlockableContent item: itemSeq){
-            if(item.unlocked()){
+            if(item.unlockedNow()){
               ImageButton button = items.button(Tex.whiteui, Styles.selecti, 30, () -> {
                 if(!config.remove(IOTypes[index], item)){
                   config.set(IOTypes[index], item, currDireBit = new byte[1]);
@@ -431,7 +432,7 @@ public class DistTargetConfigTable extends Table{
     @Override
     public String toString(){
       return "TargetConfigure{" +
-          "position=" + position +
+          "position=" + Point2.unpack(position) +
           ", priority=" + priority +
           ", data=" + data +
           ", directBits=" + directBits +

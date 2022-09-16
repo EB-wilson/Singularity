@@ -121,12 +121,14 @@ public interface EdgeLinkerBuildComp extends BuildCompBase{
   default void drawLink(){
     float l;
     Draw.z((l = Draw.z()) + 5f);
-    if(nextEdge() != null) SglDraw.drawLink(
-        tile(), getEdgeBlock().linkOffset(),
-        nextEdge().tile(), nextEdge().getEdgeBlock().linkOffset(),
-        getEdgeBlock().linkRegion(), getEdgeBlock().linkCapRegion(),
-        linkLerp()
-    );
+    if(nextEdge() != null){
+      SglDraw.drawLink(
+          tile(), getEdgeBlock().linkOffset(),
+          nextEdge().tile(), nextEdge().getEdgeBlock().linkOffset(),
+          getEdgeBlock().linkRegion(), getEdgeBlock().linkCapRegion(),
+          linkLerp()
+      );
+    }
     Draw.z(l);
   }
 

@@ -34,14 +34,12 @@ public class NuclearEnergyNet{
   }
   
   public void add(NuclearEnergyBuildComp entity){
-    if(entity.getNuclearBlock().hasEnergy()){
-      if(entity.getNuclearBlock().consumeEnergy()) consumer.add(entity);
-      if(entity.getNuclearBlock().outputEnergy()) sources.add(entity);
-  
-      all.add(entity);
-      entity.energy().setNet(this);
-      onStructModified(empty);
-    }
+    if(entity.getNuclearBlock().consumeEnergy()) consumer.add(entity);
+    if(entity.getNuclearBlock().outputEnergy()) sources.add(entity);
+
+    all.add(entity);
+    entity.energy().setNet(this);
+    onStructModified(empty);
   }
   
   /**进行一次bfs搜索构成网络的所有成员*/

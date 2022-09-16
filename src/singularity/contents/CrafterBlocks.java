@@ -31,11 +31,10 @@ import mindustry.world.Block;
 import mindustry.world.meta.Attribute;
 import mindustry.world.meta.BlockStatus;
 import singularity.graphic.SglDraw;
-import singularity.type.Gas;
+import singularity.type.SglLiquidStack;
 import singularity.world.SglFx;
 import singularity.world.blocks.function.Destructor;
 import singularity.world.blocks.product.*;
-import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.*;
@@ -43,13 +42,13 @@ import singularity.world.lightnings.LightningContainer;
 import singularity.world.lightnings.generator.CircleGenerator;
 import singularity.world.lightnings.generator.PointToPointGenerator;
 import singularity.world.meta.SglStat;
+import singularity.world.particles.SglParticleModels;
 import singularity.world.products.SglProduceType;
 import universecore.util.UncLiquidStack;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.UncConsumeItems;
 import universecore.world.consumers.UncConsumeLiquids;
-import universecore.world.particles.Particle;
 import universecore.world.producers.ProduceLiquids;
 import universecore.world.producers.ProduceType;
 
@@ -72,7 +71,7 @@ public class CrafterBlocks implements ContentList{
       /**激光解离机*/
       laser_resolver,
       /**反应釜*/
-      reaction_kettle,
+      //reaction_kettle,
       /**洗矿机*/
       ore_washer,
       /**结晶器*/
@@ -117,18 +116,18 @@ public class CrafterBlocks implements ContentList{
       consume.time(90);
       consume.power(2.5f);
       consume.items(ItemStack.with(Items.silicon, 4, SglItems.uranium_238, 1));
-      consume.valid = e -> e.consData(Integer.class, 0) > 0;
+      consume.consValidCondition((NormalCrafterBuild e) -> e.getVar(Integer.class, 0) > 0);
       newProduce();
       produce.item(Items.phaseFabric, 4);
       
       craftEffect = Fx.smeltsmoke;
   
       Cons<Item> recipe = item -> {
-        newOptionalConsume((e, c) -> {
-          e.consData(2);
+        newOptionalConsume((NormalCrafterBuild e, BaseConsumers c) -> {
+          e.setVar(2);
         }, (s, c) -> {
           s.add(SglStat.effect, t -> t.add(Core.bundle.get("misc.doConsValid")));
-        }).setDelta((NormalCrafterBuild e) -> e.efficiency()*Time.delta);
+        }).overdriveValid(false);
         consume.item(item, 1);
         consume.time(180);
         consume.power(0.4f);
@@ -140,13 +139,13 @@ public class CrafterBlocks implements ContentList{
         @Override
         public void updateTile(){
           super.updateTile();
-          if(consData(Integer.class, 0) > 0) consData(consData(Integer.class) - 1);
+          if(getVar(Integer.class, 0) > 0) setVar(getVar(Integer.class) - 1);
         }
   
         @Override
         public BlockStatus status(){
           BlockStatus status = super.status();
-          if(status == BlockStatus.noInput && consData(Integer.class, 0) > 0) return BlockStatus.noOutput;
+          if(status == BlockStatus.noInput && getVar(Integer.class, 0) > 0) return BlockStatus.noOutput;
           return status;
         }
       };
@@ -158,11 +157,11 @@ public class CrafterBlocks implements ContentList{
           
           @Override
           public void draw(){
-            warmup = Mathf.lerp(warmup, e.consData(Integer.class, 0) > 0? 1: 0, 0.15f);
+            warmup = Mathf.lerp(warmup, e.getVar(Integer.class, 0) > 0? 1: 0, 0.15f);
             Draw.rect(top, entity.x, entity.y, rotation += warmup*e.edelta());
             Lines.stroke(2);
             Draw.color(Pal.accent);
-            Draw.alpha(e.warmup());
+            Draw.alpha(e.workEfficiency());
             Lines.lineAngleCenter(
                 entity.x + Mathf.sin(entity.totalProgress(), 6, (float) Vars.tilesize/3*block.size),
                 entity.y,
@@ -184,7 +183,7 @@ public class CrafterBlocks implements ContentList{
         newConsume();
         consume.liquid(Liquids.water, 0.02f);
         newProduce();
-        produce.gas(Gases.O2, 0.005f);
+        produce.liquid(SglLiquids.oxygen, 0.005f);
         produce.liquid(SglLiquids.algae_mud, 0.001f);
         
         ambientSound = Sounds.none;
@@ -247,7 +246,7 @@ public class CrafterBlocks implements ContentList{
       consume.time(100);
       consume.power(2.2f);
       consume.liquid(Liquids.water, 0.4f);
-      consume.gas(Gases.spore_cloud, 0.06f);
+      consume.liquid(SglLiquids.spore_cloud, 0.06f);
       newProduce();
       produce.item(Items.sporePod, 2);
       
@@ -265,7 +264,7 @@ public class CrafterBlocks implements ContentList{
       consume.liquid(Liquids.water, 0.2f);
       consume.power(2.5f);
       newProduce().color = Liquids.water.color;
-      produce.gases(Gases.O2, 0.1f, Gases.H2, 0.2f);
+      produce.liquids(SglLiquidStack.with(SglLiquids.oxygen, 0.1f, Liquids.hydrogen, 0.2f));
       
       newConsume();
       consume.item(Items.sporePod, 1);
@@ -273,7 +272,7 @@ public class CrafterBlocks implements ContentList{
       consume.power(2);
       consume.time(60);
       newProduce().color = Items.sporePod.color;
-      produce.gas(Gases.spore_cloud, 0.18f);
+      produce.liquid(SglLiquids.spore_cloud, 0.18f);
       
       newConsume();
       consume.liquid(SglLiquids.algae_mud, 0.2f);
@@ -319,8 +318,7 @@ public class CrafterBlocks implements ContentList{
           Items.pyratite, 1,
           SglItems.coke, 1
       ));
-      produce.liquid(SglLiquids.mixed_tar, 0.1f);
-      produce.gas(Gases.CH4, 0.2f);
+      produce.liquids(SglLiquidStack.with(SglLiquids.mixed_tar, 0.1f, SglLiquids.methane, 0.2f));
       
       craftEffect = Fx.smeltsmoke;
       
@@ -411,8 +409,8 @@ public class CrafterBlocks implements ContentList{
                   e.producer.current != null? e.producer.current.color: trans);
               Draw.color();
               Draw.rect(region, entity.x(), entity.y());
-              Draw.alpha(entity.warmup());
-              Draw.rect(laser, entity.x(), entity.y(), rotation += entity.warmup()*entity.edelta()*1.5f);
+              Draw.alpha(entity.workEfficiency());
+              Draw.rect(laser, entity.x(), entity.y(), rotation += entity.workEfficiency()*entity.edelta()*1.5f);
               Draw.color();
               Draw.rect(rotator, entity.x(), entity.y(), rotation);
               Draw.rect(top, entity.x(), entity.y());
@@ -423,14 +421,14 @@ public class CrafterBlocks implements ContentList{
       };
     }};
     
-    reaction_kettle = new ReactionKettle("reaction_kettle"){{
+    /*reaction_kettle = new ReactionKettle("reaction_kettle"){{
       requirements(Category.crafting, ItemStack.with(Items.titanium, 70, Items.lead, 60, Items.plastanium, 70, Items.copper, 100, Items.graphite, 40));
       size = 3;
       health = 600;
     
       itemCapacity = 30;
       liquidCapacity = 20;
-      gasCapacity = 10;
+      liquidCapacity = 10;
     
       maxGasPressure = 25;
     
@@ -454,7 +452,7 @@ public class CrafterBlocks implements ContentList{
           };
         }
       };
-    }};
+    }};*/
     
     ore_washer = new NormalCrafter("ore_washer"){{
       requirements(Category.crafting, ItemStack.with(Items.titanium, 60, Items.graphite, 40, Items.lead, 45, Items.metaglass, 60));
@@ -493,11 +491,7 @@ public class CrafterBlocks implements ContentList{
             BaseConsume<?> cons = ((SglConsumers) (entity.consumer.current)).first();
             Color topColor;
             float alpha = 0;
-            if(cons instanceof SglConsumeGases){
-              Gas gas = ((SglConsumeGases<?>) cons).gases[0].gas;
-              topColor = gas.color;
-              alpha = entity.gases.getPressure()/entity.getGasBlock().maxGasPressure();
-            }else if(cons instanceof UncConsumeLiquids){
+            if(cons instanceof UncConsumeLiquids){
               Liquid liquid = ((UncConsumeLiquids<?>) cons).liquids[0].liquid;
               if(liquid == Liquids.water) liquid = ((UncConsumeLiquids<?>) cons).liquids[1].liquid;
               topColor = liquid.color;
@@ -657,7 +651,7 @@ public class CrafterBlocks implements ContentList{
       consume.time(120f);
       consume.power(1.8f);
       consume.items(ItemStack.with(Items.pyratite, 1));
-      consume.gas(Gases.O2, 0.4f);
+      consume.liquid(SglLiquids.oxygen, 0.4f);
       consume.liquids(UncLiquidStack.with(SglLiquids.mixed_tar, 0.2f, Liquids.water, 0.4f));
       newProduce();
       produce.liquid(SglLiquids.mixed_chemical_gel, 0.4f);
@@ -690,7 +684,6 @@ public class CrafterBlocks implements ContentList{
             if(entity.recipeCurrent == -1 || entity.consumer.current == null || entity.producer.current == null) return;
             UncConsumeItems<?> ci = entity.consumer.current.get(SglConsumeType.item);
             UncConsumeLiquids<?> cl = entity.consumer.current.get(SglConsumeType.liquid);
-            SglConsumeGases<?> cg = entity.consumer.current.get(SglConsumeType.gas);
             ProduceLiquids<?> pl = entity.producer.current.get(SglProduceType.liquid);
             Draw.rect(bottom, entity.x(), entity.y());
             Draw.color(Liquids.water.color);
@@ -702,11 +695,11 @@ public class CrafterBlocks implements ContentList{
             int sclx, scly;
             for(int dir=0; dir<4; dir++){
               UnlockableContent o = dir < ci.items.length? ci.items[dir].item:
-                  dir-ci.items.length < cl.liquids.length? cl.liquids[dir-ci.items.length].liquid:
-                  dir-(ci.items.length + cl.liquids.length) < cg.gases.length? cg.gases[dir-(ci.items.length + cl.liquids.length)].gas: null;
+                  dir-ci.items.length < cl.liquids.length? cl.liquids[dir-ci.items.length].liquid: null;
               if(o == null) continue;
-              Draw.color(o instanceof Item ? ((Item)o).color: o instanceof Gas? ((Gas)o).color: ((Liquid)o).color);
-              Draw.alpha(o instanceof Item ? (float)entity.items.get(o.id)/(float)entity.block().itemCapacity: o instanceof Liquid? entity.liquids.get((Liquid)o)/entity.block().liquidCapacity: entity.pressure() / entity.getGasBlock().maxGasPressure());
+              Draw.color(o instanceof Item ? ((Item)o).color: ((Liquid)o).color);
+              Draw.alpha(o instanceof Item ? (float)entity.items.get(o.id)/(float)entity.block().itemCapacity:
+                  o instanceof Liquid? entity.liquids.get((Liquid)o)/entity.block().liquidCapacity: 0);
               Draw.rect(liquidSide, entity.x(), entity.y(), dir*90f);
               Draw.color();
               
@@ -715,7 +708,7 @@ public class CrafterBlocks implements ContentList{
               Draw.rect(piston, entity.x + pistonMove*sclx, entity.y + pistonMove*scly, dir*90);
             }
             Draw.color(pl.liquids[0].liquid.color);
-            Draw.alpha(entity.warmup()*0.75f);
+            Draw.alpha(entity.workEfficiency()*0.75f);
             Draw.rect(liquidCenter, entity.x(), entity.y());
             Draw.color();
             Draw.rect(region, entity.x(), entity.y());
@@ -757,7 +750,7 @@ public class CrafterBlocks implements ContentList{
         @Override
         public float alphaControl(int index, NormalCrafterBuild e){
           if(index == 1){
-            return e.warmup();
+            return e.workEfficiency();
           }
           else return 1;
         }
@@ -839,7 +832,7 @@ public class CrafterBlocks implements ContentList{
           drawDef = entity -> {
             Draw.rect(bottom, entity.x(), entity.y());
             Draw.color(Liquids.slag.color);
-            Draw.alpha(entity.warmup());
+            Draw.alpha(entity.workEfficiency());
             Draw.rect(liquid, entity.x(), entity.y());
             Draw.color();
             Drawf.spinSprite(rim, entity.x(), entity.y(), entity.totalProgress()*0.8f);
@@ -907,7 +900,7 @@ public class CrafterBlocks implements ContentList{
               Draw.alpha(e.progress());
               Draw.rect(crystal, e.x, e.y);
           
-              Draw.alpha(e.warmup());
+              Draw.alpha(e.workEfficiency());
               Lines.lineAngleCenter(
                   e.x + Mathf.sin(e.totalProgress(), 6, (float) Vars.tilesize/3*block.size),
                   e.y,
@@ -920,8 +913,8 @@ public class CrafterBlocks implements ContentList{
               Draw.z(Layer.effect);
               for(int dist=2; dist>=0; dist--){
                 Draw.color(Color.valueOf("FF756F"));
-                Draw.alpha((alphas[dist] <= 1? alphas[dist]: alphas[dist] <= 1.5? 1: 0)*e.warmup());
-                if(e.warmup() > 0){
+                Draw.alpha((alphas[dist] <= 1? alphas[dist]: alphas[dist] <= 1.5? 1: 0)*e.workEfficiency());
+                if(e.workEfficiency() > 0){
                   if(alphas[dist] < 0.4) alphas[dist] += 0.6;
                   for(int i=0; i<4; i++){
                     Draw.rect(wave,
@@ -955,25 +948,20 @@ public class CrafterBlocks implements ContentList{
       craftEffect = SglFx.crystalConstructed;
       
       draw = new DrawFactory<NormalCrafterBuild>(this){
-        TextureRegion laser, crystal, crystalPower;
+        TextureRegion crystal, crystalPower;
   
         @Override
         public void load(){
           super.load();
-          laser = Core.atlas.find(name + "_laser");
           crystal = getModAtlas("FEX_crystal");
           crystalPower = getModAtlas("FEX_crystal_power");
         }
         
         {
           drawerType = e -> new DrawFactoryDrawer(e){
-            float rotation;
-            
             @Override
             public void draw(){
               Draw.rect(region, entity.x, entity.y);
-              Draw.rect(rotator, entity.x, entity.y, (rotation += e.warmup()*e.edelta()*1.8f) + 45);
-              Draw.rect(rotator, entity.x, entity.y, -rotation - 45);
               Draw.z(Layer.effect);
               if(e.items.has(SglItems.crystal_FEX) || e.progress() > 0.4f){
                 Draw.rect(crystal, e.x, e.y);
@@ -981,12 +969,6 @@ public class CrafterBlocks implements ContentList{
                 Draw.rect(crystalPower, e.x, e.y);
                 Draw.color();
               }
-              Draw.color(Color.white, Color.blue.cpy().lerp(Color.white, 0.4f), 0.45f*(float) Math.random());
-              Draw.alpha(e.warmup());
-              Draw.rect(laser, entity.x, entity.y, rotation + 45);
-              Draw.color(Color.white, Color.red.cpy().lerp(Color.white, 0.4f), 0.45f*(float) Math.random());
-              Draw.alpha(e.warmup());
-              Draw.rect(laser, entity.x, entity.y, -rotation - 45);
               Draw.z(Layer.effect + 1);
             }
           };
@@ -1009,39 +991,34 @@ public class CrafterBlocks implements ContentList{
       craftEffect = Fx.smeltsmoke;
       
       draw = new DrawFactory<NormalCrafterBuild>(this){
-        TextureRegion alloy, laserEmitter;
+        TextureRegion alloy;
   
         @Override
         public void load(){
           super.load();
           alloy = Core.atlas.find(name + "_alloy");
-          laserEmitter = Core.atlas.find(name + "_laser_emitter");
         }
         
         {
           drawerType = e -> new DrawFactoryDrawer(e){
             float timeRow;
-            float dx, dy;
             
             @Override
             public void draw(){
-              Draw.rect(region, e.x, e.y);
-              timeRow += e.warmup()*e.edelta();
-              dx = 4*Mathf.sin(timeRow/6);
-              dy = 4*Mathf.sin(timeRow/4);
-              
-              Draw.rect(laserEmitter, e.x, e.y + dy);
-              Draw.rect(laserEmitter, e.x + dx, e.y, 90);
+              Draw.rect(bottom, e.x, e.y);
+              if(e.items.get(SglItems.strengthening_alloy) >= 3) Draw.rect(alloy, e.x, e.y);
+
+              timeRow += e.workEfficiency()*e.edelta();
+              float dx = 4*Mathf.sin(timeRow/5);
+
               Draw.color(Color.valueOf("FF756F"));
-              Draw.alpha(e.warmup());
-              Lines.stroke(0.6f);
+              Draw.alpha(e.workEfficiency());
+              Lines.stroke(0.8f);
               SglDraw.startBloom(31);
-              Lines.line(e.x - 6, e.y + dy, e.x + 6, e.y + dy);
               Lines.line(e.x + dx, e.y + 6, e.x + dx, e.y - 6);
               SglDraw.endBloom();
               Draw.reset();
-              if(e.items.get(SglItems.strengthening_alloy) >= 3) Draw.rect(alloy, e.x, e.y);
-              Draw.rect(top, e.x, e.y);
+              Draw.rect(region, e.x, e.y);
             }
           };
         }
@@ -1077,10 +1054,10 @@ public class CrafterBlocks implements ContentList{
             public void draw(){
               Draw.rect(bottom, e.x, e.y);
               Draw.color(Color.valueOf("#D1D19F"));
-              Draw.alpha(e.warmup());
+              Draw.alpha(e.workEfficiency());
               Draw.rect(liquid, e.x, e.y);
               Draw.color();
-              Draw.rect(rotator, e.x, e.y, rotation += e.warmup()*e.edelta()*1.75f);
+              Draw.rect(rotator, e.x, e.y, rotation += e.workEfficiency()*e.edelta()*1.75f);
               Draw.rect(rotator, e.x, e.y, -rotation);
               Draw.rect(region, e.x, e.y);
 
@@ -1090,7 +1067,7 @@ public class CrafterBlocks implements ContentList{
             void drawForceField(){
               Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);
-              Draw.alpha(e.warmup());
+              Draw.alpha(e.workEfficiency());
               Lines.stroke(1.5f);
               Lines.square(e.x, e.y, 34, 45 + rotation/1.5f);
               Lines.square(e.x, e.y, 36, -rotation/1.5f);
@@ -1098,9 +1075,9 @@ public class CrafterBlocks implements ContentList{
               Lines.square(e.x, e.y, 3 + Mathf.random(-0.15f, 0.15f));
               Lines.square(e.x, e.y, 4 + Mathf.random(-0.15f, 0.15f), 45);
 
-              if(e.warmup() > 0.01 && timer.get(30)){
-                SglFx.forceField.at(e.x, e.y, (45 + rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.warmup()});
-                Time.run(15, () -> SglFx.forceField.at(e.x, e.y, (-rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.warmup()}));
+              if(e.workEfficiency() > 0.01 && timer.get(30)){
+                SglFx.forceField.at(e.x, e.y, (45 + rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.workEfficiency()});
+                Time.run(15, () -> SglFx.forceField.at(e.x, e.y, (-rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.workEfficiency()}));
               }
             }
           };
@@ -1133,7 +1110,7 @@ public class CrafterBlocks implements ContentList{
       newProduce();
       produce.item(SglItems.anti_metter, 1);
 
-      craftEffect = SglFx.explodeImpWave;
+      craftEffect = SglFx.explodeImpWaveBig;
 
       clipSize = 150;
 
@@ -1169,8 +1146,8 @@ public class CrafterBlocks implements ContentList{
       };
 
       crafting = (NormalCrafterBuild e) -> {
-        if(SglDraw.clipDrawable(e.x, e.y, clipSize) && Mathf.chanceDelta(e.warmup()*0.1f)) e.<LightningContainer>getVar("lightningDrawer").create();
-        if(Mathf.chanceDelta(e.warmup()*0.04f)) SglFx.randomLightning.at(e.x, e.y, 0, Pal.reactorPurple);
+        if(SglDraw.clipDrawable(e.x, e.y, clipSize) && Mathf.chanceDelta(e.workEfficiency()*0.1f)) e.<LightningContainer>getVar("lightningDrawer").create();
+        if(Mathf.chanceDelta(e.workEfficiency()*0.04f)) SglFx.randomLightning.at(e.x, e.y, 0, Pal.reactorPurple);
       };
 
       craftTrigger = e -> {
@@ -1189,7 +1166,8 @@ public class CrafterBlocks implements ContentList{
 
           if(Mathf.chance(0.25f)){
             SglFx.explodeImpWave.at(gen.targetX, gen.targetY);
-            Angles.randLenVectors(System.nanoTime(), Mathf.random(4, 7), 2, 3.5f, (x, y) -> Particle.create(gen.targetX, gen.targetY, x, y, Mathf.random(3.25f, 4f)));
+            Angles.randLenVectors(System.nanoTime(), Mathf.random(4, 7), 2, 3.5f,
+                (x, y) -> SglParticleModels.nuclearParticle.create(gen.targetX, gen.targetY, x, y, Mathf.random(3.25f, 4f)));
           }
           else{
             SglFx.spreadLightning.at(gen.targetX, gen.targetY, Pal.reactorPurple);
@@ -1202,7 +1180,7 @@ public class CrafterBlocks implements ContentList{
         drawDef = e -> {
           Draw.rect(bottom, e.x, e.y);
           Draw.color(Pal.reactorPurple);
-          Draw.alpha(e.warmup());
+          Draw.alpha(e.workEfficiency());
           SglDraw.startBloom(31);
           e.<LightningContainer>getVar("lightningDrawer").draw();
           SglDraw.endBloom();
@@ -1217,27 +1195,27 @@ public class CrafterBlocks implements ContentList{
 
           SglDraw.drawLightEdge(
               e.x, e.y,
-              (145 + offsetW)*e.warmup(), 4*e.warmup(),
-              (35 + offsetH)*e.warmup(), 2.25f*e.warmup(),
+              (145 + offsetW)*e.workEfficiency(), 4*e.workEfficiency(),
+              (35 + offsetH)*e.workEfficiency(), 2.25f*e.workEfficiency(),
               0
           );
 
-          Draw.alpha(0.4f*e.warmup());
-          Lines.stroke(5f + 3*e.warmup());
-          Lines.circle(e.x, e.y, 73*e.warmup());
-          Draw.alpha(0.6f*e.warmup());
-          Lines.stroke( 5*e.warmup());
-          Lines.circle(e.x, e.y, 40*e.warmup());
-          Draw.alpha(0.7f*e.warmup());
+          Draw.alpha(0.4f*e.workEfficiency());
+          Lines.stroke(5f + 3*e.workEfficiency());
+          Lines.circle(e.x, e.y, 73*e.workEfficiency());
+          Draw.alpha(0.6f*e.workEfficiency());
+          Lines.stroke( 5*e.workEfficiency());
+          Lines.circle(e.x, e.y, 40*e.workEfficiency());
+          Draw.alpha(0.7f*e.workEfficiency());
           Lines.stroke(2f);
-          Lines.circle(e.x, e.y, 17*e.warmup());
+          Lines.circle(e.x, e.y, 17*e.workEfficiency());
 
           Draw.z(Layer.effect - 10);
           Draw.alpha(0.55f);
           SglDraw.drawLightEdge(
               e.x, e.y,
-              (180 + offsetW)*e.warmup(), 4*e.warmup(),
-              (60 + offsetH)*e.warmup(), 2.25f*e.warmup(),
+              (180 + offsetW)*e.workEfficiency(), 4*e.workEfficiency(),
+              (60 + offsetH)*e.workEfficiency(), 2.25f*e.workEfficiency(),
               0
           );
         };

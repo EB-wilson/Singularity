@@ -21,7 +21,7 @@ import universecore.world.producers.ProduceType;
 import static mindustry.Vars.iconMed;
 
 public class ProduceMedium<T extends Building & ProducerBuildComp & MediumBuildComp> extends BaseProduce<T>{
-  public final float product;
+  public float product;
 
   public ProduceMedium(float product){
     this.product = product;
@@ -33,11 +33,21 @@ public class ProduceMedium<T extends Building & ProducerBuildComp & MediumBuildC
   }
 
   @Override
+  public void merge(BaseProduce<T> baseProduce){
+    if(baseProduce instanceof ProduceMedium cons){
+      product += cons.product;
+
+      return;
+    }
+    throw new IllegalArgumentException("only merge product with same type");
+  }
+
+  @Override
   public void produce(T entity){}
 
   @Override
   public void update(T entity){
-    entity.mediumContains(entity.mediumContains() + Math.min(entity.remainingMediumCapacity(), product*parent.delta(entity)*multiple(entity)));
+    entity.mediumContains(entity.mediumContains() + Math.min(entity.remainingMediumCapacity(), product*parent.cons.delta(entity)*multiple(entity)));
   }
 
   @Override

@@ -4,9 +4,7 @@ import arc.struct.ObjectMap;
 import singularity.world.distribution.DistBuffers;
 
 public interface DistComponent{
-  default ObjectMap<DistBuffers<?>, Integer> bufferSize(){
-    return DistBuffers.defBufferCapacity;
-  }
+  ObjectMap<DistBuffers<?>, Integer> bufferSize();
   
   default int computingPower(){
     return 0;
@@ -15,4 +13,6 @@ public interface DistComponent{
   default int frequencyOffer(){
     return 0;
   }
+
+  boolean componentValid();
 }

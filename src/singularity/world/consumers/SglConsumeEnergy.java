@@ -13,7 +13,7 @@ import universecore.world.consumers.UncConsumeType;
 
 public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & ConsumerBuildComp> extends BaseConsume<T>{
   public boolean buffer = false;
-  public final float usage;
+  public float usage;
 
   public SglConsumeEnergy(float usage){
     this.usage = usage;
@@ -27,7 +27,18 @@ public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & Cons
   public UncConsumeType<SglConsumeEnergy<?>> type(){
     return SglConsumeType.energy;
   }
-  
+
+  @Override
+  public void merge(BaseConsume<T> baseConsume){
+    if(baseConsume instanceof SglConsumeEnergy cons){
+      buffer |= cons.buffer;
+      usage += cons.usage;
+
+      return;
+    }
+    throw new IllegalArgumentException("only merge consume with same type");
+  }
+
   @Override
   public void consume(T entity){
     if(buffer) entity.handleEnergy(-usage*60*multiple(entity));
@@ -52,10 +63,11 @@ public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & Cons
 
   @Override
   public boolean valid(T entity){
+    if(entity.energy() == null) return false;
     if(buffer){
       return entity.energy().getEnergy() >= usage*60*entity.getBuilding().edelta();
     }
-    return entity.energy().getEnergy() >= usage;
+    return entity.energy().getEnergy() >= usage*12.5f;
   }
   
   @Override

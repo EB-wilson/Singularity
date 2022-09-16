@@ -2,53 +2,66 @@ package singularity.world.blocks.distribute;
 
 import arc.Core;
 import arc.func.Cons;
+import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.math.geom.Geometry;
 import arc.math.geom.Intersector;
 import arc.math.geom.Point2;
 import arc.struct.IntSeq;
 import arc.struct.ObjectSet;
+import arc.struct.Seq;
 import arc.util.Eachable;
 import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import arc.util.pooling.Pool;
+import arc.util.pooling.Pools;
 import mindustry.Vars;
+import mindustry.content.Liquids;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
+import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Tile;
+import singularity.Singularity;
 import singularity.graphic.SglDraw;
-import singularity.type.Gas;
-import singularity.world.components.GasBuildComp;
 import singularity.world.components.distnet.DistElementBlockComp;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
+import singularity.world.modules.SglLiquidModule;
+
+import java.util.Iterator;
 
 import static mindustry.Vars.tilesize;
 import static mindustry.Vars.world;
 
 public class MatrixBridge extends DistNetBlock{
   private static final ObjectSet<MatrixBridgeBuild> temps = new ObjectSet<>();
+
+  public Color effectColor = Color.valueOf("D3FDFF");
+  public TextureRegion linkRegion, topRegion;
   
-  public TextureRegion linkRegion, capRegion;
-  
-  public float linkRange = 15;
+  public float linkRange = 16;
   public float transportItemTime = 1;
-  
+  public float linkStoke = 8f;
+
+  public float maxLiquidCapacity = -1;
+
   public MatrixBridge(String name){
     super(name);
     configurable = true;
     frequencyUse = 0;
     hasItems = true;
     hasLiquids = outputsLiquid = true;
-    hasGases = outputGases = true;
   }
   
   @Override
@@ -56,29 +69,36 @@ public class MatrixBridge extends DistNetBlock{
     super.appliedConfig();
     
     config(IntSeq.class, (MatrixBridgeBuild e, IntSeq seq) -> {
-      Point2[] ps = new Point2[]{
-          seq.get(0) == -1? null: Point2.unpack(seq.get(0)),
-          seq.get(1) == -1? null: Point2.unpack(seq.get(1))
-      };
-      if(ps[0] != null){
-        e.linkElementPos = ps[0].set(e.tile.x + ps[0].x, e.tile.y + ps[0].y).pack();
+      if(seq.get(0) != -1){
+        Point2 p = Point2.unpack(seq.get(0));
+        e.linkElementPos = p.set(e.tile.x + p.x, e.tile.y + p.y).pack();
       }
-      if(ps[1] != null){
-        e.linkNextPos = ps[1].set(e.tile.x + ps[1].x, e.tile.y + ps[1].y).pack();
+      if(seq.get(1) != -1){
+        Point2 p = Point2.unpack(seq.get(1));
+        e.linkNextPos = p.set(e.tile.x + p.x, e.tile.y + p.y).pack();
       }
     });
     
     config(Point2.class, (MatrixBridgeBuild e, Point2 p) -> {
       int pos = p.pack();
       Building target = Vars.world.build(pos);
+
+      if(target instanceof DistNetworkCoreComp){
+        e.linkNextPos = -1;
+      }
+
       if(target instanceof MatrixBridgeBuild){
+        if(e.linkElement instanceof DistNetworkCoreComp){
+          e.linkElementPos = -1;
+        }
+
         if(((MatrixBridgeBuild) target).linkNext == e){
           ((MatrixBridgeBuild) target).linkNextPos = -1;
           ((MatrixBridgeBuild) target).deLink((DistElementBuildComp) e);
           ((MatrixBridgeBuild) target).linkNext = null;
         }
+        else e.linkNextLerp = 0;
         e.linkNextPos = e.linkNextPos == pos? -1: target.pos();
-        e.linkNextLerp = 0;
       }
       else if(target instanceof DistElementBuildComp){
         e.linkElementPos = e.linkElementPos == pos? -1: target.pos();
@@ -91,13 +111,14 @@ public class MatrixBridge extends DistNetBlock{
   public void init(){
     super.init();
     clipSize = Math.max(clipSize, linkRange * tilesize * 2);
+    if(maxLiquidCapacity == -1) maxLiquidCapacity = liquidCapacity*4;
   }
   
   @Override
   public void load(){
     super.load();
-    linkRegion = Core.atlas.find(name + "_link");
-    capRegion = Core.atlas.find(name + "_cap", (TextureRegion)null);
+    linkRegion = Core.atlas.find(name + "_link", Singularity.getModAtlas("matrix_link_laser"));
+    topRegion = Core.atlas.find(name + "_top", Singularity.getModAtlas("matrix_link_light"));
   }
   
   public boolean canLink(Tile origin, Tile other, float range){
@@ -126,9 +147,19 @@ public class MatrixBridge extends DistNetBlock{
         }
       }
     });
+
+    Draw.rect(topRegion, req.tile().drawx(), req.tile().drawy());
   
     for(BuildPlan plan : links){
-      if(plan != null) SglDraw.drawLink(req.tile(), req.block.offset, plan.tile(), plan.block.offset, linkRegion, capRegion, 1);
+      if(plan != null){
+        SglDraw.drawLaser(
+            req.tile().drawx(), req.tile().drawy(),
+            plan.tile().drawx(), plan.tile().drawy(),
+            linkRegion,
+            null,
+            linkStoke
+        );
+      }
     }
   }
   
@@ -140,18 +171,33 @@ public class MatrixBridge extends DistNetBlock{
       }
     });
   }
-  
+
+  @Override
+  public void drawPlace(int x, int y, int rotation, boolean valid){
+    super.drawPlace(x, y, rotation, valid);
+
+    Lines.stroke(1f);
+    Draw.color(Pal.placing);
+    Drawf.circles(x * tilesize + offset, y * tilesize + offset, linkRange * tilesize);
+  }
+
   public class MatrixBridgeBuild extends DistNetBuild{
+    Rand rand = new Rand();
+
     public float transportCounter;
     public int linkNextPos = -1, linkElementPos = -1;
     public MatrixBridgeBuild linkNext;
     public DistElementBuildComp linkElement;
     public float linkNextLerp, linkElementLerp;
-  
+
+    public Seq<EffTask> drawEffs = new Seq<>();
+
+    float netEfficiency;
+
     public boolean canLink(Building target){
       if(!MatrixBridge.this.canLink(tile, target.tile, linkRange*Vars.tilesize)) return false;
       if(target instanceof MatrixBridgeBuild && target.block == block) return true;
-      return target instanceof DistElementBuildComp;
+      return target instanceof DistElementBuildComp comp && linkable(comp) && comp.linkable(this);
     }
 
     @Override
@@ -187,6 +233,8 @@ public class MatrixBridge extends DistNetBlock{
         }
         linkNextLerp = 0;
       }
+
+      netEfficiency = Mathf.lerpDelta(netEfficiency, drawEff(), 0.02f);
       
       if(linkElementPos != -1 && (linkElement == null || !linkElement.getBuilding().isAdded() || linkElementPos != linkElement.getBuilding().pos())){
         if(linkElement != null){
@@ -210,27 +258,74 @@ public class MatrixBridge extends DistNetBlock{
         }
         linkElementLerp = 0;
       }
-      if(linkNextPos != -1 && linkNext != null && linkNextLerp < 0.99f) linkNextLerp = Mathf.lerpDelta(linkNextLerp, 1, 0.04f);
-      if(linkElementPos != -1 && linkElement != null && linkElementLerp < 0.99f) linkElementLerp = Mathf.lerpDelta(linkElementLerp, 1, 0.04f);
-      
-      if(consValid() && !distributor.network.netValid()){
-        if(linkNext == null){
-          doDump();
+
+      if(linkElementPos != -1 && linkElement != null && linkElementLerp < 0.99f){
+        linkElementLerp = Mathf.lerpDelta(linkElementLerp, 1, 0.04f);
+      }
+
+      if(linkNextPos != -1 && linkNext != null && linkNextLerp < 0.99f){
+        linkNextLerp = Mathf.lerpDelta(linkNextLerp, 1, 0.04f);
+      }
+
+      if(linkNext == null){
+        doDump();
+      }
+      else if(!distributor.network.netValid() && consumeValid()){
+        doTransport(linkNext);
+      }
+
+      updateEff();
+    }
+
+    public void updateEff(){
+      Iterator<EffTask> itr = drawEffs.iterator();
+      while(itr.hasNext()){
+        EffTask eff = itr.next();
+        if(eff.progress >= 1){
+          itr.remove();
+          Pools.free(eff);
         }
-        else{
-          doTransport(linkNext);
+        eff.update();
+      }
+
+      if(linkNext != null){
+        if(rand.nextFloat() <= 0.05f*linkNextLerp*netEfficiency*Time.delta){
+          makeEff(x, y, linkNext.x, linkNext.y);
         }
       }
+
+      if(linkElement != null){
+        if(rand.nextFloat() <= 0.05f*linkElementLerp*netEfficiency*Time.delta){
+          if(linkElement instanceof DistNetworkCoreComp){
+            makeEff(x, y, linkElement.getBuilding().x, linkElement.getBuilding().y);
+          }
+          else makeEff(linkElement.getBuilding().x, linkElement.getBuilding().y, x, y);
+        }
+      }
+    }
+
+    public void makeEff(float fromX, float fromY, float toX, float toY){
+      Tmp.v1.setAngle(rand.random(0f, 360f));
+      Tmp.v1.setLength(rand.random(2f, 5f));
+
+      drawEffs.add(EffTask.make(
+          fromX + Tmp.v1.x, fromY + Tmp.v1.y,
+          toX + Tmp.v1.x, toY + Tmp.v1.y,
+          rand.random(0.3f, 1.2f),
+          rand.random(0.125f, 0.4f),
+          rand.random(180),
+          rand.random(-0.6f, 0.6f),
+          effectColor
+      ));
     }
     
     public void doDump(){
       dumpAccumulate();
       dumpLiquid();
-      dumpGas();
     }
     
     public void doTransport(MatrixBridgeBuild next){
-      transportCounter += edelta();
+      transportCounter += delta()*consEfficiency();
       while(transportCounter >= transportItemTime){
         Item item = items.take();
         if(item != null){
@@ -242,14 +337,13 @@ public class MatrixBridge extends DistNetBlock{
             items.undoFlow(item);
           }
         }
+
         transportCounter -= transportItemTime;
       }
       
       liquids.each((l, a) -> {
         moveLiquid(next, l);
       });
-  
-      moveGas(next);
     }
   
     @Override
@@ -263,8 +357,8 @@ public class MatrixBridge extends DistNetBlock{
       }
       
       if(canLink(other)){
-        if(other instanceof DistElementBuildComp){
-          if(other instanceof MatrixBridgeBuild || !(linkElement instanceof DistNetworkCoreComp)) configure(Point2.unpack(other.pos()));
+        if(other instanceof DistElementBuildComp comp){
+          configure(Point2.unpack(other.pos()));
         }
         return false;
       }
@@ -314,14 +408,53 @@ public class MatrixBridge extends DistNetBlock{
     @Override
     public void draw(){
       Draw.rect(region, x, y);
+
+      Drawf.light(x, y, 16, Liquids.cryofluid.color, linkNextLerp*0.5f);
+
+      float alp = 0.3f + 0.7f*netEfficiency;
+      Draw.alpha(alp*Math.max(linkElementLerp, linkNextLerp));
+      Draw.z(netEfficiency > 0.3f? Layer.effect: Layer.blockBuilding + 5f);
+      Draw.rect(topRegion, x, y);
       if(linkNext != null){
-        SglDraw.drawLink(tile, linkNext.getBuilding().tile, linkRegion, capRegion, linkNextLerp);
+        Draw.alpha(alp*linkNextLerp);
+        Draw.rect(topRegion, linkNext.getBuilding().x, linkNext.getBuilding().y);
+        Draw.z(Layer.power);
+        SglDraw.drawLaser(
+            x, y,
+            linkNext.getBuilding().x, linkNext.getBuilding().y,
+            linkRegion,
+            null,
+            linkStoke*linkNextLerp
+        );
       }
       if(linkElement != null){
-        SglDraw.drawLink(tile, linkElement.getBuilding().tile, linkRegion, capRegion, linkElementLerp);
+        Draw.alpha(alp*linkElementLerp);
+        Draw.z(netEfficiency > 0.3f? Layer.effect: Layer.blockBuilding + 5f);
+        Draw.rect(topRegion, linkElement.getBuilding().x, linkElement.getBuilding().y);
+        Draw.z(Layer.power);
+        SglDraw.drawLaser(
+            x, y,
+            linkElement.getBuilding().x, linkElement.getBuilding().y,
+            linkRegion,
+            null,
+            linkStoke*linkElementLerp
+        );
+      }
+
+      drawEffect();
+    }
+
+    public float drawEff(){
+      return distributor.network.netStructValid()? distributor.network.netEfficiency(): consEfficiency();
+    }
+
+    public void drawEffect(){
+      Draw.z(Layer.effect);
+      for(EffTask eff: drawEffs){
+        eff.draw();
       }
     }
-  
+
     @Override
     public boolean acceptItem(Building source, Item item){
       return source.interactable(team) && items.get(item) < itemCapacity && (source.block == block || linkNext != null);
@@ -329,12 +462,8 @@ public class MatrixBridge extends DistNetBlock{
   
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.interactable(team) && liquids.get(liquid) < liquidCapacity && (source.block == block || linkNext != null);
-    }
-  
-    @Override
-    public boolean acceptGas(GasBuildComp source, Gas gas){
-      return source.getBuilding().interactable(team) && pressure() < maxGasPressure && (source.getBlock() == block || linkNext != null);
+      return source.interactable(team) && liquids.get(liquid) < liquidCapacity && ((SglLiquidModule)liquids).total() < maxLiquidCapacity
+          && (source.block == block || linkNext != null);
     }
 
     @Override
@@ -365,6 +494,64 @@ public class MatrixBridge extends DistNetBlock{
       write.f(transportCounter);
       write.i(linkNextPos);
       write.i(linkElementPos);
+    }
+  }
+
+  public static class EffTask implements Pool.Poolable{
+    float fromX, fromY;
+    float toX, toY;
+    float length;
+    float radius;
+
+    float speed;
+    float angleSpeed;
+
+    float rotate;
+    float progress;
+
+    Color color;
+
+    public static EffTask make(float fromX, float fromY, float toX, float toY, float radius, float speed, float defAngle, float angleSpeed, Color color){
+      EffTask res = Pools.obtain(EffTask.class, EffTask::new);
+      res.fromX = fromX;
+      res.fromY = fromY;
+      res.toX = toX;
+      res.toY = toY;
+      res.length = Mathf.len(toX - fromX, toY - fromY);
+      res.radius = radius;
+      res.speed = speed;
+      res.rotate = defAngle;
+      res.angleSpeed = angleSpeed;
+      res.color = color;
+
+      return res;
+    }
+
+    public void update(){
+      progress += speed/length*Time.delta;
+      rotate += angleSpeed*Time.delta;
+    }
+
+    public void draw(){
+      Tmp.v1.set(toX - fromX, toY - fromY);
+      Tmp.v1.scl(progress);
+
+      Draw.color(color);
+      Draw.alpha(Mathf.clamp((progress > 0.5? (1 - progress): progress)/0.15f));
+      Fill.square(fromX + Tmp.v1.x, fromY + Tmp.v1.y, radius, rotate);
+    }
+
+    @Override
+    public void reset(){
+      fromX = fromY = toX = toY = 0;
+      length = 0;
+      radius = 0;
+      speed = 0;
+      angleSpeed = 0;
+
+      rotate = progress = 0;
+
+      color = null;
     }
   }
 }

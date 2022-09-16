@@ -9,7 +9,7 @@
     <groovy codeStyle="LEGACY" />
   </component>
   <component name="ASMSmaliIdeaPluginConfiguration">
-    <asm skipDebug="true" skipFrames="true" skipCode="false" expandFrames="false" />
+    <asm skipDebug="true" skipFrames="true" skipCode="true" expandFrames="false" />
     <groovy codeStyle="LEGACY" />
   </component>
   <component name="EntryPointsManager">
@@ -24,5 +24,5 @@
   <component name="FrameworkDetectionExcludesConfiguration">
     <file type="web" url="file://$PROJECT_DIR$" />
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="17" project-jdk-type="JavaSDK" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="azul-17" project-jdk-type="JavaSDK" />
 </project>

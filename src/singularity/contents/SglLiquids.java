@@ -1,6 +1,7 @@
 package singularity.contents;
 
 import arc.graphics.Color;
+import mindustry.graphics.Pal;
 import mindustry.type.Liquid;
 
 @SuppressWarnings("SpellCheckingInspection")
@@ -22,7 +23,21 @@ public class SglLiquids implements ContentList{
   /**混合焦油*/
   mixed_tar,
   /**燃油*/
-  fuel_oil;
+  fuel_oil,
+
+  //气体
+  /**氧气*/
+  oxygen,
+  /**氯气*/
+  chlorine,
+  /**氦气*/
+  helium,
+  /**氧化硫*/
+  sulfur_oxide,
+  /**甲烷*/
+  methane,
+  /**孢子云*/
+  spore_cloud;
 
   public void load(){
     FEX_liquid = new Liquid("FEX_liquid", Color.valueOf("#E34248")){{
@@ -95,6 +110,67 @@ public class SglLiquids implements ContentList{
       flammability = 1f;
       temperature = 0.4f;
       viscosity = 0.4f;
+    }};
+
+    //气体
+    oxygen = new Liquid("oxygen", Color.white){{
+      gas = true;
+
+      heatCapacity = 0.2f;
+      explosiveness = 0.8f;
+      flammability = 0.5f;
+      temperature = 0.4f;
+      viscosity = 0f;
+    }};
+
+    chlorine = new Liquid("chlorine", Color.white){{
+      gas = true;
+
+      heatCapacity = 0.35f;
+      explosiveness = 0.3f;
+      flammability = 0.2f;
+      temperature = 0.4f;
+      viscosity = 0f;
+    }};
+
+    helium = new Liquid("helium", Color.white){{
+      gas = true;
+
+      heatCapacity = 0.6f;
+      explosiveness = 0;
+      flammability = 0;
+      temperature = 0.4f;
+      viscosity = 0;
+    }};
+
+    sulfur_oxide = new Liquid("sulfur_oxide", Color.white){{
+      gas = true;
+
+      heatCapacity = 0.65f;
+      explosiveness = 0;
+      flammability = 0;
+      temperature = 0.4f;
+      viscosity = 0;
+    }};
+
+    methane = new Liquid("methane", Color.white){{
+      gas = true;
+
+      heatCapacity = 0.8f;
+      explosiveness = 1f;
+      flammability = 0.85f;
+      temperature = 0.4f;
+      viscosity = 0;
+    }};
+
+    spore_cloud = new Liquid("spore_cloud", Pal.spore){{
+      gas = true;
+
+      heatCapacity = 0.3f;
+      explosiveness = 0.8f;
+      flammability = 0.75f;
+      temperature = 0.4f;
+      viscosity = 0;
     }};
   }
 }

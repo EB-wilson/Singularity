@@ -20,7 +20,6 @@ public class DrawNuclearReactor extends DrawFactory<NuclearReactor.NuclearReacto
   public TextureRegion light;
   public Color hotColor = Color.valueOf("ff9575a3");
   public Color coolColor = new Color(1, 1, 1, 0f);
-  public float flashThreshold = 580f;
 
   public float lightRadius = 60f;
   public Color lightColor = Pal.reactorPurple;
@@ -54,7 +53,7 @@ public class DrawNuclearReactor extends DrawFactory<NuclearReactor.NuclearReacto
       Draw.rect(bottom, entity.x, entity.y);
       Draw.rect(region, entity.x, entity.y);
       
-      Draw.color(coolColor, hotColor, entity.temperature()/entity.block().maxTemperature);
+      Draw.color(coolColor, hotColor, entity.heat/entity.block().maxHeat);
       Fill.rect(entity.x, entity.y, entity.block.size * tilesize, entity.block.size * tilesize);
       
       Liquid liquid = entity.block().coolants.get(0).get(SglConsumeType.liquid).liquids[0].liquid;
@@ -63,8 +62,8 @@ public class DrawNuclearReactor extends DrawFactory<NuclearReactor.NuclearReacto
       Draw.alpha(entity.liquids.get(liquid)/entity.block.liquidCapacity);
       Draw.rect(top, entity.x, entity.y);
 
-      if(entity.temperature() > flashThreshold){
-        float flash = 1f + ((entity.temperature() - flashThreshold) / (entity.block().maxTemperature - flashThreshold)) * 5.4f;
+      if(entity.heat > entity.block().smokeThreshold){
+        float flash = 1f + ((entity.heat - entity.block().smokeThreshold) / (entity.block().maxHeat - entity.block().smokeThreshold)) * 5.4f;
         flash += flash * Time.delta;
         Draw.color(Color.red, Color.yellow, Mathf.absin(flash, 9f, 1f));
         Draw.alpha(0.6f);
@@ -76,7 +75,7 @@ public class DrawNuclearReactor extends DrawFactory<NuclearReactor.NuclearReacto
   
     @Override
     public void drawLight(){
-      Drawf.light(entity.x(), entity.y(), lightRadius * entity.warmup() * block.size, lightColor, lightAlpha);
+      Drawf.light(entity.x(), entity.y(), lightRadius * entity.workEfficiency() * block.size, lightColor, lightAlpha);
     }
   }
 }

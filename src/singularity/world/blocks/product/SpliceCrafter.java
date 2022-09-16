@@ -3,7 +3,6 @@ package singularity.world.blocks.product;
 import arc.Core;
 import arc.func.Cons;
 import arc.func.Func;
-import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.math.Mathf;
@@ -25,19 +24,19 @@ import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
-import singularity.type.Gas;
-import singularity.type.GasStack;
 import singularity.type.SglLiquidStack;
-import singularity.world.blocks.SglBlock;
 import singularity.world.blocks.chains.ChainsContainer;
 import singularity.world.blocks.chains.ChainsEvents;
-import singularity.world.components.*;
-import singularity.world.consumers.SglConsumeGases;
+import singularity.world.components.ChainsBlockComp;
+import singularity.world.components.ChainsBuildComp;
+import singularity.world.components.SpliceBlockComp;
+import singularity.world.components.SpliceBuildComp;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.draw.DrawSpliceBlock;
-import singularity.world.meta.SglBlockStatus;
-import singularity.world.modules.*;
-import singularity.world.products.ProduceGases;
+import singularity.world.modules.ChainsModule;
+import singularity.world.modules.SglConsumeModule;
+import singularity.world.modules.SglLiquidModule;
+import singularity.world.modules.SglProductModule;
 import singularity.world.products.SglProduceType;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ConsumerBuildComp;
@@ -70,18 +69,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     super.init();
     tempLiquidCapacity = liquidCapacity;
   }
-  
-  @Override
-  public void setBars(){
-    super.setBars();
-    if(hasGases){
-      removeBar("gasPressure");
-      addBar("gasPressure", (SpliceCrafterBuild entity) -> new Bar(
-          () -> Core.bundle.get("fragment.bars.gasPressure") + ":" + Strings.autoFixed(entity.smoothPressure*100, 0) + "kPa",
-          () -> Pal.accent,
-          () -> Math.min(entity.smoothPressure / maxGasPressure, 1)));
-    }
-  }
 
   @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -111,18 +98,12 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
   
     @Override
-    public SpliceGasesModule gases(){
-      return (SpliceGasesModule)gases;
-    }
-  
-    @Override
     public NormalCrafterBuild create(Block block, Team team){
       super.create(block, team);
       chains = new ChainsModule(this);
       
       if(hasItems) items = new SpliceItemModule(itemCapacity, true);
       if(hasLiquids) liquids = new SpliceLiquidModule(liquidCapacity, true);
-      if(hasGases) gases = new SpliceGasesModule(this, true, tempLiquidCapacity);
       consumer = new SpliceConsumeModule(this);
       producer = new SpliceProduceModule(this);
 
@@ -182,8 +163,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       }
   
       UncConsumeLiquids<?> cl = consumer.current.get(SglConsumeType.liquid);
-      SglConsumeGases<?> cg = consumer.current.get(SglConsumeType.gas);
-      if(cl != null || cg != null){
+      if(cl != null){
         bars.table(Tex.buttonEdge1, t -> t.left().add(Core.bundle.get("fragment.bars.consume")).pad(4)).pad(0).height(38).padTop(4);
         bars.row();
         bars.table(t -> {
@@ -204,27 +184,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
               }
             });
           }
-      
-          if(cg != null){
-            t.table(Tex.pane2, gases -> {
-              gases.defaults().growX().margin(0).pad(4).height(18);
-              gases.left().add(Core.bundle.get("misc.gas")).color(Pal.gray);
-              gases.row();
-              for(GasStack stack: cg.gases){
-                Func<Building, Bar> bar = (ent -> {
-                  GasBuildComp entity = (GasBuildComp) ent;
-                  return new Bar(
-                      () -> stack.gas.localizedName,
-                      () -> stack.gas.color,
-                      () -> Math.min((entity.gases().get(stack.gas) / gasCapacity) * (entity.gases().get(stack.gas) / entity.gases().total() > 0? entity.gases().total(): 1f), 1f)
-                  );
-                });
-                gases.add(bar.get(this));
-                gases.row();
-              }
-            });
-          }
-        }).height(46 + Math.max((cl != null? cl.liquids.length: 0), (cg != null? cg.gases.length: 0))*26).padBottom(0).padTop(2);
+        }).height(46 + cl.liquids.length*26).padBottom(0).padTop(2);
       }
   
       bars.row();
@@ -232,49 +192,26 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       if(recipeCurrent == -1 || producer.current == null) return;
   
       ProduceLiquids<?> pl = producer.current.get(SglProduceType.liquid);
-      ProduceGases<?> pg = producer.current.get(SglProduceType.gas);
-      if(pl != null || pg != null){
-        bars.table(cl == null && cg == null? Tex.buttonEdge1: Tex.pane, t -> t.left().add(Core.bundle.get("fragment.bars.product")).pad(4)).pad(0).height(38);
+      if(pl != null){
+        bars.table(Tex.buttonEdge1, t -> t.left().add(Core.bundle.get("fragment.bars.product")).pad(4)).pad(0).height(38);
         bars.row();
         bars.table(t -> {
           t.defaults().grow().margin(0);
-          if(pl != null){
-            t.table(pg == null? Tex.buttonRight: Tex.pane2, liquid -> {
-              liquid.defaults().growX().margin(0).pad(4).height(18);
-              liquid.add(Core.bundle.get("misc.liquid")).color(Pal.gray);
+          t.table(Tex.pane2, liquid -> {
+            liquid.defaults().growX().margin(0).pad(4).height(18);
+            liquid.add(Core.bundle.get("misc.liquid")).color(Pal.gray);
+            liquid.row();
+            for(UncLiquidStack stack: pl.liquids){
+              Func<Building, Bar> bar = (entity -> new Bar(
+                  () -> stack.liquid.localizedName,
+                  () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
+                  () -> Math.min(entity.liquids.get(stack.liquid) / liquids().allCapacity, 1f)
+              ));
+              liquid.add(bar.get(this));
               liquid.row();
-              for(UncLiquidStack stack: pl.liquids){
-                Func<Building, Bar> bar = (entity -> new Bar(
-                    () -> stack.liquid.localizedName,
-                    () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
-                    () -> Math.min(entity.liquids.get(stack.liquid) / liquids().allCapacity, 1f)
-                ));
-                liquid.add(bar.get(this));
-                liquid.row();
-              }
-            });
-          }
-      
-          if(pg != null){
-            t.table(Tex.buttonRight, gases -> {
-              gases.defaults().growX().margin(0).pad(4).height(18);
-              gases.left().add(Core.bundle.get("misc.gas")).color(Pal.gray);
-              gases.row();
-              for(GasStack stack: pg.gases){
-                Func<Building, Bar> bar = (ent -> {
-                  GasBuildComp entity = (GasBuildComp) ent;
-                  return new Bar(
-                      () -> stack.gas.localizedName,
-                      () -> stack.gas.color,
-                      () -> Math.min(entity.gases().get(stack.gas) / gases().allCapacity, 1f)
-                  );
-                });
-                gases.add(bar.get(this));
-                gases.row();
-              }
-            });
-          }
-        }).height(46 + Math.max((pl != null? pl.liquids.length: 0), (pg != null? pg.gases.length: 0))*26).padTop(2);
+            }
+          });
+        }).height(46 + pl.liquids.length*26).padTop(2);
       }
     }
   
@@ -297,14 +234,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
             tLiquids.loaded = true;
           }
           if(liquids != tLiquids) liquids = tLiquids;
-        }
-        if(hasGases){
-          SpliceGasesModule tGases = chains.getVar("gases");
-          if(!tGases.loaded){
-            tGases.set((SpliceGasesModule) gases);
-            tGases.loaded = true;
-          }
-          if(gases != tGases) gases = tGases;
         }
         
         SpliceConsumeModule tCons = chains.getVar("consumer");
@@ -345,17 +274,12 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   
     @Override
     public boolean acceptItem(Building source, Item item){
-      return source.interactable(this.team) && hasItems && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item)) && items.get(item) < items().allCapacity && status == SglBlockStatus.proper;
+      return source.interactable(this.team) && hasItems && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item)) && items.get(item) < items().allCapacity;
     }
   
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.interactable(this.team) && hasLiquids && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)) && liquids.get(liquid) <= liquids().allCapacity - 0.0001f && status == SglBlockStatus.proper;
-    }
-  
-    @Override
-    public boolean acceptGas(GasBuildComp source, Gas gas){
-      return !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && super.acceptGas(source, gas);
+      return source.interactable(this.team) && hasLiquids && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)) && liquids.get(liquid) <= liquids().allCapacity - 0.0001f;
     }
   
     @Override
@@ -373,7 +297,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         Draw.z(71.0F);
         Draw.color(Pal.gray);
         Fill.square(brcx, brcy, 2.5F*multiplier, 45.0F);
-        Draw.color(status == SglBlockStatus.proper? status().color: Color.valueOf("#000000"));
+        Draw.color(status().color);
         Fill.square(brcx, brcy, 1.5F*multiplier, 45.0F);
         Draw.color();
       }
@@ -391,7 +315,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
 
       if(hasItems) chains.container.putVar("items", new SpliceItemModule(itemCapacity, firstInit));
       if(hasLiquids) chains.container.putVar("liquids", new SpliceLiquidModule(tempLiquidCapacity, firstInit));
-      if(hasGases) chains.container.putVar("gases", new SpliceGasesModule(this, firstInit, gasCapacity));
 
       chains.container.putVar("build", this);
       if(firstInit) firstInit = false;
@@ -402,7 +325,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       if(old == chains.container) return;
       if(getBlock().hasItems) chains.container.<SpliceItemModule>getVar("items").add(old.<SpliceItemModule>getVar("items"));
       if(getBlock().hasLiquids) chains.container.<SpliceLiquidModule>getVar("liquids").add(old.getVar("liquids"));
-      if(getBlock(SglBlock.class).hasGases) chains.container.<SpliceGasesModule>getVar("gases").add(old.<SpliceGasesModule>getVar("gases"));
 
       SpliceCrafterBuild statDisplay;
       if((statDisplay = chains.container.getVar("build")) != this){
@@ -416,7 +338,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     public void chainsRemoved(Seq<ChainsBuildComp> children){
       SpliceItemModule items = chains.getVar("items");
       SpliceLiquidModule liquids = chains.getVar("liquids");
-      SpliceGasesModule gases = chains.getVar("gases");
 
       SpliceCrafter targetBlock = getBlock(SpliceCrafter.class);
 
@@ -431,7 +352,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         float present = (float) otherContainer.all.size/total;
         SpliceItemModule oItems = otherContainer.getVar("items");
         SpliceLiquidModule oLiquids = otherContainer.getVar("liquids");
-        SpliceGasesModule oGases = otherContainer.getVar("gases");
 
         if(targetBlock.hasItems){
           oItems.allCapacity = (int) ((items.allCapacity - getBlock().itemCapacity)*present);
@@ -450,16 +370,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
           liquids.each((liquid, amount) -> {
             float pre = amount/liquids.total();
             oLiquids.set(liquid, ((liquids.total() - targetBlock.liquidCapacity*totalPre)*present*pre));
-          });
-        }
-
-        if(targetBlock.hasGases){
-          oGases.allCapacity = (gases.allCapacity - targetBlock.gasCapacity)*present;
-          oGases.clear();
-          float totalPre = gases.getPressure()/targetBlock.maxGasPressure;
-          gases.each((gas, amount) -> {
-            float pre = amount/gases.total();
-            oGases.set(gas, (gases.total() - targetBlock.maxGasPressure*targetBlock.gasCapacity*totalPre)*present*pre);
           });
         }
       }
@@ -540,44 +450,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       lastFrameId = Core.graphics.getFrameId();
       
       super.updateFlow();
-      added.clear();
-    }
-  }
-  
-  public static class SpliceGasesModule extends GasesModule{
-    protected ObjectSet<GasesModule> added = new ObjectSet<>();
-    public float allCapacity;
-    public boolean loaded;
-    public long lastFrameId;
-    
-    public SpliceGasesModule(GasBuildComp entity, boolean firstLoad, float capacity){
-      super(entity, firstLoad);
-      loaded = !firstLoad;
-      allCapacity = capacity;
-    }
-    
-    public void set(SpliceGasesModule otherModule){
-      otherModule.each(this::set);
-    }
-    
-    public void add(SpliceGasesModule otherModule){
-      if(added.add(otherModule)){
-        super.add(otherModule);
-        allCapacity += otherModule.allCapacity;
-      }
-    }
-    
-    @Override
-    public float getPressure(){
-      return total/allCapacity;
-    }
-    
-    @Override
-    public void update(boolean comp){
-      if(lastFrameId == Core.graphics.getFrameId()) return;
-      lastFrameId = Core.graphics.getFrameId();
-      
-      super.update(comp);
       added.clear();
     }
   }

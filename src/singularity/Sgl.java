@@ -76,14 +76,6 @@ public class Sgl{
   public static ClassHandler classes;
   /**ui类存放对象*/
   public static SglUI ui;
-  /**所有大气的全局存储对象，提供了关于大气层的一些参数与操作*/
-  public static Atmospheres atmospheres;
-  /**气体云的全局存储对象，提供了气体散逸成云的功能和关于气体云的集中操作*/
-  public static GasAreas gasAreas;
-  /**反应的全局存储对象，保存了所有的反应类型，并提供了匹配反应的方法*/
-  public static Reactions reactions;
-  /**所有反应点的全局存储对象，用于保存和统一操作反应点*/
-  public static ReactionPoints reactionPoints;
   /***/
   public static Contributors contributors;
   
@@ -96,22 +88,16 @@ public class Sgl{
     SglStyles.load();
 
     ui = new SglUI();
-    atmospheres = new Atmospheres();
-    gasAreas = new GasAreas();
-    reactions = new Reactions();
-    reactionPoints = new ReactionPoints();
     contributors = new Contributors();
     
     updateTiles = new UpdateTiles();
     
     ui.init();
-    atmospheres.init();
   }
   
   public static void update(){
     if(Vars.state.isPaused()) return;
-    
-    atmospheres.update();
+
     if(Vars.state.isGame()) updateTiles.update();
   }
   

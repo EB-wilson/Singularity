@@ -7,6 +7,7 @@ import arc.scene.ui.layout.Stack;
 import arc.scene.ui.layout.Table;
 import arc.struct.Bits;
 import arc.util.Strings;
+import arc.util.Time;
 import mindustry.core.UI;
 import mindustry.gen.Building;
 import mindustry.ui.ReqImage;
@@ -23,7 +24,7 @@ import universecore.world.consumers.UncConsumeType;
 import static mindustry.Vars.iconMed;
 
 public class SglConsumeMedium<T extends Building & MediumBuildComp & ConsumerBuildComp> extends BaseConsume<T>{
-  public final float request;
+  public float request;
 
   public SglConsumeMedium(float request){
     this.request = request;
@@ -35,11 +36,21 @@ public class SglConsumeMedium<T extends Building & MediumBuildComp & ConsumerBui
   }
 
   @Override
+  public void merge(BaseConsume<T> baseConsume){
+    if(baseConsume instanceof SglConsumeMedium cons){
+      request += cons.request;
+
+      return;
+    }
+    throw new IllegalArgumentException("only merge consume with same type");
+  }
+
+  @Override
   public void consume(T t){}
 
   @Override
   public void update(T entity){
-    entity.removeMedium(request*entity.edelta());
+    entity.removeMedium(request*parent.delta(entity)*multiple(entity));
   }
 
   @Override
@@ -77,8 +88,8 @@ public class SglConsumeMedium<T extends Building & MediumBuildComp & ConsumerBui
 
   @Override
   public boolean valid(T entity){
-    return entity.mediumContains() >= request*(entity.getBlock().hasPower && entity.getBuilding().power.status != 0?
-        entity.delta()*entity.power.status: entity.getBuilding().delta())*multiple(entity);
+    float delta = entity.consEfficiency() < 0.001f? Time.delta: parent.delta(entity);
+    return entity.mediumContains() >= request*delta*multiple(entity);
   }
 
   @Override

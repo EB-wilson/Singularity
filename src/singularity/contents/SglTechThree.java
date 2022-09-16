@@ -7,12 +7,10 @@ import mindustry.content.Liquids;
 import static mindustry.content.Blocks.*;
 import static mindustry.content.Items.*;
 import static mindustry.game.Objectives.Produce;
-import static mindustry.game.Objectives.Research;
 import static singularity.contents.CollectBlocks.fast_spin_drill;
 import static singularity.contents.CollectBlocks.rock_drill;
 import static singularity.contents.CrafterBlocks.*;
 import static singularity.contents.DefenceBlocks.*;
-import static singularity.contents.GasBlocks.*;
 import static singularity.contents.LiquidBlocks.*;
 import static singularity.contents.NuclearBlocks.*;
 import static singularity.contents.SglItems.*;
@@ -49,9 +47,7 @@ public class SglTechThree implements ContentList{
       node(coalCentrifuge, petroleum_separator, petSep -> {
         petSep.node(retort_column, retCol -> {});
 
-        petSep.node(gel_mixer, Seq.with(
-            new Research(reaction_kettle)
-        ), gelMix -> {
+        petSep.node(gel_mixer, gelMix -> {
 
         });
       });
@@ -70,12 +66,6 @@ public class SglTechThree implements ContentList{
         });
       });
 
-      node(siliconSmelter, reaction_kettle, reactKet -> {
-        reactKet.node(electrolytor, eleT -> {
-          eleT.node(purifier, pure -> {});
-        });
-      });
-
       node(kiln, strengthening_alloy_smelter, strAlloySme -> {
         strAlloySme.node(matrix_cutter, matCut -> {
           matCut.node(polymer_gravitational_generator, polyGen -> {
@@ -85,30 +75,6 @@ public class SglTechThree implements ContentList{
               quaGen.node(destructor, dest -> {});
 
               quaGen.node(substance_inverter, subInv -> {});
-            });
-          });
-        });
-      });
-
-      node(mechanicalDrill, gas_conduit, gasCond -> {
-        gasCond.node(gas_junction, gasJun -> {
-          gasJun.node(pressure_valve, pressValve -> {
-            pressValve.node(air_compressor, airComp -> {
-              airComp.node(supercharger, superCha -> {
-                superCha.node(gas_compressor, gasComp -> {});
-              });
-            });
-
-            pressValve.node(gas_bridge_conduit, gasBridge -> {
-              gasBridge.node(phase_gas_bridge_conduit, phaGasBridge -> {
-                phaGasBridge.node(iridium_gas_bridge_conduit, iridGasBridge -> {});
-              });
-            });
-
-            pressValve.node(filter_valve, filterVal -> {
-              filterVal.node(gas_unloader, gasUnl -> {});
-
-              filterVal.node(negative_filter_valve, negFilter -> {});
             });
           });
         });

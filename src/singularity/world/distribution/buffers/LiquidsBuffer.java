@@ -23,7 +23,9 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
   private final LiquidPacket tmp = new LiquidPacket(Liquids.water, 0);
 
   public void put(Liquid liquid, float amount){
-    put(new LiquidPacket(liquid, amount));
+    tmp.obj.liquid = liquid;
+    tmp.obj.amount = amount;
+    put(tmp);
   }
   
   public void remove(Liquid liquid, float amount){
@@ -31,7 +33,12 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
     tmp.obj.amount = amount;
     remove(tmp);
   }
-  
+
+  @Override
+  public Float remainingCapacity(){
+    return super.remainingCapacity().floatValue();
+  }
+
   public void remove(Liquid liquid){
     remove(liquid.id);
   }
@@ -65,7 +72,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
             (e, c) -> e.acceptLiquid(handler, packet.get()) && c.get(GridChildType.container, packet.get()),
             temp)){
           if(packet.amount() <= 0.001f) continue liquidRead;
-          float move = Math.min(packet.amount(), handler.block.liquidCapacity - handler.liquids.get(packet.get()));
+          float move = Math.min(packet.amount(), entry.entity.block.liquidCapacity - entry.entity.liquids.get(packet.get()));
 
           packet.remove(move);
           packet.deRead(move);
@@ -77,12 +84,33 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
 
   @Override
   public void bufferContAssign(DistributeNetwork network, Liquid ct){
-    //TODO: 实现
+    bufferContAssign(network, ct, get(ct));
   }
 
   @Override
   public void bufferContAssign(DistributeNetwork network, Liquid ct, Number amount){
-    //TODO: 实现
+    float am = amount.floatValue();
+
+    LiquidPacket packet = get(ct.id);
+    if(packet == null) return;
+    for(MatrixGrid grid: network.grids){
+      for(MatrixGrid.BuildingEntry<? extends Building> entry: grid.<Building>get(GridChildType.container, (e, c) -> c.get(GridChildType.container, ct)
+          && e.acceptLiquid(grid.handler.getBuilding(), ct))){
+
+        if(packet.amount() <= 0 || am <= 0) return;
+
+        float accept = !entry.entity.acceptLiquid(grid.handler.getBuilding(), ct)? 0:
+            entry.entity.block.liquidCapacity - entry.entity.liquids.get(ct);
+
+        float move = Math.min(packet.amount(), accept);
+        move = Math.min(move, am);
+
+        packet.remove(move);
+        packet.deRead(move);
+        am -= move;
+        entry.entity.handleLiquid(grid.handler.getBuilding(), packet.get(), move);
+      }
+    }
   }
 
   @Override

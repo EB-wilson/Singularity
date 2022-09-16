@@ -37,7 +37,12 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     tmp.obj.amount = amount;
     remove(tmp);
   }
-  
+
+  @Override
+  public Integer remainingCapacity(){
+    return super.remainingCapacity().intValue();
+  }
+
   public void remove(Item item){
     remove(item.id);
   }

@@ -62,7 +62,7 @@ public class PutItemsRequest extends DistRequestBase<ItemStack>{
     else{
       boolean blockTest = false;
       for(ItemStack stack : reqItems){
-        int move = Math.min(source.get(stack.item), destination.remainingCapacity().intValue());
+        int move = Math.min(source.get(stack.item), destination.remainingCapacity());
 
         if(move <= 0) continue;
 
@@ -77,10 +77,5 @@ public class PutItemsRequest extends DistRequestBase<ItemStack>{
   @Override
   protected boolean afterHandleTask(){
     return true;
-  }
-
-  @Override
-  public Seq<ItemStack> getList(){
-    return reqItems;
   }
 }

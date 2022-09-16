@@ -12,6 +12,7 @@ import mindustry.type.*;
 import singularity.ui.tables.DistTargetConfigTable.TargetConfigure;
 import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.IOPointComp;
 import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
@@ -69,19 +70,26 @@ public class RequestHandlers{
 
     protected void addParseConfig(TargetConfigure cfg, GridChildType type){
       Building build = Vars.world.build(cfg.position);
-      assert build != null;
-      float capacity = build.block.liquidCapacity, total = 0;
-      for(UnlockableContent ignored: cfg.get(type, ContentType.liquid)){
-        total++;
-      }
-      if(total > 0){
-        for(UnlockableContent liquid: cfg.get(type, ContentType.liquid)){
-          LiquidStack stack = liquids.get(liquid.id);
-          if(stack == null){
-            liquids.put(liquid.id, new LiquidStack((Liquid) liquid, capacity*(1/total)));
-          }
-          else stack.amount += capacity*(1/total);
+      if(build == null) return;
+
+      ObjectSet<UnlockableContent> set = cfg.get(type, ContentType.liquid);
+      float capacity = build.block.liquidCapacity;
+
+      for(UnlockableContent liquid: set){
+        LiquidStack stack = liquids.get(liquid.id);
+        float delta = capacity/set.size;
+        if(stack == null){
+          liquids.put(liquid.id, new LiquidStack((Liquid) liquid, delta));
         }
+        else stack.amount += delta;
+        total += delta;
+      }
+    }
+
+    protected void scaleTo(float targetAmount){
+      float scl = targetAmount/total;
+      for(LiquidStack stack: liquids.values()){
+        stack.amount *= scl;
       }
     }
   }
@@ -131,11 +139,10 @@ public class RequestHandlers{
       ReadItemsRequest result = seq.isEmpty()? null: new ReadItemsRequest(sender, sender.getBuffer(DistBuffers.itemBuffer), seq);
       if(result == null) return null;
       result.waker = (DistMatrixUnitBuildComp e) -> {
-        for(IntMap.Entry<IOPointBlock.IOPoint> point: e.ioPoints()){
+        for(IntMap.Entry<IOPointComp> point: e.ioPoints()){
           for(ItemStack stack: seq){
-            if(point.value.config != null
-                && point.value.config.get(GridChildType.output, stack.item)
-                && point.value.acceptItemOut(e.getBuilding(), stack.item)) return true;
+            if(point.value.gridConfig() != null
+                && point.value.valid(e, GridChildType.output, stack.item)) return true;
           }
         }
 
@@ -181,7 +188,7 @@ public class RequestHandlers{
         ItemsBuffer.ItemPacket packet = buffer.get(id);
         if(packet != null){
           if(!tmpItems.contains(packet.get())) continue;
-          int transBack = Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity().intValue());
+          int transBack = Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity());
           if(transBack <= 0) continue;
 
           packet.remove(transBack);
@@ -234,13 +241,16 @@ public class RequestHandlers{
 
     @Override
     public ReadLiquidsRequest makeRequest(DistMatrixUnitBuildComp sender){
+      LiquidsBuffer buff = sender.getBuffer(DistBuffers.liquidBuffer);
+      scaleTo((float)buff.capacity/buff.unit());
       Seq<LiquidStack> seq = new Seq<>(liquids.values().toArray());
+
       ReadLiquidsRequest result = liquids.isEmpty()? null: new ReadLiquidsRequest(sender, sender.getBuffer(DistBuffers.liquidBuffer), seq);
       if(result == null) return null;
       result.waker = (DistMatrixUnitBuildComp e) -> {
-        for(IntMap.Entry<IOPointBlock.IOPoint> point: e.ioPoints()){
+        for(IntMap.Entry<IOPointComp> point: e.ioPoints()){
           for(LiquidStack stack: seq){
-            if(point.value.acceptLiquidOut(e.getBuilding(), stack.liquid)) return true;
+            if(point.value.valid(e, GridChildType.output, stack.liquid)) return true;
           }
         }
         return false;
@@ -249,50 +259,56 @@ public class RequestHandlers{
     }
 
     private final float[] tmp = new float[Vars.content.liquids().size];
+    private final ObjectSet<Liquid> tmpLiquids = new ObjectSet<>();
 
     @Override
     public boolean callBack(DistMatrixUnitBuildComp sender, ReadLiquidsRequest request, Boolp task){
       Arrays.fill(tmp, 0);
-      for(LiquidsBuffer.LiquidPacket packet: sender.getBuffer(DistBuffers.liquidBuffer)){
+      tmpLiquids.clear();
+
+      LiquidsBuffer buffer = sender.getBuffer(DistBuffers.liquidBuffer);
+      for(LiquidsBuffer.LiquidPacket packet: buffer){
         tmp[packet.id()] = packet.amount();
+        tmpLiquids.add(packet.get());
       }
 
       boolean taskStatus = task.get();
 
-      LiquidsBuffer buffer = sender.getBuffer(DistBuffers.liquidBuffer);
-      for(LiquidsBuffer.LiquidPacket packet: buffer){
-        tmp[packet.id()] = packet.amount() - tmp[packet.id()];
-      }
-
       for(MatrixGrid.BuildingEntry<?> entry : sender.matrixGrid().get(GridChildType.output, (e, c) -> e instanceof IOPointBlock.IOPoint)){
-        if(entry.config == null) return taskStatus;
+        if(entry.config == null) continue;
         IOPointBlock.IOPoint ioPoint = (IOPointBlock.IOPoint) entry.entity;
-        for(UnlockableContent liquid : ioPoint.config.get(GridChildType.output, ContentType.item)){
-          float amount;
-          if((amount = buffer.get((Liquid)liquid)) > 0.01f && ioPoint.acceptLiquidOut(sender.getBuilding(), (Liquid)liquid)){
-            amount = ioPoint.output((Liquid) liquid, amount);
-            buffer.remove((Liquid) liquid, amount);
-            buffer.deReadFlow((Liquid) liquid, amount);
+        if(ioPoint.config == null) continue;
+        for(UnlockableContent liquid : ioPoint.config.get(GridChildType.output, ContentType.liquid)){
+          Liquid li = (Liquid) liquid;
+          if(buffer.get(li) > 0 && ioPoint.acceptLiquidOut(sender.getBuilding(), li)){
+            int all = sender.matrixGrid().get(GridChildType.output, (e, c) -> c.get(GridChildType.output, liquid)).size;
 
-            tmp[liquid.id]--;
+            float amount = ioPoint.output(li, buffer.get(li)/all);
+            if(amount <= 0) continue;
+            buffer.remove(li, amount);
+            buffer.deReadFlow(li, amount);
+
+            tmpLiquids.add(li);
           }
         }
       }
 
       LiquidsBuffer coreBuffer = sender.distributor().core().distCore().getBuffer(DistBuffers.liquidBuffer);
       for(int id = 0; id < tmp.length; id++){
-        if(tmp[id] <= 0) continue;
-        LiquidsBuffer.LiquidPacket packet = coreBuffer.get(id);
-        float transBack = Math.min(tmp[id], coreBuffer.remainingCapacity().floatValue());
-        if(transBack <= 0) continue;
-
+        LiquidsBuffer.LiquidPacket packet = buffer.get(id);
         if(packet != null){
+          if(!tmpLiquids.contains(packet.get())) continue;
+          float transBack = Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity());
+          if(transBack <= 0) continue;
+
           packet.remove(transBack);
           packet.dePut(transBack);
           packet.deRead(transBack);
           coreBuffer.put(packet.get(), transBack);
           coreBuffer.dePutFlow(packet.get(), transBack);
           coreBuffer.deReadFlow(packet.get(), transBack);
+
+          coreBuffer.bufferContAssign(sender.distributor().network, packet.get(), transBack);
         }
       }
 

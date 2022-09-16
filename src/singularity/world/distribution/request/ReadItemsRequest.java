@@ -54,16 +54,17 @@ public class ReadItemsRequest extends DistRequestBase<ItemStack>{
       Item item = Vars.content.item(id);
       for(MatrixGrid grid : target.grids){
         for(MatrixGrid.BuildingEntry<Building> entry: grid.get(GridChildType.container,
-            (e, c) -> e.items.get(item) > 0 && c.get(GridChildType.container, item),
+            (e, c) -> e.block.hasItems && e.items != null && e.items.get(item) > 0
+                && c.get(GridChildType.container, item),
             temp)){
 
           if(tempItems[id] <= 0) continue itemFor;
-          if(source.remainingCapacity().intValue() <= 0) {
+          if(source.remainingCapacity() <= 0) {
             break itemFor;
           }
 
           int move = Math.min(entry.entity.items.get(item), tempItems[id]);
-          move = Math.min(move, source.remainingCapacity().intValue());
+          move = Math.min(move, source.remainingCapacity());
 
           if(move > 0){
             move = entry.entity.removeStack(item, move);
@@ -83,7 +84,7 @@ public class ReadItemsRequest extends DistRequestBase<ItemStack>{
     boolean blockTest = false;
     for(ItemStack stack : reqItems){
       int move = Math.min(stack.amount, source.get(stack.item));
-      move = Math.min(move, destination.remainingCapacity().intValue());
+      move = Math.min(move, destination.remainingCapacity());
       if(move <= 0) continue;
 
       source.remove(stack.item, move);
@@ -96,10 +97,5 @@ public class ReadItemsRequest extends DistRequestBase<ItemStack>{
   @Override
   protected boolean afterHandleTask(){
     return true;
-  }
-  
-  @Override
-  public Seq<ItemStack> getList(){
-    return reqItems;
   }
 }

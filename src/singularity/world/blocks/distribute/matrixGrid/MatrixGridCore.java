@@ -10,24 +10,28 @@ import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.math.geom.Polygon;
 import arc.math.geom.Vec2;
-import arc.struct.FloatSeq;
-import arc.struct.IntSeq;
+import arc.struct.*;
 import arc.util.Eachable;
 import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import mindustry.ctype.ContentType;
+import mindustry.ctype.UnlockableContent;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
+import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import mindustry.world.Tile;
 import singularity.Sgl;
+import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.world.components.EdgeLinkerBuildComp;
 import singularity.world.components.EdgeLinkerComp;
-import singularity.world.blocks.distribute.IOPointBlock;
+import singularity.world.components.distnet.IOPointComp;
+import singularity.world.distribution.GridChildType;
 import universecore.annotations.Annotations;
 import universecore.util.DataPackable;
 
@@ -47,7 +51,11 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   public int maxEdges = 8;
   
   public TextureRegion linkRegion, linkCapRegion;
-  
+  public TextureRegion linkLightRegion, linkLightCapRegion;
+  public float linkOffset;
+  public TextureRegion childLinkRegion;
+  public ObjectMap<GridChildType, Color> linkColors = new ObjectMap<>();
+
   public MatrixGridCore(String name){
     super(name);
     
@@ -66,8 +74,11 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   @Override
   public void load(){
     super.load();
-    linkRegion = Core.atlas.find(name + "_link");
-    linkCapRegion = Core.atlas.find(name + "link_cap");
+    linkRegion = Core.atlas.find(name + "_link", Singularity.getModAtlas("matrix_grid_edge"));
+    linkCapRegion = Core.atlas.find(name + "_cap", Singularity.getModAtlas("matrix_grid_cap"));
+    linkLightRegion = Core.atlas.find(name + "_light_link", Singularity.getModAtlas("matrix_grid_light_edge"));
+    linkLightCapRegion = Core.atlas.find(name + "_light_cap", Singularity.getModAtlas("matrix_grid_light_cap"));
+    childLinkRegion = Core.atlas.find(name + "_child_linker", Singularity.getModAtlas("matrix_grid_child_linker"));
   }
 
   @Override
@@ -121,18 +132,30 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   public void init(){
     super.init();
     clipSize = Math.max(clipSize, linkLength * tilesize * 2);
+    initColor();
   }
-  
+
+  public void initColor(){
+    linkColors.put(GridChildType.input, Pal.heal);
+    linkColors.put(GridChildType.output, Pal.accent);
+    linkColors.put(GridChildType.acceptor, Color.valueOf("D3FDFF"));
+    linkColors.put(GridChildType.container, Color.valueOf("D3FDFF"));
+  }
+
   @Annotations.ImplEntries
   public class MatrixGridCoreBuild extends MatrixGridBuild implements EdgeLinkerBuildComp{
+    private static final IntSet TMP_EXI = new IntSet();
+
     protected EdgeContainer edges = new EdgeContainer();
     protected Polygon lastPoly;
     protected Vec2[] vertices;
     protected FloatSeq verticesSeq;
     
     protected int nextPos = -1;
-    public boolean loaded;
+    protected boolean loaded;
     protected float alpha;
+
+    protected IntMap<float[]> childLinkWarmup = new IntMap<>();
   
     @Override
     public void updateTile(){
@@ -150,8 +173,31 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
           }
         }
       }
+
+      for(float[] a: childLinkWarmup.values()){
+        a[0] = Mathf.lerpDelta(a[0], 1, 0.02f);
+      }
       
       alpha = Mathf.lerpDelta(alpha, configIOPoint? 1: 0, 0.02f);
+    }
+
+    @Override
+    public void releaseRequest(){
+      super.releaseRequest();
+
+      TMP_EXI.clear();
+      for(DistTargetConfigTable.TargetConfigure config: configs){
+        float[] warmup = childLinkWarmup.get(config.position);
+        if(warmup == null){
+          warmup = new float[1];
+          childLinkWarmup.put(config.position, warmup);
+        }
+        TMP_EXI.add(config.position);
+      }
+
+      for(IntMap.Entry<float[]> entry: childLinkWarmup){
+        if(!TMP_EXI.contains(entry.key)) childLinkWarmup.remove(entry.key);
+      }
     }
 
     @Override
@@ -165,8 +211,61 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     }
 
     @Override
-    public void edgeUpdated(){
+    public void edgeUpdated(){}
 
+    @Override
+    public void draw(){
+      for(IntMap.Entry<float[]> entry: childLinkWarmup){
+        DistTargetConfigTable.TargetConfigure cfg = configMap.get(entry.key);
+        if(cfg == null || entry.value[0] <= 0.01f) continue;
+
+        Tile t = world.tile(entry.key);
+        Draw.alpha(0.7f*entry.value[0]);
+        ObjectMap<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> map = cfg.get();
+
+        Color c = null;
+        for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> mapEntry: map){
+          boolean bool = false;
+          for(ObjectMap.Entry<ContentType, ObjectSet<UnlockableContent>> setEntry: mapEntry.value){
+            if(!setEntry.value.isEmpty()){
+              bool = true;
+              break;
+            }
+          }
+
+          if(bool){
+            if(c == null){
+              c = linkColors.get(mapEntry.key, Color.white);
+            }
+            else{
+              c = Color.white;
+              break;
+            }
+          }
+        }
+        Draw.color(c);
+        Draw.z(Layer.bullet - 5);
+        SglDraw.drawLaser(x, y, t.drawx(), t.drawy(), childLinkRegion, null, 8*entry.value[0]);
+        Draw.z(Layer.effect);
+        Fill.circle(t.drawx(), t.drawy(), 1.5f*entry.value[0]);
+      }
+      Draw.z(Layer.blockBuilding);
+      Draw.reset();
+    }
+
+    @Override
+    public void drawLink(){
+      EdgeLinkerBuildComp.super.drawLink();
+      if(nextEdge() != null){
+        Draw.z(Layer.effect);
+        Draw.alpha(0.65f);
+        SglDraw.drawLink(
+            tile, linkOffset,
+            nextEdge().tile(), nextEdge().getEdgeBlock().linkOffset(),
+            linkLightRegion, linkLightCapRegion,
+            linkLerp()
+        );
+      }
     }
 
     @Override
@@ -193,18 +292,19 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     @Override
     public void drawConfigure(){
       super.drawConfigure();
-      for(IOPointBlock.IOPoint io: ioPoints.values()){
+      for(IOPointComp io: ioPoints.values()){
         if(Sgl.ui.secConfig.getConfiguring() == io) continue;
-        float radius = io.block.size * tilesize / 2f + 1f;
-        Drawf.square(io.x, io.y, radius, Pal.accent);
+        float radius = io.getBlock().size * tilesize / 2f + 1f;
+        Building building = io.getBuilding();
+        Drawf.square(building.x, building.y, radius, Pal.accent);
   
         Tmp.v1.set(-1, 1).setLength(radius + 1).scl((Time.time%60)/60*1.41421f);
         Tmp.v2.set(1, 0).setLength(radius + 1).add(Tmp.v1);
         for(int i=0; i<4; i++){
           Draw.color(Pal.gray);
-          Fill.square(io.x + Tmp.v2.x, io.y + Tmp.v2.y, 2f, 45);
+          Fill.square(building.x + Tmp.v2.x, building.y + Tmp.v2.y, 2f, 45);
           Draw.color(Pal.place);
-          Fill.square(io.x + Tmp.v2.x, io.y + Tmp.v2.y, 1.25f, 45);
+          Fill.square(building.x + Tmp.v2.x, building.y + Tmp.v2.y, 1.25f, 45);
           Tmp.v2.rotate(90);
         }
       }
@@ -235,7 +335,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       pair.linking = nextPos;
       return pair.pack();
     }
-  
+
     protected class LinkPair extends MatrixGridBuild.PosCfgPair{
       public static final long typeID = 5463757638164667648L;
   

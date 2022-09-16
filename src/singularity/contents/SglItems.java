@@ -2,7 +2,6 @@ package singularity.contents;
 
 import arc.graphics.Color;
 import mindustry.type.Item;
-import singularity.Sgl;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class SglItems implements ContentList{
@@ -153,14 +152,11 @@ public class SglItems implements ContentList{
       radioactivity = 0f;
     }};
     
-    dry_ice = new SglItem("dry_ice", Color.valueOf("#EDF0ED")){{
+    dry_ice = new Item("dry_ice", Color.valueOf("#EDF0ED")){{
       hardness = 1;
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0f;
-      
-      temperature = 212;
-      heatCapacity = 620;
     }};
   
     chlorella_block = new Item("chlorella_block", Color.valueOf("#6CB855")){{
@@ -226,18 +222,5 @@ public class SglItems implements ContentList{
       flammability = 0f;
       radioactivity = 0f;
     }};
-  }
-  
-  public static class SglItem extends Item{
-    public float temperature = -1;
-    public float heatCapacity = 550;
-    
-    public SglItem(String name, Color color){
-      super(name, color);
-    }
-    
-    public float getTemperature(){
-      return temperature > 0? temperature: Sgl.atmospheres.current.getAbsTemperature();
-    }
   }
 }

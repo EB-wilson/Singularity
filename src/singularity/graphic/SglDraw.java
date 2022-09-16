@@ -7,6 +7,7 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
+import arc.math.Mathf;
 import arc.math.geom.Rect;
 import arc.util.Nullable;
 import arc.util.Tmp;
@@ -207,6 +208,15 @@ public class SglDraw{
     }
   }
 
-  public static void curve(){
+  public static void drawLaser(float originX, float originY, float otherX, float otherY, TextureRegion linkRegion,
+                               TextureRegion capRegion, float stoke){
+    float rot = Mathf.angle(otherX - originX, otherY - originY);
+
+    if(capRegion != null){
+      Draw.rect(capRegion, otherX, otherY, rot);
+    }
+
+    Lines.stroke(stoke);
+    Lines.line(linkRegion, originX, originY, otherX, otherY, capRegion != null);
   }
 }

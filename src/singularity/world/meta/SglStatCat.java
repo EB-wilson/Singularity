@@ -1,7 +1,6 @@
 package singularity.world.meta;
 
 import arc.struct.Seq;
-import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatCat;
 import universecore.util.handler.FieldHandler;
 
@@ -13,7 +12,7 @@ public class SglStatCat{
       reaction = create("reaction");
 
   private static StatCat create(String name){
-    return create(name, Stat.all.size);
+    return create(name, StatCat.all.size);
   }
 
   private static StatCat create(String name, int index){

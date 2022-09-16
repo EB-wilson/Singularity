@@ -331,7 +331,7 @@ public class BaseDrill extends SglBlock{
     
     @Override
     public boolean updateValid(){
-      return consValid() && !isFull();
+      return consumeValid() && !isFull();
     }
   
     @Override

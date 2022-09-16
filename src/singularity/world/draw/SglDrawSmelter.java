@@ -53,18 +53,18 @@ public class SglDrawSmelter<Target extends Building & FactoryBuildComp & Drawabl
     public void draw(){
       Draw.rect(region, entity.x(), entity.y(), block.rotate ? entity.rotation()*90 : 0);
     
-      if(entity.warmup() > 0f && flameColor.a > 0.001f){
+      if(entity.workEfficiency() > 0f && flameColor.a > 0.001f){
         float g = 0.3f;
         float r = 0.06f;
         float cr = Mathf.random(0.1f);
       
         Draw.z(Layer.block + 0.01f);
       
-        Draw.alpha(((1f - g) + Mathf.absin(Time.time, 8f, g) + Mathf.random(r) - r) * entity.warmup());
+        Draw.alpha(((1f - g) + Mathf.absin(Time.time, 8f, g) + Mathf.random(r) - r) * entity.workEfficiency());
       
         Draw.tint(flameColor);
         Fill.circle(entity.x(), entity.y(), flameRadius + Mathf.absin(Time.time, flameRadiusScl, flameRadiusMag) + cr);
-        Draw.color(1f, 1f, 1f, entity.warmup());
+        Draw.color(1f, 1f, 1f, entity.workEfficiency());
         Draw.rect(top, entity.x(), entity.y());
         Fill.circle(entity.x(), entity.y(), flameRadiusIn + Mathf.absin(Time.time, flameRadiusScl, flameRadiusInMag) + cr);
       
@@ -74,7 +74,7 @@ public class SglDrawSmelter<Target extends Building & FactoryBuildComp & Drawabl
   
     @Override
     public void drawLight(){
-      Drawf.light( entity.x(), entity.y(), (lightRadius + Mathf.absin(lightSinScl, lightSinMag)) * entity.warmup() * block.size, flameColor, lightAlpha);
+      Drawf.light( entity.x(), entity.y(), (lightRadius + Mathf.absin(lightSinScl, lightSinMag)) * entity.workEfficiency() * block.size, flameColor, lightAlpha);
     }
   }
 }

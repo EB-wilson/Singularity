@@ -2,12 +2,15 @@ package singularity.world.blocks.distribute.matrixGrid;
 
 import arc.Core;
 import arc.func.Cons2;
+import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.geom.Point2;
 import arc.util.Eachable;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
+import mindustry.graphics.Layer;
 import mindustry.world.Block;
+import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.world.components.EdgeLinkerBuildComp;
 import singularity.world.components.EdgeLinkerComp;
@@ -21,6 +24,7 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
   public float linkOffset;
   
   public TextureRegion linkRegion, linkCapRegion;
+  public TextureRegion linkLightRegion, linkLightCapRegion;
   
   public MatrixEdgeBlock(String name){
     super(name);
@@ -51,8 +55,10 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
   @Override
   public void load(){
     super.load();
-    linkRegion = Core.atlas.find(name + "_link");
-    linkRegion = Core.atlas.find(name + "_link_cap");
+    linkRegion = Core.atlas.find(name + "_link", Singularity.getModAtlas("matrix_grid_edge"));
+    linkCapRegion = Core.atlas.find(name + "_cap", Singularity.getModAtlas("matrix_grid_cap"));
+    linkLightRegion = Core.atlas.find(name + "_light_link", Singularity.getModAtlas("matrix_grid_light_edge"));
+    linkLightCapRegion = Core.atlas.find(name + "_light_cap", Singularity.getModAtlas("matrix_grid_light_cap"));
   }
   
   @Override
@@ -87,6 +93,21 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
     @Override
     public void edgeUpdated(){
 
+    }
+
+    @Override
+    public void drawLink(){
+      EdgeLinkerBuildComp.super.drawLink();
+      if(nextEdge() != null){
+        Draw.z(Layer.effect);
+        Draw.alpha(0.65f);
+        SglDraw.drawLink(
+            tile, linkOffset,
+            nextEdge().tile(), nextEdge().getEdgeBlock().linkOffset(),
+            linkLightRegion, linkLightCapRegion,
+            linkLerp()
+        );
+      }
     }
 
     @Override

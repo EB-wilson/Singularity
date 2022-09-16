@@ -101,7 +101,7 @@ public class DrawSpliceBlock<T extends Building & SpliceBuildComp> extends SglDr
     }
   
     @Override
-    public void doDraw(){
+    public void render(){
       draw();
     }
   

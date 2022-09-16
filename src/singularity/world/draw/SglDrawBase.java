@@ -68,7 +68,7 @@ public abstract class SglDrawBase<Target extends DrawableComp>{
     }
 
     /**draw渲染执行时调用此方法*/
-    public void doDraw(){
+    public void render(){
       if(drawDef == null){
         draw();
       }

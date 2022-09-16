@@ -41,9 +41,9 @@ public class SglDrawPlasma<T extends Building & FactoryBuildComp & DrawableComp>
       float r = block.size * tilesize - 3f + Mathf.absin(Time.time, 2f + i * 1f, 5f - i * 0.5f);
       
       Draw.color(plasma1, plasma2, (float)i / plasmas.length);
-      Draw.alpha((0.3f + Mathf.absin(Time.time, 2f + i * 2f, 0.3f + i * 0.05f)) * entity.warmup());
+      Draw.alpha((0.3f + Mathf.absin(Time.time, 2f + i * 2f, 0.3f + i * 0.05f)) * entity.workEfficiency());
       Draw.blend(Blending.additive);
-      Draw.rect(plasmas[i], entity.x, entity.y, r, r, Time.time * (12 + i * 6f) * entity.warmup());
+      Draw.rect(plasmas[i], entity.x, entity.y, r, r, Time.time * (12 + i * 6f) * entity.workEfficiency());
       Draw.blend();
     }
     Draw.color();
@@ -63,7 +63,7 @@ public class SglDrawPlasma<T extends Building & FactoryBuildComp & DrawableComp>
 
     @Override
     public void drawLight(){
-      Drawf.light(entity.x(), entity.y(), lightRadius * entity.warmup() * block.size, lightColor, lightAlpha);
+      Drawf.light(entity.x(), entity.y(), lightRadius * entity.workEfficiency() * block.size, lightColor, lightAlpha);
     }
   }
 }

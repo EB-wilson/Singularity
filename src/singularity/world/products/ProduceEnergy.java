@@ -3,6 +3,7 @@ package singularity.world.products;
 import mindustry.gen.Building;
 import mindustry.world.meta.Stats;
 import singularity.world.components.NuclearEnergyBuildComp;
+import singularity.world.consumers.SglConsumeEnergy;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import universecore.components.blockcomp.ProducerBuildComp;
@@ -20,14 +21,24 @@ public class ProduceEnergy<T extends Building & NuclearEnergyBuildComp & Produce
   public ProduceType<ProduceEnergy<?>> type(){
     return SglProduceType.energy;
   }
-  
+
+  @Override
+  public void merge(BaseProduce<T> baseProduce){
+    if(baseProduce instanceof ProduceEnergy cons){
+      product += cons.product;
+
+      return;
+    }
+    throw new IllegalArgumentException("only merge product with same type");
+  }
+
   @Override
   public void produce(T entity){
   }
   
   @Override
   public void update(T entity){
-    entity.handleEnergy(product*parent.delta(entity)*multiple(entity));
+    entity.handleEnergy(product*parent.cons.delta(entity)*multiple(entity));
     if(entity.getEnergy() > entity.getNuclearBlock().energyCapacity()) entity.energy().set(entity.getNuclearBlock().energyCapacity());
   }
   

@@ -21,14 +21,10 @@ import singularity.Sgl;
 import universecore.UncCore;
 import universecore.util.animate.CellAction;
 import universecore.util.animate.CellChangeColorAction;
-import universecore.util.handler.FieldHandler;
 
-import java.util.concurrent.ExecutorService;
 import java.util.regex.Pattern;
 
 public class PublicInfoDialog extends BaseListDialog{
-  private static final FieldHandler<Http> fieldHandler = new FieldHandler<>(Http.class);
-
   private static final String titlesUrl = "https://raw.githubusercontent.com/EB-wilson/Singularity/master/publicInfo/titles.hjson";
   private static final String langRegex = "#locale#";
   private static final Pattern imagePattern = Pattern.compile("<image *=.*>");
@@ -84,9 +80,6 @@ public class PublicInfoDialog extends BaseListDialog{
   @SuppressWarnings("StatementWithEmptyBody")
   public void refresh(){
     Log.info("loading message");
-  
-    ExecutorService exec = fieldHandler.getValue(null, "exec");
-    exec.shutdown();
     
     titleLoaded = false;
     Http.get(titlesUrl, req -> {
@@ -292,10 +285,7 @@ public class PublicInfoDialog extends BaseListDialog{
           time = 0;
           UncCore.cellActions.clear();
           UncCore.cellActions.add(new CellChangeColorAction(cell, this, t.color.cpy().a(0), 60));
-  
-          ExecutorService exec = fieldHandler.getValue(null, "exec");
-          exec.shutdown();
-          
+
           refreshDef.run();
         }).get().touchable(() -> timeout? Touchable.enabled: Touchable.disabled);
       });

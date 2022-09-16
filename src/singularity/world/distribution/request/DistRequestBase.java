@@ -3,7 +3,6 @@ package singularity.world.distribution.request;
 import arc.Core;
 import arc.func.Boolf;
 import arc.func.Boolp;
-import arc.struct.Seq;
 import org.jetbrains.annotations.Nullable;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistributeNetwork;
@@ -21,6 +20,10 @@ public abstract class DistRequestBase<S>{
   
   public DistRequestBase(DistElementBuildComp sender){
     this.sender = sender;
+  }
+
+  public <T extends DistElementBuildComp> void setWaker(Boolf<T> waker){
+    this.waker = waker;
   }
   
   public int priority(){
@@ -103,38 +106,34 @@ public abstract class DistRequestBase<S>{
   
   public boolean preHandle(){
     if(preHandleCallback != null){
-      boolean res = preHandleCallback.run(this::preHandleTask);
-      preHandleCallback = null;
-      return res;
+      return preHandleCallback.run(this::preHandleTask);
     }
     else return preHandleTask();
   }
 
   public boolean handle(){
     if(handleCallBack != null){
-      boolean res = handleCallBack.run(this::handleTask);
-      handleCallBack = null;
-      return res;
+      return handleCallBack.run(this::handleTask);
     }
     else return handleTask();
   }
   
   public boolean afterHandle(){
     if(afterHandleCallBack != null){
-      boolean res = afterHandleCallBack.run(this::afterHandleTask);
-      afterHandleCallBack = null;
-      return res;
+      return afterHandleCallBack.run(this::afterHandleTask);
     }
     else return afterHandleTask();
   }
-  
-
 
   protected abstract boolean preHandleTask();
   protected abstract boolean handleTask();
   protected abstract boolean afterHandleTask();
 
-  public abstract Seq<S> getList();
+  public void resetCallBack(){
+    preHandleCallback = null;
+    handleCallBack = null;
+    afterHandleCallBack = null;
+  }
   
   public void onExecute(){
     executeMark = Core.graphics.getFrameId();

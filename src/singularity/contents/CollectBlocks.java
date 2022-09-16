@@ -18,6 +18,7 @@ import singularity.world.blocks.drills.MatrixMinerEdge;
 import singularity.world.blocks.product.SglAttributeCrafter;
 import singularity.world.draw.DrawFactory;
 import singularity.world.meta.SglAttribute;
+import universecore.world.consumers.BaseConsumers;
 
 import static mindustry.type.ItemStack.with;
 
@@ -70,15 +71,15 @@ public class CollectBlocks implements ContentList {
       newProduce();
       produce.liquid(SglLiquids.rock_bitumen, 0.2f);
   
-      newOptionalConsume((e, c) -> {
-        e.consData(2.0f);
+      newOptionalConsume((NormalCrafterBuild e, BaseConsumers c) -> {
+        e.setVar(2.0f);
       }, (s, c) -> {
         s.add(Stat.boostEffect, 2.0f, StatUnit.timesSpeed);
       });
       consume.time(300);
       consume.item(SglItems.dry_ice, 1);
-      newOptionalConsume((e, c) -> {
-        e.consData(1.6f);
+      newOptionalConsume((NormalCrafterBuild e, BaseConsumers c) -> {
+        e.setVar(1.6f);
       }, (s, c) -> {
         s.add(Stat.boostEffect, 1.6f, StatUnit.timesSpeed);
       });
@@ -87,13 +88,13 @@ public class CollectBlocks implements ContentList {
       buildType = () -> new SglAttributeCrafterBuild(){
         @Override
         public float efficiency(){
-          return super.efficiency()*consData(Float.class, 1f);
+          return super.efficiency()*getVar(Float.class, 1f);
         }
   
         @Override
         public void updateTile(){
           super.updateTile();
-          consData(1);
+          setVar(1);
         }
       };
       

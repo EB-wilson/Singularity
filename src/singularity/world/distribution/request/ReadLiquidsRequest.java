@@ -54,13 +54,14 @@ public class ReadLiquidsRequest extends DistRequestBase<LiquidStack>{
       for(MatrixGrid grid: target.grids){
         for(MatrixGrid.BuildingEntry<Building> entry: grid.get(
             GridChildType.container,
-            (e, c) -> e.liquids.get(liquid) > 0.001f && c.get(GridChildType.container, liquid),
+            (e, c) -> e.block.hasLiquids && e.liquids != null && e.liquids.get(liquid) > 0.001f
+                && c.get(GridChildType.container, liquid),
             temp)){
           if(tempLiquid[id] < 0.001f) continue liquidFor;
-          if(source.remainingCapacity().floatValue() < 0.001f) break liquidFor;
+          if(source.remainingCapacity() < 0.001f) break liquidFor;
 
           float move = Math.min(tempLiquid[id], entry.entity.liquids.get(liquid));
-          move = Math.min(move, source.remainingCapacity().floatValue());
+          move = Math.min(move, source.remainingCapacity());
 
           if(move > 0.001f){
             entry.entity.liquids.remove(liquid, move);
@@ -79,7 +80,7 @@ public class ReadLiquidsRequest extends DistRequestBase<LiquidStack>{
     boolean blockTest = false;
     for(LiquidStack stack : reqLiquids){
       float move = Math.min(stack.amount, source.get(stack.liquid));
-      move = Math.min(move, destination.remainingCapacity().floatValue());
+      move = Math.min(move, destination.remainingCapacity());
       if(move <= 0) continue;
 
       source.remove(stack.liquid, move);
@@ -92,10 +93,5 @@ public class ReadLiquidsRequest extends DistRequestBase<LiquidStack>{
   @Override
   protected boolean afterHandleTask(){
     return true;
-  }
-
-  @Override
-  public Seq<LiquidStack> getList(){
-    return reqLiquids;
   }
 }

@@ -31,18 +31,12 @@ import mindustry.world.Block;
 import mindustry.world.meta.BlockFlag;
 import mindustry.world.meta.BlockStatus;
 import singularity.Singularity;
-import singularity.type.Gas;
-import singularity.type.GasStack;
 import singularity.type.SglLiquidStack;
 import singularity.world.blocks.SglBlock;
-import singularity.world.components.GasBuildComp;
-import singularity.world.consumers.SglConsumeGases;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.draw.DrawFactory;
-import singularity.world.meta.SglBlockStatus;
 import singularity.world.meta.SglStat;
 import singularity.world.modules.SglProductModule;
-import singularity.world.products.ProduceGases;
 import singularity.world.products.Producers;
 import singularity.world.products.SglProduceType;
 import universecore.annotations.Annotations;
@@ -110,7 +104,6 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       hasItems |= outputItems |= prod.get(SglProduceType.item) != null;
       hasLiquids |= outputsLiquid |= prod.get(SglProduceType.liquid) != null;
       hasPower |= outputsPower |= prod.get(SglProduceType.power) != null && prod.get(SglProduceType.power).powerProduction != 0;
-      hasGases |= outputGases |= prod.get(SglProduceType.gas) != null;
       hasEnergy |= outputEnergy |= prod.get(SglProduceType.energy) != null;
     }
     
@@ -150,7 +143,6 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     
     public Seq<Item> outputItems;
     public Seq<Liquid> outputLiquids;
-    public Seq<Gas> outputGases;
     
     public float powerProdEfficiency;
   
@@ -212,52 +204,28 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       if(recipeCurrent == -1 || producer.current == null || consumer.current == null) return;
   
       UncConsumeLiquids<?> cl = consumer.current.get(SglConsumeType.liquid);
-      SglConsumeGases<?> cg = consumer.current.get(SglConsumeType.gas);
   
       ProduceLiquids<?> pl = producer.current.get(SglProduceType.liquid);
-      ProduceGases<?> pg = producer.current.get(SglProduceType.gas);
-      if(pl != null || pg != null){
-        bars.table(cl == null && cg == null? Tex.buttonEdge1: Tex.pane, t -> t.left().add(Core.bundle.get("fragment.bars.product")).pad(4)).pad(0).height(38);
+      if(pl != null){
+        bars.table(cl == null? Tex.buttonEdge1: Tex.pane, t -> t.left().add(Core.bundle.get("fragment.bars.product")).pad(4)).pad(0).height(38);
         bars.row();
         bars.table(t -> {
           t.defaults().grow().margin(0);
-          if(pl != null){
-            t.table(pg == null? Tex.buttonRight: Tex.pane2, liquid -> {
-              liquid.defaults().growX().margin(0).pad(4).height(18);
-              liquid.add(Core.bundle.get("misc.liquid")).color(Pal.gray);
+          t.table(Tex.pane2, liquid -> {
+            liquid.defaults().growX().margin(0).pad(4).height(18);
+            liquid.add(Core.bundle.get("misc.liquid")).color(Pal.gray);
+            liquid.row();
+            for(UncLiquidStack stack: pl.liquids){
+              Func<Building, Bar> bar = (entity -> new Bar(
+                () -> stack.liquid.localizedName,
+                () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
+                () -> Math.min(entity.liquids.get(stack.liquid) / entity.block().liquidCapacity, 1f)
+              ));
+              liquid.add(bar.get(this));
               liquid.row();
-              for(UncLiquidStack stack: pl.liquids){
-                Func<Building, Bar> bar = (entity -> new Bar(
-                  () -> stack.liquid.localizedName,
-                  () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
-                  () -> Math.min(entity.liquids.get(stack.liquid) / entity.block().liquidCapacity, 1f)
-                ));
-                liquid.add(bar.get(this));
-                liquid.row();
-              }
-            });
-          }
-      
-          if(pg != null){
-            t.table(Tex.buttonRight, gases -> {
-              gases.defaults().growX().margin(0).pad(4).height(18);
-              gases.left().add(Core.bundle.get("misc.gas")).color(Pal.gray);
-              gases.row();
-              for(GasStack stack: pg.gases){
-                Func<Building, Bar> bar = (ent -> {
-                  GasBuildComp entity = (GasBuildComp) ent;
-                  return new Bar(
-                    () -> stack.gas.localizedName,
-                    () -> stack.gas.color,
-                    () -> Math.min(entity.gases().get(stack.gas) / entity.getGasBlock().gasCapacity(), 1f)
-                  );
-                });
-                gases.add(bar.get(this));
-                gases.row();
-              }
-            });
-          }
-        }).height(46 + Math.max((pl != null? pl.liquids.length: 0), (pg != null? pg.gases.length: 0))*26).padTop(2);
+            }
+          });
+        }).height(46 + pl.liquids.length*26).padTop(2);
       }
     }
   
@@ -272,17 +240,12 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       if(recipeCurrent == -1) return null;
       return outputLiquids;
     }
-  
+
     @Override
-    public Seq<Gas> outputGases(){
-      return outputGases;
+    public float consEfficiency(){
+      return super.consEfficiency()*warmup();
     }
-  
-    @Override
-    public boolean shouldConsume(){
-      return producer.valid() && super.shouldConsume();
-    }
-  
+
     @Override
     public BlockStatus status(){
       if(autoSelect && !canSelect && recipeCurrent == -1) return BlockStatus.noInput;
@@ -290,11 +253,15 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     }
 
     @Override
+    public boolean shouldConsume(){
+      return super.shouldConsume() && productValid();
+    }
+
+    @Override
     public void updateTile() {
-      if(updateRecipe){
+      if(updateRecipe && producer.current != null){
         if(producer.current.get(SglProduceType.item) != null) outputItems = new Seq<>(producer.current.get(SglProduceType.item).items).map(e -> e.item);
         if(producer.current.get(SglProduceType.liquid) != null) outputLiquids = new Seq<>(producer.current.get(SglProduceType.liquid).liquids).map(e -> e.liquid);
-        if(producer.current.get(SglProduceType.gas) != null) outputGases = new Seq<>(producer.current.get(SglProduceType.gas).gases).map(e -> e.gas);
       }
     }
   
@@ -308,19 +275,12 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     @Override
     public float getPowerProduction(){
       if(!outputsPower || producer.current == null || producer.current.get(SglProduceType.power) == null) return 0;
-      powerProdEfficiency = Mathf.num(shouldConsume() && consValid())*((BaseProduce<NormalCrafterBuild>)producer.current.get(SglProduceType.power)).multiple(this);
+      powerProdEfficiency = Mathf.num(shouldConsume() && consumeValid())*((BaseProduce<NormalCrafterBuild>)producer.current.get(SglProduceType.power)).multiple(this);
       return producer.getPowerProduct()*efficiency();
-    }
-  
-    @Override
-    public float efficiency(){
-      return super.efficiency()*warmup();
     }
     
     @Override
     public void buildConfiguration(Table table){
-      if(status == SglBlockStatus.broken || !canSelect) return;
-
       if(producers.size() > 1){
         Table prescripts = new Table(Tex.buttonTrans);
         prescripts.defaults().grow().marginTop(0).marginBottom(0).marginRight(5).marginRight(5);
@@ -336,13 +296,11 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
 
           if(c.selectable.get() == BaseConsumers.Visibility.hidden) continue;
 
-          icon = p.icon != null? p.icon.get(): c.icon.get();
+          icon = p.icon();
 
           ImageButton button = new ImageButton(icon, Styles.selecti);
           button.touchablility = () -> c.selectable.get().buttonValid;
-          button.clicked(() -> {
-            configure(s);
-          });
+          button.clicked(() -> configure(s));
           button.update(() -> button.setChecked(recipeCurrent == s));
           buttons.add(button).size(50, 50);
           if((i+1) % 4 == 0) buttons.row();
@@ -362,6 +320,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     @Override
     public void draw(){
       super.draw();
+
       drawSelectRecipe(this);
       drawStatus();
       Draw.blend();
@@ -392,14 +351,14 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     }
 
     @Override
-    public void crafted(){
+    public void craftTrigger(){
       craftEffect.at(getX(), getY());
       if(craftTrigger != null) ((Cons<NormalCrafterBuild>)craftTrigger).get(this);
       if(craftedSound != Sounds.none) craftedSound.at(x, y, 1, craftedSoundVolume);
     }
 
     @Override
-    public void crafting(){
+    public void onCraftingUpdate(){
       if(Mathf.chanceDelta(updateEffectChance)){
         updateEffect.at(getX() + Mathf.range(effectRange * 4f), getY() + Mathf.range(effectRange * 4));
       }

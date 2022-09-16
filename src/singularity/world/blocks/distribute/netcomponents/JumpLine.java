@@ -1,5 +1,6 @@
 package singularity.world.blocks.distribute.netcomponents;
 
+import arc.graphics.g2d.Draw;
 import mindustry.gen.Building;
 import mindustry.world.Tile;
 
@@ -20,13 +21,16 @@ public class JumpLine extends ComponentBus{
     public void updateConnectedBus(){
       proximityBus.clear();
 
-      busLinked = 0;
       for(Building building: proximity){
-        if(building instanceof ComponentBusBuild bus && bus.linkable(tile)){
+        if(building instanceof ComponentBusBuild bus && bus.linkable(tile) && linkable(bus.tile)){
           proximityBus.add(bus);
         }
       }
+    }
 
+    @Override
+    public void draw(){
+      Draw.rect(region, x, y, rotation*90);
     }
   }
 }

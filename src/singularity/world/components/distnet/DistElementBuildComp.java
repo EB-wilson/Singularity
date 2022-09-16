@@ -7,6 +7,7 @@ import mindustry.gen.Building;
 import mindustry.world.Tile;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.modules.DistributeModule;
+import universecore.annotations.Annotations;
 import universecore.components.blockcomp.BuildCompBase;
 
 public interface DistElementBuildComp extends BuildCompBase{
@@ -15,22 +16,33 @@ public interface DistElementBuildComp extends BuildCompBase{
   int priority();
   
   void priority(int priority);
-  
-  Seq<DistElementBuildComp> netLinked();
+
+  @Annotations.BindField("netLinked")
+  default Seq<DistElementBuildComp> netLinked(){
+    return null;
+  }
   
   default void networkValided(){}
 
   default void networkUpdated(){}
 
+  default void networkRemoved(DistElementBuildComp remove){}
+
   default void linked(DistElementBuildComp target){}
 
   default void delinked(DistElementBuildComp target){}
+
+  default boolean linkable(DistElementBuildComp other){
+    return true;
+  }
 
   default DistElementBlockComp getDistBlock(){
     return getBlock(DistElementBlockComp.class);
   }
   
   default void link(DistElementBuildComp target){
+    if(!linkable(target) || !target.linkable(this)) return;
+
     distributor().distNetLinks.add(target.getBuilding().pos());
     target.distributor().distNetLinks.add(getBuilding().pos());
   
@@ -49,6 +61,10 @@ public interface DistElementBuildComp extends BuildCompBase{
   
     updateNetLinked();
     target.updateNetLinked();
+
+    for(DistElementBuildComp element: distributor().network.elements){
+      element.networkRemoved(target);
+    }
     
     new DistributeNetwork().flow(this);
     new DistributeNetwork().flow(target);
@@ -65,14 +81,23 @@ public interface DistElementBuildComp extends BuildCompBase{
       if(!netLinked().contains((DistElementBuildComp) entity.build)) netLinked().add((DistElementBuildComp) entity.build);
     }
   }
-  
+
+  @Annotations.MethodEntry(entryMethod = "onProximityAdded")
+  default void onDistNetAdded(){
+    updateNetLinked();
+    for(DistElementBuildComp comp: netLinked()){
+      comp.distributor().network.add(distributor().network);
+    }
+  }
+
+  @Annotations.MethodEntry(entryMethod = "onProximityRemoved")
   default void onDistNetRemoved(){
     IntSeq links = distributor().distNetLinks;
     for(int i=0; i<links.size; i++){
       Building other = Vars.world.build(links.get(i));
       if(other instanceof DistElementBuildComp){
         ((DistElementBuildComp) other).distributor().distNetLinks.removeValue(getBuilding().pos());
-        ((DistElementBuildComp) other).updateNetLinked();
+        ((DistElementBuildComp) other).netLinked().remove(this, true);
       }
     }
     links.clear();
