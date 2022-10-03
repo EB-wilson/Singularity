@@ -33,7 +33,6 @@ public class NuclearEnergyModule extends BlockModule {
   }
 
   public final NuclearEnergyBuildComp entity;
-  public final float baseAcceptPres;
   public final boolean buffered;
   public final IntSeq linked = new IntSeq();
   
@@ -48,9 +47,8 @@ public class NuclearEnergyModule extends BlockModule {
   
   public float displayMoving = 0f;
   
-  public NuclearEnergyModule(NuclearEnergyBuildComp entity, float base, boolean buffered){
+  public NuclearEnergyModule(NuclearEnergyBuildComp entity, boolean buffered){
     this.entity = entity;
-    this.baseAcceptPres = base;
     this.buffered = buffered;
   }
 

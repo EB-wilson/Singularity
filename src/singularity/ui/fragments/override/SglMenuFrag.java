@@ -39,6 +39,7 @@ import mindustry.ui.fragments.MenuFragment;
 import singularity.Sgl;
 import singularity.Singularity;
 import singularity.core.UpdatePool;
+import singularity.graphic.SglDrawConst;
 import singularity.graphic.renders.SglPlanetRender;
 import universecore.util.handler.FieldHandler;
 
@@ -244,7 +245,7 @@ public class SglMenuFrag extends MenuFragment{
     group.fill(t -> {
       t.visibility = () -> shown;
       //所以我选择在游戏logo上盖个透明的按钮(反正也能按)
-      Image button = new Image(Singularity.getModAtlas("transparent"));
+      Image button = new Image(SglDrawConst.transparent);
       button.clicked(Sgl.ui.mainMenu::show);
       t.top().add(button).size(940, 270);
     });

@@ -185,8 +185,8 @@ public class SglAttributeCrafter extends NormalCrafter{
     float attributeEffect = 1;
     
     @Override
-    public float efficiency(){
-      return super.efficiency()*attributeEffect;
+    public float consEfficiency(){
+      return super.consEfficiency()*attributeEffect;
     }
     
     @Override

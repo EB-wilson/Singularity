@@ -24,7 +24,6 @@ import universecore.util.aspect.triggers.TriggerEntry;
 import universecore.util.path.BFSPathFinder;
 import universecore.util.path.IPath;
 import universecore.util.path.PathFindFunc;
-import universecore.util.path.PathVertices;
 
 @Annotations.ImplEntries
 public class SglWall extends Wall{
@@ -79,7 +78,7 @@ public class SglWall extends Wall{
     }
   }
 
-  public class SglWallBuild extends WallBuild implements PathVertices<SglWallBuild>{
+  public class SglWallBuild extends WallBuild{
     private static final ObjectSet<GravityGroup> ITERATED = new ObjectSet<>();
 
     protected GravityGroup gravGroup;
@@ -166,11 +165,6 @@ public class SglWall extends Wall{
     public float mass(){
       return mass;
     }
-
-    @Override
-    public Iterable<SglWallBuild> getLinkVertices(){
-      return proximityGrav;
-    }
   }
 
   @Annotations.ImplEntries
@@ -212,7 +206,7 @@ public class SglWall extends Wall{
           clip.add(build);
 
           while(!queue.isEmpty()){
-            for(SglWallBuild vertex: queue.removeFirst().getLinkVertices()){
+            for(SglWallBuild vertex: queue.removeFirst().proximityGrav){
               if(!value.contains(vertex)) continue;
 
               if(added.add(vertex)){
@@ -241,7 +235,7 @@ public class SglWall extends Wall{
     }
 
     public void remove(SglWallBuild build){
-      for(SglWallBuild other: build.getLinkVertices()){
+      for(SglWallBuild other: build.proximityGrav){
         if(other.gravGroup != this) continue;
         other.proximityGrav.remove(build);
 
@@ -281,6 +275,11 @@ public class SglWall extends Wall{
     @Override
     public IPath<SglWallBuild> createPath(){
       return null;
+    }
+
+    @Override
+    public Iterable<SglWallBuild> getLinkVertices(SglWallBuild sglWallBuild){
+      return sglWallBuild.proximityGrav;
     }
 
     @Override

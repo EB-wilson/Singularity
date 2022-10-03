@@ -9,12 +9,14 @@ import singularity.world.components.distnet.DistNetworkCoreComp;
 import singularity.world.distribution.DistBuffers;
 
 public class CoreNeighbourComponent extends DistNetBlock{
-  public int frequencyOffer = 16;
+  public int frequencyOffer = 0;
+  public int computingPower = 0;
 
   public ObjectMap<DistBuffers<?>, Integer> bufferSize = new ObjectMap<>();
 
   public CoreNeighbourComponent(String name){
     super(name);
+    frequencyUse = 0;
   }
 
   public class CoreNeighbourComponentBuild extends DistNetBuild implements DistComponent{
@@ -26,6 +28,11 @@ public class CoreNeighbourComponent extends DistNetBlock{
     @Override
     public int frequencyOffer(){
       return frequencyOffer;
+    }
+
+    @Override
+    public int computingPower() {
+      return computingPower;
     }
 
     @Override

@@ -1,11 +1,9 @@
 package singularity.contents;
 
-import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
-import arc.graphics.g2d.TextureRegion;
 import arc.math.Angles;
 import arc.math.Mathf;
 import arc.util.Tmp;
@@ -13,13 +11,16 @@ import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.entities.Effect;
+import mindustry.gen.Building;
 import mindustry.gen.Sounds;
-import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import mindustry.type.Category;
+import mindustry.type.Item;
 import mindustry.type.ItemStack;
+import mindustry.type.Liquid;
 import mindustry.world.Block;
+import mindustry.world.draw.*;
 import mindustry.world.meta.BuildVisibility;
 import singularity.graphic.SglDraw;
 import singularity.type.SglCategory;
@@ -29,14 +30,17 @@ import singularity.world.blocks.nuclear.EnergyVoid;
 import singularity.world.blocks.nuclear.NuclearPipeNode;
 import singularity.world.blocks.nuclear.NuclearReactor;
 import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.consumers.SglConsumers;
+import singularity.world.draw.DrawBottom;
 import singularity.world.draw.DrawExpandPlasma;
-import singularity.world.draw.DrawFactory;
-import singularity.world.draw.SglDrawPlasma;
+import singularity.world.draw.DrawReactorHeat;
+import singularity.world.draw.DrawRegionDynamic;
 import singularity.world.particles.SglParticleModels;
+import universecore.world.consumers.BaseConsume;
+import universecore.world.consumers.UncConsumeItems;
+import universecore.world.consumers.UncConsumeLiquids;
 import universecore.world.particles.Particle;
 import universecore.world.particles.ParticleModel;
-
-import static mindustry.Vars.tilesize;
 
 public class NuclearBlocks implements ContentList{
   /**核能塔座*/
@@ -103,26 +107,35 @@ public class NuclearBlocks implements ContentList{
       
       updateEffect = Fx.generatespark;
       updateEffectChance = 0.01f;
-      
-      draw = new DrawFactory<NormalCrafterBuild>(this){
-        @Override
-        public TextureRegion[] icons(){
-          return new TextureRegion[]{
-              bottom,
-              region
-          };
-        }
-        
-        {
-          drawDef = e -> {
-            Draw.rect(bottom, e.x, e.y);
-            Draw.rect(region, e.x, e.y);
-            Draw.color(SglItems.uranium_235.color);
-            Draw.alpha((float)e.items.get(SglItems.uranium_235)/itemCapacity);
-            Draw.rect(top, e.x, e.y);
-          };
-        }
-      };
+
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawDefault(),
+          new DrawRegionDynamic<NormalCrafterBuild>("_top"){{
+            color = e -> {
+              BaseConsume<?> cons = e.consumer.current == null? null: ((SglConsumers) (e.consumer.current)).first();
+              if(cons instanceof UncConsumeLiquids){
+                Liquid liquid = ((UncConsumeLiquids<?>) cons).liquids[0].liquid;
+                if(liquid == Liquids.water) liquid = ((UncConsumeLiquids<?>) cons).liquids[1].liquid;
+                return liquid.color;
+              }else if(cons instanceof UncConsumeItems){
+                Item item = ((UncConsumeItems<?>) cons).items[0].item;
+                return item.color;
+              }else return Color.white;
+            };
+            alpha = e -> {
+              BaseConsume<?> cons = e.consumer.current == null? null: ((SglConsumers) (e.consumer.current)).first();
+              if(cons instanceof UncConsumeLiquids){
+                Liquid liquid = ((UncConsumeLiquids<?>) cons).liquids[0].liquid;
+                if(liquid == Liquids.water) liquid = ((UncConsumeLiquids<?>) cons).liquids[1].liquid;
+                return e.liquids.get(liquid)/e.block.liquidCapacity;
+              }else if(cons instanceof UncConsumeItems){
+                Item item = ((UncConsumeItems<?>) cons).items[0].item;
+                return (float) e.items.get(item)/e.block.itemCapacity;
+              }else return 0;
+            };
+          }}
+      );
     }};
     
     neutron_generator = new NormalCrafter("neutron_generator"){{
@@ -135,18 +148,17 @@ public class NuclearBlocks implements ContentList{
       consume.energy(4);
       newProduce();
       produce.power(50);
-      
-      draw = new SglDrawPlasma<NormalCrafterBuild>(this, 4){{
-        plasma1 = Pal.reactorPurple;
-        plasma2 = Pal.reactorPurple2;
-  
-        drawDef = e -> {
-          Draw.rect(bottom, e.x, e.y);
-          Draw.rect(region, e.x, e.y);
-          drawPlasma(e);
-          Draw.rect(top, e.x, e.y);
-        };
-      }};
+
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawDefault(),
+          new DrawPlasma(){{
+            suffix = "_plasma_";
+            plasma1 = Pal.reactorPurple;
+            plasma2 = Pal.reactorPurple2;
+          }},
+          new DrawRegion("_top")
+      );
     }};
   
     nuclear_impact_reactor = new NormalCrafter("nuclear_impact_reactor"){{
@@ -185,7 +197,7 @@ public class NuclearBlocks implements ContentList{
             (x, y) -> SglParticleModels.nuclearParticle.create(e.x, e.y, x, y, Mathf.random(3.25f, 4f)));
       };
       
-      warmupSpeed = 0.00065f;
+      warmupSpeed = 0.008f;
       
       newConsume();
       consume.item(SglItems.concentration_uranium_235, 1);
@@ -202,8 +214,14 @@ public class NuclearBlocks implements ContentList{
       consume.time(180);
       newProduce();
       produce.power(400);
-      
-      draw = new DrawExpandPlasma<>(this, 2);
+
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawExpandPlasma(){{
+            plasmas = 2;
+          }},
+          new DrawDefault()
+      );
     }};
     
     nuclear_reactor = new NuclearReactor("nuclear_reactor"){{
@@ -224,6 +242,11 @@ public class NuclearBlocks implements ContentList{
       addTransfer(new ItemStack(SglItems.plutonium_239, 1));
       consume.time(180);
       consume.item(SglItems.uranium_238, 1);
+
+      draw = new DrawMulti(
+          new DrawDefault(),
+          new DrawReactorHeat()
+      );
     }};
     
     lattice_reactor = new NuclearReactor("lattice_reactor"){{
@@ -248,11 +271,17 @@ public class NuclearBlocks implements ContentList{
       addTransfer(new ItemStack(SglItems.plutonium_239, 1));
       consume.time(420);
       consume.item(SglItems.uranium_238, 1);
+
+      draw = new DrawMulti(
+          new DrawDefault(),
+          new DrawReactorHeat()
+      );
     }};
     
     overrun_reactor = new NuclearReactor("overrun_reactor"){{
       requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 400, SglItems.crystal_FEX, 260, SglItems.crystal_FEX_power, 280, SglItems.degenerate_neutron_polymer, 100, Items.surgeAlloy, 375, Items.phaseFabric, 240));
       size = 6;
+      hasLiquids = true;
       itemCapacity = 50;
       liquidCapacity = 50;
       energyCapacity = 8192;
@@ -279,43 +308,39 @@ public class NuclearBlocks implements ContentList{
           SglParticleModels.nuclearParticle.create(e.x + x, e.y + y, Tmp.v1.x, Tmp.v1.y, iff*6.5f*e.workEfficiency());
         });
       };
-      
-      draw = new SglDrawPlasma<NuclearReactorBuild>(this, 4){
-        TextureRegion rotatorA, rotatorB;
-  
-        final Color hotColor = Color.valueOf("ff9575a3");
-        final Color coolColor = new Color(1, 1, 1, 0f);
-  
-        @Override
-        public void load(){
-          super.load();
-          rotatorA = Core.atlas.find(block.name + "_rotator_0");
-          rotatorB = Core.atlas.find(block.name + "_rotator_1");
-        }
-        
-        {
-          plasma1 = Pal.reactorPurple;
-          plasma2 = Pal.reactorPurple2;
 
-          drawerType = e -> new SglBaseDrawer(e){
-            float smooth;
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawPlasma(){{
+            suffix = "_plasma_";
+            plasma1 = Pal.reactorPurple;
+            plasma2 = Pal.reactorPurple2;
+          }},
+          new DrawRegionDynamic<NormalCrafterBuild>("_liquid"){
+            {
+              alpha = e -> e.liquids.currentAmount()/e.block.liquidCapacity;
+              color = e -> Tmp.c1.set(SglLiquids.phase_FEX_liquid.color).lerp(Color.white, 0.3f);
+            }
 
             @Override
-            public void draw(){
-              smooth = Mathf.lerpDelta(smooth, e.liquids.currentAmount(), 0.02f);
-
-              Draw.rect(bottom, e.x, e.y);
-              drawPlasma(e);
+            public void draw(Building build){
               SglDraw.startBloom(31);
-              Drawf.liquid(liquid, e.x, e.y, smooth/liquidCapacity, e.liquids.current().color.cpy().lerp(Color.white, 0.3f));
+              super.draw(build);
               SglDraw.endBloom();
-              Draw.rect(rotatorA, e.x, e.y, e.totalProgress()*5);
-              Draw.rect(rotatorB, e.x, e.y, -e.totalProgress()*5);
-              Draw.rect(region, e.x, e.y);
-
-              Draw.color(coolColor, hotColor, e.heat/e.block().maxHeat);
-              Fill.rect(e.x, e.y, e.block.size * tilesize, e.block.size * tilesize);
-
+            }
+          },
+          new DrawRegion("_rotator_0"){{
+            rotateSpeed = 5;
+          }},
+          new DrawRegion("_rotator_1"){{
+            rotateSpeed = -5;
+          }},
+          new DrawDefault(),
+          new DrawReactorHeat(),
+          new DrawBlock(){
+            @Override
+            public void draw(Building build){
+              NuclearReactorBuild e = (NuclearReactorBuild) build;
               Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);
 
@@ -337,9 +362,8 @@ public class NuclearBlocks implements ContentList{
               Lines.stroke(1.8f*e.workEfficiency());
               Lines.circle(e.x, e.y, 18 + shake);
             }
-          };
-        }
-      };
+          }
+      );
     }};
   
     nuclear_energy_source = new EnergySource("nuclear_energy_source"){{

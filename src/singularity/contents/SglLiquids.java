@@ -8,36 +8,38 @@ import mindustry.type.Liquid;
 public class SglLiquids implements ContentList{
   /**FEX流体*/
   public static Liquid FEX_liquid,
-  /**相位态FEX流体*/
-  phase_FEX_liquid,
-  /**混合化工凝胶*/
-  mixed_chemical_gel,
-  /**富铱凝胶*/
-  iridium_gel,
-  /**润滑剂*/
-  lubricant,
-  /**藻泥*/
-  algae_mud,
-  /**岩层沥青*/
-  rock_bitumen,
-  /**混合焦油*/
-  mixed_tar,
-  /**燃油*/
-  fuel_oil,
+      /**相位态FEX流体*/
+      phase_FEX_liquid,
+      /**混合化工凝胶*/
+      mixed_chemical_gel,
+      /**富铱凝胶*/
+      iridium_gel,
+      /**润滑剂*/
+      lubricant,
+      /**藻泥*/
+      algae_mud,
+      /**岩层沥青*/
+      rock_bitumen,
+      /**混合焦油*/
+      mixed_tar,
+      /**燃油*/
+      fuel_oil,
 
-  //气体
-  /**氧气*/
-  oxygen,
-  /**氯气*/
-  chlorine,
-  /**氦气*/
-  helium,
-  /**氧化硫*/
-  sulfur_oxide,
-  /**甲烷*/
-  methane,
-  /**孢子云*/
-  spore_cloud;
+      //气体
+      /**氧气*/
+      oxygen,
+      /**氯气*/
+      chlorine,
+      /**氦气*/
+      helium,
+      /**二氧化碳*/
+      carbon_dioxide,
+      /**氧化硫*/
+      sulfur_oxide,
+      /**甲烷*/
+      methane,
+      /**孢子云*/
+      spore_cloud;
 
   public void load(){
     FEX_liquid = new Liquid("FEX_liquid", Color.valueOf("#E34248")){{
@@ -143,6 +145,16 @@ public class SglLiquids implements ContentList{
       viscosity = 0;
     }};
 
+    carbon_dioxide = new Liquid("carbon_dioxide", Color.white){{
+      gas = true;
+
+      heatCapacity = 1.2f;
+      explosiveness = 0;
+      flammability = 0;
+      temperature = 0.4f;
+      viscosity = 0;
+    }};
+
     sulfur_oxide = new Liquid("sulfur_oxide", Color.white){{
       gas = true;
 
@@ -156,7 +168,7 @@ public class SglLiquids implements ContentList{
     methane = new Liquid("methane", Color.white){{
       gas = true;
 
-      heatCapacity = 0.8f;
+      heatCapacity = 1.4f;
       explosiveness = 1f;
       flammability = 0.85f;
       temperature = 0.4f;
@@ -166,7 +178,7 @@ public class SglLiquids implements ContentList{
     spore_cloud = new Liquid("spore_cloud", Pal.spore){{
       gas = true;
 
-      heatCapacity = 0.3f;
+      heatCapacity = 0.5f;
       explosiveness = 0.8f;
       flammability = 0.75f;
       temperature = 0.4f;

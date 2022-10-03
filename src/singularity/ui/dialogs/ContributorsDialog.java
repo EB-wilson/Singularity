@@ -11,6 +11,7 @@ import singularity.Contribute;
 import singularity.Contributors;
 import singularity.Sgl;
 import singularity.Singularity;
+import singularity.graphic.SglDrawConst;
 import universecore.ui.table.ZoomableTable;
 
 public class ContributorsDialog extends BaseDialog{
@@ -34,7 +35,7 @@ public class ContributorsDialog extends BaseDialog{
       table.defaults().pad(8);
       table.table(Tex.pane, t -> {
         t.defaults().center().top().padTop(6);
-        t.image(Singularity.getModAtlas("author")).size(64);
+        t.image(SglDrawConst.sglIcon).size(64);
         t.row();
         t.add(Contribute.author.localize()).color(Pal.accent);
         t.row();

@@ -147,8 +147,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
   }
   
   default void onMoveEnergy(NuclearEnergyBuildComp dest, float rate){
-    Seq<NuclearEnergyBuildComp> path = getEnergyNetwork().getPath(this, dest);
-    for(NuclearEnergyBuildComp child: path) child.onMovePathChild(rate);
+    for(NuclearEnergyBuildComp child: getEnergyNetwork().getPath(this, dest)) child.onMovePathChild(rate);
   }
   
   default void onMovePathChild(float flow){

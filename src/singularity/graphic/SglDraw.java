@@ -67,46 +67,44 @@ public class SglDraw{
         false);
   }
 
-  public static void drawLightEdge(float x, float y, float width, float widthH, float height, float heightW, float rotation){
-    drawLightEdge(x, y, width, widthH, 1, height, heightW, 1, rotation);
+  public static void drawLightEdge(float x, float y, float vertLength, float vertWidth, float horLength, float horWidth){
+    Color color = Draw.getColor();
+    drawDiamond(x, y, vertLength, vertWidth, 90, color, color);
+    drawDiamond(x, y, horLength, horWidth, 0, color, color);
   }
 
-  public static void drawLightEdge(float x, float y, float width, float widthH, float alphaW, float height, float heightW, float alphaH, float rotation){
-    float heightR = height/2, widthR = width/2;
+  public static void drawLightEdge(float x, float y, Color color, float vertLength, float vertWidth, float rotationV, Color gradientV,
+                                   float horLength, float horWidth, float rotationH, Color gradientH){
+    drawDiamond(x, y, vertLength, vertWidth, 90 + rotationV, color, gradientV);
+    drawDiamond(x, y, horLength, horWidth, rotationH, color, gradientH);
+  }
 
-    Tmp.v1.set(1, 0).setLength(widthR).y = widthH/2;
-    Tmp.v1.rotate(rotation);
-    Tmp.v2.set(0, 1).setLength(heightR).x = heightW/2;
-    Tmp.v2.rotate(rotation);
+  public static void drawLightEdge(float x, float y, float vertLength, float vertWidth, float rotationV, float gradientV,
+                                   float horLength, float horWidth, float rotationH, float gradientH){
+    Color color = Draw.getColor(), gradientColorV = color.cpy().a(gradientV), gradientColorH = color.cpy().a(gradientH);
+    drawDiamond(x, y, vertLength, vertWidth, 90 + rotationV, color, gradientColorV);
+    drawDiamond(x, y, horLength, horWidth, rotationH, color, gradientColorH);
+  }
 
-    Color c = Draw.getColor();
-    Tmp.c1.set(c).a *= alphaW;
-    Tmp.c2.set(c).a *= alphaH;
+  public static void drawDiamond(float x, float y, float length, float width, float rotation, Color color, Color gradient){
+    Tmp.v1.set(length/2, 0).rotate(rotation);
+    Tmp.v2.set(0, width/2).rotate(rotation);
 
-    Fill.quad(
-        x, y + Tmp.v1.y, c.toFloatBits(),
-        x, y - Tmp.v1.y, c.toFloatBits(),
-        x + Tmp.v1.x, y, Tmp.c1.toFloatBits(),
-        x + Tmp.v1.x, y, Tmp.c1.toFloatBits()
-    );
-    Fill.quad(
-        x, y + Tmp.v1.y, c.toFloatBits(),
-        x, y - Tmp.v1.y, c.toFloatBits(),
-        x - Tmp.v1.x, y, Tmp.c1.toFloatBits(),
-        x - Tmp.v1.x, y, Tmp.c1.toFloatBits()
-    );
-    Fill.quad(
-        x + Tmp.v2.x, y, c.toFloatBits(),
-        x - Tmp.v2.x, y, c.toFloatBits(),
-        x, y + Tmp.v2.y, Tmp.c2.toFloatBits(),
-        x, y + Tmp.v2.y, Tmp.c2.toFloatBits()
-    );
-    Fill.quad(
-        x + Tmp.v2.x, y, c.toFloatBits(),
-        x - Tmp.v2.x, y, c.toFloatBits(),
-        x, y - Tmp.v2.y, Tmp.c2.toFloatBits(),
-        x, y - Tmp.v2.y, Tmp.c2.toFloatBits()
-    );
+    float originColor = color.toFloatBits();
+    float gradientColor = gradient.toFloatBits();
+
+    Fill.quad(x, y, originColor, x, y, originColor,
+        x + Tmp.v1.x, y + Tmp.v1.y, gradientColor,
+        x + Tmp.v2.x, y + Tmp.v2.y, gradientColor);
+    Fill.quad(x, y, originColor, x, y, originColor,
+        x + Tmp.v1.x, y + Tmp.v1.y, gradientColor,
+        x - Tmp.v2.x, y - Tmp.v2.y, gradientColor);
+    Fill.quad(x, y, originColor, x, y, originColor,
+        x - Tmp.v1.x, y - Tmp.v1.y, gradientColor,
+        x + Tmp.v2.x, y + Tmp.v2.y, gradientColor);
+    Fill.quad(x, y, originColor, x, y, originColor,
+        x - Tmp.v1.x, y - Tmp.v1.y, gradientColor,
+        x - Tmp.v2.x, y - Tmp.v2.y, gradientColor);
   }
 
   public static void gradientCircle(float x, float y, float radius, Color gradientColor){

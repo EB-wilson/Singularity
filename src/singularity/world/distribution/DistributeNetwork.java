@@ -1,33 +1,47 @@
 package singularity.world.distribution;
 
 import arc.Core;
+import arc.math.Mathf;
+import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.OrderedSet;
-import arc.struct.Queue;
-import arc.struct.Seq;
+import arc.util.Time;
+import org.jetbrains.annotations.NotNull;
+import singularity.world.FinderContainerBase;
 import singularity.world.components.distnet.DistComponent;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
+import singularity.world.distribution.buffers.BaseBuffer;
+import singularity.world.distribution.request.DistRequestBase;
 import singularity.world.modules.DistCoreModule;
+import universecore.util.Empties;
 import universecore.util.colletion.TreeSeq;
 
-public class DistributeNetwork{
-  private static final Queue<DistElementBuildComp> finder = new Queue<>();
-  private static final ObjectSet<DistElementBuildComp> added = new ObjectSet<>();
-  private static final Seq<DistElementBuildComp> tmp = new Seq<>();
+import java.util.Iterator;
+
+public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp> implements Iterable<DistElementBuildComp>{
+  private static final ObjectSet<DistElementBuildComp> tmp = new ObjectSet<>();
   public static final DistElementBuildComp[] EMP_ARR = new DistElementBuildComp[0];
 
   public TreeSeq<DistElementBuildComp> elements = new TreeSeq<>((a, b) -> b.priority() - a.priority());
-  public ObjectSet<DistElementBuildComp> existed = new ObjectSet<>();
+  public OrderedSet<DistElementBuildComp> energyBuffer = new OrderedSet<>();
   private DistElementBuildComp[] elementsIterateArr;
 
   public TreeSeq<MatrixGrid> grids = new TreeSeq<>((a, b) -> b.priority - a.priority);
   
   public OrderedSet<DistNetworkCoreComp> cores = new OrderedSet<>();
   public OrderedSet<DistComponent> components = new OrderedSet<>();
+
+  public ObjectMap<String, Object> vars = new ObjectMap<>();
+
   public int frequencyUsed;
   public int maxFrequency;
+
+  public float energyProduct;
+  public float energyConsume;
+  public float extraEnergyRequire;
+  public float energyStatus;
 
   private boolean structUpdated = true;
   private boolean status = false;
@@ -35,10 +49,23 @@ public class DistributeNetwork{
 
   long frame;
 
+  public void putVar(String key, Object value){
+    vars.put(key, value);
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> T getVar(String key, T def){
+    return (T) vars.get(key, def);
+  }
+
+  public <T> T getVar(String key){
+    return getVar(key, null);
+  }
+
   public void add(DistributeNetwork other){
     if(other != this){
       lock = true;
-      for(DistElementBuildComp next: other.elements){
+      for(DistElementBuildComp next: other){
         add(next);
       }
 
@@ -46,21 +73,24 @@ public class DistributeNetwork{
         add(component);
       }
       lock = false;
+
+      vars.putAll(other.vars);
       modified();
     }
   }
 
   public void add(DistComponent comp){
-    if(comp instanceof DistElementBuildComp ele && (ele.distributor().network == this || !existed.add(ele))) return;
+    if(comp instanceof DistElementBuildComp ele && (ele.distributor().network == this)) return;
 
     components.add(comp);
     modified();
   }
   
   public void add(DistElementBuildComp other){
-    if(other.distributor().network == this || !existed.add(other)) return;
+    if(other == null || other.distributor().network == this) return;
 
     elements.add(other);
+    if(other.getDistBlock().matrixEnergyCapacity() > 0) energyBuffer.add(other);
     if(other instanceof DistComponent c) components.add(c);
     if(other instanceof DistNetworkCoreComp d) cores.add(d);
     if(other instanceof DistMatrixUnitBuildComp mat) grids.add(mat.matrixGrid());
@@ -70,7 +100,7 @@ public class DistributeNetwork{
   }
 
   public float netEfficiency(){
-    return netValid()? getCore().netEff(): 0;
+    return netStructValid()? energyStatus: 0;
   }
   
   public DistNetworkCoreComp getCore(){
@@ -78,12 +108,12 @@ public class DistributeNetwork{
   }
 
   public boolean netValid(){
-    return netStructValid() && getCore().netEff() > 0.001f;
+    return netStructValid() && energyStatus > 0.001f;
   }
 
   public boolean netStructValid(){
     DistNetworkCoreComp core = getCore();
-    boolean res = core != null && frequencyUsed < maxFrequency;
+    boolean res = core != null && frequencyUsed <= maxFrequency;
     if(!res) status = false;
     return res;
   }
@@ -105,6 +135,8 @@ public class DistributeNetwork{
       }
       structUpdated = false;
     }
+
+    updateEnergy();
 
     frequencyUsed = 0;
     maxFrequency = 0;
@@ -140,6 +172,39 @@ public class DistributeNetwork{
     }
   }
 
+  public void updateEnergy(){
+    energyStatus = energyProduct = energyConsume = extraEnergyRequire = 0;
+
+    if(netStructValid()){
+      for(DistElementBuildComp element: elementsIterateArr){
+        energyConsume += element.matrixEnergyConsume();
+        extraEnergyRequire += element.extraEnergyRequire();
+      }
+      for(DistElementBuildComp element: elementsIterateArr){
+        energyProduct += element.matrixEnergyProduct();
+      }
+      energyStatus = energyConsume == 0? 1: energyProduct/energyConsume;
+
+      if(energyBuffer.isEmpty()) return;
+
+      float avgDelta = (energyStatus - 1)*energyConsume/energyBuffer.size*Time.delta;
+      int count = 0;
+      boolean anyBuffer = false;
+      for(DistElementBuildComp buffer: energyBuffer){
+        count++;
+        float origin = buffer.matrixEnergyBuffered();
+        float set = Mathf.clamp(origin + avgDelta, 0, buffer.getDistBlock().matrixEnergyCapacity());
+        buffer.matrixEnergyBuffered(set);
+
+        if(avgDelta < 0 && set - origin < 0) anyBuffer = true;
+        avgDelta += (avgDelta - set + origin)/(energyBuffer.size - count);
+      }
+
+      energyStatus = Mathf.clamp(energyStatus);
+      if(energyStatus < 1 && anyBuffer) energyStatus = 1;
+    }
+  }
+
   public void modified(){
     if(lock) return;
 
@@ -147,56 +212,121 @@ public class DistributeNetwork{
     structUpdated = true;
   }
   
-  public void restruct(DistElementBuildComp origin, Seq<DistElementBuildComp> exclude){
-    finder.clear();
-    added.clear();
-    
-    finder.addFirst(origin);
-
-    lock = true;
-    
-    DistElementBuildComp other;
-    while(!finder.isEmpty()){
-      if(added.add(other = finder.removeLast())){
-        add(other);
-        
-        for(DistElementBuildComp next: other.netLinked()){
-          if(!exclude.contains(next)) finder.addFirst(next);
-        }
-      }
-    }
-
-    lock = false;
-    modified();
-  }
-  
   public void flow(DistElementBuildComp origin){
+    flow(origin, Empties.nilSetO());
+  }
+
+  public void flow(DistElementBuildComp origin, ObjectSet<DistElementBuildComp> excl){
     elements.clear();
     grids.clear();
     cores.clear();
     components.clear();
-    
-    restruct(origin, new Seq<>());
+
+    restruct(origin, excl);
   }
-  
+
+  private void restruct(DistElementBuildComp origin, ObjectSet<DistElementBuildComp> excl){
+    excluded.clear();
+    excluded.addAll(excl);
+    lock = true;
+    super.flow(origin);
+    lock = false;
+
+    modified();
+  }
+
   public void remove(DistElementBuildComp remove){
-    for(DistElementBuildComp element: elements){
+    for(DistElementBuildComp element: elementsIterateArr){
       element.networkRemoved(remove);
     }
 
-    for(DistElementBuildComp other: remove.netLinked()){
+    tmp.clear();
+    tmp.add(remove);
+    for(DistElementBuildComp other: elementsIterateArr){
       if(other.distributor().network != this) continue;
       
       other.distributor().setNet();
-      tmp.clear();
-      other.distributor().network.restruct(other, tmp.add(remove));
+      other.distributor().network.restruct(other, tmp);
     }
 
     modified();
   }
   
   public void priorityModified(DistElementBuildComp target){
-    if(elements.remove(target)) elements.add(target);
+    if(elements.remove(target)){
+      elements.add(target);
+      elementsIterateArr = elements.toArray(EMP_ARR);
+    }
     if(target instanceof DistMatrixUnitBuildComp && grids.remove(((DistMatrixUnitBuildComp) target).matrixGrid())) grids.add(((DistMatrixUnitBuildComp) target).matrixGrid());
+  }
+
+  private final Itr INST_ITR = new Itr();
+
+  @NotNull
+  @Override
+  public Iterator<DistElementBuildComp> iterator(){
+    INST_ITR.cursor = 0;
+    return INST_ITR;
+  }
+
+  @Override
+  public Iterable<DistElementBuildComp> getLinkVertices(DistElementBuildComp distElementBuildComp){
+    return distElementBuildComp.netLinked();
+  }
+
+  @Override
+  public boolean isDestination(DistElementBuildComp distElementBuildComp, DistElementBuildComp vert1){
+    return false;
+  }
+
+  public NetStatus status(){
+    if(netStructValid()){
+      if(netValid()){
+        for(BaseBuffer<?, ?, ?> value: getCore().distCore().buffers.values()){
+          if(value.space() <= 0) return NetStatus.bufferBlocked;
+        }
+        for(DistRequestBase<?> task: getCore().distCore().requestTasks){
+          if(task.isBlocked()) return NetStatus.requestBlocked;
+        }
+        return NetStatus.ordinary;
+      }
+      return NetStatus.energyLeak;
+    }
+    else if(frequencyUsed > maxFrequency) return NetStatus.topologyLeak;
+
+    return NetStatus.unknow;
+  }
+
+  public enum NetStatus{
+    ordinary,
+    energyLeak,
+    bufferBlocked,
+    requestBlocked,
+    topologyLeak,
+    unknow;
+
+    private final String localized;
+
+    NetStatus(){
+      localized = Core.bundle.get("status." + name());
+    }
+
+    public String localized(){
+      return localized;
+    }
+  }
+
+  private class Itr implements Iterator<DistElementBuildComp>{
+    int cursor = 0;
+
+    @Override
+    public boolean hasNext(){
+      return cursor < elementsIterateArr.length;
+    }
+
+    @Override
+    public DistElementBuildComp next(){
+      return elementsIterateArr[cursor++];
+    }
   }
 }

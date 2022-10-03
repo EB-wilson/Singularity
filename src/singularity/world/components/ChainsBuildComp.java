@@ -23,10 +23,10 @@ public interface ChainsBuildComp extends BuildCompBase, Posc, Iterable<ChainsBui
   @Annotations.MethodEntry(entryMethod = "onProximityAdded")
   default void onChainsUpdate(){
     for(ChainsBuildComp other : chainBuilds()){
-      if(other.canChain(this)) other.chains().container.add(chains().container);
+      if(canChain(other) && other.canChain(this)) other.chains().container.add(chains().container);
     }
   }
-  
+
   default boolean canChain(ChainsBuildComp other){
     if(!getChainsBlock().chainable(other.getChainsBlock())) return false;
 
@@ -41,7 +41,7 @@ public interface ChainsBuildComp extends BuildCompBase, Posc, Iterable<ChainsBui
   default Seq<ChainsBuildComp> chainBuilds(){
     Seq<ChainsBuildComp> result = new Seq<>();
     for(Building other: getBuilding().proximity){
-      if(other instanceof ChainsBuildComp && canChain((ChainsBuildComp) other)){
+      if(other instanceof ChainsBuildComp comp && canChain(comp) && comp.canChain(this)){
         result.add((ChainsBuildComp) other);
       }
     }
@@ -59,4 +59,6 @@ public interface ChainsBuildComp extends BuildCompBase, Posc, Iterable<ChainsBui
   default void chainsRemoved(Seq<ChainsBuildComp> children){}
 
   default void chainsFlowed(ChainsContainer old){}
+
+  default void onChainsUpdated(){}
 }

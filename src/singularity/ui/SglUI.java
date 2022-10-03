@@ -29,7 +29,6 @@ public class SglUI{
     mainMenu.build();
     aboutDialog.build();
     contributors.build();
-    bufferStat.build();
     
     Group overlay = FieldHandler.getValueTemp(Vars.control.input, "group");
     secConfig.build(overlay);

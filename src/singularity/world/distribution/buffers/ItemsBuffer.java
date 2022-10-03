@@ -16,6 +16,7 @@ import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.world.blocks.storage.CoreBlock;
 import mindustry.world.modules.ItemModule;
+import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
@@ -41,6 +42,11 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
   @Override
   public Integer remainingCapacity(){
     return super.remainingCapacity().intValue();
+  }
+
+  @Override
+  public DistBuffers<ItemsBuffer> bufferType(){
+    return DistBuffers.itemBuffer;
   }
 
   public void remove(Item item){
@@ -141,11 +147,6 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
       }
     }
   }
-
-  @Override
-  public int unit(){
-    return 8;
-  }
   
   @Override
   public ItemModule generateBindModule(){
@@ -195,7 +196,7 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
 
     @Override
     public int occupation(){
-      return obj.amount*unit();
+      return obj.amount*bufferType().unit();
     }
   
     @Override

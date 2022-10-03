@@ -41,13 +41,13 @@ public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & Cons
 
   @Override
   public void consume(T entity){
-    if(buffer) entity.handleEnergy(-usage*60*multiple(entity));
+    if(buffer) entity.handleEnergy(-usage*60*parent.delta(entity)*multiple(entity));
   }
 
   @Override
   public void update(T entity) {
     if(!buffer){
-      entity.handleEnergy(-usage*parent.delta(entity)*parent.delta(entity));
+      entity.handleEnergy(-usage*parent.delta(entity));
     }
   }
 

@@ -5,8 +5,8 @@ import arc.Core;
 public enum GridChildType{
   output,
   input,
-  container,
-  acceptor;
+  acceptor,
+  container;
   
   public String locale(){
     return Core.bundle.get("misc." + name());

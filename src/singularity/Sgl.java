@@ -6,8 +6,10 @@ import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.gen.Building;
 import singularity.core.*;
+import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
+import singularity.world.distribution.DistSupportContainerTable;
 import singularity.world.blocks.distribute.IOPointBlock;
 import universecore.util.handler.ClassHandler;
 import universecore.util.mods.ModGetter;
@@ -82,8 +84,12 @@ public class Sgl{
   public static UpdateTiles updateTiles;
   
   public static IOPointBlock ioPoint;
+
+  public static DistSupportContainerTable matrixContainers;
   
   public static void init(){
+    //加载绘制资源
+    SglDrawConst.load();
     //载入风格
     SglStyles.load();
 
@@ -91,7 +97,10 @@ public class Sgl{
     contributors = new Contributors();
     
     updateTiles = new UpdateTiles();
-    
+
+    matrixContainers = new DistSupportContainerTable();
+
+    matrixContainers.setDefaultSupports();
     ui.init();
   }
   

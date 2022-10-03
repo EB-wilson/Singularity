@@ -188,7 +188,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
     @Override
     public Building create(Block block, Team team){
       super.create(block, team);
-      itemBuffer.capacity = itemCapacity*itemBuffer.unit();
+      itemBuffer.capacity = itemCapacity*itemBuffer.bufferType().unit();
       items = itemBuffer.generateBindModule();
       return this;
     }

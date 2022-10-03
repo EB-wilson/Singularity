@@ -62,7 +62,7 @@ public class BlockDataDialog extends BaseDialog{
         
           monitor.table(t -> {
             t.defaults().grow();
-            t.add(Core.bundle.format("misc.position", target.x, target.y)).color(Pal.gray).padLeft(3);
+            t.add(Core.bundle.format("data.position", target.x, target.y)).color(Pal.gray).padLeft(3);
             t.row();
             
             Table button = new Table();

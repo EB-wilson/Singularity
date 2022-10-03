@@ -4,8 +4,6 @@ import arc.Core;
 import arc.audio.Sound;
 import arc.func.Cons;
 import arc.func.Func;
-import arc.graphics.Color;
-import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.scene.ui.ImageButton;
@@ -16,7 +14,6 @@ import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.content.Fx;
-import mindustry.content.Items;
 import mindustry.entities.Effect;
 import mindustry.game.Team;
 import mindustry.gen.Building;
@@ -30,11 +27,9 @@ import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.meta.BlockFlag;
 import mindustry.world.meta.BlockStatus;
-import singularity.Singularity;
 import singularity.type.SglLiquidStack;
 import singularity.world.blocks.SglBlock;
 import singularity.world.consumers.SglConsumeType;
-import singularity.world.draw.DrawFactory;
 import singularity.world.meta.SglStat;
 import singularity.world.modules.SglProductModule;
 import singularity.world.products.Producers;
@@ -48,7 +43,6 @@ import universecore.world.consumers.UncConsumeLiquids;
 import universecore.world.consumers.UncConsumePower;
 import universecore.world.producers.BaseProduce;
 import universecore.world.producers.BaseProducers;
-import universecore.world.producers.ProduceItems;
 import universecore.world.producers.ProduceLiquids;
 
 import java.util.ArrayList;
@@ -85,7 +79,6 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     sync = true;
     ambientSound = Sounds.machine;
     ambientSoundVolume = 0.03f;
-    draw = new DrawFactory<>(this);
     flags = EnumSet.of(BlockFlag.factory);
   }
   
@@ -114,24 +107,12 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
   }
 
   @Override
-  public void load() {
-    super.load();
-    if(displaySelectPrescripts) prescriptSelector = Core.atlas.has(name + "_prescriptSelector")?
-    Core.atlas.find(name + "_prescriptSelector"): Singularity.getModAtlas("prescriptSelector" + size);
-  }
-
-  @Override
   public void setStats() {
     super.setStats();
     if(producers.size() > 1){
       stats.add(SglStat.autoSelect, autoSelect);
       stats.add(SglStat.controllable, canSelect);
     }
-  }
-
-  @Override
-  public TextureRegion[] icons(){
-    return draw.icons();
   }
 
   @SuppressWarnings("unchecked")
@@ -193,7 +174,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
         float consPower = consumesPower && consumer.current != null && (cp = (UncConsumePower<NormalCrafterBuild>) consumer.current.get(SglConsumeType.power)) != null?
             cp.usage*cp.multiple(this): 0;
         Func<Building, Bar> bar = (entity -> new Bar(
-          () -> Core.bundle.format("bar.poweroutput",Strings.fixed(Math.max(productPower-consPower, 0) * 60 * entity.timeScale(), 1)),
+          () -> Core.bundle.format("bar.poweroutput", Strings.fixed(Math.max(productPower-consPower, 0) * 60 * entity.timeScale(), 1)),
           () -> Pal.powerBar,
           () -> powerProdEfficiency
         ));
@@ -275,8 +256,9 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     @Override
     public float getPowerProduction(){
       if(!outputsPower || producer.current == null || producer.current.get(SglProduceType.power) == null) return 0;
-      powerProdEfficiency = Mathf.num(shouldConsume() && consumeValid())*((BaseProduce<NormalCrafterBuild>)producer.current.get(SglProduceType.power)).multiple(this);
-      return producer.getPowerProduct()*efficiency();
+      powerProdEfficiency = Mathf.num(shouldConsume() && consumeValid())*consEfficiency()
+          *((BaseProduce<NormalCrafterBuild>)producer.current.get(SglProduceType.power)).multiple(this);
+      return producer.getPowerProduct()*consEfficiency();
     }
     
     @Override
@@ -315,27 +297,6 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     @Override
     public NormalCrafter block() {
       return NormalCrafter.this;
-    }
-
-    @Override
-    public void draw(){
-      super.draw();
-
-      drawSelectRecipe(this);
-      drawStatus();
-      Draw.blend();
-    }
-    
-    public void drawSelectRecipe(NormalCrafterBuild entity){
-      if(entity.block().displaySelectPrescripts && entity.recipeCurrent != -1){
-        BaseProducers current = producer.current;
-        ProduceItems<?> produceItems = current.get(SglProduceType.item);
-        ProduceLiquids<?> produceLiquids = current.get(SglProduceType.liquid);
-        Color color = current.color != null? current.color: produceItems.items != null? produceItems.items[0].item.color: produceLiquids.liquids != null? produceLiquids.liquids[0].liquid.color: Items.copper.color;
-        Draw.color(color);
-        Draw.rect(entity.block().prescriptSelector, entity.x, entity.y);
-        Draw.color();
-      }
     }
   
     @Override

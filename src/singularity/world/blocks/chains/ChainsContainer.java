@@ -19,6 +19,7 @@ public class ChainsContainer{
   private int maxX, maxY;
   
   private long lastFrameUpdated;
+  private boolean structUpdated = true;
 
   public boolean inlerp(ChainsBuildComp origin, ChainsBuildComp other){
     if(!all.contains(origin)) return false;
@@ -93,12 +94,21 @@ public class ChainsContainer{
     other.chains().container = this;
     
     other.chainsAdded(oldContainer);
+
+    structUpdated = true;
   }
   
   public void update(){
     if(Core.graphics.getFrameId() == lastFrameUpdated) return;
     lastFrameUpdated = Core.graphics.getFrameId();
 
+    if(structUpdated){
+      for(ChainsBuildComp comp: all){
+        comp.onChainsUpdated();
+      }
+
+      structUpdated = false;
+    }
   }
   
   public void reconstruct(ChainsBuildComp source, Boolf<ChainsBuildComp> filter){

@@ -27,6 +27,7 @@ import mindustry.world.Tile;
 import singularity.Sgl;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
+import singularity.graphic.SglDrawConst;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.world.components.EdgeLinkerBuildComp;
 import singularity.world.components.EdgeLinkerComp;
@@ -138,8 +139,8 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   public void initColor(){
     linkColors.put(GridChildType.input, Pal.heal);
     linkColors.put(GridChildType.output, Pal.accent);
-    linkColors.put(GridChildType.acceptor, Color.valueOf("D3FDFF"));
-    linkColors.put(GridChildType.container, Color.valueOf("D3FDFF"));
+    linkColors.put(GridChildType.acceptor, SglDrawConst.matrixNet);
+    linkColors.put(GridChildType.container, SglDrawConst.matrixNet);
   }
 
   @Annotations.ImplEntries
@@ -215,6 +216,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
 
     @Override
     public void draw(){
+      super.draw();
       for(IntMap.Entry<float[]> entry: childLinkWarmup){
         DistTargetConfigTable.TargetConfigure cfg = configMap.get(entry.key);
         if(cfg == null || entry.value[0] <= 0.01f) continue;

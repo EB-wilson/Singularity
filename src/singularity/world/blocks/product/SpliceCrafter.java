@@ -1,18 +1,15 @@
 package singularity.world.blocks.product;
 
 import arc.Core;
-import arc.func.Cons;
+import arc.func.Floatf;
 import arc.func.Func;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
-import arc.util.Eachable;
 import arc.util.Strings;
-import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
@@ -26,13 +23,11 @@ import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
 import singularity.type.SglLiquidStack;
 import singularity.world.blocks.chains.ChainsContainer;
-import singularity.world.blocks.chains.ChainsEvents;
 import singularity.world.components.ChainsBlockComp;
 import singularity.world.components.ChainsBuildComp;
 import singularity.world.components.SpliceBlockComp;
 import singularity.world.components.SpliceBuildComp;
 import singularity.world.consumers.SglConsumeType;
-import singularity.world.draw.DrawSpliceBlock;
 import singularity.world.modules.ChainsModule;
 import singularity.world.modules.SglConsumeModule;
 import singularity.world.modules.SglLiquidModule;
@@ -42,38 +37,50 @@ import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.components.blockcomp.ProducerBuildComp;
 import universecore.util.UncLiquidStack;
+import universecore.world.consumers.BaseConsume;
+import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.UncConsumeLiquids;
+import universecore.world.producers.BaseProduce;
+import universecore.world.producers.BaseProducers;
 import universecore.world.producers.ProduceLiquids;
-
-import java.util.LinkedHashMap;
 
 @Annotations.ImplEntries
 public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   public int maxChainsWidth = 10;
   public int maxChainsHeight = 10;
 
-  public boolean interCorner = true;
-  public float tempLiquidCapacity;
+  public boolean interCorner = false;
 
-  protected ObjectMap<ChainsEvents.ChainsTrigger, Seq<Runnable>> chainsListeners = new ObjectMap<>();
-  protected ObjectMap<Class<? extends ChainsEvents.ChainsEvent>, LinkedHashMap<String, Cons<ChainsEvents.ChainsEvent>>> globalChainsListeners = new ObjectMap<>();
+  public float tempLiquidCapacity;
   
   public SpliceCrafter(String name){
     super(name);
-    
-    draw = new DrawSpliceBlock<>(this);
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public void init(){
     super.init();
     tempLiquidCapacity = liquidCapacity;
-  }
 
-  @Override
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public void drawPlanConfigTop(BuildPlan plan, Eachable<BuildPlan> list){
-    ((DrawSpliceBlock) draw).drawRequest(plan, list, interCorner);
+    for(BaseConsumers consumer: consumers){
+      for(BaseConsume<? extends ConsumerBuildComp> cons: consumer.all()){
+        Floatf old = cons.consMultiplier;
+        cons.setMultiple((SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
+      }
+    }
+    for(BaseConsumers consumer: optionalCons){
+      for(BaseConsume<? extends ConsumerBuildComp> cons: consumer.all()){
+        Floatf old = cons.consMultiplier;
+        cons.setMultiple((SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
+      }
+    }
+    for(BaseProducers producer: producers){
+      for(BaseProduce<?> prod: producer.all()){
+        Floatf old = prod.prodMultiplier;
+        prod.setMultiple((SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
+      }
+    }
   }
 
   @Override
@@ -84,9 +91,9 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   @Annotations.ImplEntries
   public class SpliceCrafterBuild extends NormalCrafterBuild implements SpliceBuildComp{
     public ChainsModule chains;
-    public int[] splice;
     public boolean handling, updateModule = true, firstInit = true;
-  
+    public int[] splice;
+
     @Override
     public SpliceItemModule items(){
       return (SpliceItemModule)items;
@@ -168,22 +175,20 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         bars.row();
         bars.table(t -> {
           t.defaults().grow().margin(0);
-          if(cl != null){
-            t.table(Tex.pane2, liquid -> {
-              liquid.defaults().growX().margin(0).pad(4).height(18);
-              liquid.left().add(Core.bundle.get("misc.liquid")).color(Pal.gray);
+          t.table(Tex.pane2, liquid -> {
+            liquid.defaults().growX().margin(0).pad(4).height(18);
+            liquid.left().add(Core.bundle.get("misc.liquid")).color(Pal.gray);
+            liquid.row();
+            for(UncLiquidStack stack: cl.liquids){
+              Func<Building, Bar> bar = (entity -> new Bar(
+                  () -> stack.liquid.localizedName,
+                  () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
+                  () -> Math.min(entity.liquids.get(stack.liquid) / liquids().allCapacity, 1f)
+              ));
+              liquid.add(bar.get(this));
               liquid.row();
-              for(UncLiquidStack stack: cl.liquids){
-                Func<Building, Bar> bar = (entity -> new Bar(
-                    () -> stack.liquid.localizedName,
-                    () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
-                    () -> Math.min(entity.liquids.get(stack.liquid) / liquids().allCapacity, 1f)
-                ));
-                liquid.add(bar.get(this));
-                liquid.row();
-              }
-            });
-          }
+            }
+          });
         }).height(46 + cl.liquids.length*26).padBottom(0).padTop(2);
       }
   
@@ -252,7 +257,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         }
         if(producer != tProd) producer = tProd;
 
-        splice = getRegionBits(tile, interCorner);
+        splice(getRegionBits(interCorner));
 
         updateModule = false;
       }
@@ -281,13 +286,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     public boolean acceptLiquid(Building source, Liquid liquid){
       return source.interactable(this.team) && hasLiquids && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)) && liquids.get(liquid) <= liquids().allCapacity - 0.0001f;
     }
-  
-    @Override
-    public void onProximityUpdate(){
-      super.onProximityUpdate();
-      splice = getRegionBits(tile, interCorner);
-    }
-  
+
     @Override
     public void drawStatus(){
       if(this.block.enableDrawStatus && this.block().consumers.size() > 0 && chains.getVar("build") == this){
@@ -301,11 +300,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         Fill.square(brcx, brcy, 1.5F*multiplier, 45.0F);
         Draw.color();
       }
-    }
-  
-    @Override
-    public int[] spliceData(){
-      return splice;
     }
 
     @Override
@@ -382,6 +376,16 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         if(statDisplay.y >= y && statDisplay.x <= getBuilding().x) chains.container.putVar("build", this);
       }
       updateModule = true;
+    }
+
+    @Override
+    public void splice(int[] arr){
+      splice = arr;
+    }
+
+    @Override
+    public int[] splice(){
+      return splice;
     }
   }
   
@@ -461,7 +465,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     public SpliceConsumeModule(ConsumerBuildComp entity){
       super(entity);
     }
-    
+
     public void set(SpliceConsumeModule module){}
   
     @Override
@@ -480,7 +484,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     public SpliceProduceModule(ProducerBuildComp entity){
       super(entity);
     }
-  
+
     public void set(SpliceProduceModule module){}
   
     @Override

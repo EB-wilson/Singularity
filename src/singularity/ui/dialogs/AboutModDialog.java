@@ -17,6 +17,7 @@ import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import singularity.Sgl;
+import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
 
 import static mindustry.Vars.ui;
@@ -75,19 +76,13 @@ public class AboutModDialog extends BaseDialog {
   };
   
   ButtonEntry[] authorPages = new ButtonEntry[]{
-      new ButtonEntry(Core.atlas.find(Sgl.modName + "-facebook"), t -> {
-        t.add(Core.bundle.get("misc.facebook")).color(Pal.accent);
-        t.row();
-        t.add(Core.bundle.get("infos.facebook"));
-      }, () -> Pal.items, () -> showUrl.get(facebookPages)),
-      
-      new ButtonEntry(Core.atlas.find(Sgl.modName + "-telegram"), t -> {
+      new ButtonEntry(SglDrawConst.telegramIcon, t -> {
         t.add(Core.bundle.get("misc.telegram")).color(Pal.accent);
         t.row();
         t.add(Core.bundle.get("infos.telegram"));
       }, () -> Color.lightGray, () -> showUrl.get(telegramPages)),
       
-      new ButtonEntry(Core.atlas.find(Sgl.modName + "-qq"), t -> {
+      new ButtonEntry(SglDrawConst.qqIcon, t -> {
         t.add(Core.bundle.get("misc.qq")).color(Pal.accent);
         t.row();
         t.add(Core.bundle.get("infos.qq"));

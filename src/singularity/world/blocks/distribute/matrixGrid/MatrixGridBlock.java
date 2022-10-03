@@ -205,6 +205,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           configMap.get(target.pos()),
           config,
           target instanceof IOPointComp point? point.configContentTypes(): new ContentType[]{ContentType.item, ContentType.liquid},
+          (b, t, c) -> true,
           c -> configure(c.pack()),
           Sgl.ui.secConfig::hideConfig
       ));

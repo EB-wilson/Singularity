@@ -51,6 +51,7 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
 
     buildCostMultiplier = 0;
 
+    //items
     setFactory(GridChildType.output, ContentType.item, new RequestHandlers.ReadItemRequestHandler());
     setFactory(GridChildType.input, ContentType.item, new RequestHandlers.PutItemRequestHandler());
     setFactory(GridChildType.acceptor, ContentType.item, new RequestHandlers.AcceptItemRequestHandler());
@@ -161,11 +162,13 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
 
     @Override
     public boolean valid(DistMatrixUnitBuildComp unit, GridChildType type, Content content){
+      if(config == null) return false;
+
       if(content instanceof Item item){
         return config.get(GridChildType.output, item) && acceptItemOut(unit.getBuilding(), item);
       }
       else if(content instanceof Liquid liquid){
-        return config.get(GridChildType.output, liquid) && acceptLiquid(unit.getBuilding(), liquid);
+        return config.get(GridChildType.output, liquid) && acceptLiquidOut(unit.getBuilding(), liquid);
       }
 
       return false;

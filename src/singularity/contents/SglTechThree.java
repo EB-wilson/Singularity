@@ -3,11 +3,12 @@ package singularity.contents;
 import arc.struct.Seq;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
+import mindustry.content.TechTree;
+import singularity.Sgl;
 
 import static mindustry.content.Blocks.*;
 import static mindustry.content.Items.*;
 import static mindustry.game.Objectives.Produce;
-import static singularity.contents.CollectBlocks.fast_spin_drill;
 import static singularity.contents.CollectBlocks.rock_drill;
 import static singularity.contents.CrafterBlocks.*;
 import static singularity.contents.DefenceBlocks.*;
@@ -24,10 +25,6 @@ public class SglTechThree implements ContentList{
     {//serpulo
       node(laserDrill, rock_drill, rockD -> {
         rockD.node(ore_washer, oreWa -> {});
-      });
-
-      node(laserDrill, fast_spin_drill, fsDri -> {
-
       });
 
       node(liquidContainer, liquid_unloader, liquidUnl -> {});
@@ -167,6 +164,12 @@ public class SglTechThree implements ContentList{
           });
         });
       });
+    }
+
+    if(Sgl.config.debugMode){
+      for(TechTree.TechNode node: TechTree.all){
+        node.content.alwaysUnlocked = true;
+      }
     }
   }
 }

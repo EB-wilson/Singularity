@@ -25,7 +25,6 @@ import singularity.contents.SglItems;
 import singularity.world.SglFx;
 import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.consumers.SglConsumeType;
-import singularity.world.draw.DrawNuclearReactor;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.particles.SglParticleModels;
@@ -57,8 +56,6 @@ public class NuclearReactor extends NormalCrafter{
     outputEnergy = true;
     autoSelect = true;
     canSelect = false;
-    
-    draw = new DrawNuclearReactor(this);
   }
   
   public void newReact(Item fuel, float time, float output, boolean prodWaste){
@@ -81,7 +78,8 @@ public class NuclearReactor extends NormalCrafter{
     }, (s, c) -> {
       s.add(SglStat.effect, t -> {
         t.row();
-        t.add(Core.bundle.get("misc.absorbHeat") + ": " + consHeat*60/1000 + SglStatUnit.kHeat.localized() + Core.bundle.get("misc.preSecond"));
+        t.add(Core.bundle.get("misc.absorbHeat") + ": " + Strings.autoFixed(consHeat*60, 2)
+            + SglStatUnit.heat.localized() + Core.bundle.get("misc.preSecond"));
       });
     });
 

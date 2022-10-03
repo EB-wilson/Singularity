@@ -25,7 +25,7 @@ import java.util.Arrays;
 /**包含了用于矩阵网格发出网络请求的一些辅助类*/
 public class RequestHandlers{
   /**矩阵网格发出网络请求使用的辅助类接口，为矩阵网格提供将配置转化为网络请求的帮助*/
-  public interface RequestHandler<R extends DistRequestBase>{
+  public interface RequestHandler<R extends DistRequestBase<?>>{
     /**添加一个要分析的io配置，所有配置项取求和
      * @param cfg 添加的配置项*/
     void addParseConfig(TargetConfigure cfg);
@@ -141,8 +141,7 @@ public class RequestHandlers{
       result.waker = (DistMatrixUnitBuildComp e) -> {
         for(IntMap.Entry<IOPointComp> point: e.ioPoints()){
           for(ItemStack stack: seq){
-            if(point.value.gridConfig() != null
-                && point.value.valid(e, GridChildType.output, stack.item)) return true;
+            if(point.value.valid(e, GridChildType.output, stack.item)) return true;
           }
         }
 
@@ -212,7 +211,7 @@ public class RequestHandlers{
   public static class AcceptLiquidRequestHandler extends AbstractLiquidRequestHandler implements RequestHandler<PutLiquidsRequest>{
     @Override
     public void addParseConfig(TargetConfigure cfg){
-      addParseConfig(cfg, GridChildType.container);
+      addParseConfig(cfg, GridChildType.acceptor);
     }
 
     @Override
@@ -242,7 +241,7 @@ public class RequestHandlers{
     @Override
     public ReadLiquidsRequest makeRequest(DistMatrixUnitBuildComp sender){
       LiquidsBuffer buff = sender.getBuffer(DistBuffers.liquidBuffer);
-      scaleTo((float)buff.capacity/buff.unit());
+      scaleTo((float)buff.capacity/buff.bufferType().unit());
       Seq<LiquidStack> seq = new Seq<>(liquids.values().toArray());
 
       ReadLiquidsRequest result = liquids.isEmpty()? null: new ReadLiquidsRequest(sender, sender.getBuffer(DistBuffers.liquidBuffer), seq);

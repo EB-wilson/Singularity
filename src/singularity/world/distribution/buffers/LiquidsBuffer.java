@@ -11,6 +11,7 @@ import mindustry.content.Liquids;
 import mindustry.gen.Building;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
+import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
@@ -37,6 +38,11 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
   @Override
   public Float remainingCapacity(){
     return super.remainingCapacity().floatValue();
+  }
+
+  @Override
+  public DistBuffers<LiquidsBuffer> bufferType(){
+    return DistBuffers.liquidBuffer;
   }
 
   public void remove(Liquid liquid){
@@ -112,11 +118,6 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
       }
     }
   }
-
-  @Override
-  public int unit(){
-    return 4;
-  }
   
   @Override
   public BufferLiquidModule generateBindModule(){
@@ -177,7 +178,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
 
     @Override
     public int occupation(){
-      return (int)Math.ceil(obj.amount*unit());
+      return (int)Math.ceil(obj.amount*bufferType().unit());
     }
   
     @Override

@@ -65,7 +65,7 @@ public class Singularity extends Mod{
        Visit the GitHub project about this mod:
        >\040""" + Sgl.githubProject + " <"
     );
-    
+
     Events.on(ClientLoadEvent.class, e -> {
       Sgl.ui.mainMenu.show();
     });

@@ -1,9 +1,7 @@
 package singularity.ui.tables;
 
 import arc.Core;
-import arc.func.Cons;
-import arc.func.Cons2;
-import arc.func.Cons3;
+import arc.func.*;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
@@ -27,6 +25,7 @@ import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
+import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Building;
@@ -50,7 +49,8 @@ public class DistTargetConfigTable extends Table{
   Runnable rebuildItems;
   int index;
   
-  public DistTargetConfigTable(Building build, TargetConfigure defaultCfg, GridChildType[] IOTypes, ContentType[] types, Cons<TargetConfigure> cons, Runnable close){
+  public DistTargetConfigTable(Building build, TargetConfigure defaultCfg, GridChildType[] IOTypes, ContentType[] types,
+                               Func3<Building, GridChildType, Content, Boolean> valid, Cons<TargetConfigure> cons, Runnable close){
     super(Tex.pane);
     if(defaultCfg != null){
       config.read(defaultCfg.pack());
@@ -154,9 +154,14 @@ public class DistTargetConfigTable extends Table{
             int dx = Geometry.d4x(i);
             int dy = Geometry.d4y(i);
 
-            Draw.color((currDireBit[0] & bit) != 0 ? Pal.accent : Pal.gray);
+            Draw.color(Pal.gray);
             Draw.alpha(alpha);
             Fill.square(x + deltaX + width/2f + dx*60*alpha, y + deltaY + height/2f + dy*60*alpha, 18, 45);
+            if((currDireBit[0] & bit) != 0){
+              Draw.color(Pal.accent);
+              Draw.alpha(alpha);
+              Fill.square(x + deltaX + width/2f + dx*60*alpha, y + deltaY + height/2f + dy*60*alpha, 15, 45);
+            }
 
             bit *= 2;
           }
@@ -210,7 +215,8 @@ public class DistTargetConfigTable extends Table{
               }).size(40).get();
               button.getStyle().imageUp = new TextureRegionDrawable(item.uiIcon);
               button.update(() -> button.setChecked(currConfig.contains(item)));
-  
+              button.touchable = valid.get(build, IOTypes[index], item)? Touchable.enabled: Touchable.disabled;
+
               if(counter++ != 0 && counter%5 == 0) items.row();
             }
           }
@@ -324,8 +330,9 @@ public class DistTargetConfigTable extends Table{
     public ObjectSet<UnlockableContent> get(GridChildType type, ContentType t){
       return data.get(type, Empties.nilMapO()).get(t, Empties.nilSetO());
     }
-    
+
     public ObjectMap<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> get(){
+      clip();
       return data;
     }
     
@@ -336,6 +343,19 @@ public class DistTargetConfigTable extends Table{
         }
       }
       return false;
+    }
+
+    public void clip(){
+      for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> entry: data){
+        if(entry.value != null){
+          if(entry.value.isEmpty()) data.remove(entry.key);
+          else{
+            for(ObjectMap.Entry<ContentType, ObjectSet<UnlockableContent>> setEntry: entry.value){
+              if(setEntry.value != null && setEntry.value.isEmpty()) entry.value.remove(setEntry.key);
+            }
+          }
+        }
+      }
     }
 
     public boolean isContainer(){

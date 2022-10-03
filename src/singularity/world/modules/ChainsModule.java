@@ -39,13 +39,6 @@ public class ChainsModule extends BlockModule{
     return container.getVar(key);
   }
   
-  public void update(){
-  
-  }
-  
   @Override
-  public void write(Writes write){
-  
-  }
-  
+  public void write(Writes write){}
 }

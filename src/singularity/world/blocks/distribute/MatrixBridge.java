@@ -34,6 +34,7 @@ import mindustry.type.Liquid;
 import mindustry.world.Tile;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
+import singularity.graphic.SglDrawConst;
 import singularity.world.components.distnet.DistElementBlockComp;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
@@ -47,7 +48,7 @@ import static mindustry.Vars.world;
 public class MatrixBridge extends DistNetBlock{
   private static final ObjectSet<MatrixBridgeBuild> temps = new ObjectSet<>();
 
-  public Color effectColor = Color.valueOf("D3FDFF");
+  public Color effectColor = SglDrawConst.matrixNet;
   public TextureRegion linkRegion, topRegion;
   
   public float linkRange = 16;
@@ -62,6 +63,7 @@ public class MatrixBridge extends DistNetBlock{
     frequencyUse = 0;
     hasItems = true;
     hasLiquids = outputsLiquid = true;
+    isNetLinker = true;
   }
   
   @Override
@@ -203,8 +205,6 @@ public class MatrixBridge extends DistNetBlock{
     @Override
     public void onProximityAdded(){
       super.onProximityAdded();
-      onDistNetRemoved();
-
       updateNetLinked();
     }
 
@@ -288,14 +288,16 @@ public class MatrixBridge extends DistNetBlock{
         eff.update();
       }
 
+      float scl = (Vars.renderer.getScale() - Vars.renderer.minZoom)/(Vars.renderer.maxZoom - Vars.renderer.minZoom);
+
       if(linkNext != null){
-        if(rand.nextFloat() <= 0.05f*linkNextLerp*netEfficiency*Time.delta){
+        if(rand.nextFloat() <= 0.05f*linkNextLerp*netEfficiency*Time.delta*scl){
           makeEff(x, y, linkNext.x, linkNext.y);
         }
       }
 
       if(linkElement != null){
-        if(rand.nextFloat() <= 0.05f*linkElementLerp*netEfficiency*Time.delta){
+        if(rand.nextFloat() <= 0.05f*linkElementLerp*netEfficiency*Time.delta*scl){
           if(linkElement instanceof DistNetworkCoreComp){
             makeEff(x, y, linkElement.getBuilding().x, linkElement.getBuilding().y);
           }

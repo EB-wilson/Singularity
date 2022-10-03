@@ -11,8 +11,6 @@ public interface DistNetworkCoreComp extends DistElementBuildComp, DistComponent
 
   @Annotations.BindField("distCore")
   default void distCore(DistCoreModule value){}
-
-  float netEff();
   
   default boolean updateState(){
     return false;

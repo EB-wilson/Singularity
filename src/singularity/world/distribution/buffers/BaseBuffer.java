@@ -9,6 +9,7 @@ import arc.util.Interval;
 import mindustry.world.modules.BlockModule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import singularity.world.distribution.DistBuffers;
 import singularity.world.distribution.DistributeNetwork;
 
 import java.util.Iterator;
@@ -21,6 +22,7 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
   protected WindowedMean putMean = new WindowedMean(6), readMean = new WindowedMean(6);
   protected int putBufferCaching, readBufferCaching;
   protected float putRate = -1, readRate = -1;
+  protected int maxUsed = -1;
   
   protected IntMap<T> memory = new IntMap<>();
 
@@ -31,11 +33,11 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
   }
   
   public Number remainingCapacity(){
-    return space()/unit();
+    return space()/bufferType().unit();
   }
   
   public Number usedCapacity(){
-    return used/unit();
+    return used/bufferType().unit();
   }
   
   public void update(){
@@ -43,6 +45,8 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
       if(timer.get(10)){
         putMean.add(putBufferCaching);
         readMean.add(readBufferCaching);
+
+        maxUsed = Math.max(maxUsed, used);
 
         putBufferCaching = readBufferCaching = 0;
 
@@ -62,6 +66,7 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
     else {
       putBufferCaching = 0;
       readBufferCaching = 0;
+      maxUsed = -1;
       putRate = -1;
       readRate = -1;
       putMean.clear();
@@ -176,6 +181,8 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
     p.dePut(packet);
   }
 
+  public abstract DistBuffers<?> bufferType();
+
   public abstract void deReadFlow(CType ct, Number amount);
 
   public abstract void dePutFlow(CType ct, Number amount);
@@ -185,8 +192,6 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
   public abstract void bufferContAssign(DistributeNetwork network, CType ct);
 
   public abstract void bufferContAssign(DistributeNetwork network, CType ct, Number amount);
-
-  public abstract int unit();
   
   public abstract BlockModule generateBindModule();
 

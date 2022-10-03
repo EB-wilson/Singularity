@@ -1,6 +1,5 @@
 package singularity.contents.override;
 
-import arc.graphics.g2d.TextureRegion;
 import mindustry.content.Blocks;
 import mindustry.content.Fx;
 import mindustry.content.Items;
@@ -8,9 +7,12 @@ import mindustry.content.Liquids;
 import mindustry.gen.Sounds;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
+import mindustry.world.draw.DrawDefault;
+import mindustry.world.draw.DrawLiquidRegion;
+import mindustry.world.draw.DrawMulti;
+import mindustry.world.draw.DrawRegion;
 import singularity.contents.SglItems;
 import singularity.world.blocks.product.NormalCrafter;
-import singularity.world.draw.DrawFactory;
 import universecore.util.OverrideContentList;
 
 import static mindustry.type.ItemStack.with;
@@ -39,8 +41,11 @@ public class OverrideBlocks implements OverrideContentList{
           consume.time(10);
           newProduce();
           produce.liquid(Liquids.slag, 0.2f);
-          
-          draw = new DrawFactory<>(this);
+
+          draw = new DrawMulti(
+              new DrawDefault(),
+              new DrawLiquidRegion()
+          );
         }}
     );
     
@@ -68,19 +73,15 @@ public class OverrideBlocks implements OverrideContentList{
           consume.power(0.50f);
           newProduce();
           produce.item(Items.sand, 1);
-          
-          draw = new DrawFactory<NormalCrafterBuild>(this){
-            {iconRotator = true;}
-      
-            @Override
-            public TextureRegion[] icons(){
-              return new TextureRegion[]{
-                  region,
-                  rotator,
-                  top
-              };
-            }
-          };
+
+          draw = new DrawMulti(
+              new DrawDefault(),
+              new DrawRegion("-rotator"){{
+                spinSprite = true;
+                rotateSpeed = 2f;
+              }},
+              new DrawRegion("-top")
+          );
         }}
     );
   }

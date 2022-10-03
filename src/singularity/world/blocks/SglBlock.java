@@ -12,9 +12,11 @@ import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
+import arc.util.Eachable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.core.Renderer;
+import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
@@ -26,17 +28,16 @@ import mindustry.ui.Bar;
 import mindustry.ui.fragments.PlacementFragment;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import mindustry.world.draw.DrawBlock;
+import mindustry.world.draw.DrawDefault;
 import mindustry.world.meta.*;
 import singularity.type.SglLiquidStack;
 import singularity.world.blocks.nuclear.NuclearPipeNode;
-import singularity.world.components.DrawableComp;
 import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.consumers.SglConsumeEnergy;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
-import singularity.world.draw.SglDrawBase;
-import singularity.world.draw.SglDrawBlock;
 import singularity.world.modules.NuclearEnergyModule;
 import singularity.world.modules.SglConsumeModule;
 import singularity.world.modules.SglLiquidModule;
@@ -66,9 +67,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public boolean canSelect = true;
   
   public boolean outputItems;
-  
-  /**方块处于损坏状态时的贴图*/
-  public TextureRegion brokenRegion;
+
+  public DrawBlock draw = new DrawDefault();
+
   /**方块的输入配方容器*/
   public final ArrayList<BaseConsumers> consumers = new ArrayList<>();
   /**方块的可选配方容器*/
@@ -88,8 +89,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   /**是否显示当前选择的配方*/
   public boolean displaySelectPrescripts = false;
-  /**方块的图形绘制方法对象，用于控制方块的draw*/
-  public SglDrawBlock<? extends SglBuilding> draw = new SglDrawBlock<>(this);
 
   public Cons<SglBuilding> initialed;
 
@@ -107,9 +106,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public float energyCapacity = 256;
   /**此方块接受的最大势能差，可设为-1将根据容量自动设置*/
   public float maxEnergyPressure = -1;
-
-  /**方块的合成配方选择器贴图，可自由指定，或者自动初始化*/
-  public TextureRegion prescriptSelector;
   
   public String otherLiquidStr = Core.bundle.get("fragment.bars.otherLiquids");
   public int maxShowFlow = 5;
@@ -211,10 +207,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   @Override
   public void load(){
     super.load();
-    brokenRegion = Core.atlas.has(name + "_broken")? Core.atlas.find(name + "_broken"): region;
-    if(displaySelectPrescripts && prescriptSelector == null) prescriptSelector = Core.atlas.has(name + "_prescriptSelector")?
-      Core.atlas.find(name + "_prescriptSelector"): Core.atlas.find("ane-prescriptSelector" + size);
-    draw.load();
+    draw.load(this);
   }
   
   @Override
@@ -234,27 +227,40 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
     if (this.hasItems && this.itemCapacity > 0) this.stats.add(Stat.itemCapacity, (float)this.itemCapacity, StatUnit.items);
   }
-  
+
+  @Override
+  public boolean outputsItems(){
+    return hasItems && outputItems;
+  }
+
   @Override
   public void setBars(){
     addBar("health", entity -> new Bar("stat.health", Pal.health, entity::healthf).blink(Color.white));
   }
-  
+
+  @Override
+  public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list){
+    draw.drawPlan(this, plan, list);
+  }
+
+  @Override
+  public void getRegionsToOutline(Seq<TextureRegion> out){
+    draw.getRegionsToOutline(this, out);
+  }
+
   @Override
   public TextureRegion[] icons(){
-    return draw.icons();
+    return draw.finalIcons(this);
   }
 
   @Annotations.ImplEntries
-  public class SglBuilding extends Building implements ConsumerBuildComp, NuclearEnergyBuildComp, DrawableComp{
+  public class SglBuilding extends Building implements ConsumerBuildComp, NuclearEnergyBuildComp{
     private static final FieldHandler<PlacementFragment> fieldHandler = new FieldHandler<>(PlacementFragment.class);
 
     public SglConsumeModule consumer;
     public NuclearEnergyModule energy;
 
     public boolean recipeSelected;
-    
-    public SglDrawBase<? extends SglBuilding>.SglBaseDrawer drawer;
 
     protected final ObjectMap<Object, Object> vars = new ObjectMap<>();
 
@@ -307,12 +313,15 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       consumer = new SglConsumeModule(this);
       
       if(hasEnergy){
-        energy = new NuclearEnergyModule(this, basicPotentialEnergy, energyBuffered);
+        energy = new NuclearEnergyModule(this, energyBuffered);
         energy.setNet();
       }
-  
-      drawer = draw.get(this);
       return this;
+    }
+
+    @Override
+    public SglLiquidModule liquids(){
+      return (SglLiquidModule) liquids;
     }
 
     @Override
@@ -341,6 +350,11 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public boolean shouldConsume(){
       return super.shouldConsume() && ConsumerBuildComp.super.shouldConsume();
+    }
+
+    @Override
+    public float efficiency(){
+      return consEfficiency();
     }
 
     @Override
@@ -540,9 +554,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
     @Override
     public float getMoveResident(NuclearEnergyBuildComp destination){
-      Seq<NuclearEnergyBuildComp> path = energy.energyNet.getPath(this, destination);
       float result = 0;
-      for(NuclearEnergyBuildComp next: path){
+      for(NuclearEnergyBuildComp next: energy.energyNet.getPath(this, destination)){
         result += next.getResident();
       }
       return result;
@@ -570,16 +583,14 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public boolean acceptItem(Building source, Item item){
       return source.interactable(this.team) && hasItems
-          && (!consumer.hasConsume() || consumer.current == null
-            || consumer.current.get(SglConsumeType.item) == null || consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item)))
+          && (!(consumer.hasConsume() || consumer.hasOptional()) || consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item)))
           && (independenceInventory? items.get(item): items.total()) < block().itemCapacity;
     }
 
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
       return source.interactable(this.team) && hasLiquids
-          && (!consumer.hasConsume() || consumer.current == null
-            || consumer.current.get(SglConsumeType.liquid) == null || consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)))
+          && (!(consumer.hasConsume() || consumer.hasOptional()) || consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)))
           && (independenceLiquidTank? liquids.get(liquid): ((SglLiquidModule)liquids).total()) <= block().liquidCapacity - 0.0001f;
     }
   
@@ -591,15 +602,14 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
     @Override
     public void draw(){
-      drawer.render();
-
+      draw.draw(this);
       drawStatus();
     }
   
     @Override
     public void drawLight(){
       super.drawLight();
-      drawer.drawLight();
+      draw.drawLight(this);
     }
     
     @Override

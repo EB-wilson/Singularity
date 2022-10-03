@@ -12,14 +12,30 @@ import universecore.components.blockcomp.BuildCompBase;
 
 public interface DistElementBuildComp extends BuildCompBase{
   DistributeModule distributor();
-  
-  int priority();
-  
-  void priority(int priority);
+
+  @Annotations.BindField("priority")
+  default int priority(){
+    return 0;
+  }
+
+  @Annotations.BindField("priority")
+  default void priority(int priority){}
 
   @Annotations.BindField("netLinked")
   default Seq<DistElementBuildComp> netLinked(){
     return null;
+  }
+
+  @Annotations.BindField("matrixEnergyBuffered")
+  default float matrixEnergyBuffered(){
+    return 0;
+  }
+
+  @Annotations.BindField("matrixEnergyBuffered")
+  default void matrixEnergyBuffered(float set){}
+
+  default float extraEnergyRequire(){
+    return 0;
   }
   
   default void networkValided(){}
@@ -43,13 +59,19 @@ public interface DistElementBuildComp extends BuildCompBase{
   default void link(DistElementBuildComp target){
     if(!linkable(target) || !target.linkable(this)) return;
 
-    distributor().distNetLinks.add(target.getBuilding().pos());
-    target.distributor().distNetLinks.add(getBuilding().pos());
+    if(getDistBlock().isNetLinker()) distributor().distNetLinks.add(target.getBuilding().pos());
+    if(target.getDistBlock().isNetLinker()) target.distributor().distNetLinks.add(getBuilding().pos());
   
     updateNetLinked();
     target.updateNetLinked();
-  
-    distributor().network.add(target.distributor().network);
+
+    if(target.getDistBlock().isNetLinker()){
+      distributor().network.add(target.distributor().network);
+    }
+    else{
+      target.distributor().network.remove(target);
+      distributor().network.add(target);
+    }
 
     target.linked(this);
     linked(target);
@@ -62,7 +84,7 @@ public interface DistElementBuildComp extends BuildCompBase{
     updateNetLinked();
     target.updateNetLinked();
 
-    for(DistElementBuildComp element: distributor().network.elements){
+    for(DistElementBuildComp element: distributor().network){
       element.networkRemoved(target);
     }
     
@@ -75,10 +97,13 @@ public interface DistElementBuildComp extends BuildCompBase{
   
   default void updateNetLinked(){
     netLinked().clear();
-    for(int i=0; i<distributor().distNetLinks.size; i++){
-      Tile entity = Vars.world.tile(distributor().distNetLinks.get(i));
-      if(entity == null || !(entity.build instanceof DistElementBuildComp)) continue;
-      if(!netLinked().contains((DistElementBuildComp) entity.build)) netLinked().add((DistElementBuildComp) entity.build);
+
+    if(getDistBlock().isNetLinker()){
+      for(int i = 0; i < distributor().distNetLinks.size; i++){
+        Tile entity = Vars.world.tile(distributor().distNetLinks.get(i));
+        if(entity == null || !(entity.build instanceof DistElementBuildComp)) continue;
+        if(!netLinked().contains((DistElementBuildComp) entity.build)) netLinked().add((DistElementBuildComp) entity.build);
+      }
     }
   }
 
@@ -86,7 +111,10 @@ public interface DistElementBuildComp extends BuildCompBase{
   default void onDistNetAdded(){
     updateNetLinked();
     for(DistElementBuildComp comp: netLinked()){
-      comp.distributor().network.add(distributor().network);
+      if(getDistBlock().isNetLinker()){
+        comp.distributor().network.add(distributor().network);
+      }
+      else comp.distributor().network.add(this);
     }
   }
 
@@ -97,7 +125,6 @@ public interface DistElementBuildComp extends BuildCompBase{
       Building other = Vars.world.build(links.get(i));
       if(other instanceof DistElementBuildComp){
         ((DistElementBuildComp) other).distributor().distNetLinks.removeValue(getBuilding().pos());
-        ((DistElementBuildComp) other).netLinked().remove(this, true);
       }
     }
     links.clear();
@@ -106,5 +133,13 @@ public interface DistElementBuildComp extends BuildCompBase{
   
   default int frequencyUse(){
     return getDistBlock().frequencyUse();
+  }
+
+  default float matrixEnergyConsume(){
+    return getDistBlock().matrixEnergyUse();
+  }
+
+  default float matrixEnergyProduct(){
+    return 0;
   }
 }

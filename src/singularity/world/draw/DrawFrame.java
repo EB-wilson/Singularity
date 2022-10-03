@@ -1,70 +1,41 @@
 package singularity.world.draw;
 
+import arc.Core;
+import arc.func.Floatf;
+import arc.func.Intf;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
+import mindustry.gen.Building;
 import mindustry.world.Block;
-import singularity.world.components.DrawableComp;
+import mindustry.world.draw.DrawBlock;
 
-/**用于绘制逐帧动画的工具类*/
-public class DrawFrame<Target extends DrawableComp> extends SglDrawBlock<Target>{
-  /**存储帧贴图，数组一维为显示的层，第二维存储帧贴图*/
-  public TextureRegion[][] frames;
-  
-  public DrawFrame(Block block){
-    super(block);
-  }
-  
-  /**帧控制器，重写该方法的返回值以控制某层的动画
-   * @param index 层索引，为层的序数*/
-  public int framesControl(int index, Target e){
-    return 0;
-  }
-  
-  /**帧控制器，重写该方法的返回值以控制某层的旋转
-   * @param index 层索引，为层的序数*/
-  public float rotationControl(int index, Target e){
-    return 0f;
-  }
-  
-  /**帧控制器，重写该方法的返回值以控制某层的透明度
-   * @param index 层索引，为层的序数*/
-  public float alphaControl(int index, Target e){
-    return 1f;
-  }
-  
+public class DrawFrame<E extends Building> extends DrawBlock{
+  public int frames = 3;
+
+  public Intf<E> cursor = e -> (int)((e.totalProgress() / 5) % frames);
+  public Floatf<E> alpha = e -> 1;
+  public Floatf<E> rotation = e -> 0;
+
+  public TextureRegion[] regions;
+
+  @SuppressWarnings("unchecked")
   @Override
-  public TextureRegion[] icons(){
-    TextureRegion[] icons = new TextureRegion[frames.length];
-    for(int layer=0; layer < icons.length; layer++){
-      icons[layer] = frames[layer][0];
-    }
-    return icons;
+  public void draw(Building build){
+    Draw.alpha(alpha.get((E) build));
+    Draw.rect(regions[cursor.get((E) build)], build.x, build.y, rotation.get((E) build));
+    Draw.color();
   }
-  
-  public class DrawFrameDrawer extends SglDrawBlockDrawer{
-    public DrawFrameDrawer(Target entity){
-      super(entity);
-    }
-  
-    public int framesControl(int index){
-      return DrawFrame.this.framesControl(index, entity);
-    }
-  
-    public float rotationControl(int index){
-      return DrawFrame.this.rotationControl(index, entity);
-    }
-  
-    public float alphaControl(int index){
-      return DrawFrame.this.alphaControl(index, entity);
-    }
-  
-    @Override
-    public void draw(){
-      for(int layer=0; layer<frames.length; layer++){
-        Draw.alpha(alphaControl(layer));
-        Draw.rect(frames[layer][Math.min(frames[layer].length - 1, framesControl(layer))], entity.x(), entity.y(), rotationControl(layer));
-      }
-      Draw.blend();
+
+  @Override
+  public TextureRegion[] icons(Block block){
+    return new TextureRegion[]{regions[0]};
+  }
+
+  @Override
+  public void load(Block block){
+    regions = new TextureRegion[frames];
+    for(int i = 0; i < frames; i++){
+      regions[i] = Core.atlas.find(block.name + "_frame" + i);
     }
   }
 }

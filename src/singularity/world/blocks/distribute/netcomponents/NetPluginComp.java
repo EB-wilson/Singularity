@@ -2,11 +2,18 @@ package singularity.world.blocks.distribute.netcomponents;
 
 import arc.Core;
 import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.struct.ObjectMap;
+import arc.util.Eachable;
+import arc.util.Tmp;
+import mindustry.Vars;
+import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
+import mindustry.graphics.Drawf;
+import singularity.graphic.SglDrawConst;
 import singularity.world.DirEdges;
 import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.components.distnet.DistComponent;
@@ -55,12 +62,63 @@ public class NetPluginComp extends DistNetBlock{
     interfaceLinker = Core.atlas.find(name + "_interface");
   }
 
+  @Override
+  public void drawPlanConfig(BuildPlan plan, Eachable<BuildPlan> list){
+    super.drawPlanConfig(plan, list);
+  }
+
   public void setBufferSize(DistBuffers<?> buffer, int size){
     buffersSize.put(buffer, size);
   }
 
+  @Override
+  public void drawPlan(BuildPlan plan, Eachable<BuildPlan> list, boolean valid){
+    super.drawPlan(plan, list, valid);
+
+    int rotation = plan.rotation;
+
+    Draw.scl(plan.animScale);
+    drawReqBits(rotation, plan.drawx(), plan.drawy());
+  }
+
+  private void drawReqBits(int rotation, float x, float y){
+    Draw.color(SglDrawConst.matrixNet);
+    for(int dir = 0; dir<4; dir++){
+      if((0b0001 << Mathf.mod(dir - rotation, 4) & connectReq) == 0) continue;
+
+      Tmp.v1.set(size*Vars.tilesize/2f + 4, 0).rotate(dir*90);
+      Tmp.v2.set(Tmp.v1).rotate90(1).setLength(10 + Mathf.absin(size > 3? Vars.tilesize: size == 3? Vars.tilesize*0.75f: Vars.tilesize/2f, 0.35f));
+
+      float dx = x + Tmp.v1.x, dy = y + Tmp.v1.y;
+      Draw.rect(SglDrawConst.squareMarker, dx, dy);
+
+      //贴图是朝上的，在地图绘制时需要向逆时针旋转90度
+      Draw.rect(SglDrawConst.matrixArrow, dx + Tmp.v2.x, dy + Tmp.v2.y, dir*90);
+      Draw.rect(SglDrawConst.matrixArrow, dx - Tmp.v2.x, dy - Tmp.v2.y, (dir - 2)*90);
+
+      if(size >= 6){
+        Tmp.v3.set(Tmp.v2).setLength(1);
+        Lines.stroke(3.5f);
+        Lines.line(
+            dx + 5*Tmp.v1.x, dy + 5*Tmp.v1.y,
+            dx + Tmp.v2.x - 2*Tmp.v1.x, dy + Tmp.v2.y - 2*Tmp.v1.y
+        );
+        Lines.line(
+            dx - 5*Tmp.v1.x, dy - 5*Tmp.v1.y,
+            dx - Tmp.v2.x + 2*Tmp.v1.x, dy - Tmp.v2.y + 2*Tmp.v1.y
+        );
+        Drawf.line(SglDrawConst.matrixNet, dx, dy, dx - Tmp.v2.x, dy - Tmp.v2.y);
+      }
+    }
+  }
+
   public class NetPluginCompBuild extends DistNetBuild implements DistComponent{
     DistributeNetwork[] linked = new DistributeNetwork[4];
+
+    @Override
+    public boolean linkable(DistElementBuildComp other){
+      return false;
+    }
 
     @Override
     public NetPluginComp block(){
@@ -75,6 +133,12 @@ public class NetPluginComp extends DistNetBlock{
     @Override
     public ObjectMap<DistBuffers<?>, Integer> bufferSize(){
       return buffersSize;
+    }
+
+    @Override
+    public void drawSelect(){
+      super.drawSelect();
+      drawReqBits(rotation, x, y);
     }
 
     @Override
@@ -141,7 +205,7 @@ public class NetPluginComp extends DistNetBlock{
 
     @Override
     public void updateNetLinked(){
-      netLinked.clear();
+      netLinked().clear();
     }
   }
 }

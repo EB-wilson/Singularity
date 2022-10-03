@@ -10,18 +10,18 @@ import singularity.world.blocks.SglBlock;
 import singularity.world.modules.DistributeModule;
 import universecore.annotations.Annotations;
 
+@Annotations.ImplEntries
 public class DistNetBlock extends SglBlock implements DistElementBlockComp{
+  public boolean isNetLinker;
   public int frequencyUse = 1;
-  
+  public float matrixEnergyCapacity = 1;
+  public float matrixEnergyUse = 0;
+
   public DistNetBlock(String name){
     super(name);
     update = true;
     saveConfig = false;
-  }
-  
-  @Override
-  public int frequencyUse(){
-    return frequencyUse;
+    canOverdrive = false;
   }
 
   @Annotations.ImplEntries
@@ -29,6 +29,7 @@ public class DistNetBlock extends SglBlock implements DistElementBlockComp{
     public DistributeModule distributor;
     public Seq<DistElementBuildComp> netLinked = new Seq<>();
     public int priority;
+    public float matrixEnergyBuffered = 0;
   
     @Override
     public Building create(Block block, Team team){
@@ -47,12 +48,7 @@ public class DistNetBlock extends SglBlock implements DistElementBlockComp{
     public DistributeModule distributor(){
       return distributor;
     }
-  
-    @Override
-    public int priority(){
-      return priority;
-    }
-  
+
     @Override
     public void priority(int priority){
       this.priority = priority;

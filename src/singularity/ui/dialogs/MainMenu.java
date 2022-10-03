@@ -16,7 +16,7 @@ import mindustry.graphics.Pal;
 import mindustry.ui.WarningBar;
 import mindustry.ui.dialogs.BaseDialog;
 import singularity.Sgl;
-import singularity.Singularity;
+import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
 
 public class MainMenu extends BaseDialog {
@@ -24,14 +24,17 @@ public class MainMenu extends BaseDialog {
   private static final Runnable lookForward = () -> Vars.ui.showInfo(Core.bundle.get("mod.lookForward"));
   
   ButtonEntry[] buttonEntries = new ButtonEntry[]{
-      new ButtonEntry(Singularity.getModAtlas("icon_start"), () -> Core.bundle.get(launch? "misc.startGame": "misc.backToGame"), () -> Color.white, () -> {hide(); launch = false;}),
-      new ButtonEntry(Singularity.getModAtlas("icon_database"), Core.bundle.get("misc.modDatabase"), Pal.accent, lookForward),
-      new ButtonEntry(Singularity.getModAtlas("icon_configure"), Core.bundle.get("misc.modConfigure"), Color.lightGray, lookForward),
-      new ButtonEntry(Singularity.getModAtlas("icon_publicInfo"), () -> Core.bundle.get("misc.publicInfo"), () -> Liquids.cryofluid.color, () -> {
+      new ButtonEntry(SglDrawConst.startIcon,
+          () -> Core.bundle.get(launch? "misc.startGame": "misc.backToGame"),
+          () -> Color.white, () -> {hide(); launch = false;
+      }),
+      new ButtonEntry(SglDrawConst.databaseIcon, Core.bundle.get("misc.modDatabase"), Pal.accent, lookForward),
+      new ButtonEntry(SglDrawConst.configureIcon, Core.bundle.get("misc.modConfigure"), Color.lightGray, lookForward),
+      new ButtonEntry(SglDrawConst.publicInfoIcon, () -> Core.bundle.get("misc.publicInfo"), () -> Liquids.cryofluid.color, () -> {
         Sgl.ui.publicInfo.show();
       }),
-      new ButtonEntry(Singularity.getModAtlas("icon_about"), Core.bundle.get("misc.aboutMod"), Color.violet, () -> Sgl.ui.aboutDialog.show()),
-      new ButtonEntry(Singularity.getModAtlas("icon_contribute"), Core.bundle.get("misc.contribute"), Color.yellow, lookForward),
+      new ButtonEntry(SglDrawConst.aboutIcon, Core.bundle.get("misc.aboutMod"), Color.violet, () -> Sgl.ui.aboutDialog.show()),
+      new ButtonEntry(SglDrawConst.contributeIcon, Core.bundle.get("misc.contribute"), Color.yellow, lookForward),
   };
   
   public MainMenu() {
@@ -40,7 +43,7 @@ public class MainMenu extends BaseDialog {
   
   public void build() {
     cont.top().table(main -> {
-      main.image(Singularity.getModAtlas("launch_logo")).size(220, 110).padTop(30);
+      main.image(SglDrawConst.sglLaunchLogo).size(220, 110).padTop(30);
       main.row();
       main.image().color(Pal.accent).growX().height(3).pad(0).padTop(4).padBottom(4);
       main.row();

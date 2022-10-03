@@ -83,7 +83,7 @@ public class EdgeContainer{
     if(remove.nextEdge() != null){
       new EdgeContainer().flow(remove.nextEdge(), Seq.with(remove));
     }
-    if(remove.perEdge() != null && remove.getEdges() != this){
+    if(remove.perEdge() != null && remove.getEdges() == this){
       new EdgeContainer().flow(remove.perEdge(), Seq.with(remove));
     }
   }
