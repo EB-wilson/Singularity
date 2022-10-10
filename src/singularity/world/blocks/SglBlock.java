@@ -1,9 +1,10 @@
 package singularity.world.blocks;
 
 import arc.Core;
+import arc.func.Boolp;
 import arc.func.Cons;
 import arc.func.Cons2;
-import arc.func.Func;
+import arc.func.Floatp;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
@@ -44,7 +45,6 @@ import singularity.world.modules.SglLiquidModule;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ConsumerBlockComp;
 import universecore.components.blockcomp.ConsumerBuildComp;
-import universecore.ui.table.RecipeTable;
 import universecore.util.DataPackable;
 import universecore.util.UncLiquidStack;
 import universecore.util.handler.FieldHandler;
@@ -60,9 +60,6 @@ import static mindustry.Vars.*;
 /**此mod的基础方块类型，对block添加了完善的consume系统，并拥有核能的基础模块*/
 @Annotations.ImplEntries
 public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyBlockComp{
-  public RecipeTable recipeTable;
-  public RecipeTable optionalRecipeTable;
-  
   public boolean autoSelect = false;
   public boolean canSelect = true;
   
@@ -86,9 +83,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   /**方块是否为核能设备*/
   public boolean hasEnergy;
-  
-  /**是否显示当前选择的配方*/
-  public boolean displaySelectPrescripts = false;
 
   public Cons<SglBuilding> initialed;
 
@@ -107,8 +101,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   /**此方块接受的最大势能差，可设为-1将根据容量自动设置*/
   public float maxEnergyPressure = -1;
   
-  public String otherLiquidStr = Core.bundle.get("fragment.bars.otherLiquids");
-  public int maxShowFlow = 5;
+  public String liquidsStr = Core.bundle.get("fragment.bars.liquids");
   public String recipeIndfo = Core.bundle.get("fragment.buttons.selectPrescripts");
 
   public SglBlock(String name) {
@@ -498,15 +491,14 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       if (!displayLiquids.isEmpty()){
         bars.table(Tex.buttonTrans, t -> {
           t.defaults().growX().height(18f).pad(4);
-          t.top().add(otherLiquidStr).padTop(0);
+          t.top().add(liquidsStr).padTop(0);
           t.row();
           for (SglLiquidStack stack : displayLiquids) {
-            Func<Building, Bar> bar = entity -> new Bar(
+            t.add(new Bar(
                 () -> stack.liquid.localizedName,
                 () -> stack.liquid.barColor != null ? stack.liquid.barColor : stack.liquid.color,
-                () -> Math.min(entity.liquids.get(stack.liquid) / entity.block().liquidCapacity, 1f)
-            );
-            t.add(bar.get(this)).growX();
+                () -> Math.min(liquids.get(stack.liquid) / block().liquidCapacity, 1f)
+            )).growX();
             t.row();
           }
         }).height(26 * displayLiquids.size + 40);
@@ -516,13 +508,13 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       if(recipeCurrent == -1 || consumer.current == null) return;
 
       if(hasPower && consPower != null){
-        boolean buffered = consPower.buffered;
-        float capacity = consPower.capacity;
-        Func<Building, Bar> bar = (entity -> new Bar(
-            () -> buffered ? Core.bundle.format("bar.poweramount", Float.isNaN(entity.power.status * capacity) ? "<ERROR>" : (int)(entity.power.status * capacity)) :
-            Core.bundle.get("bar.power"), () -> Pal.powerBar,
-            () -> Mathf.zero(consPower.requestedPower(entity)) && entity.power.graph.getPowerProduced() + entity.power.graph.getBatteryStored() > 0f ? 1f : entity.power.status));
-        bars.add(bar.get(this)).growX();
+        Boolp buffered = () -> consPower.buffered;
+        Floatp capacity = () -> consPower.capacity;
+        bars.add(new Bar(
+            () -> buffered.get() ? Core.bundle.format("bar.poweramount", Float.isNaN(power.status*capacity.get())?
+                "<ERROR>": (int)(power.status*capacity.get())): Core.bundle.get("bar.power"),
+            () -> Pal.powerBar,
+            () -> Mathf.zero(consPower.requestedPower(this)) && power.graph.getPowerProduced() + power.graph.getBatteryStored() > 0f? 1f: power.status)).growX();
         bars.row();
       }
 
@@ -537,12 +529,11 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
             liquid.left().add(Core.bundle.get("misc.liquid")).color(Pal.gray);
             liquid.row();
             for(UncLiquidStack stack: cl.liquids){
-              Func<Building, Bar> bar = (entity -> new Bar(
+              liquid.add(new Bar(
                   () -> stack.liquid.localizedName,
                   () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
-                  () -> Math.min(entity.liquids.get(stack.liquid) / entity.block().liquidCapacity, 1f)
+                  () -> Math.min(liquids.get(stack.liquid) / block().liquidCapacity, 1f)
               ));
-              liquid.add(bar.get(this));
               liquid.row();
             }
           });

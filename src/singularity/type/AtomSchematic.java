@@ -15,26 +15,21 @@ import universecore.world.consumers.BaseConsumers;
 public class AtomSchematic extends UnlockableContent{
   public static final ItemStack[] ITEM_STACKS = new ItemStack[0];
   public final Item item;
-  public final UnlockableContent dependence;
   public final int researchConsume;
   public final SglConsumers request = new SglConsumers(false);
 
-  public AtomSchematic(Item item, int researchConsume, UnlockableContent dependence){
+  public UnlockableContent dependence;
+
+  public AtomSchematic(Item item, int researchConsume){
     super("schematic_" + item.name);
     this.item = item;
-    this.dependence = dependence;
     this.researchConsume = researchConsume;
 
     request.selectable = () -> unlockedNow()? BaseConsumers.Visibility.usable: BaseConsumers.Visibility.hidden;
   }
 
-  @Override
-  public void init(){
-    super.init();
-    setTechTree();
-  }
-
-  public void setTechTree(){
+  public void setTechTree(UnlockableContent dependence){
+    this.dependence = dependence;
     TechTree.TechNode node = new TechTree.TechNode(TechTreeConstructor.get(dependence), this, ITEM_STACKS);
     node.objectives.add(new Objectives.Objective(){
       @Override
@@ -50,7 +45,8 @@ public class AtomSchematic extends UnlockableContent{
   }
 
   public BaseConsumers.Visibility researchVisibility(){
-    return unlockedNow()? BaseConsumers.Visibility.unusable: dependence.unlockedNow()? BaseConsumers.Visibility.usable: BaseConsumers.Visibility.hidden;
+    return unlockedNow()? BaseConsumers.Visibility.unusable: dependence == null || dependence.unlockedNow()?
+        BaseConsumers.Visibility.usable: BaseConsumers.Visibility.hidden;
   }
 
   public void destructing(int amount){

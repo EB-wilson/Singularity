@@ -15,19 +15,21 @@ import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
+import singularity.world.SglFx;
 import singularity.world.blocks.drills.ExtendMiner;
 import singularity.world.blocks.drills.ExtendableDrill;
 import singularity.world.blocks.drills.MatrixMiner;
 import singularity.world.blocks.drills.MatrixMinerEdge;
 import singularity.world.blocks.product.SglAttributeCrafter;
 import singularity.world.draw.DrawBottom;
+import singularity.world.draw.DrawDirSpliceBlock;
 import singularity.world.draw.DrawExpandPlasma;
 import singularity.world.meta.SglAttribute;
 import universecore.world.consumers.BaseConsumers;
 
 import static mindustry.type.ItemStack.with;
 
-public class CollectBlocks implements ContentList {
+public class ProductBlocks implements ContentList {
   /**岩层钻井机*/
   public static Block rock_drill,
   /**潮汐钻头*/
@@ -53,18 +55,12 @@ public class CollectBlocks implements ContentList {
       setAttrBooster(SglAttribute.bitumen, 1.12f);
       
       newConsume();
+      consume.time(90);
       consume.liquid(Liquids.water, 0.3f);
       consume.power(1.75f);
       newProduce();
-      produce.liquid(SglLiquids.rock_bitumen, 0.2f);
-  
-      newOptionalConsume((NormalCrafterBuild e, BaseConsumers c) -> {
-        e.setVar(2.0f);
-      }, (s, c) -> {
-        s.add(Stat.boostEffect, 2.0f, StatUnit.timesSpeed);
-      });
-      consume.time(300);
-      consume.item(SglItems.dry_ice, 1);
+      produce.item(SglItems.rock_bitumen, 1);
+
       newOptionalConsume((NormalCrafterBuild e, BaseConsumers c) -> {
         e.setVar(1.6f);
       }, (s, c) -> {
@@ -101,7 +97,14 @@ public class CollectBlocks implements ContentList {
     }};
 
     tidal_drill = new ExtendableDrill("tidal_drill"){{
-      requirements(Category.production, ItemStack.with());
+      requirements(Category.production, ItemStack.with(
+          SglItems.degenerate_neutron_polymer, 50,
+          SglItems.strengthening_alloy, 120,
+          SglItems.aerogel, 90,
+          SglItems.crystal_FEX_power, 75,
+          SglItems.iridium, 40,
+          Items.phaseFabric, 60
+      ));
       size = 4;
 
       squareSprite = false;
@@ -117,7 +120,7 @@ public class CollectBlocks implements ContentList {
 
       newBooster(4.2f);
       consume.liquid(SglLiquids.phase_FEX_liquid, 0.15f);
-      newBooster(3.6f);
+      newBooster(3.1f);
       consume.liquid(SglLiquids.FEX_liquid, 0.12f);
 
       draw = new DrawMulti(
@@ -149,21 +152,72 @@ public class CollectBlocks implements ContentList {
     }};
 
     force_field_extender = new ExtendMiner("force_field_extender"){{
-      requirements(Category.production, ItemStack.with());
+      requirements(Category.production, ItemStack.with(
+          SglItems.degenerate_neutron_polymer, 20,
+          SglItems.crystal_FEX, 20,
+          SglItems.iridium, 8,
+          SglItems.strengthening_alloy, 30
+      ));
       size = 2;
 
+      squareSprite = false;
+
       master = (ExtendableDrill) tidal_drill;
+      mining = SglFx.shrinkParticle(10, 1.5f, 120, Pal.reactorPurple);
+
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawDefault(),
+          new DrawDirSpliceBlock<ExtendMinerBuild>(){{
+            simpleSpliceRegion = true;
+
+            spliceBits = e -> {
+              int res = 0;
+              for(int i = 0; i < 4; i++){
+                if(e.splice()[i] != -1) res |= 0b0001 << i;
+              }
+              return res;
+            };
+
+            planSplicer = (plan, other) -> plan.block instanceof ExtendMiner self && other.block instanceof ExtendMiner oth
+                && self.chainable(oth) && oth.chainable(self);
+          }},
+          new DrawBlock(){
+            @Override
+            public void draw(Building build){
+              ExtendMinerBuild e = (ExtendMinerBuild) build;
+
+              Draw.z(Layer.effect);
+              Draw.color(Pal.reactorPurple);
+              SglDraw.drawLightEdge(e.x, e.y, 8*e.warmup, 2f*e.warmup, 8*e.warmup, 2f*e.warmup, 45);
+              SglDraw.drawLightEdge(e.x, e.y, 15*e.warmup, 2f*e.warmup, 45, 0.6f, 15*e.warmup, 2f*e.warmup, 45, 0.6f);
+            }
+          }
+      );
     }};
 
     matrix_miner = new MatrixMiner("matrix_miner"){{
-      requirements(Category.production, ItemStack.with());
+      requirements(Category.production, ItemStack.with(
+          SglItems.matrix_alloy, 130,
+          SglItems.crystal_FEX_power, 80,
+          SglItems.strengthening_alloy, 90,
+          SglItems.aerogel, 90,
+          Items.phaseFabric, 65,
+          Items.graphite, 90,
+          SglItems.iridium, 45
+      ));
       size = 5;
       linkOffset = 10.75f;
     }};
 
     matrix_miner_node = new MatrixMinerEdge("matrix_miner_node"){
       {
-        requirements(Category.production, ItemStack.with());
+        requirements(Category.production, ItemStack.with(
+            SglItems.matrix_alloy, 30,
+            SglItems.crystal_FEX_power, 25,
+            SglItems.strengthening_alloy, 16,
+            SglItems.aerogel, 20
+        ));
         size = 3;
         linkOffset = 5.5f;
       }

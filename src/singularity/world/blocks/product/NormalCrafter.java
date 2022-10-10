@@ -3,7 +3,7 @@ package singularity.world.blocks.product;
 import arc.Core;
 import arc.audio.Sound;
 import arc.func.Cons;
-import arc.func.Func;
+import arc.func.Floatp;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.scene.ui.ImageButton;
@@ -16,7 +16,6 @@ import arc.util.io.Writes;
 import mindustry.content.Fx;
 import mindustry.entities.Effect;
 import mindustry.game.Team;
-import mindustry.gen.Building;
 import mindustry.gen.Sounds;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -51,7 +50,7 @@ import java.util.ArrayList;
 @Annotations.ImplEntries
 public class NormalCrafter extends SglBlock implements FactoryBlockComp{
   public final ArrayList<BaseProducers> producers = new ArrayList<>();
-  
+
   public float updateEffectChance = 0.05f;
   public Effect updateEffect = Fx.none;
   public Effect craftEffect = Fx.none;
@@ -126,7 +125,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     public Seq<Liquid> outputLiquids;
     
     public float powerProdEfficiency;
-  
+
     @Override
     public NormalCrafterBuild create(Block block, Team team) {
       super.create(block, team);
@@ -143,7 +142,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       super.reset();
       progress(0);
     }
-  
+
     @Override
     public void updateDisplayLiquid() {
       if(!block.hasLiquids) return;
@@ -169,16 +168,18 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     @Override
     public void displayBars(Table bars){
       if(recipeCurrent != -1 && producer.current != null && block.hasPower && block.outputsPower && producer.current.get(SglProduceType.power) != null){
-        float productPower = powerProdEfficiency*producer.current.get(SglProduceType.power).powerProduction;
-        UncConsumePower<NormalCrafterBuild> cp;
-        float consPower = consumesPower && consumer.current != null && (cp = (UncConsumePower<NormalCrafterBuild>) consumer.current.get(SglConsumeType.power)) != null?
-            cp.usage*cp.multiple(this): 0;
-        Func<Building, Bar> bar = (entity -> new Bar(
-          () -> Core.bundle.format("bar.poweroutput", Strings.fixed(Math.max(productPower-consPower, 0) * 60 * entity.timeScale(), 1)),
-          () -> Pal.powerBar,
-          () -> powerProdEfficiency
-        ));
-        bars.add(bar.get(this)).growX();
+        Floatp prod = () -> powerProdEfficiency*producer.current.get(SglProduceType.power).powerProduction;
+        Floatp cons = () -> {
+          UncConsumePower<NormalCrafterBuild> cp;
+          return consumesPower && consumer.current != null && (cp =
+              (UncConsumePower<NormalCrafterBuild>) consumer.current.get(SglConsumeType.power)) != null?
+              cp.usage*cp.multiple(this): 0;
+        };
+        bars.add(new Bar(
+            () -> Core.bundle.format("bar.poweroutput", Strings.fixed(Math.max(prod.get() - cons.get(), 0)*60*timeScale(), 1)),
+            () -> Pal.powerBar,
+            () -> powerProdEfficiency
+        )).growX();
         bars.row();
       }
       super.displayBars(bars);
@@ -197,12 +198,11 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
             liquid.add(Core.bundle.get("misc.liquid")).color(Pal.gray);
             liquid.row();
             for(UncLiquidStack stack: pl.liquids){
-              Func<Building, Bar> bar = (entity -> new Bar(
-                () -> stack.liquid.localizedName,
-                () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
-                () -> Math.min(entity.liquids.get(stack.liquid) / entity.block().liquidCapacity, 1f)
+              liquid.add(new Bar(
+                  () -> stack.liquid.localizedName,
+                  () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
+                  () -> Math.min(liquids.get(stack.liquid) / block.liquidCapacity, 1f)
               ));
-              liquid.add(bar.get(this));
               liquid.row();
             }
           });

@@ -11,7 +11,7 @@ import java.util.Iterator;
 /**随机路径的闪电生成器，给出起点路径总长度生成随机闪电路径*/
 public class RandomGenerator extends LightningGenerator{
   public float maxLength = 80;
-  public float maxDeflect = 75;
+  public float maxDeflect = 70;
   public float originAngle = Float.MIN_VALUE;
 
   float currLength;

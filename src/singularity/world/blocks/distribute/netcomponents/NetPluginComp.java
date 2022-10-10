@@ -72,13 +72,8 @@ public class NetPluginComp extends DistNetBlock{
   }
 
   @Override
-  public void drawPlan(BuildPlan plan, Eachable<BuildPlan> list, boolean valid){
-    super.drawPlan(plan, list, valid);
-
-    int rotation = plan.rotation;
-
-    Draw.scl(plan.animScale);
-    drawReqBits(rotation, plan.drawx(), plan.drawy());
+  public void drawOverlay(float x, float y, int rotation){
+    drawReqBits(rotation, x, y);
   }
 
   private void drawReqBits(int rotation, float x, float y){
@@ -133,12 +128,6 @@ public class NetPluginComp extends DistNetBlock{
     @Override
     public ObjectMap<DistBuffers<?>, Integer> bufferSize(){
       return buffersSize;
-    }
-
-    @Override
-    public void drawSelect(){
-      super.drawSelect();
-      drawReqBits(rotation, x, y);
     }
 
     @Override

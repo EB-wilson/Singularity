@@ -225,7 +225,7 @@ public class SglFx{
     }};
 
     {
-      branch.maxDeflect = 65;
+      branch.maxDeflect = 60;
       lifetime = 60;
     }
 
@@ -256,9 +256,12 @@ public class SglFx{
   },
 
   spreadLightning = new LightningEffect(){
-    final RandomGenerator branch = new RandomGenerator();
+    final RandomGenerator branch = new RandomGenerator(){{
+      maxDeflect = 50;
+    }};
 
     final RandomGenerator generator = new RandomGenerator(){{
+      maxDeflect = 65;
       branchChance = 0.15f;
       branchMaker = (vert, str) -> {
         branch.originX = vert.x;
@@ -307,9 +310,11 @@ public class SglFx{
       Time.run(lifetime + 5, () -> Pools.free(lightning));
       return lightning;
     }
-  };
+  },
 
-  private static Effect impactExplode(float size, Color color, float lifeTime){
+  shrinkParticleSmall = shrinkParticle(12, 2, 120, null);
+
+  public static Effect impactExplode(float size, Color color, float lifeTime){
     return new Effect(lifeTime, e -> {
       Draw.color(color);
       float rate = Mathf.pow(e.fout(), 2);
@@ -339,6 +344,19 @@ public class SglFx{
       randLenVectors(e.id, 12, 26, (x, y) -> {
         float s = Mathf.randomSeed(e.id + counter[0]++, 4f, 8f);
         Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), s*e.fout());
+      });
+    });
+  }
+
+  public static Effect shrinkParticle(float radius, float maxSize, float lifeTime, Color color){
+    return new Effect(lifeTime, e -> {
+      Draw.z(Layer.effect);
+      Draw.color(color == null? e.color: color);
+      randLenVectors(e.id, 2, radius, (x, y) -> {
+        float size = Mathf.randomSeed(e.id, maxSize);
+        float le = e.fout(Interp.pow3Out);
+        Fill.square(e.x + x*le, e.y + y*le, size*e.fin(),
+            Mathf.lerp(Mathf.randomSeed(e.id, 360), Mathf.randomSeed(e.id, 360), e.fin()));
       });
     });
   }
@@ -381,6 +399,4 @@ public class SglFx{
 
     public abstract LightningContainer createLightning(float x, float y);
   }
-
-
 }

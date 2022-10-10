@@ -5,10 +5,12 @@ import arc.Events;
 import arc.graphics.g2d.TextureRegion;
 import arc.util.Log;
 import mindustry.Vars;
+import mindustry.content.TechTree;
 import mindustry.mod.Mod;
 import singularity.contents.*;
 import singularity.contents.override.OverrideBlocks;
 import singularity.contents.override.OverridePlanets;
+import singularity.contents.override.OverrideTechThree;
 import singularity.core.Init;
 import singularity.type.SglCategory;
 import singularity.type.SglContentType;
@@ -19,7 +21,7 @@ import universecore.util.OverrideContentList;
 
 import static mindustry.game.EventType.*;
 
-@Annotations.ImportUNC(requireVersion = 12)
+@Annotations.ImportUNC(requireVersion = 14)
 public class Singularity extends Mod{
   private static final ContentList[] modContents = new ContentList[]{
       new SglItems(),//物品
@@ -29,7 +31,7 @@ public class Singularity extends Mod{
       new NuclearBlocks(),//核能方块
       new CrafterBlocks(),//工厂方块
       new LiquidBlocks(),//物流方块
-      new CollectBlocks(),//采集方块
+      new ProductBlocks(),//采集方块
       new DistributeBlocks(),//物流运输方块
       new DefenceBlocks(),//防御方块
 
@@ -41,6 +43,7 @@ public class Singularity extends Mod{
   private static final OverrideContentList[] overrideContents = new OverrideContentList[]{
       new OverrideBlocks(),
       new OverridePlanets(),
+      new OverrideTechThree(),
   };
   
   public boolean initialized = false;
@@ -104,6 +107,12 @@ public class Singularity extends Mod{
   
     for(OverrideContentList override: Singularity.overrideContents){
       override.load();
+    }
+
+    if(Sgl.config.debugMode){
+      for(TechTree.TechNode node: TechTree.all){
+        node.content.alwaysUnlocked = true;
+      }
     }
 
     Log.info("[Singularity] mod content loaded");

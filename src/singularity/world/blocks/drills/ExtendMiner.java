@@ -3,9 +3,13 @@ package singularity.world.blocks.drills;
 import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
+import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.struct.Seq;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.Vars;
+import mindustry.entities.Effect;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.type.Item;
@@ -17,12 +21,19 @@ import singularity.world.DirEdges;
 import singularity.world.blocks.SglBlock;
 import singularity.world.components.ChainsBlockComp;
 import singularity.world.components.ChainsBuildComp;
+import singularity.world.components.SpliceBlockComp;
+import singularity.world.components.SpliceBuildComp;
 import singularity.world.modules.ChainsModule;
 import singularity.world.modules.SglLiquidModule;
 import universecore.annotations.Annotations;
 
-public class ExtendMiner extends SglBlock implements ChainsBlockComp{
+@Annotations.ImplEntries
+public class ExtendMiner extends SglBlock implements SpliceBlockComp{
   public ExtendableDrill master;
+  public boolean negativeSplice;
+
+  public Effect mining;
+  public float miningEffectChance = 0.02f;
 
   public final Seq<ItemStack> ores = new Seq<>();
 
@@ -86,6 +97,8 @@ public class ExtendMiner extends SglBlock implements ChainsBlockComp{
   public void init(){
     super.init();
     master.validChildType.add(this);
+    hasItems = master.hasItems;
+    hasLiquids = master.hasLiquids;
     itemCapacity = master.itemCapacity;
     liquidCapacity = master.liquidCapacity;
   }
@@ -95,13 +108,19 @@ public class ExtendMiner extends SglBlock implements ChainsBlockComp{
     return other == this || other == master;
   }
 
+  @Override
+  public boolean interCorner(){
+    return false;
+  }
+
   @Annotations.ImplEntries
-  public class ExtendMinerBuild extends SglBuilding implements ChainsBuildComp{
+  public class ExtendMinerBuild extends SglBuilding implements SpliceBuildComp{
+    public int[] splice;
     public ChainsModule chains;
     public ExtendableDrill.ExtendableDrillBuild masterDrill;
     public Seq<ItemStack> mines = new Seq<>();
-
-    int chainsBits;
+    public boolean updateSplice;
+    public float warmup;
 
     @Override
     public void updateTile(){
@@ -110,6 +129,17 @@ public class ExtendMiner extends SglBlock implements ChainsBlockComp{
         for(ItemStack item: masterDrill.outputItems){
           dump(item.item);
         }
+      }
+
+      warmup = Mathf.lerpDelta(warmup, masterDrill == null? 0: masterDrill.warmup, master.warmupSpeed);
+
+      if(mining != null && Mathf.chanceDelta(miningEffectChance*warmup)){
+        mining.at(x, y);
+      }
+
+      if(updateSplice){
+        updateSplice = false;
+        splice = getRegionBits();
       }
     }
 
@@ -121,16 +151,14 @@ public class ExtendMiner extends SglBlock implements ChainsBlockComp{
       return this;
     }
 
+    @Annotations.EntryBlocked
     @Override
     public void onProximityUpdate(){
       super.onProximityUpdate();
 
       master.getMines(tile, block, mines);
 
-      for(int i = 0; i < 4; i++){
-        Building b = nearby(DirEdges.get(size, i)[0].x, DirEdges.get(size, i)[0].y);
-        if(b instanceof ChainsBuildComp oth && canChain(oth)) chainsBits |= 0b0001 << i;
-      }
+      updateSplice = true;
     }
 
     @Override
@@ -168,7 +196,7 @@ public class ExtendMiner extends SglBlock implements ChainsBlockComp{
 
     @Override
     public boolean canChain(ChainsBuildComp other){
-      if(!ChainsBuildComp.super.canChain(other)) return false;
+      if(!SpliceBuildComp.super.canChain(other)) return false;
       Building oth = null;
       t: for(int i = 0; i < 4; i++){
         if(oth != null) break;
@@ -187,6 +215,28 @@ public class ExtendMiner extends SglBlock implements ChainsBlockComp{
         }
       }
       return oth != null;
+    }
+
+    @Override
+    public int[] splice(){
+      return splice;
+    }
+
+    @Override
+    public void splice(int[] arr){
+      splice = arr;
+    }
+
+    @Override
+    public void write(Writes write){
+      super.write(write);
+      write.f(warmup);
+    }
+
+    @Override
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
+      warmup = read.f();
     }
   }
 }

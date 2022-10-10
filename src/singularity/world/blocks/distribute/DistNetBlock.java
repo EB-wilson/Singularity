@@ -1,6 +1,8 @@
 package singularity.world.blocks.distribute;
 
 import arc.struct.Seq;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.world.Block;
@@ -53,6 +55,18 @@ public class DistNetBlock extends SglBlock implements DistElementBlockComp{
     public void priority(int priority){
       this.priority = priority;
       distributor.network.priorityModified(this);
+    }
+
+    @Override
+    public void write(Writes write){
+      super.write(write);
+      write.f(matrixEnergyBuffered);
+    }
+
+    @Override
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
+      matrixEnergyBuffered = read.f();
     }
   }
 }

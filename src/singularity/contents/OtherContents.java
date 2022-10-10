@@ -14,17 +14,17 @@ public class OtherContents implements ContentList{
 
   @Override
   public void load(){
-    copper_schematic = new AtomSchematic(Items.copper, 14000, CrafterBlocks.destructor){{
+    copper_schematic = new AtomSchematic(Items.copper, 14000){{
       request.medium(0.23f);
       request.time(30);
     }};
 
-    lead_schematic = new AtomSchematic(Items.lead, 14000, copper_schematic){{
+    lead_schematic = new AtomSchematic(Items.lead, 14000){{
       request.medium(0.26f);
       request.time(30);
     }};
 
-    silicon_schematic = new AtomSchematic(Items.silicon, 18000, lead_schematic){{
+    silicon_schematic = new AtomSchematic(Items.silicon, 18000){{
       request.medium(0.41f);
       request.item(Items.sand, 1);
       request.time(45);

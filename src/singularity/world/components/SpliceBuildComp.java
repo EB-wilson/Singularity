@@ -41,19 +41,24 @@ public interface SpliceBuildComp extends ChainsBuildComp{
     return result;
   }
 
-  default int[] getRegionBits(boolean interCorner){
+  default int[] getRegionBits(){
     int[] result = new int[8];
     Arrays.fill(result, -1);
 
     boolean[] data = getSplice();
 
+    boolean neg = getBlock(SpliceBlockComp.class).negativeSplice();
     for(int part = 0; part < 8; part++){
       if(part < 4){
-        result[part] = !data[(part*2) % 8]? 0: -1;
+        if(neg){
+          result[part] = !data[part*2]? 0: -1;
+        }
+        else result[part] = data[part*2]? 0: -1;
       }
       else{
         int i = (part - 4)*2, b = (i+2)%8;
-        result[part] = !data[i] && !data[b]? 0: data[i] && (interCorner || !data[i+1]) && data[b]? 1: -1;
+        result[part] = !data[i] && !data[b]? (neg? 0: -1)
+            : data[i] && (getBlock(SpliceBlockComp.class).interCorner() || !data[i + 1]) && data[b]? 1: -1;
       }
     }
 
@@ -62,6 +67,6 @@ public interface SpliceBuildComp extends ChainsBuildComp{
 
   @Annotations.MethodEntry(entryMethod = "onProximityUpdate")
   default void updateRegionBit(){
-    splice(getRegionBits(getBlock(SpliceBlockComp.class).interCorner()));
+    splice(getRegionBits());
   }
 }

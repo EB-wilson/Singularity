@@ -1,12 +1,19 @@
 package singularity.contents;
 
+import arc.Core;
+import arc.Events;
 import arc.graphics.Color;
+import arc.graphics.g2d.TextureRegion;
+import arc.util.Time;
+import mindustry.game.EventType;
 import mindustry.type.Item;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class SglItems implements ContentList{
+  /**铝*/
+  public static Item aluminium,
   /**FEX水晶*/
-  public static Item crystal_FEX,
+  crystal_FEX,
   /**充能FEX水晶*/
   crystal_FEX_power,
   /**矩阵合金*/
@@ -17,8 +24,6 @@ public class SglItems implements ContentList{
   aerogel,
   /**简并态中子聚合物*/
   degenerate_neutron_polymer,
-  /**处理器*/
-  cpu,
   /**铀238*/
   uranium_238,
   /**铀235*/
@@ -31,30 +36,42 @@ public class SglItems implements ContentList{
   concentration_plutonium_239,
   /**反物质*/
   anti_metter,
-  /**铀饼*/
-  uranium_cake,
-  /**干冰*/
-  dry_ice,
   /**绿藻块*/
   chlorella_block,
   /**绿藻素*/
   chlorella,
+  /**碱石*/
+  alkali_stone,
+  /**絮凝剂*/
+  flocculant,
   /**焦炭*/
   coke,
   /**铱*/
   iridium,
   /**核废料*/
   nuclear_waste,
-  /***/
+  /**矿物碎屑*/
   crush_ore,
-  /**破碎铀矿石*/
-  crush_uranium_ore,
-  /**混合铀原料*/
-  salt_uranium,
-  /**混合铱盐*/
-  salt_iridium;
-  
+  /**岩层沥青*/
+  rock_bitumen,
+  /**铀原矿*/
+  uranium_rawore,
+  /**铀原料*/
+  uranium_rawmaterial,
+  /**铱金混合物*/
+  iridium_mixed_rawmaterial,
+  /**氯铱酸盐*/
+  iridium_chloride;
+
   public void load(){
+    aluminium = new Item("aluminium", Color.valueOf("#C0ECFF")){{
+      hardness = 3;
+      explosiveness = 0f;
+      flammability = 0f;
+      radioactivity = 0f;
+      cost = 0.9f;
+    }};
+
     crystal_FEX = new Item("crystal_FEX", Color.valueOf("#D2393E")){{
       hardness = 3;
       explosiveness = 0f;
@@ -63,13 +80,38 @@ public class SglItems implements ContentList{
       cost = 1.25f;
     }};
     
-    crystal_FEX_power = new Item("crystal_FEX_power", Color.valueOf("#E34248")){{
-      hardness = 3;
-      explosiveness = 1.6f;
-      flammability = 0f;
-      radioactivity = 3f;
-      cost = 1.35f;
-    }};
+    crystal_FEX_power = new Item("crystal_FEX_power", Color.valueOf("#E34248")){
+      {
+        hardness = 3;
+        explosiveness = 1.6f;
+        flammability = 0f;
+        radioactivity = 3f;
+        cost = 1.35f;
+
+        frameTime = 9;
+      }
+
+      @Override
+      public void loadIcon(){
+        super.loadIcon();
+        TextureRegion[] regions = new TextureRegion[18];
+
+        for(int i = 0; i < 10; i++){
+          regions[i] = Core.atlas.find(name + "_" + i);
+          if(i != 0 && i != 9) regions[regions.length - i] = regions[i];
+        }
+
+        fullIcon = new TextureRegion(fullIcon);
+        uiIcon = new TextureRegion(uiIcon);
+
+        Events.run(EventType.Trigger.update, () -> {
+          int frame = (int)(Time.globalTime / frameTime) % regions.length;
+
+          fullIcon.set(regions[frame]);
+          uiIcon.set(regions[frame]);
+        });
+      }
+    };
     
     matrix_alloy = new Item("matrix_alloy", Color.valueOf("#929090")){{
       hardness = 4;
@@ -144,20 +186,6 @@ public class SglItems implements ContentList{
       flammability = 0;
       radioactivity = 0;
     }};
-    
-    uranium_cake = new Item("uranium_cake", Color.valueOf("#E67D53")){{
-      hardness = 1;
-      explosiveness = 0f;
-      flammability = 0f;
-      radioactivity = 0f;
-    }};
-    
-    dry_ice = new Item("dry_ice", Color.valueOf("#EDF0ED")){{
-      hardness = 1;
-      explosiveness = 0f;
-      flammability = 0f;
-      radioactivity = 0f;
-    }};
   
     chlorella_block = new Item("chlorella_block", Color.valueOf("#6CB855")){{
       hardness = 1;
@@ -165,18 +193,32 @@ public class SglItems implements ContentList{
       flammability = 1.2f;
       radioactivity = 0f;
     }};
-  
+
     chlorella = new Item("chlorella", Color.valueOf("#7BD261")){{
       hardness = 1;
       explosiveness = 1.2f;
       flammability = 1.6f;
       radioactivity = 0f;
     }};
-    
+
+    alkali_stone = new Item("alkali_stone", Color.valueOf("#B0BAC0")){{
+      hardness = 1;
+      explosiveness = 0f;
+      flammability = 0f;
+      radioactivity = 0f;
+    }};
+
     coke = new Item("coke", Color.valueOf("#6A6A69")){{
       hardness = 1;
       explosiveness = 1.5f;
       flammability = 1.8f;
+      radioactivity = 0f;
+    }};
+
+    flocculant = new Item("flocculant", Color.white){{
+      hardness = 1;
+      explosiveness = 0f;
+      flammability = 0f;
       radioactivity = 0f;
     }};
     
@@ -201,22 +243,36 @@ public class SglItems implements ContentList{
       flammability = 0f;
       radioactivity = 0f;
     }};
-    
-    crush_uranium_ore = new Item("crush_uranium_ore", Color.valueOf("#4D6D15FF")){{
+
+    rock_bitumen = new Item("rock_bitumen", Color.valueOf("#808A73")){{
       hardness = 1;
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0f;
     }};
     
-    salt_uranium = new Item("salt_uranium", Color.valueOf("#4D940C")){{
+    uranium_rawore = new Item("uranium_rawore", Color.valueOf("#95B564")){{
+      hardness = 1;
+      explosiveness = 0f;
+      flammability = 0f;
+      radioactivity = 0f;
+    }};
+    
+    uranium_rawmaterial = new Item("uranium_rawmaterial", Color.valueOf("#B5D980")){{
       hardness = 0;
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0.1f;
     }};
     
-    salt_iridium = new Item("salt_iridium", Color.valueOf("#D8E1E1")){{
+    iridium_mixed_rawmaterial = new Item("iridium_mixed_rawmaterial", Color.valueOf("#AECBCB")){{
+      hardness = 0;
+      explosiveness = 0f;
+      flammability = 0f;
+      radioactivity = 0f;
+    }};
+
+    iridium_chloride = new Item("iridium_chloride", Color.valueOf("#CBE0E0")){{
       hardness = 0;
       explosiveness = 0f;
       flammability = 0f;

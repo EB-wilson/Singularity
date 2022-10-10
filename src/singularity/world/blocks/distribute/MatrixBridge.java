@@ -530,7 +530,7 @@ public class MatrixBridge extends DistNetBlock{
     }
 
     public void update(){
-      progress += speed/length*Time.delta;
+      progress += length == 0? 0: speed/length*Time.delta;
       rotate += angleSpeed*Time.delta;
     }
 

@@ -147,10 +147,14 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
   }
   
   default void onMoveEnergy(NuclearEnergyBuildComp dest, float rate){
-    for(NuclearEnergyBuildComp child: getEnergyNetwork().getPath(this, dest)) child.onMovePathChild(rate);
+    NuclearEnergyBuildComp last = this;
+    for(NuclearEnergyBuildComp child: getEnergyNetwork().getPath(this, dest)){
+      child.onMoveEnergyPathChild(last, rate, dest);
+      last = child;
+    }
   }
   
-  default void onMovePathChild(float flow){
+  default void onMoveEnergyPathChild(NuclearEnergyBuildComp last, float flow, NuclearEnergyBuildComp target){
   }
   
   default float getEnergy(){
@@ -172,7 +176,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
   
   /**返回该块是否接受核能输入*/
   default boolean acceptEnergy(NuclearEnergyBuildComp source){
-    return getBuilding().interactable(source.getBuilding().team) && getNuclearBlock().hasEnergy();
+    return getBuilding().interactable(source.getBuilding().team) && getNuclearBlock().hasEnergy() && energy().getEnergy() < getNuclearBlock().energyCapacity();
   }
   
   /**向连接的方块输出核能量，如果那个方块接受的话*/

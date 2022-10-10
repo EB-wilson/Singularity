@@ -67,18 +67,31 @@ public class NuclearBlocks implements ContentList{
   @Override
   public void load(){
     nuclear_pipe_node = new NuclearPipeNode("nuclear_pipe_node"){{
-      requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 8, SglItems.crystal_FEX, 4));
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.strengthening_alloy, 8,
+          SglItems.crystal_FEX, 4
+      ));
     }};
     
     phase_pipe_node = new NuclearPipeNode("phase_pipe_node"){{
-      requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 24, SglItems.crystal_FEX, 16, Items.phaseFabric, 15));
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.strengthening_alloy, 24,
+          SglItems.crystal_FEX, 16,
+          Items.phaseFabric, 15
+      ));
       size = 2;
       maxLinks = 10;
       linkRange = 18;
     }};
     
     decay_bin = new NormalCrafter("decay_bin"){{
-      requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 60, SglItems.crystal_FEX, 40, Items.silicon, 50, Items.lead, 80, Items.metaglass, 40));
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.strengthening_alloy, 60,
+          SglItems.crystal_FEX, 40,
+          Items.silicon, 50,
+          Items.lead, 80,
+          Items.metaglass, 40
+      ));
       size = 2;
       autoSelect = true;
       canSelect = false;
@@ -139,7 +152,12 @@ public class NuclearBlocks implements ContentList{
     }};
     
     neutron_generator = new NormalCrafter("neutron_generator"){{
-      requirements(Category.power, ItemStack.with(SglItems.strengthening_alloy, 100, SglItems.crystal_FEX_power, 80, Items.phaseFabric, 70, SglItems.aerogel, 90));
+      requirements(Category.power, ItemStack.with(
+          SglItems.strengthening_alloy, 100,
+          SglItems.crystal_FEX_power, 80,
+          Items.phaseFabric, 70,
+          SglItems.aerogel, 90
+      ));
       size = 3;
       
       warmupSpeed = 0.0075f;
@@ -162,7 +180,14 @@ public class NuclearBlocks implements ContentList{
     }};
   
     nuclear_impact_reactor = new NormalCrafter("nuclear_impact_reactor"){{
-      requirements(Category.power, ItemStack.with());
+      requirements(Category.power, ItemStack.with(
+          SglItems.strengthening_alloy, 260,
+          SglItems.aerogel, 240,
+          Items.plastanium, 220,
+          Items.silicon, 280,
+          Items.phaseFabric, 160,
+          Items.surgeAlloy, 200
+      ));
       size = 5;
       itemCapacity = 30;
       liquidCapacity = 35;
@@ -197,9 +222,9 @@ public class NuclearBlocks implements ContentList{
             (x, y) -> SglParticleModels.nuclearParticle.create(e.x, e.y, x, y, Mathf.random(3.25f, 4f)));
       };
       
-      warmupSpeed = 0.008f;
-      
-      newConsume();
+      warmupSpeed = 0.0008f;
+
+      newConsume().consValidCondition((NormalCrafterBuild e) -> e.power.status >= 0.99f);
       consume.item(SglItems.concentration_uranium_235, 1);
       consume.power(80);
       consume.liquid(Liquids.cryofluid, 0.6f);
@@ -207,7 +232,7 @@ public class NuclearBlocks implements ContentList{
       newProduce();
       produce.power(400);
       
-      newConsume();
+      newConsume().consValidCondition((NormalCrafterBuild e) -> e.power.status >= 0.99f);
       consume.item(SglItems.concentration_plutonium_239, 1);
       consume.power(80);
       consume.liquid(Liquids.cryofluid, 0.6f);
@@ -225,7 +250,13 @@ public class NuclearBlocks implements ContentList{
     }};
     
     nuclear_reactor = new NuclearReactor("nuclear_reactor"){{
-      requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 200, SglItems.crystal_FEX, 160, SglItems.aerogel, 180, Items.lead, 180, Items.phaseFabric, 140));
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.strengthening_alloy, 200,
+          SglItems.crystal_FEX, 160,
+          SglItems.aerogel, 180,
+          Items.lead, 180,
+          Items.phaseFabric, 140
+      ));
       size = 4;
       itemCapacity = 35;
       liquidCapacity = 25;
@@ -250,7 +281,13 @@ public class NuclearBlocks implements ContentList{
     }};
     
     lattice_reactor = new NuclearReactor("lattice_reactor"){{
-      requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 120, SglItems.crystal_FEX, 90, SglItems.crystal_FEX_power, 70, Items.phaseFabric, 60, Items.surgeAlloy, 80));
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.strengthening_alloy, 120,
+          SglItems.crystal_FEX, 90,
+          SglItems.crystal_FEX_power, 70,
+          Items.phaseFabric, 60,
+          Items.surgeAlloy, 80
+      ));
       size = 3;
       itemCapacity = 25;
       liquidCapacity = 20;
@@ -279,7 +316,14 @@ public class NuclearBlocks implements ContentList{
     }};
     
     overrun_reactor = new NuclearReactor("overrun_reactor"){{
-      requirements(SglCategory.nuclear, ItemStack.with(SglItems.strengthening_alloy, 400, SglItems.crystal_FEX, 260, SglItems.crystal_FEX_power, 280, SglItems.degenerate_neutron_polymer, 100, Items.surgeAlloy, 375, Items.phaseFabric, 240));
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.strengthening_alloy, 400,
+          SglItems.crystal_FEX, 260,
+          SglItems.crystal_FEX_power, 280,
+          SglItems.degenerate_neutron_polymer, 100,
+          Items.surgeAlloy, 375,
+          Items.phaseFabric, 240
+      ));
       size = 6;
       hasLiquids = true;
       itemCapacity = 50;

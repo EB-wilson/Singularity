@@ -3,26 +3,30 @@ package singularity.contents;
 import arc.struct.Seq;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
-import mindustry.content.TechTree;
-import singularity.Sgl;
+import mindustry.content.Planets;
+import mindustry.game.Objectives;
 
 import static mindustry.content.Blocks.*;
 import static mindustry.content.Items.*;
-import static mindustry.game.Objectives.Produce;
-import static singularity.contents.CollectBlocks.rock_drill;
+import static mindustry.content.Liquids.hydrogen;
+import static mindustry.content.Liquids.ozone;
 import static singularity.contents.CrafterBlocks.*;
 import static singularity.contents.DefenceBlocks.*;
+import static singularity.contents.DistributeBlocks.*;
 import static singularity.contents.LiquidBlocks.*;
 import static singularity.contents.NuclearBlocks.*;
+import static singularity.contents.ProductBlocks.*;
 import static singularity.contents.SglItems.*;
 import static singularity.contents.SglLiquids.*;
-import static universecore.util.TechTreeConstructor.node;
-import static universecore.util.TechTreeConstructor.nodeProduce;
+import static universecore.util.TechTreeConstructor.*;
 
 public class SglTechThree implements ContentList{
+
   @Override
   public void load(){
     {//serpulo
+      currentRoot(Planets.serpulo.techTree);
+
       node(laserDrill, rock_drill, rockD -> {
         rockD.node(ore_washer, oreWa -> {});
       });
@@ -41,39 +45,31 @@ public class SglTechThree implements ContentList{
 
       node(phaseWeaver, fission_weaver, fisWea -> {});
 
-      node(coalCentrifuge, petroleum_separator, petSep -> {
-        petSep.node(retort_column, retCol -> {});
-
-        petSep.node(gel_mixer, gelMix -> {
-
-        });
-      });
-
       node(melter, thermal_centrifuge, theCen -> {
-        theCen.node(laser_resolver, lasRes -> {
+        theCen.node(laser_resolver, lasRes -> {});
+      });
 
+      node(siliconSmelter, distill_purifier, disPur -> {
+        disPur.node(osmotic_purifier, osmPur -> {});
+      });
+
+      node(siliconSmelter, combustion_chamber, comCha -> {
+        comCha.node(retort_column, retCol -> {});
+
+        comCha.node(reacting_pool, reaPoo -> {
+          reaPoo.node(electrolytor, ele -> {});
+
+          reaPoo.node(osmotic_separation_tank, osmTank -> {});
+
+          reaPoo.node(vacuum_crucible, vacCru -> {});
         });
       });
+
+      node(melter, thermal_smelter, theCen -> {});
 
       node(graphitePress, crystallizer, cry -> {
         cry.node(FEX_crystal_charger, charger -> {
-          charger.node(lattice_constructor, latCons -> {
-
-          });
-        });
-      });
-
-      node(kiln, strengthening_alloy_smelter, strAlloySme -> {
-        strAlloySme.node(matrix_cutter, matCut -> {
-          matCut.node(polymer_gravitational_generator, polyGen -> {
-            polyGen.node(quality_generator, quaGen -> {
-              quaGen.node(hadron_reconstructor, hadCon -> {});
-
-              quaGen.node(destructor, dest -> {});
-
-              quaGen.node(substance_inverter, subInv -> {});
-            });
-          });
+          charger.node(lattice_constructor, latCons -> {});
         });
       });
 
@@ -83,14 +79,50 @@ public class SglTechThree implements ContentList{
 
           });
 
-          nucNode.node(fuel_packager, fuelPack -> {
-            fuelPack.node(nuclear_reactor, nucReact -> {
-              nucReact.node(lattice_reactor, latReact -> {
-                latReact.node(overrun_reactor, oveReact -> {});
-              });
+          nucNode.node(fuel_packager, fuelPack -> {});
 
-              nucReact.node(neutron_generator, neutGen -> {});
+          nucNode.node(nuclear_reactor, nucReact -> {
+            nucReact.node(lattice_reactor, latReact -> {
+              latReact.node(overrun_reactor, oveReact -> {});
             });
+
+            nucReact.node(nuclear_impact_reactor, nucImp -> {});
+
+            nucReact.node(neutron_generator, neutGen -> {});
+          });
+        });
+      });
+
+      node(blastDrill, tidal_drill, tidDil -> {
+        tidDil.node(force_field_extender, forExt -> {});
+      });
+
+      node(blastDrill, matrix_miner, Seq.with(new Objectives.Research(matrix_core)), matDil -> {
+        matDil.node(matrix_miner_node, matNod -> {});
+      });
+
+      node(coreShard, matrix_bridge, matBri -> {
+        matBri.node(matrix_core, matCore -> {
+          matCore.node(matrix_process_unit, matProc -> {});
+
+          matCore.node(matrix_topology_container, matTop -> {});
+
+          matCore.node(matrix_component_interface, matComp -> {
+            matComp.node(interface_jump_line, jump -> {});
+
+            matComp.node(matrix_buffer, buff -> {});
+          });
+
+          matCore.node(matrix_energy_manager, matEnm -> {
+            matEnm.node(matrix_energy_buffer, matEnb -> {});
+
+            matEnm.node(matrix_power_interface, matPoi -> {});
+
+            matEnm.node(matrix_neutron_interface, matNui -> {});
+          });
+
+          matCore.node(matrix_controller, matCtrl -> {
+            matCtrl.node(matrix_grid_node, matGnd -> {});
           });
         });
       });
@@ -103,27 +135,7 @@ public class SglTechThree implements ContentList{
         });
       });
 
-      nodeProduce(titanium, crush_uranium_ore, uOre -> {
-        uOre.nodeProduce(uranium_cake, uCake -> {
-          uCake.nodeProduce(salt_uranium, uSalt -> {
-            uSalt.nodeProduce(uranium_235, u235 -> {
-              u235.nodeProduce(concentration_uranium_235, cu235 -> {
-                cu235.nodeProduce(nuclear_waste, Seq.with(new Produce(concentration_plutonium_239)), nWest -> {
-                  nWest.nodeProduce(salt_iridium, iSalt -> {});
-                });
-              });
-            });
-
-            uSalt.nodeProduce(uranium_238, u238 -> {
-              u238.nodeProduce(plutonium_239, pu239 -> {
-                pu239.nodeProduce(concentration_plutonium_239, cpu239 -> {});
-              });
-            });
-          });
-        });
-      });
-
-      nodeProduce(Liquids.water, rock_bitumen, rockB -> {
+      nodeProduce(Items.sand, rock_bitumen, rockB -> {
         rockB.nodeProduce(FEX_liquid, FEXl -> {
           FEXl.nodeProduce(crystal_FEX, cryFEX -> {
             cryFEX.nodeProduce(crystal_FEX_power, powFEX -> {});
@@ -139,37 +151,75 @@ public class SglTechThree implements ContentList{
         });
       });
 
-      node(Liquids.oil, fuel_oil, fuelOil -> {});
+      nodeProduce(lead, aluminium, alu -> {});
 
-      nodeProduce(Items.sand, crush_ore, cruOre -> {});
+      nodeProduce(Liquids.water, ozone, alMud -> {});
 
-      nodeProduce(Items.sand, dry_ice, dryIce -> {});
+      nodeProduce(Liquids.water, hydrogen, hyd -> {});
 
-      nodeProduce(titanium, uranium_238, u238 -> {
-        u238.nodeProduce(plutonium_239, p239 -> {});
+      nodeProduce(Liquids.water, purified_water, puW -> {
+        puW.nodeProduce(flocculant, flo -> {});
       });
 
-      nodeProduce(thorium, strengthening_alloy, strAlloy -> {
+      nodeProduce(Items.sand, crush_ore, cruOre -> {
+        cruOre.nodeProduce(mixed_ore_solution, oreSol -> {
+          
+        });
+      });
+
+      nodeProduce(Items.sand, uranium_rawore, uRaw -> {
+        uRaw.nodeProduce(uranium_salt_solution, uraSol -> {
+          uraSol.nodeProduce(uranium_rawmaterial, ura_raw -> {});
+        });
+      });
+
+      nodeProduce(Items.sand, alkali_stone, alk -> {
+        alk.nodeProduce(lye, lye -> {});
+
+        alk.nodeProduce(chlorine, chl -> {});
+      });
+
+      nodeProduce(silicon, silicon_chloride_sol, scs -> {});
+
+      nodeProduce(pyratite, acid, acd -> {});
+
+      nodeProduce(pyratite, sulfur_dioxide, sufDie -> {});
+
+      nodeProduce(sporePod, spore_cloud, spoClo -> {});
+
+      nodeProduce(scrap, nuclear_waste, nucWes -> {
+        nucWes.nodeProduce(iridium_mixed_rawmaterial, iriRaw -> {
+          iriRaw.nodeProduce(iridium_chloride, iriChl -> {});
+        });
+      });
+
+      nodeProduce(thorium, uranium_235, u235 -> {
+        u235.nodeProduce(concentration_uranium_235, cu235 -> {});
+      });
+
+      nodeProduce(thorium, uranium_238, u238 -> {
+        u238.nodeProduce(plutonium_239, p239 -> {
+          p239.nodeProduce(concentration_plutonium_239, cp239 -> {});
+        });
+      });
+
+      nodeProduce(titanium, strengthening_alloy, strAlloy -> {
         strAlloy.nodeProduce(matrix_alloy, matAlloy -> {});
       });
 
-      nodeProduce(metaglass, aerogel, aGel -> {});
-      nodeProduce(coal, coke, coke -> {});
-      nodeProduce(coal, mixed_tar, mixTar -> {
-        mixTar.nodeProduce(mixed_chemical_gel, chemGel -> {
-          chemGel.nodeProduce(iridium_gel, Seq.with(new Produce(salt_iridium)), iGel -> {
-            iGel.nodeProduce(iridium, irid -> {
-              irid.nodeProduce(degenerate_neutron_polymer, poly -> {});
-            });
-          });
+      nodeProduce(titanium, iridium, iri -> {
+        iri.nodeProduce(degenerate_neutron_polymer, neuPol -> {
+          neuPol.nodeProduce(anti_metter, antMet -> {});
         });
       });
+
+      nodeProduce(metaglass, aerogel, aGel -> {});
+
+      nodeProduce(coal, coke, coke -> {});
     }
 
-    if(Sgl.config.debugMode){
-      for(TechTree.TechNode node: TechTree.all){
-        node.content.alwaysUnlocked = true;
-      }
+    {//erekir
+      currentRoot(Planets.erekir.techTree);
     }
   }
 }

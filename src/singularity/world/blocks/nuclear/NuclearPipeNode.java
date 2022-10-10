@@ -12,11 +12,13 @@ import arc.math.geom.Geometry;
 import arc.math.geom.Intersector;
 import arc.math.geom.Point2;
 import arc.scene.ui.layout.Table;
+import arc.struct.IntFloatMap;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
 import arc.util.*;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.Vars;
-import mindustry.content.Blocks;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
@@ -27,7 +29,6 @@ import mindustry.input.Placement;
 import mindustry.world.Block;
 import mindustry.world.Edges;
 import mindustry.world.Tile;
-import mindustry.world.blocks.power.PowerNode;
 import mindustry.world.meta.Env;
 import singularity.contents.NuclearBlocks;
 import singularity.world.components.NuclearEnergyBlockComp;
@@ -300,9 +301,9 @@ public class NuclearPipeNode extends NuclearBlock{
   }
   
   public class NuclearPipeNodeBuild extends SglBuilding{
-    public float flowing;
-    public float smoothAlpha;
-    private float chanceFlow;
+    public IntFloatMap smoothAlpha = new IntFloatMap();
+    public IntFloatMap chanceFlow = new IntFloatMap();
+    public IntFloatMap flowing = new IntFloatMap();
     private final Interval flowTimer = new Interval();
     private final WindowedMean flowMean = new WindowedMean(5);
     
@@ -355,18 +356,28 @@ public class NuclearPipeNode extends NuclearBlock{
     public void updateTile(){
       super.updateTile();
       if(flowTimer.get(10)){
-        flowMean.add(chanceFlow*Time.delta);
-        chanceFlow = 0;
-        flowing = flowMean.mean()/10;
+        flowing.clear();
+        for(IntFloatMap.Entry entry: chanceFlow){
+          flowMean.add(entry.value*Time.delta);
+          int pos = entry.key;
+          chanceFlow.remove(pos, 0);
+          flowing.put(pos, flowMean.mean()/10);
+          smoothAlpha.put(pos, Mathf.lerpDelta(smoothAlpha.get(pos), Mathf.clamp(flowing.get(pos)/energyCapacity), 0.02f));
+        }
       }
     }
-  
+
     @Override
-    public void onMovePathChild(float flow){
-      super.onMovePathChild(flow);
-      chanceFlow += flow;
+    public void onMoveEnergyPathChild(NuclearEnergyBuildComp last, float flow, NuclearEnergyBuildComp target){
+      int pos;
+      if(energy.linked.contains(pos = last.getBuilding().pos())){
+        chanceFlow.increment(pos, flow);
+      }
+      if(energy.linked.contains(pos = target.getBuilding().pos())){
+        chanceFlow.increment(pos, flow);
+      }
     }
-  
+
     @Override
     public void draw(){
       super.draw();
@@ -377,20 +388,17 @@ public class NuclearPipeNode extends NuclearBlock{
         if(entity == null || entity.block instanceof NuclearPipeNode && entity.id() >= id) continue;
         drawLink(this, (NuclearEnergyBuildComp) entity);
       }
-  
-      float alpha = Mathf.clamp(flowing/energyCapacity);
       
-      Lines.stroke(4.5f);
+      Lines.stroke(4f);
       for(int i = 0; i < energy.linked.size; i++){
-        Building entity = world.build(energy.linked.get(i));
+        int pos = energy.linked.get(i);
+        Building entity = world.build(pos);
         if(entity == null) continue;
         if(entity.block instanceof NuclearPipeNode && entity.id() >= id) continue;
-        if(entity instanceof NuclearPipeNodeBuild) alpha = (alpha + Mathf.clamp(((NuclearPipeNodeBuild)entity).flowing/((NuclearPipeNodeBuild)entity).block().energyCapacity))/2;
-        smoothAlpha = Mathf.lerpDelta(smoothAlpha, alpha, 0.02f);
-        Draw.alpha(smoothAlpha * laserOpacity);
+        Draw.alpha(smoothAlpha.get(pos)*laserOpacity);
         Tmp.v1.set(x, y).sub(entity.tile.worldx(), entity.tile.worldy()).setLength(size*tilesize/2f - 1.5f).scl(-1);
         Tmp.v2.set(entity.x, entity.y).sub(tile.worldx(), tile.worldy()).setLength(entity.block.size*tilesize/2f - 1.5f).scl(-1);
-        Drawf.laser(((PowerNode)Blocks.powerNode).laser, linkLeaser, linkLeaser,
+        Drawf.laser(linkLeaser, linkLeaser, linkLeaser,
             x + Tmp.v1.x, y + Tmp.v1.y,
             entity.x() + Tmp.v2.x, entity.y() + Tmp.v2.y,
             0.45f);
@@ -433,6 +441,37 @@ public class NuclearPipeNode extends NuclearBlock{
       Draw.color(Pal.accent);
       Drawf.circles(x, y, linkRange * tilesize);
       Draw.reset();
+    }
+
+    @Override
+    public void write(Writes write){
+      super.write(write);
+      write.i(smoothAlpha.size);
+
+      IntFloatMap.Keys keys = smoothAlpha.keys();
+      while(keys.hasNext()){
+        int p = keys.next();
+        write.i(p);
+        write.f(smoothAlpha.get(p));
+        write.f(flowing.get(p));
+        write.f(chanceFlow.get(p));
+      }
+    }
+
+    @Override
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
+      int size = read.i();
+
+      smoothAlpha.clear();
+      flowing.clear();
+      chanceFlow.clear();
+      for(int i = 0; i < size; i++){
+        int p = read.i();
+        smoothAlpha.put(p, read.f());
+        flowing.put(p, read.f());
+        chanceFlow.put(p, read.f());
+      }
     }
   }
 }

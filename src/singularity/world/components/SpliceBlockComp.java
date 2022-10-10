@@ -7,4 +7,9 @@ public interface SpliceBlockComp extends ChainsBlockComp{
   default boolean interCorner(){
     return false;
   }
+
+  @Annotations.BindField("negativeSplice")
+  default boolean negativeSplice(){
+    return false;
+  }
 }

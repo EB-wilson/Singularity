@@ -7,6 +7,7 @@ import mindustry.content.Liquids;
 import mindustry.gen.Sounds;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
+import mindustry.world.Block;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.draw.DrawLiquidRegion;
 import mindustry.world.draw.DrawMulti;
@@ -18,9 +19,11 @@ import universecore.util.OverrideContentList;
 import static mindustry.type.ItemStack.with;
 
 public class OverrideBlocks implements OverrideContentList{
+  public static Block oldMelter, oldPulverizer;
+
   @Override
   public void load(){
-    doOverrideContent(Blocks.melter,
+    doOverrideContent(oldMelter = Blocks.melter,
         new NormalCrafter("melter_override"){{
           requirements(Category.crafting, ItemStack.with(Items.copper, 30, Items.lead, 35, Items.graphite, 45));
           autoSelect = true;
@@ -49,7 +52,7 @@ public class OverrideBlocks implements OverrideContentList{
         }}
     );
     
-    doOverrideContent(Blocks.pulverizer,
+    doOverrideContent(oldPulverizer = Blocks.pulverizer,
         new NormalCrafter("pulverizer_override"){{
           requirements(Category.crafting, with(Items.copper, 30, Items.lead, 25));
           craftEffect = Fx.pulverize;

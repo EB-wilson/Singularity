@@ -12,6 +12,7 @@ import universecore.util.path.GenericPath;
 import universecore.util.path.IPath;
 
 public class NuclearEnergyNet extends FinderContainerBase<NuclearEnergyBuildComp>{
+  public static final GenericPath<NuclearEnergyBuildComp> EMP_PATH = new GenericPath<>();
   public ObjectMap<NuclearEnergyBuildComp, ObjectMap<NuclearEnergyBuildComp, IPath<NuclearEnergyBuildComp>>> paths = new ObjectMap<>();
 
   public Seq<NuclearEnergyBuildComp> all = new Seq<>();
@@ -75,7 +76,7 @@ public class NuclearEnergyNet extends FinderContainerBase<NuclearEnergyBuildComp
   }
   
   public IPath<NuclearEnergyBuildComp> getPath(NuclearEnergyBuildComp source, NuclearEnergyBuildComp dest){
-    return paths.get(source, new ObjectMap<>()).get(dest, new GenericPath<>());
+    return paths.get(source, ObjectMap::new).get(dest, EMP_PATH);
   }
   
   public void remove(NuclearEnergyBuildComp removed){

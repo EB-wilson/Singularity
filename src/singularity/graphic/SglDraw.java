@@ -73,6 +73,12 @@ public class SglDraw{
     drawDiamond(x, y, horLength, horWidth, 0, color, color);
   }
 
+  public static void drawLightEdge(float x, float y, float vertLength, float vertWidth, float horLength, float horWidth, float rotation){
+    Color color = Draw.getColor();
+    drawDiamond(x, y, vertLength, vertWidth, 90 + rotation, color, color);
+    drawDiamond(x, y, horLength, horWidth, 0 + rotation, color, color);
+  }
+
   public static void drawLightEdge(float x, float y, Color color, float vertLength, float vertWidth, float rotationV, Color gradientV,
                                    float horLength, float horWidth, float rotationH, Color gradientH){
     drawDiamond(x, y, vertLength, vertWidth, 90 + rotationV, color, gradientV);
@@ -166,7 +172,7 @@ public class SglDraw{
   }
 
   public static void startBloom(float z){
-    if(z < Layer.block + 0.02f || z > Layer.blockOver - 0.02f) throw new IllegalArgumentException("z");
+    if(z < Layer.block + 0.02f || z > Layer.blockOver - 0.02f) throw new IllegalArgumentException("bloom z should 35 > be > 30, given z: " + z);
     if(blooming) throw new IllegalStateException("current is blooming, please endBloom");
     blooming = true;
     Draw.z(z);

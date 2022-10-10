@@ -22,7 +22,7 @@ public class DrawRegionDynamic<E extends Building> extends DrawBlock{
   public TextureRegion region;
   public String suffix = "";
   public boolean spinSprite = false;
-  public boolean drawPlan = true;
+  public boolean drawPlan = false;
   public float x, y;
   /** Any number <=0 disables layer changes. */
   public float layer = -1;

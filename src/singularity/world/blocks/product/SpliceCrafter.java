@@ -51,6 +51,8 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
 
   public boolean interCorner = false;
 
+  public boolean negativeSplice = false;
+
   public float tempLiquidCapacity;
   
   public SpliceCrafter(String name){
@@ -66,19 +68,22 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     for(BaseConsumers consumer: consumers){
       for(BaseConsume<? extends ConsumerBuildComp> cons: consumer.all()){
         Floatf old = cons.consMultiplier;
-        cons.setMultiple((SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
+        cons.setMultiple(old == null? (SpliceCrafterBuild e) -> e.chains.container.all.size:
+            (SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
       }
     }
     for(BaseConsumers consumer: optionalCons){
       for(BaseConsume<? extends ConsumerBuildComp> cons: consumer.all()){
         Floatf old = cons.consMultiplier;
-        cons.setMultiple((SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
+        cons.setMultiple(old == null? (SpliceCrafterBuild e) -> e.chains.container.all.size:
+            (SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
       }
     }
     for(BaseProducers producer: producers){
       for(BaseProduce<?> prod: producer.all()){
         Floatf old = prod.prodMultiplier;
-        prod.setMultiple((SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
+        prod.setMultiple(old == null? (SpliceCrafterBuild e) -> e.chains.container.all.size:
+            (SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
       }
     }
   }
@@ -124,6 +129,13 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       return this;
     }
 
+    @Annotations.EntryBlocked
+    @Override
+    public void onProximityUpdate(){
+      super.onProximityUpdate();
+      updateModule = true;
+    }
+
     @Override
     public void displayBars(Table bars){
       if(recipeCurrent != -1 && producer.current != null && block.hasPower && block.outputsPower && producer.current.get(SglProduceType.power) != null){
@@ -141,7 +153,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
       if (!displayLiquids.isEmpty()){
         bars.table(Tex.buttonTrans, t -> {
           t.defaults().growX().height(18f).pad(4);
-          t.top().add(otherLiquidStr).padTop(0);
+          t.top().add(liquidsStr).padTop(0);
           t.row();
           for (SglLiquidStack stack : displayLiquids) {
             Func<Building, Bar> bar = entity -> new Bar(
@@ -257,7 +269,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         }
         if(producer != tProd) producer = tProd;
 
-        splice(getRegionBits(interCorner));
+        splice = getRegionBits();
 
         updateModule = false;
       }
@@ -401,6 +413,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
   
     public void set(SpliceItemModule otherModule){
+      allCapacity = otherModule.allCapacity;
       super.set(otherModule);
     }
     
@@ -433,6 +446,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
     
     public void set(SpliceLiquidModule otherModule){
+      allCapacity = otherModule.allCapacity;
       otherModule.each(this::set);
     }
     

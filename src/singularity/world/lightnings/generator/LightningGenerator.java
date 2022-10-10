@@ -13,14 +13,14 @@ import java.util.Iterator;
 
 /**闪电生成器基类，同时实现了Iterator和Iterable接口，可以使用for-each循环形式逐个产生顶点，每一次获取迭代器都将返回生成器自身，并重置迭代状态
  * 注意，任何在迭代器运作外的时机变更生成器属性，都会直接影响迭代产生的顶点分布情况，而生成器是可复用的，每次迭代都会产生互不相关的一组顶点
- * <p>警告：这个方法不是线程安全的，任何时候要避免在一次迭代结束前再次获取迭代器*/
+ * <p>警告：这个方法不是线程安全的，任何时候要避免同时迭代此对象*/
 public abstract class LightningGenerator implements Iterable<LightningVertex>, Iterator<LightningVertex>{
   public float originX, originY;
 
   /**顶点基准间距最小值*/
-  public float minInterval = 8;
+  public float minInterval = 10;
   /**顶点基准位置最大值*/
-  public float maxInterval = 16;
+  public float maxInterval = 18;
 
   /**闪电顶点离散程度，越高则顶点偏移越远*/
   public float maxSpread = 12.25f;
@@ -80,7 +80,7 @@ public abstract class LightningGenerator implements Iterable<LightningVertex>, I
   /**此类同时实现了可迭代和迭代器接口，即可以进行for-each循环来逐个产生顶点，需要此方法返回对象本身，而此方法应当被重写以在调用时重置迭代器状态，这意味着这个方法不是线程安全的*/
   @NotNull
   @Override
-  public Iterator<LightningVertex> iterator(){
+  public synchronized Iterator<LightningVertex> iterator(){
     return this;
   }
 

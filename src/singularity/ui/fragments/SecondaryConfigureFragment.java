@@ -58,8 +58,11 @@ public class SecondaryConfigureFragment{
     configuring.buildSecondaryConfig(table, target);
     table.pack();
     table.setTransform(true);
-    table.actions(Actions.scaleTo(0f, 1f), Actions.visible(true),
-        Actions.scaleTo(1f, 1f, 0.07f, Interp.pow3Out));
+    table.actions(
+        Actions.scaleTo(0f, 1f),
+        Actions.visible(true),
+        Actions.scaleTo(1f, 1f, 0.07f, Interp.pow3Out)
+    );
   
     table.update(() -> {
       table.setOrigin(Align.center);
