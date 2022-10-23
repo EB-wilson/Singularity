@@ -13,7 +13,7 @@ public class DistributeModule extends BlockModule{
   public final DistElementBuildComp entity;
   public final IntSeq distNetLinks = new IntSeq();
   
-  public DistRequestBase<?> lastAssign;
+  public DistRequestBase lastAssign;
   public DistributeNetwork network;
   
   public DistributeModule(DistElementBuildComp entity){
@@ -32,7 +32,7 @@ public class DistributeModule extends BlockModule{
     if(network.netStructValid()) entity.networkValided();
   }
   
-  public void assign(DistRequestBase<?> request){
+  public void assign(DistRequestBase request){
     if(network.netStructValid()){
       DistCoreModule core = core().distCore();
       core.receive(request);

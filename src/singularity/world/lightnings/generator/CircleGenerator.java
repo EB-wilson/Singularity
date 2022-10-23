@@ -3,10 +3,7 @@ package singularity.world.lightnings.generator;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.util.Tmp;
-import org.jetbrains.annotations.NotNull;
 import singularity.world.lightnings.LightningVertex;
-
-import java.util.Iterator;
 
 /**环形闪电的生成器，通过指定的圆心和半径生成闪电顶点*/
 public class CircleGenerator extends LightningGenerator{
@@ -26,17 +23,17 @@ public class CircleGenerator extends LightningGenerator{
   LightningVertex firstOne;
 
   @Override
-  public @NotNull Iterator<LightningVertex> iterator(){
+  public void reset(){
+    super.reset();
     rad.set(1, 0).setLength(radius).setAngle(originAngle);
     currentRotated = 0;
     first = true;
     firstOne = null;
-    return this;
   }
 
   @Override
   public boolean hasNext(){
-    return currentRotated < 360;
+    return super.hasNext() && currentRotated < 360;
   }
 
   @Override
@@ -59,8 +56,8 @@ public class CircleGenerator extends LightningGenerator{
       Tmp.v2.set(Tmp.v1.set(rad.rotate(rotated))).setLength(offset).scl(offset < 0? -1: 1);
       Tmp.v1.add(Tmp.v2);
 
-      vertex.x = originX + Tmp.v1.x;
-      vertex.y = originY + Tmp.v1.y;
+      vertex.x = Tmp.v1.x;
+      vertex.y = Tmp.v1.y;
     }
 
     if(first){

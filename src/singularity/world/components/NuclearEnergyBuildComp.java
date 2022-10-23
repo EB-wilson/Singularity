@@ -25,7 +25,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
     return null;
   }
   
-  @Annotations.BindField("energyLinked")
+  @Annotations.BindField(value = "energyLinked", initialize = "new arc.struct.Seq<>()")
   default Seq<NuclearEnergyBuildComp> energyLinked(){
     return null;
   }

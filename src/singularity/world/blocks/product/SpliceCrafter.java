@@ -1,6 +1,7 @@
 package singularity.world.blocks.product;
 
 import arc.Core;
+import arc.func.Cons;
 import arc.func.Floatf;
 import arc.func.Func;
 import arc.graphics.g2d.Draw;
@@ -49,12 +50,15 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   public int maxChainsWidth = 10;
   public int maxChainsHeight = 10;
 
+  public Cons<SpliceCrafterBuild> structUpdated;
+
   public boolean interCorner = false;
 
   public boolean negativeSplice = false;
 
+  public int tempItemCapacity;
   public float tempLiquidCapacity;
-  
+
   public SpliceCrafter(String name){
     super(name);
   }
@@ -63,6 +67,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   @Override
   public void init(){
     super.init();
+    tempItemCapacity = itemCapacity;
     tempLiquidCapacity = liquidCapacity;
 
     for(BaseConsumers consumer: consumers){
@@ -231,10 +236,19 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         }).height(46 + pl.liquids.length*26).padTop(2);
       }
     }
-  
+
+    @Override
+    public void update(){
+      if(hasItems) itemCapacity = items().allCapacity;
+      if(hasLiquids) liquidCapacity = liquids().allCapacity;
+      super.update();
+      itemCapacity = tempItemCapacity;
+      liquidCapacity = tempLiquidCapacity;
+    }
+
     @Override
     public void updateTile(){
-      liquidCapacity = liquids().allCapacity;
+      chains.container.update();
       if(updateModule){
         if(hasItems){
           SpliceItemModule tItems = chains.getVar("items");
@@ -273,12 +287,11 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
 
         updateModule = false;
       }
-  
+
       super.updateTile();
       
       if(producer.entity != this) producer.doDump(this);
-      
-      liquidCapacity = tempLiquidCapacity;
+
       handling = false;
     }
   
@@ -297,6 +310,15 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
       return source.interactable(this.team) && hasLiquids && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)) && liquids.get(liquid) <= liquids().allCapacity - 0.0001f;
+    }
+
+    @Override
+    public void draw(){
+      if(hasItems) itemCapacity = items().allCapacity;
+      if(hasLiquids) liquidCapacity = liquids().allCapacity;
+      super.draw();
+      itemCapacity = tempItemCapacity;
+      liquidCapacity = tempLiquidCapacity;
     }
 
     @Override
@@ -391,6 +413,11 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
 
     @Override
+    public void onChainsUpdated(){
+      if(structUpdated != null) structUpdated.get(this);
+    }
+
+    @Override
     public void splice(int[] arr){
       splice = arr;
     }
@@ -413,7 +440,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
   
     public void set(SpliceItemModule otherModule){
-      allCapacity = otherModule.allCapacity;
       super.set(otherModule);
     }
     
@@ -446,7 +472,6 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
     }
     
     public void set(SpliceLiquidModule otherModule){
-      allCapacity = otherModule.allCapacity;
       otherModule.each(this::set);
     }
     

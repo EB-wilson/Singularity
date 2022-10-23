@@ -1,5 +1,6 @@
 package singularity.world.blocks.distribute.netcomponents;
 
+import arc.math.Mathf;
 import arc.struct.Seq;
 import singularity.world.FinderContainerBase;
 import singularity.world.components.distnet.DistElementBlockComp;
@@ -10,12 +11,15 @@ import universecore.util.Empties;
 public class CompBusGroup extends FinderContainerBase<ComponentBus.ComponentBusBuild> implements DistElementBuildComp{
   public static final DistElementBlockComp block = new DistElementBlockComp(){
     @Override
-    public int frequencyUse(){
+    public int topologyUse(){
       return 2;
     }
   };
 
   public DistributeModule distributor;
+
+  public float totalConsEnergy;
+  public int totalConsumers;
 
   public Seq<ComponentBus.ComponentBusBuild> children = new Seq<>();
 
@@ -41,6 +45,9 @@ public class CompBusGroup extends FinderContainerBase<ComponentBus.ComponentBusB
 
     componentBusBuild.group = this;
     children.add(componentBusBuild);
+    if(componentBusBuild.block().matrixEnergyRequestMulti > 0) totalConsumers++;
+
+    totalConsEnergy += componentBusBuild.block().matrixEnergyRequestMulti;
   }
 
   @Override
@@ -81,5 +88,11 @@ public class CompBusGroup extends FinderContainerBase<ComponentBus.ComponentBusB
   @Override
   public Seq<DistElementBuildComp> netLinked(){
     return Empties.nilSeq();
+  }
+
+  @Override
+  public float matrixEnergyConsume(){
+    float ave = totalConsEnergy/totalConsumers;
+    return ave*Mathf.pow(1.14f, totalConsumers);
   }
 }

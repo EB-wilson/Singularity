@@ -2,12 +2,12 @@ package singularity.world.consumers;
 
 import arc.Core;
 import arc.graphics.Color;
+import arc.math.Mathf;
 import arc.scene.ui.Image;
 import arc.scene.ui.layout.Stack;
 import arc.scene.ui.layout.Table;
 import arc.struct.Bits;
 import arc.util.Strings;
-import arc.util.Time;
 import mindustry.core.UI;
 import mindustry.gen.Building;
 import mindustry.ui.ReqImage;
@@ -87,9 +87,8 @@ public class SglConsumeMedium<T extends Building & MediumBuildComp & ConsumerBui
   }
 
   @Override
-  public boolean valid(T entity){
-    float delta = entity.consEfficiency() < 0.001f? Time.delta: parent.delta(entity);
-    return entity.mediumContains() >= request*delta*multiple(entity);
+  public float efficiency(T t){
+    return Mathf.clamp(t.mediumContains()/(request*multiple(t)));
   }
 
   @Override

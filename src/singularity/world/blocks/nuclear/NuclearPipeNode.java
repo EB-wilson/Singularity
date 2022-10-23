@@ -30,6 +30,8 @@ import mindustry.world.Block;
 import mindustry.world.Edges;
 import mindustry.world.Tile;
 import mindustry.world.meta.Env;
+import mindustry.world.meta.Stat;
+import mindustry.world.meta.StatUnit;
 import singularity.contents.NuclearBlocks;
 import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
@@ -88,9 +90,16 @@ public class NuclearPipeNode extends NuclearBlock{
   @Override
   public void init(){
     super.init();
-    clipSize = Math.max(clipSize, linkRange * tilesize * 2);
+    clipSize = Math.max(clipSize, linkRange*tilesize*2);
   }
-  
+
+  @Override
+  public void setStats(){
+    super.setStats();
+    stats.add(Stat.linkRange, linkRange, StatUnit.blocks);
+    stats.add(Stat.maxConsecutive, maxLinks);
+  }
+
   @Override
   public void load(){
     super.load();

@@ -27,18 +27,18 @@ public class DistSupportContainerTable{
     }
 
     for(int i = 0; i < capacities.length; i+=2){
-      cont.capacities.put((DistBuffers<?>) capacities[i], ((Number)capacities[i+1]).floatValue());
+      cont.capacities.put((DistBufferType<?>) capacities[i], ((Number)capacities[i+1]).floatValue());
     }
   }
 
   public void setDefaultSupports(){
     for(Block block: Vars.content.blocks()){
       if(block instanceof StorageBlock){
-        setSupport(block, false, DistBuffers.itemBuffer, block.itemCapacity);
+        setSupport(block, false, DistBufferType.itemBuffer, block.itemCapacity);
       }
 
       if(block instanceof LiquidRouter && block.liquidCapacity > 100){
-        setSupport(block, true, DistBuffers.liquidBuffer, block.liquidCapacity);
+        setSupport(block, true, DistBufferType.liquidBuffer, block.liquidCapacity);
       }
     }
   }
@@ -46,19 +46,19 @@ public class DistSupportContainerTable{
   public static class Container{
     public final Block cont;
     public final boolean isIntegrate;
-    public final ObjectMap<DistBuffers<?>, Float> capacities = new ObjectMap<>();
+    public final ObjectMap<DistBufferType<?>, Float> capacities = new ObjectMap<>();
 
     public Container(Block cont, boolean isIntegrate){
       this.cont = cont;
       this.isIntegrate = isIntegrate;
     }
 
-    public void setCapacity(DistBuffers<?> buff, float amount){
+    public void setCapacity(DistBufferType<?> buff, float amount){
       capacities.put(buff, isIntegrate? amount:
           amount*Vars.content.getBy(buff.targetType()).select(c -> c instanceof UnlockableContent uc && !uc.isHidden()).size);
     }
 
-    public float getCapacity(DistBuffers<?> type){
+    public float getCapacity(DistBufferType<?> type){
       return capacities.get(type, 0f);
     }
   }

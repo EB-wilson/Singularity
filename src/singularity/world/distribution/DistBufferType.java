@@ -9,16 +9,17 @@ import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.buffers.LiquidsBuffer;
 import singularity.world.modules.SglLiquidModule;
 
-public abstract class DistBuffers<T extends BaseBuffer<?, ?, ?>>{
-  public static Seq<DistBuffers<?>> all = new Seq<>();
-  
-  public static DistBuffers<ItemsBuffer> itemBuffer = new DistBuffers<>(ContentType.item, 8, ItemsBuffer::new){
+public abstract class DistBufferType<T extends BaseBuffer<?, ?, ?>>{
+  private static final Seq<DistBufferType<?>> tmp = new Seq<>();
+  public static DistBufferType<?>[] all;
+
+  public static DistBufferType<ItemsBuffer> itemBuffer = new DistBufferType<>(ContentType.item, 8, ItemsBuffer::new){
     @Override
     public Integer containerUsed(Building build){
       return build.items.total();
     }
   };
-  public static DistBuffers<LiquidsBuffer> liquidBuffer = new DistBuffers<>(ContentType.liquid, 4, LiquidsBuffer::new){
+  public static DistBufferType<LiquidsBuffer> liquidBuffer = new DistBufferType<>(ContentType.liquid, 4, LiquidsBuffer::new){
     @Override
     public Float containerUsed(Building build){
       if(build.liquids instanceof SglLiquidModule li){
@@ -31,15 +32,20 @@ public abstract class DistBuffers<T extends BaseBuffer<?, ?, ?>>{
     }
   };
 
+  public final int id;
+
   private final ContentType contentType;
   private final Prov<T> initializer;
   private final int unit;
   
-  public DistBuffers(ContentType contentType, int unit, Prov<T> initializer){
+  public DistBufferType(ContentType contentType, int unit, Prov<T> initializer){
     this.contentType = contentType;
     this.unit = unit;
     this.initializer = initializer;
-    all.add(this);
+    id = tmp.size;
+    tmp.add(this);
+
+    all = tmp.toArray(DistBufferType.class);
   }
   
   public T get(int capacity){

@@ -6,8 +6,9 @@ import universecore.util.handler.FieldHandler;
 
 public class SglStatCat{
   public static final StatCat
-      nuclear = create("nuclear", 2),
-      gas = create("gas", 5),
+      structure = create("structure", 2),
+      neutron = create("neutron", 3),
+      matrix = create("matrix", 5),
       heat = create("heat", 6),
       reaction = create("reaction");
 

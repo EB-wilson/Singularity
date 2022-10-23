@@ -6,7 +6,7 @@ import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import singularity.world.components.distnet.DistElementBuildComp;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
@@ -15,7 +15,7 @@ import singularity.world.distribution.buffers.ItemsBuffer;
 import java.util.Arrays;
 
 /**从网络中读取物品，此操作将物品从网络缓存读出并写入到目标缓存，网络缓存会优先提供已缓存物品，若不足则从网络子容器申请物品到网络缓存再分配*/
-public class ReadItemsRequest extends DistRequestBase<ItemStack>{
+public class ReadItemsRequest extends DistRequestBase{
   private static final Seq<MatrixGrid.BuildingEntry<Building>> temp = new Seq<>();
   private static final int[] tempItems = new int[Vars.content.liquids().size];
 
@@ -38,7 +38,7 @@ public class ReadItemsRequest extends DistRequestBase<ItemStack>{
   @Override
   public void init(DistributeNetwork target){
     super.init(target);
-    source = target.getCore().distCore().getBuffer(DistBuffers.itemBuffer);
+    source = target.getCore().distCore().getBuffer(DistBufferType.itemBuffer);
   }
   
   @Override

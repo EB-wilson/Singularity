@@ -11,7 +11,7 @@ import mindustry.content.Liquids;
 import mindustry.gen.Building;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
@@ -41,8 +41,8 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
   }
 
   @Override
-  public DistBuffers<LiquidsBuffer> bufferType(){
-    return DistBuffers.liquidBuffer;
+  public DistBufferType<LiquidsBuffer> bufferType(){
+    return DistBufferType.liquidBuffer;
   }
 
   public void remove(Liquid liquid){
@@ -72,7 +72,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
   public void bufferContAssign(DistributeNetwork network){
     liquidRead: for(LiquidPacket packet: this){
       for(MatrixGrid grid: network.grids){
-        Building handler = grid.handler.getBuilding();
+        Building handler = network.getCore().getBuilding();
         for(MatrixGrid.BuildingEntry<Building> entry: grid.get(
             GridChildType.container,
             (e, c) -> e.acceptLiquid(handler, packet.get()) && c.get(GridChildType.container, packet.get()),
@@ -99,13 +99,15 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
 
     LiquidPacket packet = get(ct.id);
     if(packet == null) return;
+
+    Building core = network.getCore().getBuilding();
     for(MatrixGrid grid: network.grids){
       for(MatrixGrid.BuildingEntry<? extends Building> entry: grid.<Building>get(GridChildType.container, (e, c) -> c.get(GridChildType.container, ct)
-          && e.acceptLiquid(grid.handler.getBuilding(), ct))){
+          && e.acceptLiquid(core, ct))){
 
         if(packet.amount() <= 0 || am <= 0) return;
 
-        float accept = !entry.entity.acceptLiquid(grid.handler.getBuilding(), ct)? 0:
+        float accept = !entry.entity.acceptLiquid(core, ct)? 0:
             entry.entity.block.liquidCapacity - entry.entity.liquids.get(ct);
 
         float move = Math.min(packet.amount(), accept);
@@ -114,7 +116,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
         packet.remove(move);
         packet.deRead(move);
         am -= move;
-        entry.entity.handleLiquid(grid.handler.getBuilding(), packet.get(), move);
+        entry.entity.handleLiquid(core, packet.get(), move);
       }
     }
   }

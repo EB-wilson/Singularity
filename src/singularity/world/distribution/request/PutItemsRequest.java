@@ -3,13 +3,13 @@ package singularity.world.distribution.request;
 import arc.struct.Seq;
 import mindustry.type.ItemStack;
 import singularity.world.components.distnet.DistElementBuildComp;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.buffers.ItemsBuffer;
 import universecore.util.Empties;
 
 /**向网络中写入物品，这一操作将物品写入网络的缓存中，处理结束由网络将缓存分配给网络中的子容器*/
-public class PutItemsRequest extends DistRequestBase<ItemStack>{
+public class PutItemsRequest extends DistRequestBase{
   protected final ItemsBuffer source;
   protected ItemsBuffer destination;
 
@@ -39,7 +39,7 @@ public class PutItemsRequest extends DistRequestBase<ItemStack>{
   @Override
   public void init(DistributeNetwork target){
     super.init(target);
-    destination = target.getCore().distCore().getBuffer(DistBuffers.itemBuffer);
+    destination = target.getCore().distCore().getBuffer(DistBufferType.itemBuffer);
   }
 
   @Override

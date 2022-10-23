@@ -3,10 +3,7 @@ package singularity.world.lightnings.generator;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.util.Tmp;
-import org.jetbrains.annotations.NotNull;
 import singularity.world.lightnings.LightningVertex;
-
-import java.util.Iterator;
 
 /**随机路径的闪电生成器，给出起点路径总长度生成随机闪电路径*/
 public class RandomGenerator extends LightningGenerator{
@@ -21,7 +18,8 @@ public class RandomGenerator extends LightningGenerator{
   float maxDistance;
 
   @Override
-  public @NotNull Iterator<LightningVertex> iterator(){
+  public void reset(){
+    super.reset();
     currLength = 0;
     maxDistance = 0;
     first = true;
@@ -31,7 +29,6 @@ public class RandomGenerator extends LightningGenerator{
     else{
       curr.set(0.001f, 0).setAngle(originAngle);
     }
-    return this;
   }
 
   @Override
@@ -53,8 +50,8 @@ public class RandomGenerator extends LightningGenerator{
       maxDistance = Math.max(maxDistance, curr.len());
     }
 
-    vertex.x = originX + curr.x;
-    vertex.y = originY + curr.y;
+    vertex.x = curr.x;
+    vertex.y = curr.y;
   }
 
   @Override
@@ -64,6 +61,6 @@ public class RandomGenerator extends LightningGenerator{
 
   @Override
   public boolean hasNext(){
-    return currLength < maxLength;
+    return super.hasNext() && currLength < maxLength;
   }
 }

@@ -6,15 +6,16 @@ import arc.math.Mathf;
 import arc.math.WindowedMean;
 import arc.struct.IntMap;
 import arc.util.Interval;
+import mindustry.ctype.UnlockableContent;
 import mindustry.world.modules.BlockModule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 
 import java.util.Iterator;
 
-public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>> implements Iterable<T>{
+public abstract class BaseBuffer<C, CType extends UnlockableContent, T extends BaseBuffer.Packet<C, CType>> implements Iterable<T>{
   public int capacity;
   protected int used;
   
@@ -181,7 +182,7 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
     p.dePut(packet);
   }
 
-  public abstract DistBuffers<?> bufferType();
+  public abstract DistBufferType<?> bufferType();
 
   public abstract void deReadFlow(CType ct, Number amount);
 
@@ -205,7 +206,7 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
     return memory.values().iterator();
   }
   
-  public static abstract class Packet<Obj, Type>{
+  public static abstract class Packet<Obj, Type extends UnlockableContent>{
     public Obj obj;
     WindowedMean putMean = new WindowedMean(6), readMean = new WindowedMean(6);
     int putCaching, readCaching;
@@ -226,11 +227,11 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
     
     public abstract Number amount();
 
-    public abstract void setZero();
+    protected abstract void setZero();
     
-    public abstract void merge(Packet<Obj, Type> other);
+    protected abstract void merge(Packet<Obj, Type> other);
     
-    public abstract void remove(Packet<Obj, Type> other);
+    protected abstract void remove(Packet<Obj, Type> other);
 
     public void calculateDelta(){
       putMean.add(putCaching);

@@ -21,7 +21,9 @@ public class Sgl{
   static{
     UpdatePool.receive("sglUpdate", Sgl::update);
   }
-  
+
+  public static final String NL = System.lineSeparator();
+
   /**此mod内部名称*/
   public static final String modName = "singularity";
   /**此mod前置的内部名称*/
@@ -52,7 +54,7 @@ public class Sgl{
   /**模组配置文件夹*/
   public static final Fi configDirectory = modDirectory.child("config").child(modName);
   /**模组的mod_config.ini配置文件*/
-  public static final Fi configFile = configDirectory.child("mod_config.ini");
+  public static final Fi configFile = configDirectory.child("mod_config.hjson");
   
   //URIs
   public static final String qq = "https://qm.qq.com/cgi-bin/qm/qr?k=wLs-Tki9wGMJtJs2mWSc46fUusYk-oO1&noverify=0";

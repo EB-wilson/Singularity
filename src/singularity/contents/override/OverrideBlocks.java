@@ -24,7 +24,7 @@ public class OverrideBlocks implements OverrideContentList{
   @Override
   public void load(){
     doOverrideContent(oldMelter = Blocks.melter,
-        new NormalCrafter("melter_override"){{
+        Blocks.melter = new NormalCrafter("melter_override"){{
           requirements(Category.crafting, ItemStack.with(Items.copper, 30, Items.lead, 35, Items.graphite, 45));
           autoSelect = true;
           canSelect = false;
@@ -39,7 +39,7 @@ public class OverrideBlocks implements OverrideContentList{
           produce.liquid(Liquids.slag, 0.2f);
     
           newConsume();
-          consume.items(ItemStack.with(SglItems.crush_ore, 1));
+          consume.items(ItemStack.with(SglItems.black_crystone, 1));
           consume.power(1f);
           consume.time(10);
           newProduce();
@@ -53,7 +53,7 @@ public class OverrideBlocks implements OverrideContentList{
     );
     
     doOverrideContent(oldPulverizer = Blocks.pulverizer,
-        new NormalCrafter("pulverizer_override"){{
+        Blocks.pulverizer = new NormalCrafter("pulverizer_override"){{
           requirements(Category.crafting, with(Items.copper, 30, Items.lead, 25));
           craftEffect = Fx.pulverize;
           updateEffect = Fx.pulverizeSmall;
@@ -72,7 +72,7 @@ public class OverrideBlocks implements OverrideContentList{
           
           newConsume();
           consume.time(40);
-          consume.item(SglItems.crush_ore, 1);
+          consume.item(SglItems.black_crystone, 1);
           consume.power(0.50f);
           newProduce();
           produce.item(Items.sand, 1);

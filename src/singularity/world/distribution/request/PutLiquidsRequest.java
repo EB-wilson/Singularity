@@ -3,12 +3,12 @@ package singularity.world.distribution.request;
 import arc.struct.Seq;
 import mindustry.type.LiquidStack;
 import singularity.world.components.distnet.DistElementBuildComp;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.buffers.LiquidsBuffer;
 
 /**向网络中写入液体，这一操作液体写入网络的缓存中，处理结束由网络将缓存分配给网络中的子容器*/
-public class PutLiquidsRequest extends DistRequestBase<LiquidStack>{
+public class PutLiquidsRequest extends DistRequestBase{
   protected final LiquidsBuffer source;
   protected LiquidsBuffer destination;
 
@@ -34,7 +34,7 @@ public class PutLiquidsRequest extends DistRequestBase<LiquidStack>{
   @Override
   public void init(DistributeNetwork target){
     super.init(target);
-    destination = target.getCore().distCore().getBuffer(DistBuffers.liquidBuffer);
+    destination = target.getCore().distCore().getBuffer(DistBufferType.liquidBuffer);
   }
 
   @Override

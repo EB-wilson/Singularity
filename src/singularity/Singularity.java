@@ -33,6 +33,7 @@ public class Singularity extends Mod{
       new LiquidBlocks(),//物流方块
       new ProductBlocks(),//采集方块
       new DistributeBlocks(),//物流运输方块
+      new Turrets(),//炮台
       new DefenceBlocks(),//防御方块
 
       new OtherContents(),//其他内容
@@ -69,17 +70,23 @@ public class Singularity extends Mod{
        >\040""" + Sgl.githubProject + " <"
     );
 
-    Events.on(ClientLoadEvent.class, e -> {
-      Sgl.ui.mainMenu.show();
-    });
-    
-    Events.on(ContentInitEvent.class, e -> {
-      Init.reloadContent();
-    });
+    if(Sgl.config.showModMenuWenLaunch){
+      Events.on(ClientLoadEvent.class, e -> {
+        Sgl.ui.mainMenu.show();
+      });
+    }
+
+    if(Sgl.config.modReciprocal){
+      Events.on(ContentInitEvent.class, e -> {
+        Init.reloadContent();
+      });
+    }
     
     Events.on(ResetEvent.class, e -> {
       Sgl.updateTiles.clear();
     });
+
+    if(Sgl.config.debugMode) Events.on(WorldLoadEvent.class, e -> Vars.state.rules.infiniteResources = true);
   }
   
   @Override
@@ -87,15 +94,12 @@ public class Singularity extends Mod{
     //加载全局变量
     Sgl.init();
 
-    //重加载mod元信息
-    Vars.mods.locateMod(Sgl.modName).meta.displayName = Core.bundle.get("mod.name");
-    Vars.mods.locateMod(Sgl.modName).meta.author = Core.bundle.get("mod.author");
-    Vars.mods.locateMod(Sgl.modName).meta.version = Core.bundle.get("mod.version");
-
     //游戏本体更改初始化
-    Init.init();
+    if(Sgl.config.modReciprocal)Init.init();
 
     initialized = true;
+
+    //Sgl.classes.finishGenerate();
     if(Sgl.config.loadInfo) Log.info("[Singularity] mod initialize finished");
   }
   
@@ -104,18 +108,22 @@ public class Singularity extends Mod{
     for(ContentList list: Singularity.modContents){
       list.load();
     }
-  
-    for(OverrideContentList override: Singularity.overrideContents){
-      override.load();
+
+    if(Sgl.config.modReciprocal){
+      for(OverrideContentList override: Singularity.overrideContents){
+        override.load();
+      }
     }
 
     if(Sgl.config.debugMode){
+      new DebugBlocks().load();
+
       for(TechTree.TechNode node: TechTree.all){
         node.content.alwaysUnlocked = true;
       }
     }
 
-    Log.info("[Singularity] mod content loaded");
+    if(Sgl.config.loadInfo) Log.info("[Singularity] mod content load finished");
   }
   
   public static TextureRegion getModAtlas(String name){

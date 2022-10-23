@@ -1,11 +1,11 @@
 package singularity.ui.fragments.override;
 
 import arc.Core;
-import arc.Events;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.GlyphLayout;
 import arc.graphics.g2d.TextureRegion;
+import arc.graphics.gl.FrameBuffer;
 import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.math.WindowedMean;
@@ -21,14 +21,10 @@ import arc.scene.ui.TextButton;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.WidgetGroup;
 import arc.util.Align;
-import arc.util.Log;
 import arc.util.Time;
 import arc.util.Tmp;
-import mindustry.Vars;
 import mindustry.content.Planets;
 import mindustry.core.Version;
-import mindustry.game.EventType;
-import mindustry.game.Universe;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -38,13 +34,10 @@ import mindustry.ui.Fonts;
 import mindustry.ui.fragments.MenuFragment;
 import singularity.Sgl;
 import singularity.Singularity;
-import singularity.core.UpdatePool;
 import singularity.graphic.SglDrawConst;
 import singularity.graphic.renders.SglPlanetRender;
 import universecore.util.handler.FieldHandler;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import universecore.util.handler.MethodHandler;
 
 import static mindustry.Vars.*;
 import static mindustry.gen.Tex.discordBanner;
@@ -56,19 +49,12 @@ public class SglMenuFrag extends MenuFragment{
   
   private final PlanetRenderer renderer = new SglPlanetRender();
   
-  private final Universe universe = new Universe();
-  private final Universe varsUniverse = Vars.universe;
-  
   WindowedMean dxMean = new WindowedMean(10), dyMean = new WindowedMean(10);
   float lastDx, lastDy;
-  boolean controlling, shown = true, inMenu, planetShown;
+  boolean controlling, shown = true;
   
   @Override
   public void build(Group parent){
-    params.planet = Planets.sun;
-    params.uiAlpha = 0;
-    params.camPos.set(10, 0, 15);
-    
     parent.clear();
     Core.scene.root.removeChild(parent);
     
@@ -79,123 +65,117 @@ public class SglMenuFrag extends MenuFragment{
     
     ui.menuGroup = group;
     Core.scene.add(group);
-  
-    UpdatePool.receive("menuUpdate", () -> {
-      if(state.isMenu() != inMenu){
-        Vars.universe = state.isMenu()? universe: varsUniverse;
-        inMenu = state.isMenu();
+
+    if(Sgl.config.mainMenuUniverseBackground){
+      params.planet = Planets.sun;
+      params.uiAlpha = 0;
+      float[] pos = Sgl.config.defaultCameraPos;
+      params.camPos.set(pos[0], pos[1], pos[2]);
+      Tmp.v31.set(0, 1, 0);
+      Tmp.v32.set(0, 0, 1).rotate(Tmp.v31, pos[3]);
+      params.camDir.set(1, 0, 0)
+          .rotate(Tmp.v31, pos[3])
+          .rotate(Tmp.v32, pos[4]);
+      params.camUp.set(0, 1, 0)
+          .rotate(Tmp.v31, pos[3])
+          .rotate(Tmp.v32, pos[4]);
+      camRight.set(0, 0, 1)
+          .rotate(Tmp.v31, pos[3])
+          .rotate(Tmp.v32, pos[4]);
+
+      if(Sgl.config.staticMainMenuBackground){
+        FrameBuffer buff = new FrameBuffer();
+        buff.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+        buff.begin(Color.clear);
+        renderer.render(params);
+        Draw.flush();
+        buff.end();
+        TextureRegion region = new TextureRegion(buff.getTexture());
+
+        group.fill((x, y, w, h) -> Draw.rect(region, x - w/2, y - h/2, w, h));
       }
-      
-      if(state.isMenu() && !ui.planet.isShown()){
-        for(int i = 0; i < 24; i++){
-          universe.update();
+      else{
+        group.fill((x, y, w, h) -> renderer.render(params));
+
+        if(Sgl.config.movementCamera){
+          group.fill(t -> {
+            t.touchable = Touchable.enabled;
+
+            t.update(() -> {
+              float dx = lastDx/9*Time.delta, dy = lastDy/9*Time.delta;
+              if(!controlling){
+                params.camDir.rotate(camRight, dy);
+                params.camUp.rotate(camRight, dy);
+
+                params.camDir.rotate(params.camUp, dx);
+                camRight.rotate(params.camUp, dx);
+                lastDx = Mathf.lerpDelta(lastDx, 0, 0.035f);
+                lastDy = Mathf.lerpDelta(lastDy, 0, 0.035f);
+              }
+            });
+
+            t.addListener(new InputListener(){
+              @Override
+              public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY){
+                return super.scrolled(event, x, y, amountX, amountY);
+              }
+            });
+
+            t.addCaptureListener(new ElementGestureListener(){
+              @Override
+              public void touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
+                controlling = true;
+                Tmp.v34.set(params.camPos);
+
+                super.touchDown(event, x, y, pointer, button);
+              }
+
+              @Override
+              public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
+                controlling = false;
+                lastDx = dxMean.rawMean();
+                lastDy = dyMean.rawMean();
+
+                super.touchUp(event, x, y, pointer, button);
+              }
+
+              @Override
+              public void pan(InputEvent event, float x, float y, float deltaX, float deltaY){
+                params.camDir.rotate(camRight, deltaY/9);
+                params.camUp.rotate(camRight, deltaY/9);
+
+                params.camDir.rotate(params.camUp, deltaX/9);
+                camRight.rotate(params.camUp, deltaX/9);
+
+                dxMean.add(deltaX);
+                dyMean.add(deltaY);
+                super.pan(event, x, y, deltaX, deltaY);
+              }
+
+              @Override
+              public void zoom(InputEvent event, float initialDistance, float distance){
+                params.camPos.set(
+                    Tmp.v34.cpy().add(
+                        params.camDir.cpy().setLength((distance - initialDistance)/60).scl(distance > initialDistance? 1: -1)));
+
+                super.zoom(event, initialDistance, distance);
+              }
+            });
+          });
         }
       }
-      
-      if(planetShown != ui.planet.isShown()){
-        Vars.universe = ui.planet.isShown()? varsUniverse: universe;
-        planetShown = ui.planet.isShown();
-      }
-    });
-  
-    group.fill((x, y, w, h) -> renderer.render(params));
-  
-    group.fill(t -> {
-      t.touchable = Touchable.enabled;
-      
-      t.update(() -> {
-        float dx = lastDx/9*Time.delta, dy = lastDy/9*Time.delta;
-        if(!controlling){
-          params.camDir.rotate(camRight, dy);
-          params.camUp.rotate(camRight, dy);
-  
-          params.camDir.rotate(params.camUp, dx);
-          camRight.rotate(params.camUp, dx);
-          lastDx = Mathf.lerpDelta(lastDx, 0, 0.035f);
-          lastDy = Mathf.lerpDelta(lastDy, 0, 0.035f);
-        }
-  
-        
-      });
-      
-      t.addListener(new InputListener(){
-        @Override
-        public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY){
-          return super.scrolled(event, x, y, amountX, amountY);
-        }
-      });
-      
-      t.addCaptureListener(new ElementGestureListener(){
-        @Override
-        public void touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
-          controlling = true;
-          Tmp.v34.set(params.camPos);
-          
-          super.touchDown(event, x, y, pointer, button);
-        }
-  
-        @Override
-        public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
-          controlling = false;
-          lastDx = dxMean.rawMean();
-          lastDy = dyMean.rawMean();
-          
-          super.touchUp(event, x, y, pointer, button);
-        }
-  
-        @Override
-        public void pan(InputEvent event, float x, float y, float deltaX, float deltaY){
-          params.camDir.rotate(camRight, deltaY/9);
-          params.camUp.rotate(camRight, deltaY/9);
-  
-          params.camDir.rotate(params.camUp, deltaX/9);
-          camRight.rotate(params.camUp, deltaX/9);
-          
-          dxMean.add(deltaX);
-          dyMean.add(deltaY);
-          super.pan(event, x, y, deltaX, deltaY);
-        }
-  
-        @Override
-        public void zoom(InputEvent event, float initialDistance, float distance){
-          params.camPos.set(
-              Tmp.v34.cpy().add(
-                  params.camDir.cpy().setLength((distance - initialDistance)/60).scl(distance > initialDistance? 1: -1)));
-          
-          super.zoom(event, initialDistance, distance);
-        }
-      });
-    });
-  
-    group.fill(c -> {
-      c.visibility = () -> shown;
-      FieldHandler.setValueTemp(ui.menufrag, "container", c);
-      c.name = "menu container";
-      
-      try{
-        Method met = mobile ? MenuFragment.class.getDeclaredMethod("buildMobile"): MenuFragment.class.getDeclaredMethod("buildDesktop");
-        met.setAccessible(true);
-        met.invoke(this);
-        Events.on(EventType.ResizeEvent.class, event -> {
-          try{
-            met.invoke(this);
-          }catch(IllegalAccessException | InvocationTargetException e){
-            Log.err(e);
-          }
-        });
-      }
-      catch(InvocationTargetException | IllegalAccessException | NoSuchMethodException e){
-        Log.err(e);
-      }
-    });
+    }
   
     //info icon
     if(mobile){
-      group.fill(c -> c.top().left().table(Tex.buttonEdge4, t -> {
-        t.touchable = Touchable.enabled;
-        t.image().update(i -> i.setDrawable(shown? Icon.eye: Icon.eyeOff));
-        t.clicked(() -> shown = !shown);
-      }).size(84, 45).name("shown"));
+      if(Sgl.config.mainMenuUniverseBackground){
+        group.fill(c -> c.top().left().table(Tex.buttonEdge4, t -> {
+          t.touchable = Touchable.enabled;
+          t.image().update(i -> i.setDrawable(shown? Icon.eye: Icon.eyeOff));
+          t.clicked(() -> shown = !shown);
+        }).size(84, 45).name("shown"));
+      }
+
       group.fill(c -> c.bottom().left().button("", new TextButton.TextButtonStyle(){{
         font = Fonts.def;
         fontColor = Color.white;
@@ -248,6 +228,13 @@ public class SglMenuFrag extends MenuFragment{
       Image button = new Image(SglDrawConst.transparent);
       button.clicked(Sgl.ui.mainMenu::show);
       t.top().add(button).size(940, 270);
+    });
+
+    group.fill(c -> {
+      c.visibility = () -> shown;
+      FieldHandler.setValueTemp(ui.menufrag, "container", c);
+      c.name = "menu container";
+      MethodHandler.invokeTemp(this, mobile? "buildMobile": "buildDesktop");
     });
   }
 }

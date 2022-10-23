@@ -1,33 +1,56 @@
 package singularity.world.blocks.distribute.netcomponents;
 
+import arc.Core;
 import arc.struct.ObjectMap;
 import mindustry.gen.Building;
+import mindustry.world.meta.StatUnit;
+import singularity.util.NumberStrify;
 import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.components.distnet.DistComponent;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
+import singularity.world.meta.SglStat;
 
 public class CoreNeighbourComponent extends DistNetBlock{
-  public int frequencyOffer = 0;
+  public int topologyCapaity = 0;
   public int computingPower = 0;
 
-  public ObjectMap<DistBuffers<?>, Integer> bufferSize = new ObjectMap<>();
+  public ObjectMap<DistBufferType<?>, Integer> bufferSize = new ObjectMap<>();
 
   public CoreNeighbourComponent(String name){
     super(name);
-    frequencyUse = 0;
+    topologyUse = 0;
+    isNetLinker = false;
+  }
+
+  @Override
+  public void setStats(){
+    super.setStats();
+    if(topologyCapaity > 0) stats.add(SglStat.topologyCapacity, topologyCapaity);
+    if(computingPower > 0) stats.add(SglStat.computingPower, computingPower*60, StatUnit.perSecond);
+    if(bufferSize.size > 0){
+      stats.add(SglStat.bufferSize, t -> {
+        t.defaults().left().fillX().padLeft(10);
+        t.row();
+        for(ObjectMap.Entry<DistBufferType<?>, Integer> entry: bufferSize){
+          if(entry.value <= 0) continue;
+          t.add(Core.bundle.get("content." + entry.key.targetType().name() + ".name") + ": " + NumberStrify.toByteFix(entry.value, 2));
+          t.row();
+        }
+      });
+    }
   }
 
   public class CoreNeighbourComponentBuild extends DistNetBuild implements DistComponent{
     @Override
-    public ObjectMap<DistBuffers<?>, Integer> bufferSize(){
+    public ObjectMap<DistBufferType<?>, Integer> bufferSize(){
       return bufferSize;
     }
 
     @Override
-    public int frequencyOffer(){
-      return frequencyOffer;
+    public int topologyCapacity(){
+      return topologyCapaity;
     }
 
     @Override

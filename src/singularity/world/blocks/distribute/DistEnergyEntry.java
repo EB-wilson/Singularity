@@ -7,7 +7,7 @@ public class DistEnergyEntry extends DistNetBlock{
   public DistEnergyEntry(String name){
     super(name);
 
-    frequencyUse = 0;
+    topologyUse = 0;
   }
 
   public class DistEnergyEntryBuild extends DistNetBuild{

@@ -1,5 +1,7 @@
 package singularity.world.components;
 
+import mindustry.world.meta.Stats;
+import singularity.world.meta.SglStat;
 import universecore.annotations.Annotations;
 
 public interface ChainsBlockComp{
@@ -15,5 +17,10 @@ public interface ChainsBlockComp{
 
   default boolean chainable(ChainsBlockComp other){
     return getClass().isAssignableFrom(other.getClass());
+  }
+
+  @Annotations.MethodEntry(entryMethod = "setStats", context = "stats -> stats")
+  default void setChainsStats(Stats stats){
+    stats.add(SglStat.maxStructureSize, "@x@", maxWidth(), maxHeight());
   }
 }

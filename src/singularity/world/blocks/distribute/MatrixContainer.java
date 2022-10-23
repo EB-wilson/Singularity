@@ -6,7 +6,7 @@ import mindustry.type.Item;
 import mindustry.type.Liquid;
 import singularity.Sgl;
 import singularity.world.blocks.SglBlock;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistSupportContainerTable.Container;
 
 public class MatrixContainer extends SglBlock{
@@ -29,8 +29,8 @@ public class MatrixContainer extends SglBlock{
 
   public void setDistSupport(){
     Container cont = Sgl.matrixContainers.getContainer(this, () -> new Container(this, isIntegrate));
-    if(hasItems) cont.setCapacity(DistBuffers.itemBuffer, itemCapacity);
-    if(hasLiquids) cont.setCapacity(DistBuffers.liquidBuffer, liquidCapacity);
+    if(hasItems) cont.setCapacity(DistBufferType.itemBuffer, itemCapacity);
+    if(hasLiquids) cont.setCapacity(DistBufferType.liquidBuffer, liquidCapacity);
   }
 
   public class MatrixContainerBuild extends SglBuilding{

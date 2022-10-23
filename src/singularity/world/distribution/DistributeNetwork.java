@@ -35,8 +35,10 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
 
   public ObjectMap<String, Object> vars = new ObjectMap<>();
 
-  public int frequencyUsed;
-  public int maxFrequency;
+  public MatrixGrid defaultGrid;
+
+  public int topologyUsed;
+  public int totalTopologyCapacity;
 
   public float energyProduct;
   public float energyConsume;
@@ -48,6 +50,12 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   private boolean lock = false;
 
   long frame;
+
+  public DistributeNetwork(){
+    defaultGrid = new MatrixGrid();
+    defaultGrid.priority = Integer.MIN_VALUE;
+    grids.add(defaultGrid);
+  }
 
   public void putVar(String key, Object value){
     vars.put(key, value);
@@ -113,7 +121,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
 
   public boolean netStructValid(){
     DistNetworkCoreComp core = getCore();
-    boolean res = core != null && frequencyUsed <= maxFrequency;
+    boolean res = core != null && topologyUsed <= totalTopologyCapacity;
     if(!res) status = false;
     return res;
   }
@@ -138,23 +146,23 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
 
     updateEnergy();
 
-    frequencyUsed = 0;
-    maxFrequency = 0;
+    topologyUsed = 0;
+    totalTopologyCapacity = 0;
 
     for(DistElementBuildComp element: elementsIterateArr){
-      frequencyUsed += element.frequencyUse();
+      topologyUsed += element.frequencyUse();
     }
 
     for(DistComponent distComponent: components){
       if(!distComponent.componentValid()) continue;
 
-      maxFrequency += distComponent.frequencyOffer();
+      totalTopologyCapacity += distComponent.topologyCapacity();
     }
 
     if(netStructValid()){
       DistCoreModule core = cores.first().distCore();
 
-      for(DistBuffers<?> buffers: DistBuffers.all){
+      for(DistBufferType<?> buffers: DistBufferType.all){
         core.getBuffer(buffers).capacity = 0;
       }
 
@@ -165,7 +173,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
 
         core.calculatePower += distComponent.computingPower();
 
-        for(DistBuffers<?> buffers: DistBuffers.all){
+        for(DistBufferType<?> buffers: DistBufferType.all){
           core.getBuffer(buffers).capacity += distComponent.bufferSize().get(buffers, 0);
         }
       }
@@ -285,14 +293,14 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
         for(BaseBuffer<?, ?, ?> value: getCore().distCore().buffers.values()){
           if(value.space() <= 0) return NetStatus.bufferBlocked;
         }
-        for(DistRequestBase<?> task: getCore().distCore().requestTasks){
+        for(DistRequestBase task: getCore().distCore().requestTasks){
           if(task.isBlocked()) return NetStatus.requestBlocked;
         }
         return NetStatus.ordinary;
       }
       return NetStatus.energyLeak;
     }
-    else if(frequencyUsed > maxFrequency) return NetStatus.topologyLeak;
+    else if(topologyUsed > totalTopologyCapacity) return NetStatus.topologyLeak;
 
     return NetStatus.unknow;
   }

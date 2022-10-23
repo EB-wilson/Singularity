@@ -18,7 +18,7 @@ import singularity.graphic.GraphicUtils;
 import singularity.world.DirEdges;
 
 public class DrawDirSpliceBlock<E> extends DrawBlock{
-  public TextureRegion[] splicers = new TextureRegion[4];
+  public TextureRegion[] region = new TextureRegion[16];
   public Intf<E> spliceBits = e -> 0;
   public Boolf2<BuildPlan, BuildPlan> planSplicer = (plan, other) -> false;
 
@@ -27,28 +27,50 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
 
   @Override
   public void load(Block block){
+    Pixmap[] splicers = new Pixmap[4];
+
     if(simpleSpliceRegion){
       PixmapRegion region = Core.atlas.getPixmap(block.name + suffix);
       Pixmap pixmap = region.crop();
       for(int i = 0; i < 4; i++){
         Pixmap m = i == 1 || i == 2? GraphicUtils.rotatePixmap90(pixmap.flipY(), i): GraphicUtils.rotatePixmap90(pixmap, i);
-        splicers[i] = new TextureRegion(new Texture(m));
+        splicers[i] = m;
       }
     }
     else{
       for(int i = 0; i < splicers.length; i++){
-        splicers[i] = Core.atlas.find(block.name + suffix + "_" + i);
+        splicers[i] = Core.atlas.getPixmap(block.name + suffix + "_" + i).crop();
       }
     }
+
+    for(int i = 0; i < region.length; i++){
+      region[i] = getSpliceRegion(splicers, i);
+    }
+
+    for(Pixmap pixmap: splicers){
+      pixmap.dispose();
+    }
+  }
+
+  private TextureRegion getSpliceRegion(Pixmap[] splicers, int i){
+    int move = 0;
+
+    Pixmap map = new Pixmap(splicers[move].width, splicers[move].height);
+    while(1 << move < i){
+      int bit = 1 << move;
+      if((i & bit) != 0){
+        map.draw(splicers[move], true);
+      }
+      move++;
+    }
+
+    return new TextureRegion(new Texture(map));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void draw(Building build){
-    int bits = spliceBits.get((E) build);
-    for(int dir = 0; dir < 4; dir++){
-      if((0b0001 << dir & bits) != 0) Draw.rect(splicers[dir], build.x, build.y);
-    }
+    Draw.rect(region[spliceBits.get((E) build)], build.x, build.y);
   }
 
   @Override
@@ -89,8 +111,6 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
       bits |= 0b0001 << i;
     }
 
-    for(int dir = 0; dir < 4; dir++){
-      if((bits & 0b0001 << dir) != 0) Draw.rect(splicers[dir], plan.drawx(), plan.drawy());
-    }
+    Draw.rect(region[bits], plan.drawx(), plan.drawy());
   }
 }

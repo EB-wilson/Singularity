@@ -9,16 +9,12 @@ import mindustry.gen.Building;
 import mindustry.world.blocks.storage.CoreBlock;
 import singularity.Sgl;
 import singularity.ui.tables.DistTargetConfigTable;
-import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import universecore.util.colletion.TreeSeq;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class MatrixGrid{
   private static final Seq tmp = new Seq();
   public static final float[] DEF_VALUE = {0f};
-
-  public DistMatrixUnitBuildComp handler;
-
   
   final ObjectMap<Building, BuildingEntry<?>> all = new ObjectMap<>();
   
@@ -31,7 +27,7 @@ public class MatrixGrid{
       super.add(item);
       DistSupportContainerTable.Container cont = Sgl.matrixContainers.getContainer(((Building)item.entity).block);
       if(cont == null) return;
-      for(ObjectMap.Entry<DistBuffers<?>, Float> entry: cont.capacities){
+      for(ObjectMap.Entry<DistBufferType<?>, Float> entry: cont.capacities){
         containerCapacities.get(entry.key, () -> new float[1])[0] += entry.value;
       }
     }
@@ -41,23 +37,19 @@ public class MatrixGrid{
       boolean res = super.remove(item);
       DistSupportContainerTable.Container cont = Sgl.matrixContainers.getContainer(((Building)item.entity).block);
       if(cont == null) return res;
-      for(ObjectMap.Entry<DistBuffers<?>, Float> entry: cont.capacities){
+      for(ObjectMap.Entry<DistBufferType<?>, Float> entry: cont.capacities){
         containerCapacities.get(entry.key, () -> new float[1])[0] -= entry.value;
       }
 
       return res;
     }
   };
-  final ObjectMap<DistBuffers<?>, float[]> containerCapacities = new ObjectMap<>();
+  final ObjectMap<DistBufferType<?>, float[]> containerCapacities = new ObjectMap<>();
 
-  final ObjectMap<DistBuffers<?>, float[]> containerUsed = new ObjectMap<>();
+  final ObjectMap<DistBufferType<?>, float[]> containerUsed = new ObjectMap<>();
   boolean statUsed;
   
   public int priority;
-  
-  public MatrixGrid(DistMatrixUnitBuildComp handler){
-    this.handler = handler;
-  }
 
   public void update(){
     for(Building bu: all.keys()){
@@ -73,30 +65,30 @@ public class MatrixGrid{
       for(BuildingEntry<?> entry: container){
         DistSupportContainerTable.Container cont = Sgl.matrixContainers.getContainer(((Building) entry.entity).block);
         if(cont == null) continue;
-        for(DistBuffers<?> key: cont.capacities.keys()){
+        for(DistBufferType<?> key: cont.capacities.keys()){
           containerUsed.get(key, () -> new float[1])[0] += key.containerUsed((Building) entry.entity).floatValue();
         }
       }
     }
   }
 
-  public void eachUsed(Cons2<DistBuffers<?>, Float> cons){
-    for(ObjectMap.Entry<DistBuffers<?>, float[]> entry: containerUsed){
+  public void eachUsed(Cons2<DistBufferType<?>, Float> cons){
+    for(ObjectMap.Entry<DistBufferType<?>, float[]> entry: containerUsed){
       cons.get(entry.key, entry.value[0]);
     }
   }
 
-  public void eachCapacity(Cons2<DistBuffers<?>, Float> cons){
-    for(ObjectMap.Entry<DistBuffers<?>, float[]> entry: containerCapacities){
+  public void eachCapacity(Cons2<DistBufferType<?>, Float> cons){
+    for(ObjectMap.Entry<DistBufferType<?>, float[]> entry: containerCapacities){
       cons.get(entry.key, entry.value[0]);
     }
   }
 
-  public float contUsed(DistBuffers<?> buff){
+  public float contUsed(DistBufferType<?> buff){
     return containerUsed.get(buff, DEF_VALUE)[0];
   }
 
-  public float contCapacity(DistBuffers<?> buff){
+  public float contCapacity(DistBufferType<?> buff){
     return containerCapacities.get(buff, DEF_VALUE)[0];
   }
 

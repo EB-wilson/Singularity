@@ -11,44 +11,48 @@ import mindustry.gen.Building;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawDefault;
+import mindustry.world.draw.DrawMulti;
 import singularity.Sgl;
 import singularity.type.SglCategory;
 import singularity.world.blocks.distribute.*;
 import singularity.world.blocks.distribute.matrixGrid.MatrixEdgeBlock;
 import singularity.world.blocks.distribute.matrixGrid.MatrixGridCore;
-import singularity.world.blocks.distribute.netcomponents.ComponentInterface;
-import singularity.world.blocks.distribute.netcomponents.CoreNeighbourComponent;
-import singularity.world.blocks.distribute.netcomponents.JumpLine;
-import singularity.world.blocks.distribute.netcomponents.NetPluginComp;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.blocks.distribute.netcomponents.*;
+import singularity.world.distribution.DistBufferType;
+import singularity.world.draw.DrawDirSpliceBlock;
+import singularity.world.draw.DrawEdgeLinkBits;
 
 public class DistributeBlocks implements ContentList{
   /**矩阵中枢*/
   public static Block matrix_core,
-      /**矩阵桥*/
-      matrix_bridge,
-      /**网格控制器*/
-      matrix_controller,
-      /**网格框架*/
-      matrix_grid_node,
-      /**能源管理器*/
-      matrix_energy_manager,
-      /**能量接口*/
-      matrix_power_interface,
-      /**中子接口*/
-      matrix_neutron_interface,
-      /**矩阵储能簇*/
-      matrix_energy_buffer,
-      /**矩阵组件接口*/
-      matrix_component_interface,
-      /**接口跳线*/
-      interface_jump_line,
-      /**矩阵处理单元*/
-      matrix_process_unit,
-      /**矩阵拓扑容器*/
-      matrix_topology_container,
-      /**通用物质缓存器*/
-      matrix_buffer;
+  /**矩阵桥*/
+  matrix_bridge,
+  /**矩阵塔*/
+  matrix_tower,
+  /**网格控制器*/
+  matrix_controller,
+  /**网格框架*/
+  matrix_grid_node,
+  /**能源管理器*/
+  matrix_energy_manager,
+  /**能量接口*/
+  matrix_power_interface,
+  /**中子接口*/
+  matrix_neutron_interface,
+  /**矩阵储能簇*/
+  matrix_energy_buffer,
+  /**矩阵组件接口*/
+  matrix_component_interface,
+  /**接口跳线*/
+  interface_jump_line,
+  /**矩阵处理单元*/
+  matrix_process_unit,
+  /**矩阵拓扑容器*/
+  matrix_topology_container,
+  /**通用物质缓存器*/
+  matrix_buffer,
+  /**自动回收组件*/
+  automatic_recycler_component;
   
   @Override
   public void load(){
@@ -68,7 +72,7 @@ public class DistributeBlocks implements ContentList{
       squareSprite = false;
       size = 6;
 
-      matrixEnergyUse = 0.8f;
+      matrixEnergyUse = 1f;
     }};
     
     matrix_bridge = new MatrixBridge("matrix_bridge"){{
@@ -83,9 +87,30 @@ public class DistributeBlocks implements ContentList{
       size = 2;
 
       newConsume();
-      consume.powerCond(1f, 0, (MatrixBridge.MatrixBridgeBuild e) -> !e.distributor.network.netStructValid());
+      consume.powerCond(0.8f, 0, (MatrixBridge.MatrixBridgeBuild e) -> !e.distributor.network.netStructValid());
 
       matrixEnergyUse = 0.02f;
+    }};
+
+    matrix_tower = new MatrixBridge("matrix_tower"){{
+      requirements(SglCategory.matrix, ItemStack.with(
+          SglItems.matrix_alloy, 40,
+          SglItems.strengthening_alloy, 24,
+          SglItems.crystal_FEX_power, 18,
+          SglItems.iridium, 6,
+          Items.phaseFabric, 12
+      ));
+      squareSprite = false;
+      crossLinking = true;
+      size = 3;
+      maxLinks = 4;
+
+      linkRange = 45;
+
+      newConsume();
+      consume.powerCond(1.6f, 0, (MatrixBridge.MatrixBridgeBuild e) -> !e.distributor.network.netStructValid());
+
+      matrixEnergyUse = 0.05f;
     }};
     
     matrix_controller = new MatrixGridCore("matrix_controller"){{
@@ -100,6 +125,8 @@ public class DistributeBlocks implements ContentList{
       squareSprite = false;
       linkOffset = 8;
       size = 4;
+
+      matrixEnergyUse = 1.2f;
     }};
 
     matrix_grid_node = new MatrixEdgeBlock("matrix_grid_node"){{
@@ -165,7 +192,20 @@ public class DistributeBlocks implements ContentList{
           SglItems.aerogel, 40
       ));
       size = 2;
-      frequencyUse = 0;
+      topologyUse = 0;
+
+      matrixEnergyRequestMulti = 0.4f;
+
+      draw = new DrawMulti(
+          new DrawDefault(),
+          new DrawDirSpliceBlock<ComponentInterfaceBuild>(){{
+            simpleSpliceRegion = true;
+            spliceBits = e -> e.busLinked;
+          }},
+          new DrawEdgeLinkBits<ComponentInterfaceBuild>(){{
+            compLinked = e -> e.compLinked;
+          }}
+      );
     }};
 
     interface_jump_line = new JumpLine("interface_jump_line"){{
@@ -174,7 +214,7 @@ public class DistributeBlocks implements ContentList{
           SglItems.aerogel, 12,
           Items.graphite, 10
       ));
-      frequencyUse = 0;
+      topologyUse = 0;
 
       draw = new DrawDefault(){
         TextureRegion rot;
@@ -187,7 +227,7 @@ public class DistributeBlocks implements ContentList{
 
         @Override
         public void drawPlan(Block block, BuildPlan plan, Eachable<BuildPlan> list){
-          Draw.rect(!plan.block.rotate || plan.rotation == 0 || plan.rotation == 2? plan.block.region: rot, plan.x, plan.y);
+          Draw.rect(!plan.block.rotate || plan.rotation == 0 || plan.rotation == 2? plan.block.region: rot, plan.drawx(), plan.drawy());
         }
 
         @Override
@@ -207,7 +247,8 @@ public class DistributeBlocks implements ContentList{
       ));
       size = 3;
 
-      computingPower = 16;
+      computingPower = 8;
+      matrixEnergyUse = 0.6f;
     }};
 
     matrix_topology_container = new CoreNeighbourComponent("matrix_topology_container"){{
@@ -221,7 +262,8 @@ public class DistributeBlocks implements ContentList{
       ));
       size = 4;
 
-      frequencyOffer = 16;
+      topologyCapaity = 16;
+      matrixEnergyUse = 0.8f;
     }};
 
     matrix_buffer = new NetPluginComp("matrix_buffer"){{
@@ -233,11 +275,24 @@ public class DistributeBlocks implements ContentList{
           Items.phaseFabric, 45
       ));
       size = 3;
-      buffersSize = ObjectMap.of(
-          DistBuffers.itemBuffer, 512,
-          DistBuffers.liquidBuffer, 512
+      bufferSize = ObjectMap.of(
+          DistBufferType.itemBuffer, 512,
+          DistBufferType.liquidBuffer, 512
       );
       connectReq = LEFT | RIGHT;
+      matrixEnergyUse = 0.6f;
+    }};
+
+    automatic_recycler_component = new AutoRecyclerComp("automatic_recycler_component"){{
+      requirements(SglCategory.matrix, ItemStack.with(
+          SglItems.matrix_alloy, 50,
+          SglItems.aerogel, 75,
+          SglItems.strengthening_alloy, 40,
+          SglItems.aluminium, 60
+      ));
+      size = 3;
+      connectReq = LEFT | RIGHT;
+      matrixEnergyUse = 0.4f;
     }};
   }
 }

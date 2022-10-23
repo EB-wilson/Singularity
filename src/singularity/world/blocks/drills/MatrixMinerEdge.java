@@ -22,8 +22,8 @@ public class MatrixMinerEdge extends MatrixEdgeBlock{
       Draw.z((l = Draw.z()) + 5f);
       if(nextEdge() != null){
         SglDraw.drawLink(
-            tile, linkOffset,
-            nextEdge().tile(), nextEdge().getEdgeBlock().linkOffset(),
+            tile, offset, linkOffset,
+            nextEdge().tile(), nextEdge().getBlock().offset, nextEdge().getEdgeBlock().linkOffset(),
             linkRegion, linkCapRegion,
             linkLerp()
         );

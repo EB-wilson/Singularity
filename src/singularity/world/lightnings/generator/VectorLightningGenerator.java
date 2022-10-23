@@ -3,32 +3,27 @@ package singularity.world.lightnings.generator;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.util.Tmp;
-import org.jetbrains.annotations.NotNull;
 import singularity.world.lightnings.LightningVertex;
 
-import java.util.Iterator;
-
 /**点对点的闪电生成器，生成由指定起点到终点的闪电顶点*/
-public class PointToPointGenerator extends LightningGenerator{
-  public float targetX, targetY;
+public class VectorLightningGenerator extends LightningGenerator{
+  public Vec2 vector = new Vec2();
 
   float distance;
-
-  Vec2 vector = new Vec2();
   float currentDistance;
   boolean first;
 
   @Override
-  public @NotNull Iterator<LightningVertex> iterator(){
+  public void reset(){
+    super.reset();
     currentDistance = 0;
     first = true;
-    distance = vector.set(targetX - originX, targetY - originY).len();
-    return super.iterator();
+    distance = vector.len();
   }
 
   @Override
   public boolean hasNext(){
-    return currentDistance < distance;
+    return super.hasNext() && currentDistance < distance;
   }
 
   @Override
@@ -41,19 +36,17 @@ public class PointToPointGenerator extends LightningGenerator{
       }
       else{
         float offset = Mathf.random(-maxSpread, maxSpread);
-
-        vector.setLength(currentDistance);
-        Tmp.v2.set(vector).add(Tmp.v1.set(vector).rotate90(1).setLength(offset).scl(offset < 0? -1: 1));
+        Tmp.v2.set(vector).setLength(currentDistance).add(Tmp.v1.set(vector).rotate90(1).setLength(offset).scl(offset < 0? -1: 1));
       }
     }
     else{
-      vector.setLength(distance);
+      currentDistance = distance;
       Tmp.v2.set(vector);
       vertex.isEnd = true;
     }
 
-    vertex.x = originX + Tmp.v2.x;
-    vertex.y = originY + Tmp.v2.y;
+    vertex.x = Tmp.v2.x;
+    vertex.y = Tmp.v2.y;
 
     if(first){
       vertex.isStart = true;

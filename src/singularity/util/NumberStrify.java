@@ -1,4 +1,4 @@
-package singularity.unit;
+package singularity.util;
 
 public class NumberStrify{
   private static final String[] byteUnit = {

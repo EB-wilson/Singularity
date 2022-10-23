@@ -9,6 +9,7 @@ import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Angles;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.math.geom.Geometry;
 import arc.util.Interval;
 import arc.util.Time;
@@ -28,11 +29,13 @@ import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.ui.Bar;
+import mindustry.ui.ItemDisplay;
 import mindustry.world.Block;
 import mindustry.world.blocks.liquid.LiquidBlock;
 import mindustry.world.draw.*;
 import mindustry.world.meta.Attribute;
 import mindustry.world.meta.BlockStatus;
+import mindustry.world.meta.Stat;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
@@ -48,7 +51,7 @@ import singularity.world.draw.DrawRegionDynamic;
 import singularity.world.draw.DrawSpliceBlock;
 import singularity.world.lightnings.LightningContainer;
 import singularity.world.lightnings.generator.CircleGenerator;
-import singularity.world.lightnings.generator.PointToPointGenerator;
+import singularity.world.lightnings.generator.VectorLightningGenerator;
 import singularity.world.meta.SglStat;
 import singularity.world.particles.SglParticleModels;
 import universecore.components.blockcomp.FactoryBuildComp;
@@ -189,19 +192,85 @@ public class CrafterBlocks implements ContentList{
         newConsume();
         consume.liquid(Liquids.water, 0.02f);
         newProduce();
-        produce.liquids(UncLiquidStack.with(Liquids.ozone, 0.005f, SglLiquids.algae_mud, 0.001f));
+        produce.liquids(UncLiquidStack.with(Liquids.ozone, 0.01f, SglLiquids.algae_mud, 0.006f));
         
         ambientSound = Sounds.none;
 
+        structUpdated = e -> {
+          e.setVar("highlight",
+              (!(e.nearby(0) instanceof SpliceCrafterBuild right) || right.chains.container != e.chains.container)
+              && (!(e.nearby(1) instanceof SpliceCrafterBuild top) || top.chains.container != e.chains.container)
+              && (e.nearby(2) instanceof SpliceCrafterBuild left && left.chains.container == e.chains.container)
+              && (e.nearby(3) instanceof SpliceCrafterBuild bottom && bottom.chains.container == e.chains.container)
+          );
+        };
+
         draw = new DrawMulti(
             new DrawBottom(),
-            new DrawLiquidRegion(Liquids.water){{
-              suffix = "_liquid";
-            }},
+            new DrawLiquidRegion(Liquids.water){
+              {
+                suffix = "_liquid";
+              }
+
+              final static Rand rand = new Rand();
+
+              @Override
+              public void draw(Building build){
+                rand.setSeed(build.id);
+
+                int am = (int) (2 + rand.nextInt(2)*build.warmup());
+                float move = 0.2f*Mathf.sinDeg(Time.time + rand.nextInt(360))*build.warmup();
+                Draw.color(Tmp.c1.set(SglLiquids.algae_mud.color)
+                    .a(Math.max(build.warmup(), 0.7f*build.liquids.get(SglLiquids.algae_mud)/liquidCapacity)));
+                Angles.randLenVectors(build.id, am, 3.5f, (dx, dy) -> {
+                  Fill.circle(build.x + dx + move, build.y + dy + move,
+                      (Mathf.randomSeed(build.id, 0.2f, 0.8f) + Mathf.absin(5, 0.1f))
+                          *Math.max(build.warmup(), build.liquids.get(SglLiquids.algae_mud)/liquidCapacity));
+                });
+              }
+            },
+            new DrawBlock(){
+              @Override
+              public void draw(Building build){
+                TextureRegion region = renderer.fluidFrames[0][Liquids.water.getAnimationFrame()];
+                TextureRegion toDraw = Tmp.tr1;
+
+                float bounds = size/2f * tilesize;
+
+                for(int sx = 0; sx < size; sx++){
+                  for(int sy = 0; sy < size; sy++){
+                    float relx = sx - (size-1)/2f, rely = sy - (size-1)/2f;
+
+                    toDraw.set(region);
+                    float rightBorder = relx*tilesize, topBorder = rely*tilesize;
+                    float squishX = rightBorder + tilesize/2f - bounds, squishY = topBorder + tilesize/2f - bounds;
+                    float ox = 0f, oy = 0f;
+
+                    if(squishX >= 8 || squishY >= 8) continue;
+
+                    if(squishX > 0){
+                      toDraw.setWidth(toDraw.width - squishX * 4f);
+                      ox = -squishX/2f;
+                    }
+
+                    if(squishY > 0){
+                      toDraw.setY(toDraw.getY() + squishY * 4f);
+                      oy = -squishY/2f;
+                    }
+
+                    Drawf.liquid(toDraw, build.x + rightBorder + ox, build.y + topBorder + oy, build.liquids.get(Liquids.water)/liquidCapacity,
+                        Tmp.c1.set(Liquids.water.color).a(0.75f));
+                  }
+                }
+              }
+            },
             new DrawSpliceBlock<SpliceCrafterBuild>(){{
               planSplicer = (plan, other) -> plan.block instanceof SpliceCrafter self && other.block instanceof SpliceCrafter oth
                       && self.chainable(oth) && oth.chainable(self);
               splicer = SpliceCrafterBuild::splice;
+            }},
+            new DrawRegionDynamic<SpliceCrafterBuild>("_highlight"){{
+              alpha = e -> e.getVar("highlight", false)? 1: 0;
             }}
         );
         
@@ -307,21 +376,20 @@ public class CrafterBlocks implements ContentList{
       ));
 
       newConsume();
-      consume.time(120);
+      consume.time(150f);
       consume.liquid(SglLiquids.mixed_ore_solution, 0.4f);
       consume.power(3f);
       newProduce();
       produce.items(ItemStack.with(
-          Items.copper, 3,
           SglItems.aluminium, 3,
           Items.lead, 2,
-          Items.titanium, 2,
+          Items.titanium, 1,
           Items.thorium, 1
       ));
 
       newConsume();
       consume.time(60);
-      consume.liquid(Liquids.water, 0.4f);
+      consume.liquid(SglLiquids.purified_water, 0.4f);
       consume.item(SglItems.alkali_stone, 1);
       consume.power(2f);
       newProduce();
@@ -332,7 +400,7 @@ public class CrafterBlocks implements ContentList{
       
       newConsume();
       consume.item(Items.sporePod, 1);
-      consume.liquid(Liquids.water, 0.1f);
+      consume.liquid(SglLiquids.purified_water, 0.1f);
       consume.power(2);
       consume.time(60);
       newProduce().color = Items.sporePod.color;
@@ -340,7 +408,7 @@ public class CrafterBlocks implements ContentList{
       
       newConsume();
       consume.item(SglItems.chlorella_block, 1);
-      consume.liquid(Liquids.water, 0.2f);
+      consume.liquid(SglLiquids.purified_water, 0.2f);
       consume.time(120);
       consume.power(2.4f);
       newProduce();
@@ -447,7 +515,7 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.time(60f);
-      consume.item(SglItems.crush_ore, 1);
+      consume.item(SglItems.black_crystone, 2);
       consume.liquid(SglLiquids.acid, 0.3f);
       consume.power(0.8f);
       newProduce();
@@ -795,14 +863,14 @@ public class CrafterBlocks implements ContentList{
       
       newConsume();
       consume.time(45f);
-      consume.item(SglItems.crush_ore, 2);
+      consume.item(SglItems.black_crystone, 2);
       consume.power(2.8f);
-      newProduce().color = SglItems.crush_ore.color;
+      newProduce().color = SglItems.black_crystone.color;
       produce.items(ItemStack.with(
           Items.titanium, 2,
           Items.thorium, 1,
           Items.lead, 3,
-          Items.copper, 5
+          SglItems.aluminium, 5
       )).random();
 
       draw = new DrawMulti(
@@ -944,7 +1012,7 @@ public class CrafterBlocks implements ContentList{
       consume.power(1.8f);
       newProduce();
       produce.liquid(SglLiquids.FEX_liquid, 0.1f);
-      produce.items(ItemStack.with(Items.sand, 4, SglItems.crush_ore, 1, SglItems.uranium_rawore, 1)).random();
+      produce.items(ItemStack.with(Items.sand, 4, SglItems.black_crystone, 1, SglItems.uranium_rawore, 1)).random();
       
       craftEffect = Fx.pulverizeMedium;
 
@@ -1021,10 +1089,10 @@ public class CrafterBlocks implements ContentList{
   
     FEX_phase_mixer = new NormalCrafter("FEX_phase_mixer"){{
       requirements(Category.crafting, ItemStack.with(
+          SglItems.strengthening_alloy, 40,
           Items.plastanium, 90,
           Items.phaseFabric, 85,
-          Items.silicon, 80,
-          Items.phaseFabric, 60
+          Items.silicon, 80
       ));
       size = 2;
       hasLiquids = true;
@@ -1099,7 +1167,7 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.time(180);
-      consume.item(SglItems.uranium_rawmaterial, 3);
+      consume.item(SglItems.uranium_rawmaterial, 5);
       consume.power(3.8f);
       newProduce().color = SglItems.uranium_rawmaterial.color;
       produce.items(ItemStack.with(SglItems.uranium_238, 3, SglItems.uranium_235, 1));
@@ -1112,11 +1180,22 @@ public class CrafterBlocks implements ContentList{
       produce.item(SglItems.iridium, 1);
 
       newConsume();
-      consume.time(120);
-      consume.item(SglItems.crush_ore, 9);
+      consume.time(90);
+      consume.item(SglItems.black_crystone, 6);
       consume.power(2.8f);
-      newProduce().color = SglItems.crush_ore.color;
-      produce.items(ItemStack.with(Items.sand, 3, Items.titanium, 1, Items.lead, 2, Items.thorium, 1));
+      consume.trigger = e -> {
+        if(Mathf.chance(0.3f)) if(e.getBuilding().acceptItem(e.getBuild(), Items.thorium))e.items().add(Items.thorium, 1);
+      };
+      consume.display = (s, c) -> s.add(Stat.output, t -> {
+        t.row();
+        t.table(i -> {
+          i.add(Core.bundle.get("misc.extra") + ":");
+          i.add(new ItemDisplay(Items.thorium, 1)).left().padLeft(6);
+          i.add("[gray]30%[]");
+        }).left().padLeft(5);
+      });
+      newProduce().color = SglItems.black_crystone.color;
+      produce.items(ItemStack.with(SglItems.aluminium, 2, Items.lead, 1));
 
       craftEffect = Fx.smeltsmoke;
       updateEffect = Fx.plasticburn;
@@ -1178,9 +1257,8 @@ public class CrafterBlocks implements ContentList{
             color = e -> e.producer.current != null? e.producer.current.color: transColor;
             alpha = e -> {
               UncConsumeItems<?> cons = e.consumer.current == null? null: e.consumer.current.get(UncConsumeType.item);
-              assert cons != null;
               Item i = cons.items[0].item;
-              return ((float) e.items.get(i))/itemCapacity;
+              return cons == null? 0: ((float) e.items.get(i))/itemCapacity;
             };
           }}
       );
@@ -1457,15 +1535,13 @@ public class CrafterBlocks implements ContentList{
       produce.item(SglItems.anti_metter, 1);
 
       craftEffect = SglFx.explodeImpWaveBig;
+      craftEffectColor = Pal.reactorPurple;
 
       clipSize = 150;
 
       initialed = e -> {
         e.setVar("lightningDrawer", new LightningContainer(){{
           generator = new CircleGenerator(){{
-            originX = e.x;
-            originY = e.y;
-
             radius = 13.5f;
             minInterval = 1.5f;
             maxInterval = 3f;
@@ -1477,10 +1553,7 @@ public class CrafterBlocks implements ContentList{
 
         LightningContainer con;
         e.setVar("lightnings", con = new LightningContainer(){{
-          generator = new PointToPointGenerator(){{
-            originX = e.x;
-            originY = e.y;
-
+          generator = new VectorLightningGenerator(){{
             lerp = f -> 1 - f*f;
 
             maxSpread = 8f;
@@ -1500,10 +1573,8 @@ public class CrafterBlocks implements ContentList{
         if(!SglDraw.clipDrawable(e.x, e.y, clipSize)) return;
         int a = Mathf.random(1, 3);
         for(int i = 0; i < a; i++){
-          Tmp.v1.rnd(Mathf.random(65, 100));
-          PointToPointGenerator gen = e.getVar("lightningGenerator");
-          gen.targetX = e.x + Tmp.v1.x;
-          gen.targetY = e.y + Tmp.v1.y;
+          VectorLightningGenerator gen = e.getVar("lightningGenerator");
+          gen.vector.rnd(Mathf.random(65, 100));
 
           int amount = Mathf.random(3, 5);
           for(int i1 = 0; i1 < amount; i1++){
@@ -1511,12 +1582,12 @@ public class CrafterBlocks implements ContentList{
           }
 
           if(Mathf.chance(0.25f)){
-            SglFx.explodeImpWave.at(gen.targetX, gen.targetY);
+            SglFx.explodeImpWave.at(e.x + gen.vector.x, e.y + gen.vector.y, Pal.reactorPurple);
             Angles.randLenVectors(System.nanoTime(), Mathf.random(4, 7), 2, 3.5f,
-                (x, y) -> SglParticleModels.nuclearParticle.create(gen.targetX, gen.targetY, x, y, Mathf.random(3.25f, 4f)));
+                (x, y) -> SglParticleModels.nuclearParticle.create(e.x + gen.vector.x, e.y + gen.vector.y, x, y, Mathf.random(3.25f, 4f)));
           }
           else{
-            SglFx.spreadLightning.at(gen.targetX, gen.targetY, Pal.reactorPurple);
+            SglFx.spreadLightning.at(e.x + gen.vector.x, e.y + gen.vector.y, Pal.reactorPurple);
           }
         }
         Effect.shake(5.5f, 20f, e.x, e.y);
@@ -1531,7 +1602,9 @@ public class CrafterBlocks implements ContentList{
               Draw.color(Pal.reactorPurple);
               Draw.alpha(e.workEfficiency());
               SglDraw.startBloom(31);
-              e.<LightningContainer>getVar("lightningDrawer").draw();
+              LightningContainer c = e.getVar("lightningDrawer");
+              if(!Vars.state.isPaused()) c.update();
+              c.draw(e.x, e.y);
               SglDraw.endBloom();
               Draw.color();
             }
@@ -1543,8 +1616,9 @@ public class CrafterBlocks implements ContentList{
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);
-              e.<LightningContainer>getVar("lightnings").draw();
-
+              LightningContainer c = e.getVar("lightnings");
+              if(!Vars.state.isPaused()) c.update();
+              c.draw(e.x, e.y);
               float offsetH = Mathf.absin(0.6f, 4);
               float offsetW = Mathf.absin(0.4f, 12);
 

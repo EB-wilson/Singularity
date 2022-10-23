@@ -123,13 +123,19 @@ public interface EdgeLinkerBuildComp extends BuildCompBase{
     Draw.z((l = Draw.z()) + 5f);
     if(nextEdge() != null){
       SglDraw.drawLink(
-          tile(), getEdgeBlock().linkOffset(),
-          nextEdge().tile(), nextEdge().getEdgeBlock().linkOffset(),
+          tile(), getBlock().offset, getEdgeBlock().linkOffset(),
+          nextEdge().tile(), nextEdge().getBlock().offset, nextEdge().getEdgeBlock().linkOffset(),
           getEdgeBlock().linkRegion(), getEdgeBlock().linkCapRegion(),
           linkLerp()
       );
     }
     Draw.z(l);
+  }
+
+  @Annotations.MethodEntry(entryMethod = "pickedUp")
+  default void edgePickedUp(){
+    perEdge().delink(this);
+    delink(nextEdge());
   }
 
   @Annotations.MethodEntry(entryMethod = "drawConfigure")

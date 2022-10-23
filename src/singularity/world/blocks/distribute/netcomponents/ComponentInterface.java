@@ -1,7 +1,6 @@
 package singularity.world.blocks.distribute.netcomponents;
 
 import arc.Core;
-import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
@@ -10,8 +9,6 @@ import singularity.world.DirEdges;
 import singularity.world.components.distnet.DistElementBuildComp;
 
 import java.util.Arrays;
-
-import static mindustry.Vars.tilesize;
 
 public class ComponentInterface extends ComponentBus{
   TextureRegion interfaceLinker, linker;
@@ -29,8 +26,8 @@ public class ComponentInterface extends ComponentBus{
   }
 
   public class ComponentInterfaceBuild extends ComponentBusBuild{
-    byte busLinked;
-    byte[] compLinked = new byte[4];
+    public byte busLinked;
+    public byte[] compLinked = new byte[4];
 
     boolean updateMark = true;
 
@@ -95,34 +92,6 @@ public class ComponentInterface extends ComponentBus{
       }
 
       updateMark = true;
-    }
-
-    @Override
-    public void draw(){
-      Draw.rect(region, x, y);
-
-      for(int dir = 0; dir < 4; dir++){
-        if((1 << dir & busLinked) != 0){
-          Draw.scl(1, dir == 1 || dir == 2? -1: 1);
-          Draw.rect(interfaceLinker, x, y, 90*dir);
-        }
-        else{
-          Point2[] arr = DirEdges.get(size, dir);
-          for(int i = 0; i < arr.length; i++){
-            if((compLinked[dir] & 1 << i) == 0) continue;
-            float dx = 0, dy = 0;
-
-            Draw.scl(1, dir == 1 || dir == 2? -1: 1);
-            switch(dir){
-              case 0 -> dx = -1;
-              case 1 -> dy = -1;
-              case 2 -> dx = 1;
-              case 3 -> dy = 1;
-            }
-            Draw.rect(linker, (tileX() + arr[i].x + dx)*tilesize, (tileY() + arr[i].y + dy)*tilesize, 90*dir);
-          }
-        }
-      }
     }
   }
 }

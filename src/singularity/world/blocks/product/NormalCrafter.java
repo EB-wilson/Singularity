@@ -4,6 +4,7 @@ import arc.Core;
 import arc.audio.Sound;
 import arc.func.Cons;
 import arc.func.Floatp;
+import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.scene.ui.ImageButton;
@@ -53,7 +54,9 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
 
   public float updateEffectChance = 0.05f;
   public Effect updateEffect = Fx.none;
+  public Color updateEffectColor = Color.white;
   public Effect craftEffect = Fx.none;
+  public Color craftEffectColor = Color.white;
   public float effectRange = -1;
   
   public Sound craftedSound = Sounds.none;
@@ -76,6 +79,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     update = true;
     solid = true;
     sync = true;
+    conductivePower = true;
     ambientSound = Sounds.machine;
     ambientSoundVolume = 0.03f;
     flags = EnumSet.of(BlockFlag.factory);
@@ -313,7 +317,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
 
     @Override
     public void craftTrigger(){
-      craftEffect.at(getX(), getY());
+      craftEffect.at(getX(), getY(), craftEffectColor);
       if(craftTrigger != null) ((Cons<NormalCrafterBuild>)craftTrigger).get(this);
       if(craftedSound != Sounds.none) craftedSound.at(x, y, 1, craftedSoundVolume);
     }
@@ -321,7 +325,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     @Override
     public void onCraftingUpdate(){
       if(Mathf.chanceDelta(updateEffectChance)){
-        updateEffect.at(getX() + Mathf.range(effectRange * 4f), getY() + Mathf.range(effectRange * 4));
+        updateEffect.at(getX() + Mathf.range(effectRange * 4f), getY() + Mathf.range(effectRange * 4), updateEffectColor);
       }
 
       if(crafting != null) ((Cons<NormalCrafterBuild>)crafting).get(this);

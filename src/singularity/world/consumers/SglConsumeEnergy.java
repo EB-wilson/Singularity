@@ -1,5 +1,6 @@
 package singularity.world.consumers;
 
+import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.struct.Bits;
 import mindustry.gen.Building;
@@ -41,7 +42,7 @@ public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & Cons
 
   @Override
   public void consume(T entity){
-    if(buffer) entity.handleEnergy(-usage*60*parent.delta(entity)*multiple(entity));
+    if(buffer) entity.handleEnergy(-usage*60*multiple(entity));
   }
 
   @Override
@@ -62,12 +63,12 @@ public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & Cons
   }
 
   @Override
-  public boolean valid(T entity){
-    if(entity.energy() == null) return false;
+  public float efficiency(T entity){
+    if(entity.energy() == null) return 0;
     if(buffer){
-      return entity.energy().getEnergy() >= usage*60*entity.getBuilding().edelta();
+      return entity.energy().getEnergy() >= usage*60*multiple(entity)? 1: 0;
     }
-    return entity.energy().getEnergy() >= usage*12.5f;
+    return Mathf.clamp(entity.energy().getEnergy()/(usage*12.5f*multiple(entity)));
   }
   
   @Override

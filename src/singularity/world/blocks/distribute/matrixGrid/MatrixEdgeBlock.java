@@ -68,8 +68,9 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
     
     list.each(plan -> {
       if(Point2.pack(req.x + pos.x, req.y + pos.y) == Point2.pack(plan.x, plan.y)){
-        if(plan.block instanceof EdgeLinkerComp){
-          SglDraw.drawLink(req.tile(), req.block.offset, plan.tile(), plan.block.offset, linkRegion, null, 1);
+        if(plan.block instanceof EdgeLinkerComp b){
+          SglDraw.drawLink(req.tile(), req.block.offset, linkOffset,
+              plan.tile(), plan.block.offset, b.linkOffset(), linkRegion, null, 1);
         }
       }
     });
@@ -91,9 +92,7 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
     }
 
     @Override
-    public void edgeUpdated(){
-
-    }
+    public void edgeUpdated(){}
 
     @Override
     public void drawLink(){
@@ -102,8 +101,8 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
         Draw.z(Layer.effect);
         Draw.alpha(0.65f);
         SglDraw.drawLink(
-            tile, linkOffset,
-            nextEdge().tile(), nextEdge().getEdgeBlock().linkOffset(),
+            tile, offset, linkOffset,
+            nextEdge().tile(), nextEdge().getBlock().offset, nextEdge().getEdgeBlock().linkOffset(),
             linkLightRegion, linkLightCapRegion,
             linkLerp()
         );
@@ -126,20 +125,9 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
     }
   
     @Override
-    public void drawConfigure(){
-      super.drawConfigure();
-      drawConfiguring(this);
-    }
-  
-    @Override
     public Point2 config(){
       Point2 p = Point2.unpack(nextPos);
       return p.set(p.x - tile.x, p.y - tile.y);
-    }
-  
-    @Override
-    public void draw(){
-      super.draw();
     }
   }
 }

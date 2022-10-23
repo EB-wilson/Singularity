@@ -1,16 +1,9 @@
 package singularity.world.blocks.distribute.netcomponents;
 
-import arc.util.Eachable;
-import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.world.Tile;
 
 public class JumpLine extends ComponentBus{
-  @Override
-  public void drawPlanRegion(BuildPlan plan, Eachable<BuildPlan> list){
-    draw.drawPlan(this, plan, list);
-  }
-
   public JumpLine(String name){
     super(name);
     rotate = true;
@@ -32,11 +25,6 @@ public class JumpLine extends ComponentBus{
           proximityBus.add(bus);
         }
       }
-    }
-
-    @Override
-    public void draw(){
-      draw.draw(this);
     }
   }
 }

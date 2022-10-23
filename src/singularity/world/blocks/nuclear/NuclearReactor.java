@@ -79,7 +79,7 @@ public class NuclearReactor extends NormalCrafter{
       s.add(SglStat.effect, t -> {
         t.row();
         t.add(Core.bundle.get("misc.absorbHeat") + ": " + Strings.autoFixed(consHeat*60, 2)
-            + SglStatUnit.heat.localized() + Core.bundle.get("misc.preSecond"));
+            + SglStatUnit.heat.localized() + Core.bundle.get("misc.perSecond"));
       });
     });
 
@@ -111,11 +111,12 @@ public class NuclearReactor extends NormalCrafter{
     });
     consume.valid = ent -> ent.getBuilding(SglBuilding.class).consumeValid();
   }
-  
+
   @Override
   public void setStats(){
     super.setStats();
-    stats.add(SglStat.heatProduct, productHeat*60 + SglStatUnit.heat.localized() + Core.bundle.get("misc.preSecond"));
+    stats.add(SglStat.heatProduct, Strings.autoFixed(productHeat*60, 2) + SglStatUnit.heat.localized() + Core.bundle.get("misc.perSecond"));
+    stats.add(SglStat.maxHeat, maxHeat, SglStatUnit.heat);
   }
   
   @Override

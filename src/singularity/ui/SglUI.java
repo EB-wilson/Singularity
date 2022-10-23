@@ -2,8 +2,10 @@ package singularity.ui;
 
 import arc.scene.Group;
 import mindustry.Vars;
+import singularity.Sgl;
 import singularity.ui.dialogs.*;
 import singularity.ui.fragments.SecondaryConfigureFragment;
+import singularity.ui.fragments.override.SglMenuFrag;
 import universecore.util.handler.FieldHandler;
 
 public class SglUI{
@@ -32,5 +34,10 @@ public class SglUI{
     
     Group overlay = FieldHandler.getValueTemp(Vars.control.input, "group");
     secConfig.build(overlay);
+
+    if(!Sgl.config.disableModMainMenu){
+      Vars.ui.menufrag = new SglMenuFrag();
+      Vars.ui.menufrag.build(Vars.ui.menuGroup);
+    }
   }
 }

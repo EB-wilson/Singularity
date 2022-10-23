@@ -93,7 +93,7 @@ public class DistFlowRateMonitor extends Monitor{
               totalStatChart = new LineChart(maxCount);
               totalStatChart.horizontal = Core.bundle.get("misc.time");
               totalStatChart.displayScale = false;
-              totalStatChart.vertical = Core.bundle.get("misc.byte") + Core.bundle.get("misc.preSecond");
+              totalStatChart.vertical = Core.bundle.get("misc.byte") + Core.bundle.get("misc.perSecond");
             }
 
             currentChart = c.add(currentSelect == null ? totalStatChart: childCharts.get(currentSelect)).grow().margin(8).get();

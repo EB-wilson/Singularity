@@ -15,8 +15,8 @@ import universecore.annotations.Annotations;
 @Annotations.ImplEntries
 public class DistNetBlock extends SglBlock implements DistElementBlockComp{
   public boolean isNetLinker;
-  public int frequencyUse = 1;
-  public float matrixEnergyCapacity = 1;
+  public int topologyUse = 1;
+  public float matrixEnergyCapacity = 0;
   public float matrixEnergyUse = 0;
 
   public DistNetBlock(String name){

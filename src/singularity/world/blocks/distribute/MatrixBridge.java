@@ -32,12 +32,15 @@ import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Tile;
+import mindustry.world.meta.Stat;
+import mindustry.world.meta.StatUnit;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.components.distnet.DistElementBlockComp;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
+import singularity.world.meta.SglStat;
 import singularity.world.modules.SglLiquidModule;
 
 import java.util.Iterator;
@@ -51,21 +54,23 @@ public class MatrixBridge extends DistNetBlock{
   public Color effectColor = SglDrawConst.matrixNet;
   public TextureRegion linkRegion, topRegion;
   
-  public float linkRange = 16;
+  public int linkRange = 16;
+  public int maxLinks = 8;
   public float transportItemTime = 1;
   public float linkStoke = 8f;
+  public boolean crossLinking = false;
 
   public float maxLiquidCapacity = -1;
 
   public MatrixBridge(String name){
     super(name);
     configurable = true;
-    frequencyUse = 0;
+    topologyUse = 0;
     hasItems = true;
     hasLiquids = outputsLiquid = true;
     isNetLinker = true;
   }
-  
+
   @Override
   public void appliedConfig(){
     super.appliedConfig();
@@ -115,6 +120,13 @@ public class MatrixBridge extends DistNetBlock{
     clipSize = Math.max(clipSize, linkRange * tilesize * 2);
     if(maxLiquidCapacity == -1) maxLiquidCapacity = liquidCapacity*4;
   }
+
+  @Override
+  public void setStats(){
+    super.setStats();
+    stats.add(Stat.linkRange, linkRange, StatUnit.blocks);
+    stats.add(SglStat.maxMatrixLinks, maxLinks);
+  }
   
   @Override
   public void load(){
@@ -123,8 +135,17 @@ public class MatrixBridge extends DistNetBlock{
     topRegion = Core.atlas.find(name + "_top", Singularity.getModAtlas("matrix_link_light"));
   }
   
-  public boolean canLink(Tile origin, Tile other, float range){
+  public boolean linkInlerp(Tile origin, Tile other, float range){
     if(origin == null || other == null) return false;
+    if(crossLinking){
+      int xDistance = Math.abs(origin.x - other.x),
+          yDistance = Math.abs(origin.y - other.y);
+
+      int linkLength = Math.min(linkRange, other.block() instanceof MatrixBridge m? m.linkRange: linkRange);
+
+      return (yDistance < linkLength + size/2f + offset && origin.x == other.x && origin.y != other.y)
+          || (xDistance < linkLength + size/2f + offset && origin.x != other.x && origin.y == other.y);
+    }
     return Intersector.overlaps(Tmp.cr1.set(origin.drawx(), origin.drawy(), range), other.getHitbox(Tmp.r1));
   }
   
@@ -151,12 +172,14 @@ public class MatrixBridge extends DistNetBlock{
     });
 
     Draw.rect(topRegion, req.tile().drawx(), req.tile().drawy());
-  
+
+    float off1 = req.block.offset;
     for(BuildPlan plan : links){
       if(plan != null){
+        float off2 = plan.block.offset;
         SglDraw.drawLaser(
-            req.tile().drawx(), req.tile().drawy(),
-            plan.tile().drawx(), plan.tile().drawy(),
+            req.tile().worldx() + off1, req.tile().worldy() + off1,
+            plan.tile().worldx() + off2, plan.tile().worldy() + off2,
             linkRegion,
             null,
             linkStoke
@@ -178,9 +201,36 @@ public class MatrixBridge extends DistNetBlock{
   public void drawPlace(int x, int y, int rotation, boolean valid){
     super.drawPlace(x, y, rotation, valid);
 
-    Lines.stroke(1f);
-    Draw.color(Pal.placing);
-    Drawf.circles(x * tilesize + offset, y * tilesize + offset, linkRange * tilesize);
+    if(crossLinking){
+      Tmp.v1.set(1, 0);
+      for(int i = 0; i < 4; i++){
+        float dx = x*tilesize + offset + Geometry.d4x(i)*size*tilesize/2f;
+        float dy = y*tilesize + offset + Geometry.d4y(i)*size*tilesize/2f;
+
+        Drawf.dashLine(
+            Pal.accent,
+            dx,
+            dy,
+            dx + Geometry.d4x(i)*linkRange*tilesize,
+            dy + Geometry.d4y(i)*linkRange*tilesize
+        );
+
+        for(int d = 1; d <= linkRange; d++){
+          Tmp.v1.setLength(d);
+          Building t = world.build(x + (int) Tmp.v1.x, y + (int) Tmp.v1.y);
+
+          if(t != null && linkInlerp(world.tile(x, y), t.tile, linkRange*tilesize) && (t.block instanceof MatrixBridge)){
+            Drawf.select(t.x, t.y, t.block.size * tilesize / 2f + 2f + Mathf.absin(Time.time, 4f, 1f), Pal.breakInvalid);
+          }
+        }
+        Tmp.v1.rotate90(1);
+      }
+    }
+    else{
+      Lines.stroke(1f);
+      Draw.color(Pal.placing);
+      Drawf.circles(x*tilesize + offset, y*tilesize + offset, linkRange*tilesize);
+    }
   }
 
   public class MatrixBridgeBuild extends DistNetBuild{
@@ -196,10 +246,33 @@ public class MatrixBridge extends DistNetBlock{
 
     float netEfficiency;
 
-    public boolean canLink(Building target){
-      if(!MatrixBridge.this.canLink(tile, target.tile, linkRange*Vars.tilesize)) return false;
-      if(target instanceof MatrixBridgeBuild && target.block == block) return true;
-      return target instanceof DistElementBuildComp comp && linkable(comp) && comp.linkable(this);
+    @Override
+    public MatrixBridge block(){
+      return MatrixBridge.this;
+    }
+
+    public boolean canLink(Building other){
+      if(crossLinking){
+        if(!(other instanceof MatrixBridgeBuild m)) return false;
+
+        float linkLength = Math.min(linkRange, m.block().linkRange);
+        if(m.block().crossLinking){
+          int xDistance = Math.abs(tileX() - other.tileX()),
+              yDistance = Math.abs(tileY() - other.tileY());
+
+          if(!((yDistance < linkLength + getBlock().size/2f + getBlock().offset && tileX() == other.tileX() && tileY() != other.tileY())
+              || (xDistance < linkLength + getBlock().size/2f + getBlock().offset && tileX() != other.tileX() && tileY() == other.tileY())))
+            return false;
+        }
+        else{
+          if(!Intersector.overlaps(Tmp.cr1.set(x, y, linkLength*tilesize), other.tile.getHitbox(Tmp.r1))) return false;
+        }
+      }
+      else{
+        if(!MatrixBridge.this.linkInlerp(tile, other.tile, linkRange*Vars.tilesize)) return false;
+      }
+      if(other instanceof MatrixBridgeBuild && other.block == block) return true;
+      return other instanceof DistElementBuildComp comp && linkable(comp) && comp.linkable(this);
     }
 
     @Override
@@ -275,6 +348,13 @@ public class MatrixBridge extends DistNetBlock{
       }
 
       updateEff();
+    }
+
+    @Override
+    public void pickedUp(){
+      linkElementPos = -1;
+      linkNextPos = -1;
+      updateTile();
     }
 
     public void updateEff(){
@@ -359,7 +439,10 @@ public class MatrixBridge extends DistNetBlock{
       }
       
       if(canLink(other)){
-        if(other instanceof DistElementBuildComp comp){
+        if(distributor.distNetLinks.size >= maxLinks
+        || other instanceof MatrixBridgeBuild o && o.distributor.distNetLinks.size >= o.block().maxLinks) return false;
+
+        if(other instanceof DistElementBuildComp){
           configure(Point2.unpack(other.pos()));
         }
         return false;
@@ -367,46 +450,91 @@ public class MatrixBridge extends DistNetBlock{
       
       return true;
     }
-  
+
     @Override
     public void drawConfigure(){
-      Drawf.circles(x, y, tile.block().size * tilesize / 2f + 1f + Mathf.absin(Time.time, 4f, 1f));
-      Drawf.circles(x, y, linkRange * tilesize);
-      float radius;
-  
-      for(int x = (int)(tile.x - linkRange - 2); x <= tile.x + linkRange + 2; x++){
-        for(int y = (int)(tile.y - linkRange - 2); y <= tile.y + linkRange + 2; y++){
+      if(crossLinking){
+        Drawf.square(x, y, size*tilesize, Pal.accent);
+
+        if(linkNext != null){
+          Tmp.v2.set(
+                  Tmp.v1.set(linkNext.getBuilding().x, linkNext.getBuilding().y)
+                      .sub(x, y)
+                      .setLength(size*tilesize/2f))
+              .setLength(linkNext.getBlock().size*tilesize/2f);
+
+          Drawf.square(
+              linkNext.getBuilding().x,
+              linkNext.getBuilding().y,
+              linkNext.getBlock().size*tilesize,
+              45,
+              Pal.accent
+          );
+          Lines.stroke(3, Pal.gray);
+          Lines.line(
+              x + Tmp.v1.x,
+              y + Tmp.v1.y,
+              linkNext.getBuilding().x - Tmp.v2.x,
+              linkNext.getBuilding().y - Tmp.v2.y
+          );
+          Lines.stroke(1, Pal.accent);
+          Lines.line(
+              x + Tmp.v1.x,
+              y + Tmp.v1.y,
+              linkNext.getBuilding().x - Tmp.v2.x,
+              linkNext.getBuilding().y - Tmp.v2.y
+          );
+        }
+      }
+      else{
+        Drawf.circles(x, y, tile.block().size*tilesize/2f + 1f + Mathf.absin(Time.time, 4f, 1f));
+        Drawf.circles(x, y, linkRange*tilesize);
+      }
+
+      Building last = null;
+      for(int x = tile.x - linkRange - 2; x <= tile.x + linkRange + 2; x++){
+        for(int y = tile.y - linkRange - 2; y <= tile.y + linkRange + 2; y++){
           Building link = world.build(x, y);
+          if(last == link) continue;
+          last = link;
           if(link != null && link != this && canLink(link)){
             if(linkNext == link || linkElement == link){
-              radius = link.block.size * tilesize / 2f + 1f;
+              float radius = link.block.size*tilesize/2f + 1f;
               Drawf.square(link.x, link.y, radius, Pal.place);
               Tmp.v1.set(link.x, link.y).sub(this.x, this.y).setLength(radius);
               Drawf.dashLine(Pal.accent,
                   this.x + Tmp.v1.x, this.y + Tmp.v1.y,
                   link.x - Tmp.v1.x, link.y - Tmp.v1.y);
-            }
-            else{
-              if(link.block == block){
-                radius = tile.block().size * tilesize / 2f + 1f + Mathf.absin(Time.time, 4f, 1f);
-                Tmp.v1.set(0, 1).setLength(radius + 4).setAngle(Time.time);
-                Drawf.circles(link.x, link.y, radius);
-                for(int i=0; i<4; i++){
-                  Draw.color(Pal.gray);
-                  Fill.poly(link.x + Tmp.v1.x, link.y + Tmp.v1.y, 3, 3.5f, Time.time + i*90 + 60);
-                  Draw.color(Pal.accent);
-                  Fill.poly(link.x + Tmp.v1.x, link.y + Tmp.v1.y, 3, 1.5f, Time.time + i*90 + 60);
-                  Tmp.v1.rotate(90);
-                }
+            }else{
+              if(link instanceof MatrixBridgeBuild l && canLink(link)){
+                drawLinkable(l);
               }
             }
           }
         }
       }
-  
+
       Draw.reset();
     }
-  
+
+    private void drawLinkable(MatrixBridgeBuild link){
+      if(link.linkNext != this){
+        float radius = link.block.size*tilesize/2f + 1f + Mathf.absin(Time.time, 4f, 1f);
+        Tmp.v1.set(0, 1).setLength(radius + 4).setAngle(Time.time);
+        Drawf.circles(link.x, link.y, radius);
+        for(int i = 0; i < 4; i++){
+          Draw.color(Pal.gray);
+          Fill.poly(link.x + Tmp.v1.x, link.y + Tmp.v1.y, 3, 3.5f, Time.time + i*90 + 60);
+          Draw.color(Pal.accent);
+          Fill.poly(link.x + Tmp.v1.x, link.y + Tmp.v1.y, 3, 1.5f, Time.time + i*90 + 60);
+          Tmp.v1.rotate(90);
+        }
+      }
+      else{
+        Drawf.select(link.x, link.y, link.block.size * tilesize / 2f + 2f + Mathf.absin(Time.time, 4f, 1f), Pal.breakInvalid);
+      }
+    }
+
     @Override
     public void draw(){
       Draw.rect(region, x, y);

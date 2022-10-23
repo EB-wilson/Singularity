@@ -1,11 +1,13 @@
 package singularity.world.blocks.distribute.netcomponents;
 
 import arc.Core;
+import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
+import arc.scene.Element;
 import arc.struct.ObjectMap;
 import arc.util.Eachable;
 import arc.util.Tmp;
@@ -13,13 +15,19 @@ import mindustry.Vars;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
+import mindustry.world.draw.DrawDefault;
+import mindustry.world.draw.DrawMulti;
+import mindustry.world.meta.StatUnit;
 import singularity.graphic.SglDrawConst;
+import singularity.util.NumberStrify;
 import singularity.world.DirEdges;
 import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.components.distnet.DistComponent;
 import singularity.world.components.distnet.DistElementBuildComp;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
+import singularity.world.draw.DrawDirSpliceBlock;
+import singularity.world.meta.SglStat;
 
 import java.util.Arrays;
 
@@ -45,7 +53,7 @@ public class NetPluginComp extends DistNetBlock{
 
   public int computingPower = 0;
 
-  protected ObjectMap<DistBuffers<?>, Integer> buffersSize = new ObjectMap<>();
+  protected ObjectMap<DistBufferType<?>, Integer> bufferSize = new ObjectMap<>();
 
   public TextureRegion interfaceLinker;
 
@@ -54,6 +62,20 @@ public class NetPluginComp extends DistNetBlock{
     rotate = true;
     rotateDraw = false;
     update = true;
+
+    draw = new DrawMulti(
+        new DrawDefault(),
+        new DrawDirSpliceBlock<NetPluginCompBuild>(){{
+          spliceBits = e -> {
+            int res = 0;
+            for(int i = 0; i < e.linked.length; i++){
+              if((0b0001 << Mathf.mod(i - e.rotation, 4) & connectReq) == 0) continue;
+              if(e.linked[i] != null) res |= 0b0001 << i;
+            }
+            return res;
+          };
+        }}
+    );
   }
 
   @Override
@@ -63,12 +85,50 @@ public class NetPluginComp extends DistNetBlock{
   }
 
   @Override
+  public void setStats(){
+    super.setStats();
+    if(computingPower > 0) stats.add(SglStat.computingPower, computingPower*60, StatUnit.perSecond);
+    if(bufferSize.size > 0){
+      stats.add(SglStat.bufferSize, t -> {
+        t.defaults().left().fillX().padLeft(10);
+        t.row();
+        for(ObjectMap.Entry<DistBufferType<?>, Integer> entry: bufferSize){
+          if(entry.value <= 0) continue;
+          t.add(Core.bundle.get("content." + entry.key.targetType().name() + ".name") + ": " + NumberStrify.toByteFix(entry.value, 2));
+          t.row();
+        }
+      });
+    }
+    stats.add(SglStat.linkDirections, t -> {
+      t.add(new Element(){
+        @Override
+        public void draw(){
+          validate();
+
+          Draw.scl(scaleX, scaleY);
+          Lines.stroke(6, Color.lightGray);
+          float rx = x + width/2, ry = y + height/2;
+          Lines.quad(x, y, x + width, y, x + width, y + height, x, y + height);
+          Tmp.v1.set(width/2 - 22, 0);
+          Draw.color();
+          for(int i = 0; i < 4; i++){
+            if((connectReq & 0b0001 << i) == 0) continue;
+
+            Tmp.v1.setAngle(i*90);
+            Draw.rect(SglDrawConst.matrixArrow, rx + Tmp.v1.x, ry + Tmp.v1.y, 40, 40, (i - 1)*90);
+          }
+        }
+      }).size(90);
+    });
+  }
+
+  @Override
   public void drawPlanConfig(BuildPlan plan, Eachable<BuildPlan> list){
     super.drawPlanConfig(plan, list);
   }
 
-  public void setBufferSize(DistBuffers<?> buffer, int size){
-    buffersSize.put(buffer, size);
+  public void setBufferSize(DistBufferType<?> buffer, int size){
+    bufferSize.put(buffer, size);
   }
 
   @Override
@@ -126,8 +186,8 @@ public class NetPluginComp extends DistNetBlock{
     }
 
     @Override
-    public ObjectMap<DistBuffers<?>, Integer> bufferSize(){
-      return buffersSize;
+    public ObjectMap<DistBufferType<?>, Integer> bufferSize(){
+      return bufferSize;
     }
 
     @Override
@@ -149,7 +209,11 @@ public class NetPluginComp extends DistNetBlock{
         linked[i] = otherNet;
       }
 
-      if(!componentValid()) Arrays.fill(linked, null);
+      if(!componentValid()){
+        Arrays.fill(linked, null);
+      }
+      else if(distributor.network.netStructValid()) onPluginValided();
+      else onPluginInvalided();
     }
 
     @Override
@@ -169,19 +233,6 @@ public class NetPluginComp extends DistNetBlock{
     }
 
     @Override
-    public void draw(){
-      Draw.rect(region, x, y);
-      if(!componentValid()) return;
-
-      for(int i = 0; i < linked.length; i++){
-        if((0b0001 << Mathf.mod(i - rotation, 4) & connectReq) == 0) continue;
-        int r = (i + rotation)%4;
-        Draw.scl(1, r == 1 || r == 2? -1: 1);
-        if(linked[i] != null) Draw.rect(interfaceLinker, x, y, 90*(i + rotation));
-      }
-    }
-
-    @Override
     public void onProximityAdded(){
       if (this.power != null) this.updatePowerGraph();
 
@@ -193,8 +244,20 @@ public class NetPluginComp extends DistNetBlock{
     }
 
     @Override
+    public void onProximityRemoved(){
+      super.onProximityRemoved();
+      onPluginRemoved();
+    }
+
+    @Override
     public void updateNetLinked(){
       netLinked().clear();
     }
+
+    public void onPluginValided(){}
+
+    public void onPluginInvalided(){}
+
+    public void onPluginRemoved(){}
   }
 }

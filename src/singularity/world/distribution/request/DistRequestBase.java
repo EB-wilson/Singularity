@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistributeNetwork;
 
-public abstract class DistRequestBase<S>{
+public abstract class DistRequestBase{
   private long updateMark, executeMark;
   
   protected boolean initialized, sleeping, killed, blocked;

@@ -145,15 +145,13 @@ public class LightningsGroup extends LightningContainer implements Drawc, Pool.P
   @Override
   public void draw(){
     if(perDraw != null) perDraw.get(this);
-    super.draw();
+    super.draw(x, y);
   }
 
   @Override
   public void update(){
-    if(generator != null){
-      generator.originX = x;
-      generator.originY = y;
-    }
+    super.update();
+
     if(lightningPathUpdate == null) return;
     LightningVertex last = null;
     for(Lightning lightning: lightnings){

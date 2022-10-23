@@ -23,6 +23,7 @@ import singularity.world.components.ChainsBlockComp;
 import singularity.world.components.ChainsBuildComp;
 import singularity.world.components.SpliceBlockComp;
 import singularity.world.components.SpliceBuildComp;
+import singularity.world.meta.SglStat;
 import singularity.world.modules.ChainsModule;
 import singularity.world.modules.SglLiquidModule;
 import universecore.annotations.Annotations;
@@ -42,6 +43,16 @@ public class ExtendMiner extends SglBlock implements SpliceBlockComp{
     update = true;
     hasItems = true;
     outputItems = true;
+  }
+
+  @Override
+  public void setStats(){
+    super.setStats();
+    stats.add(SglStat.componentBelongs, t -> {
+      t.defaults().left();
+      t.image(master.fullIcon).size(35).padRight(8);
+      t.add(master.localizedName);
+    });
   }
 
   @Override

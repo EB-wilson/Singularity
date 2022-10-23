@@ -6,7 +6,7 @@ import mindustry.gen.Building;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import singularity.world.components.distnet.DistElementBuildComp;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
@@ -15,7 +15,7 @@ import singularity.world.distribution.buffers.LiquidsBuffer;
 import java.util.Arrays;
 
 /**从网络中读取液体，此操作将液体从网络缓存读出并写入到目标缓存，网络缓存会优先提供已缓存液体，若不足则从网络子容器申请液体到网络缓存再分配*/
-public class ReadLiquidsRequest extends DistRequestBase<LiquidStack>{
+public class ReadLiquidsRequest extends DistRequestBase{
   private static final Seq<MatrixGrid.BuildingEntry<Building>> temp = new Seq<>();
   private static final float[] tempLiquid = new float[Vars.content.liquids().size];
 
@@ -38,7 +38,7 @@ public class ReadLiquidsRequest extends DistRequestBase<LiquidStack>{
   @Override
   public void init(DistributeNetwork target){
     super.init(target);
-    source = target.getCore().distCore().getBuffer(DistBuffers.liquidBuffer);
+    source = target.getCore().distCore().getBuffer(DistBufferType.liquidBuffer);
   }
 
   @Override

@@ -16,7 +16,7 @@ import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.world.blocks.storage.CoreBlock;
 import mindustry.world.modules.ItemModule;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
@@ -45,8 +45,8 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
   }
 
   @Override
-  public DistBuffers<ItemsBuffer> bufferType(){
-    return DistBuffers.itemBuffer;
+  public DistBufferType<ItemsBuffer> bufferType(){
+    return DistBufferType.itemBuffer;
   }
 
   public void remove(Item item){
@@ -77,8 +77,8 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
   public void bufferContAssign(DistributeNetwork network){
     itemRead: for(ItemPacket packet : this){
       cores.clear();
+      Building handler = network.getCore().getBuilding();
       for(MatrixGrid grid : network.grids){
-        Building handler = grid.handler.getBuilding();
         for(MatrixGrid.BuildingEntry<? extends Building> entry: grid.<Building>get(
             GridChildType.container,
             (e, c) -> e.acceptItem(handler, packet.get()) && c.get(GridChildType.container, packet.get()))){
@@ -115,22 +115,23 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     cores.clear();
     int counter = amount.intValue();
 
+    Building core = network.getCore().getBuilding();
     ItemPacket packet = get(ct.id);
     if(packet == null) return;
     for(MatrixGrid grid: network.grids){
       for(MatrixGrid.BuildingEntry<? extends Building> entry: grid.<Building>get(GridChildType.container, (e, c) -> c.get(GridChildType.container, ct)
-          && e.acceptItem(grid.handler.getBuilding(), ct))){
+          && e.acceptItem(core, ct))){
 
         if(entry.entity instanceof CoreBlock.CoreBuild) cores.add((MatrixGrid.BuildingEntry<CoreBlock.CoreBuild>) entry);
 
         if(packet.amount() <= 0 || counter <= 0) return;
-        int move = Math.min(packet.amount(), entry.entity.acceptStack(packet.get(), packet.amount(), grid.handler.getBuilding()));
+        int move = Math.min(packet.amount(), entry.entity.acceptStack(packet.get(), packet.amount(), core));
         move = Math.min(move, counter);
 
         packet.remove(move);
         packet.deRead(move);
         counter -= move;
-        entry.entity.handleStack(packet.get(), move, grid.handler.getBuilding());
+        entry.entity.handleStack(packet.get(), move, core);
       }
     }
 

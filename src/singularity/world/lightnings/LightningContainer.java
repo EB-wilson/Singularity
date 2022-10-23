@@ -1,15 +1,16 @@
 package singularity.world.lightnings;
 
 import arc.func.Cons;
+import arc.func.Cons2;
 import arc.func.FloatFloatf;
 import arc.math.Mathf;
+import arc.struct.Seq;
 import arc.util.Time;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import singularity.world.lightnings.generator.LightningGenerator;
 
 import java.util.Iterator;
-import java.util.LinkedList;
 
 /**闪电容器，使用一个闪电生成器产生闪电，由容器进行处理和绘制，通常用于一类闪电用同一个容器存储*/
 public class LightningContainer{
@@ -26,14 +27,17 @@ public class LightningContainer{
   /**闪电每一段宽度的随机区间*/
   public float minWidth = 2.5f, maxWidth = 4.5f;
   /**闪电的衰减变换器，传入的数值为闪电的存在时间进度*/
-  public FloatFloatf lerp = f -> 1 - f;
+  public FloatFloatf lerp = f -> Mathf.pow(1 - f, 2);
 
   /**闪电分支创建时调用的回调函数，一般用于定义闪电的分支子容器属性*/
   public Cons<Lightning> branchCreated;
 
+  /**闪电顶点触发器，当一个闪电节点已到达后触发，传入前一个顶点和这一个顶点*/
+  public Cons2<LightningVertex, LightningVertex> trigger;
+
   protected float clipSize;
 
-  protected final LinkedList<Lightning> lightnings = new LinkedList<>();
+  protected final Seq<Lightning> lightnings = new Seq<>();
 
   /**使用当前的闪电生成器在容器中创建一道新的闪电*/
   public void create(){
@@ -44,20 +48,18 @@ public class LightningContainer{
         lifeTime,
         lerp,
         time,
-        speed
+        speed,
+        trigger
     ));
   }
 
-  /**绘制容器，这会将容器中保存的所有闪电进行绘制，并更新容器与闪电状态*/
-  public void draw(){
+  public void update(){
     Iterator<Lightning> itr = lightnings.iterator();
-    Lightning lightning;
-    float progress;
     while(itr.hasNext()){
-      lightning = itr.next();
+      Lightning lightning = itr.next();
       clipSize = Math.max(clipSize, lightning.clipSize);
 
-      progress = (Time.time - lightning.startTime)/lifeTime;
+      float progress = (Time.time - lightning.startTime)/lifeTime;
       if(progress > 1){
         itr.remove();
         Pools.free(lightning);
@@ -65,7 +67,14 @@ public class LightningContainer{
         continue;
       }
 
-      lightning.draw();
+      lightning.update();
+    }
+  }
+
+  /**绘制容器，这会将容器中保存的所有闪电进行绘制*/
+  public void draw(float x, float y){
+    for(Lightning lightning: lightnings){
+      lightning.draw(x, y);
     }
   }
 

@@ -34,7 +34,7 @@ public class MultLiquidBlock extends LiquidBlock{
         return new Bar(
             () -> current.currentAmount() <= 0.001f ?
                 Core.bundle.get("bar.liquid") + " #" + index:
-                current.current().localizedName + "     " + (current.getFlowRate(current.current()) >= 0? Strings.autoFixed(current.getFlowRate(current.current()), 0): "...") + Core.bundle.get("misc.preSecond"),
+                current.current().localizedName + "     " + (current.getFlowRate(current.current()) >= 0? Strings.autoFixed(current.getFlowRate(current.current()), 0): "...") + Core.bundle.get("misc.perSecond"),
             () -> current.current().barColor(),
             () -> current.currentAmount() /liquidCapacity
         );
@@ -97,7 +97,7 @@ public class MultLiquidBlock extends LiquidBlock{
     public MultLiquidBlock block(){
       return (MultLiquidBlock) block;
     }
-  
+
     @Override
     public void updateTile(){
       super.updateTile();

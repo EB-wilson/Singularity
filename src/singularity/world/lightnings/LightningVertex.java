@@ -10,7 +10,7 @@ import arc.util.pooling.Pools;
 public class LightningVertex implements Pool.Poolable{
   public float x, y;
   public float angle;
-  public boolean isBranch;
+
   public boolean isStart;
   public boolean isEnd;
 
@@ -19,10 +19,12 @@ public class LightningVertex implements Pool.Poolable{
 
   public Lightning branchOther;
 
-  protected void draw(){
-    if(isBranch){
-      if(branchOther != null) branchOther.draw();
-    }
+  protected void draw(float x, float y){
+    if(branchOther != null) branchOther.draw(this.x + x, this.y + y);
+  }
+
+  public void update(){
+    if(branchOther != null) branchOther.update();
   }
 
   @Override
@@ -33,7 +35,6 @@ public class LightningVertex implements Pool.Poolable{
     progress = 0;
     x = y = 0;
     angle = 0;
-    isBranch = false;
     branchOther = null;
     isStart = false;
     isEnd = false;

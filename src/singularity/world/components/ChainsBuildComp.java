@@ -1,6 +1,9 @@
 package singularity.world.components;
 
+import arc.struct.IntSet;
 import arc.struct.Seq;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.gen.Building;
 import mindustry.gen.Posc;
 import singularity.world.blocks.chains.ChainsContainer;
@@ -11,6 +14,11 @@ import universecore.components.blockcomp.BuildCompBase;
 import java.util.Iterator;
 
 public interface ChainsBuildComp extends BuildCompBase, Posc, Iterable<ChainsBuildComp>{
+  @Annotations.BindField(value = "loadingInvalidPos", initialize = "new arc.struct.IntSet()")
+  default IntSet loadingInvalidPos(){
+    return null;
+  }
+
   @Annotations.BindField("chains")
   default ChainsModule chains(){
     return null;
@@ -21,10 +29,12 @@ public interface ChainsBuildComp extends BuildCompBase, Posc, Iterable<ChainsBui
   }
   
   @Annotations.MethodEntry(entryMethod = "onProximityAdded")
-  default void onChainsUpdate(){
+  default void onChainsAdded(){
     for(ChainsBuildComp other : chainBuilds()){
+      if(loadingInvalidPos().contains(other.getTile().pos())) continue;
       if(canChain(other) && other.canChain(this)) other.chains().container.add(chains().container);
     }
+    if(!loadingInvalidPos().isEmpty()) loadingInvalidPos().clear();
   }
 
   default boolean canChain(ChainsBuildComp other){
@@ -61,4 +71,29 @@ public interface ChainsBuildComp extends BuildCompBase, Posc, Iterable<ChainsBui
   default void chainsFlowed(ChainsContainer old){}
 
   default void onChainsUpdated(){}
+
+  Seq<ChainsBuildComp> tmp = new Seq<>();
+
+  @Annotations.MethodEntry(entryMethod = "write", paramTypes = "arc.util.io.Writes -> write")
+  default void writeChains(Writes write){
+    tmp.clear();
+    for(Building building: getBuilding().proximity){
+      if(building instanceof ChainsBuildComp chain && chain.chains().container != chains().container){
+        tmp.add(chain);
+      }
+    }
+
+    write.i(tmp.size);
+    for(ChainsBuildComp comp: tmp){
+      write.i(comp.getTile().pos());
+    }
+  }
+
+  @Annotations.MethodEntry(entryMethod = "read", paramTypes = {"arc.util.io.Reads -> read", "byte"})
+  default void readChains(Reads read){
+    int size = read.i();
+    for(int i = 0; i < size; i++){
+      loadingInvalidPos().add(read.i());
+    }
+  }
 }

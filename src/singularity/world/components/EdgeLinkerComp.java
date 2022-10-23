@@ -13,9 +13,13 @@ import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import mindustry.world.meta.Stat;
+import mindustry.world.meta.StatUnit;
+import mindustry.world.meta.Stats;
 import universecore.annotations.Annotations;
 
 import static mindustry.Vars.tilesize;
+import static mindustry.Vars.world;
 
 public interface EdgeLinkerComp{
   ObjectSet<EdgeLinkerBuildComp> tmpSeq = new ObjectSet<>();
@@ -42,6 +46,7 @@ public interface EdgeLinkerComp{
   
   @Annotations.MethodEntry(entryMethod = "drawPlace", paramTypes = {"int -> x", "int -> y", "int -> rotation", "boolean -> valid"})
   default void drawPlacing(int x, int y, int rotation, boolean valid){
+    Tmp.v1.set(1, 0);
     for(int i = 0; i < 4; i++){
       float dx = x*tilesize + getBlock().offset + Geometry.d4x(i)*getBlock().size*tilesize/2f;
       float dy = y*tilesize + getBlock().offset + Geometry.d4y(i)*getBlock().size*tilesize/2f;
@@ -53,7 +58,21 @@ public interface EdgeLinkerComp{
           dx + Geometry.d4x(i)*linkLength()*tilesize,
           dy + Geometry.d4y(i)*linkLength()*tilesize
       );
+
+      for(int d = 1; d <= linkLength(); d++){
+        Tmp.v1.setLength(d);
+        Building t = world.build(x + (int) Tmp.v1.x, y + (int) Tmp.v1.y);
+        if(t instanceof EdgeLinkerBuildComp e && canLink(world.tile(x, y), this, t.tile, e.getEdgeBlock())){
+          Drawf.select(t.x, t.y, t.block.size * tilesize / 2f + 2f + Mathf.absin(Time.time, 4f, 1f), Pal.breakInvalid);
+        }
+      }
+      Tmp.v1.rotate90(1);
     }
+  }
+
+  @Annotations.MethodEntry(entryMethod = "setStats", context = {"stats -> stats"})
+  default void setEdgeLinkerStats(Stats stats){
+    stats.add(Stat.linkRange, linkLength(), StatUnit.blocks);
   }
   
   default void drawConfiguring(EdgeLinkerBuildComp origin){

@@ -7,22 +7,30 @@ import universecore.util.handler.FieldHandler;
 
 public class SglStat{
   public static final Stat
-      compressible = create("compressible", SglStatCat.gas),
-      compressor = create("compressor", SglStatCat.gas),
-      gasCapacity = create("gasCapacity", SglStatCat.gas),
-      maxGasPressure = create("maxGasPressure", SglStatCat.gas),
-  
-      consumeEnergy = create("consumeEnergy", SglStatCat.nuclear),
-      productEnergy = create("productEnergy", SglStatCat.nuclear),
-  
+      componentBelongs = create("componentBelongs", SglStatCat.structure),
+      maxStructureSize = create("maxStructureSize", SglStatCat.structure),
+      maxChildrenNodes = create("maxChildrenNodes", SglStatCat.structure),
+      linkDirections = create("linkDirections", SglStatCat.structure),
+
+      energyCapacity = create("energyCapacity", SglStatCat.neutron),
+      energyResident = create("energyResident", SglStatCat.neutron),
+      basicPotentialEnergy = create("basicPotentialEnergy", SglStatCat.neutron),
+      maxEnergyPressure = create("maxEnergyPressure", SglStatCat.neutron),
+      consumeEnergy = create("consumeEnergy", SglStatCat.neutron),
+      productEnergy = create("productEnergy", SglStatCat.neutron),
+
+      matrixEnergyUse = create("matrixEnergyUse", SglStatCat.matrix),
+      matrixEnergyCapacity = create("matrixEnergyCapacity", SglStatCat.matrix),
+      topologyUse = create("topologyUse", SglStatCat.matrix),
+      maxMatrixLinks = create("maxMatrixLinks", SglStatCat.matrix),
+
+      bufferSize = create("bufferSize", SglStatCat.matrix),
+      computingPower = create("computingPower", SglStatCat.matrix),
+      topologyCapacity = create("topologyCapacity", SglStatCat.matrix),
+
       heatProduct = create("heatProduct", SglStatCat.heat),
-      baseHeatCapacity = create("baseHeatCapacity", SglStatCat.heat),
-      maxTemperature = create("maxTemperature", SglStatCat.heat),
-      heatCoefficient = create("heatCoefficient", SglStatCat.heat),
-  
-      deltaHeat = create("deltaHeat", SglStatCat.reaction),
-      requirePressure = create("requirePressure", SglStatCat.reaction),
-      requireTemperature = create("requireTemperature", SglStatCat.reaction),
+      maxHeat = create("maxHeat", SglStatCat.heat),
+
       consume = create("consume", SglStatCat.reaction),
       product = create("product", SglStatCat.reaction),
 

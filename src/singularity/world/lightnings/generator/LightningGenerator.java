@@ -1,5 +1,6 @@
 package singularity.world.lightnings.generator;
 
+import arc.func.Boolf2;
 import arc.func.Cons;
 import arc.func.Func2;
 import arc.math.Mathf;
@@ -15,8 +16,6 @@ import java.util.Iterator;
  * 注意，任何在迭代器运作外的时机变更生成器属性，都会直接影响迭代产生的顶点分布情况，而生成器是可复用的，每次迭代都会产生互不相关的一组顶点
  * <p>警告：这个方法不是线程安全的，任何时候要避免同时迭代此对象*/
 public abstract class LightningGenerator implements Iterable<LightningVertex>, Iterator<LightningVertex>{
-  public float originX, originY;
-
   /**顶点基准间距最小值*/
   public float minInterval = 10;
   /**顶点基准位置最大值*/
@@ -35,10 +34,12 @@ public abstract class LightningGenerator implements Iterable<LightningVertex>, I
   public Func2<LightningVertex, Float, LightningGenerator> branchMaker;
 
   public Cons<Lightning> branchCreated;
+  public Boolf2<LightningVertex, LightningVertex> blockNow;
 
   protected Lightning curr;
 
   protected LightningVertex last;
+  protected boolean isEnding;
 
   public static final Pool<LightningVertex> vertexPool;
 
@@ -68,20 +69,26 @@ public abstract class LightningGenerator implements Iterable<LightningVertex>, I
         curr.lifeTime,
         curr.lerp,
         curr.time,
-        curr.speed
+        curr.speed,
+        curr.trigger
     );
 
     vertex.branchOther.vertices.getFirst().isStart = false;
-    vertex.isBranch = true;
 
     if(branchCreated != null) branchCreated.get(vertex.branchOther);
   }
 
-  /**此类同时实现了可迭代和迭代器接口，即可以进行for-each循环来逐个产生顶点，需要此方法返回对象本身，而此方法应当被重写以在调用时重置迭代器状态，这意味着这个方法不是线程安全的*/
+  /**此类同时实现了可迭代和迭代器接口，即可以进行for-each循环来逐个产生顶点，这个方法不是线程安全的*/
   @NotNull
   @Override
   public synchronized Iterator<LightningVertex> iterator(){
+    reset();
     return this;
+  }
+
+  public void reset(){
+    last = null;
+    isEnding = false;
   }
 
   /**迭代器通过这个方法获取下一个顶点*/
@@ -90,11 +97,23 @@ public abstract class LightningGenerator implements Iterable<LightningVertex>, I
     LightningVertex vertex = Pools.obtain(LightningVertex.class, null);
     handleVertex(vertex);
     afterHandle(vertex);
+
+    if(blockNow != null && last != null && blockNow.get(last, vertex)){
+      isEnding = true;
+      vertex.isEnd = true;
+      return vertex;
+    }
+
     if(!vertex.isStart && !vertex.isEnd && branchChance > 0 && Mathf.chance(branchChance)){
       createBranch(vertex);
     }
     last = vertex;
     return vertex;
+  }
+
+  @Override
+  public boolean hasNext(){
+    return !isEnding;
   }
 
   /**在顶点处理之后调用*/

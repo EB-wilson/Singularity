@@ -13,7 +13,7 @@ import singularity.ui.tables.DistTargetConfigTable.TargetConfigure;
 import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.IOPointComp;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
 import singularity.world.distribution.buffers.ItemsBuffer;
@@ -25,7 +25,7 @@ import java.util.Arrays;
 /**包含了用于矩阵网格发出网络请求的一些辅助类*/
 public class RequestHandlers{
   /**矩阵网格发出网络请求使用的辅助类接口，为矩阵网格提供将配置转化为网络请求的帮助*/
-  public interface RequestHandler<R extends DistRequestBase<?>>{
+  public interface RequestHandler<R extends DistRequestBase>{
     /**添加一个要分析的io配置，所有配置项取求和
      * @param cfg 添加的配置项*/
     void addParseConfig(TargetConfigure cfg);
@@ -107,7 +107,7 @@ public class RequestHandlers{
     
     @Override
     public PutItemsRequest makeRequest(DistMatrixUnitBuildComp sender){
-      return items.toSeq().isEmpty()? null: new PutItemsRequest(sender, sender.getBuffer(DistBuffers.itemBuffer), items.toSeq());
+      return items.toSeq().isEmpty()? null: new PutItemsRequest(sender, sender.getBuffer(DistBufferType.itemBuffer), items.toSeq());
     }
   }
   
@@ -121,7 +121,7 @@ public class RequestHandlers{
     
     @Override
     public PutItemsRequest makeRequest(DistMatrixUnitBuildComp sender){
-      return items.toSeq().isEmpty()? null: new PutItemsRequest(sender, sender.getBuffer(DistBuffers.itemBuffer), items.toSeq());
+      return items.toSeq().isEmpty()? null: new PutItemsRequest(sender, sender.getBuffer(DistBufferType.itemBuffer), items.toSeq());
     }
   }
   
@@ -136,7 +136,7 @@ public class RequestHandlers{
     @Override
     public ReadItemsRequest makeRequest(DistMatrixUnitBuildComp sender){
       Seq<ItemStack> seq = items.toSeq();
-      ReadItemsRequest result = seq.isEmpty()? null: new ReadItemsRequest(sender, sender.getBuffer(DistBuffers.itemBuffer), seq);
+      ReadItemsRequest result = seq.isEmpty()? null: new ReadItemsRequest(sender, sender.getBuffer(DistBufferType.itemBuffer), seq);
       if(result == null) return null;
       result.waker = (DistMatrixUnitBuildComp e) -> {
         for(IntMap.Entry<IOPointComp> point: e.ioPoints()){
@@ -158,7 +158,7 @@ public class RequestHandlers{
       Arrays.fill(tmp, 0);
       tmpItems.clear();
 
-      ItemsBuffer buffer = sender.getBuffer(DistBuffers.itemBuffer);
+      ItemsBuffer buffer = sender.getBuffer(DistBufferType.itemBuffer);
       for(ItemsBuffer.ItemPacket packet: buffer){
         tmp[packet.id()] = packet.amount();
         tmpItems.add(packet.get());
@@ -182,7 +182,7 @@ public class RequestHandlers{
         }
       }
 
-      ItemsBuffer coreBuffer = sender.distributor().core().distCore().getBuffer(DistBuffers.itemBuffer);
+      ItemsBuffer coreBuffer = sender.distributor().core().distCore().getBuffer(DistBufferType.itemBuffer);
       for(int id = 0; id < tmp.length; id++){
         ItemsBuffer.ItemPacket packet = buffer.get(id);
         if(packet != null){
@@ -216,7 +216,7 @@ public class RequestHandlers{
 
     @Override
     public PutLiquidsRequest makeRequest(DistMatrixUnitBuildComp sender){
-      return liquids.isEmpty()? null: new PutLiquidsRequest(sender, sender.getBuffer(DistBuffers.liquidBuffer), new Seq<>(liquids.values().toArray()));
+      return liquids.isEmpty()? null: new PutLiquidsRequest(sender, sender.getBuffer(DistBufferType.liquidBuffer), new Seq<>(liquids.values().toArray()));
     }
   }
 
@@ -228,7 +228,7 @@ public class RequestHandlers{
 
     @Override
     public PutLiquidsRequest makeRequest(DistMatrixUnitBuildComp sender){
-      return liquids.isEmpty()? null: new PutLiquidsRequest(sender, sender.getBuffer(DistBuffers.liquidBuffer), new Seq<>(liquids.values().toArray()));
+      return liquids.isEmpty()? null: new PutLiquidsRequest(sender, sender.getBuffer(DistBufferType.liquidBuffer), new Seq<>(liquids.values().toArray()));
     }
   }
 
@@ -240,11 +240,11 @@ public class RequestHandlers{
 
     @Override
     public ReadLiquidsRequest makeRequest(DistMatrixUnitBuildComp sender){
-      LiquidsBuffer buff = sender.getBuffer(DistBuffers.liquidBuffer);
+      LiquidsBuffer buff = sender.getBuffer(DistBufferType.liquidBuffer);
       scaleTo((float)buff.capacity/buff.bufferType().unit());
       Seq<LiquidStack> seq = new Seq<>(liquids.values().toArray());
 
-      ReadLiquidsRequest result = liquids.isEmpty()? null: new ReadLiquidsRequest(sender, sender.getBuffer(DistBuffers.liquidBuffer), seq);
+      ReadLiquidsRequest result = liquids.isEmpty()? null: new ReadLiquidsRequest(sender, sender.getBuffer(DistBufferType.liquidBuffer), seq);
       if(result == null) return null;
       result.waker = (DistMatrixUnitBuildComp e) -> {
         for(IntMap.Entry<IOPointComp> point: e.ioPoints()){
@@ -265,7 +265,7 @@ public class RequestHandlers{
       Arrays.fill(tmp, 0);
       tmpLiquids.clear();
 
-      LiquidsBuffer buffer = sender.getBuffer(DistBuffers.liquidBuffer);
+      LiquidsBuffer buffer = sender.getBuffer(DistBufferType.liquidBuffer);
       for(LiquidsBuffer.LiquidPacket packet: buffer){
         tmp[packet.id()] = packet.amount();
         tmpLiquids.add(packet.get());
@@ -292,7 +292,7 @@ public class RequestHandlers{
         }
       }
 
-      LiquidsBuffer coreBuffer = sender.distributor().core().distCore().getBuffer(DistBuffers.liquidBuffer);
+      LiquidsBuffer coreBuffer = sender.distributor().core().distCore().getBuffer(DistBufferType.liquidBuffer);
       for(int id = 0; id < tmp.length; id++){
         LiquidsBuffer.LiquidPacket packet = buffer.get(id);
         if(packet != null){

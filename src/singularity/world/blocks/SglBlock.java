@@ -16,11 +16,13 @@ import arc.struct.Seq;
 import arc.util.Eachable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import mindustry.Vars;
 import mindustry.core.Renderer;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
+import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.type.Item;
@@ -36,7 +38,6 @@ import singularity.type.SglLiquidStack;
 import singularity.world.blocks.nuclear.NuclearPipeNode;
 import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
-import singularity.world.consumers.SglConsumeEnergy;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.modules.NuclearEnergyModule;
@@ -50,7 +51,6 @@ import universecore.util.UncLiquidStack;
 import universecore.util.handler.FieldHandler;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.UncConsumeLiquids;
-import universecore.world.consumers.UncConsumePower;
 import universecore.world.consumers.UncConsumeType;
 
 import java.util.ArrayList;
@@ -85,6 +85,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public boolean hasEnergy;
 
   public Cons<SglBuilding> initialed;
+  public Cons<SglBuilding> updating;
 
   /**核能阻值，在运送核能时运输速度会减去这个数值*/
   public float resident = 0.1f;
@@ -158,23 +159,19 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       configurable = true;
       saveConfig = true;
     }
-    
-    ArrayList<ArrayList<BaseConsumers>> consume = new ArrayList<>();
-    if(consumers.size() > 0) consume.add(consumers);
-    if(optionalCons.size() > 0) consume.add(optionalCons);
-    for(ArrayList<BaseConsumers> list: consume){
-      for(BaseConsumers cons: list){
-        if(cons.get(SglConsumeType.item) != null){
-          hasItems = true;
-          if(cons.craftTime == 0) cons.time(90f);
-        }
-        hasLiquids |= cons.get(SglConsumeType.liquid) != null;
-        hasPower |= consumesPower |= cons.get(SglConsumeType.power) != null;
-        hasEnergy |= consumeEnergy |= cons.get(SglConsumeType.energy) != null;
-      }
-    }
 
-    if(hasEnergy && maxEnergyPressure == -1) maxEnergyPressure = energyCapacity*energyCapacity*0.5f;
+    ArrayList<BaseConsumers> consume = new ArrayList<>();
+    if(consumers().size() > 0) consume.addAll(consumers());
+    if(optionalCons().size() > 0) consume.addAll(optionalCons());
+    for(BaseConsumers cons: consume){
+      if(cons.get(SglConsumeType.item) != null){
+        hasItems = true;
+        if(cons.craftTime == 0) cons.time(90f);
+      }
+      hasLiquids |= cons.get(SglConsumeType.liquid) != null;
+      hasPower |= consumesPower |= cons.get(SglConsumeType.power) != null;
+      hasEnergy |= consumeEnergy |= cons.get(SglConsumeType.energy) != null;
+    }
     
     super.init();
   }
@@ -258,8 +255,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     protected final ObjectMap<Object, Object> vars = new ObjectMap<>();
 
     protected final Seq<SglLiquidStack> displayLiquids = new Seq<>();
-    
-    public Seq<NuclearEnergyBuildComp> energyLinked = new Seq<>();
 
     @Annotations.FieldKey("consumeCurrent") public int recipeCurrent = -1;
     public int lastRecipe;
@@ -327,6 +322,12 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     }
 
     @Override
+    public void onControlSelect(Unit player){
+      super.onControlSelect(player);
+      FieldHandler.setValueDefault(Vars.ui.hudfrag.blockfrag, "lastDisplayState", null);
+    }
+
+    @Override
     public void placed(){
       super.placed();
       if(net.client()) return;
@@ -349,30 +350,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public float efficiency(){
       return consEfficiency();
     }
-
-    @Override
-    public float consEfficiency(){
-      return powerEfficiency()*energyEfficiency();
-    }
-
-    public float powerEfficiency(){
-      if(!consumer.hasConsume()) return 1;
-      if(!hasPower) return 1;
-      if(consumer.current == null) return 0f;
-
-      UncConsumePower<?> cp = consumer.current.get(UncConsumeType.power);
-      return cp == null? 1f: cp.buffered? 1f: power.status;
-    }
-
-    public float energyEfficiency(){
-      if(!consumer.hasConsume()) return 1;
-      if(!hasEnergy) return 1;
-      //未选择配方时返回0
-      if(consumer.current == null) return 0f;
-
-      SglConsumeEnergy<?> ce = consumer.current.get(SglConsumeType.energy);
-      return ce == null? 1f: ce.buffer? 1f: Mathf.clamp(energy.getEnergy() / (ce.usage*60));
-    }
     
     public void dumpLiquid(){
       liquids.each((l, n) -> dumpLiquid(l));
@@ -386,7 +363,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         consumer.build(table);
       });
     }
-    
+
     @Override
     public void drawStatus(){
       if(this.block.enableDrawStatus && this.block().consumers.size() > 0) {
@@ -447,8 +424,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       if(updateRecipe) fieldHandler.setValue(ui.hudfrag.blockfrag, "wasHovered", false);
 
       super.update();
+
+      if(updating != null) updating.get(this);
     }
-    
+
     public void onUpdateCurrent(){
       consumer.setCurrent();
     }
@@ -468,8 +447,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     }
     
     public void reset(){
-      if(items != null)items.clear();
-      if(liquids != null)liquids.clear();
+      if(items != null) items.clear();
+      if(liquids != null) liquids.clear();
     }
     
     public Object config(){
@@ -607,7 +586,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public SglBlock block(){
       return SglBlock.this;
     }
-    
+
     @Override
     public void write(Writes write) {
       super.write(write);

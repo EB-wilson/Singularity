@@ -1,0 +1,40 @@
+//这是singularity模组的配置文件，在图形配置界面能看到绝大多数的配置项
+//调试选项等通常不会用到的配置则需要在此文件中进行调整
+
+//This is the configuration file of the singularity mod. You can see most of the configuration items in the configuration UI page.
+//Configurations that are not usually used, such as debugging options, need to be adjusted in this file.
+{
+  "configVersion": 2,
+
+  //=====Basic/基础设置=====//
+  //--main menu/主菜单设置--
+  //若禁用mod主界面，主界面将使用游戏本身的而出现任何更改
+  "disableModMainMenu": false,
+  //游戏启动时是否自动弹出mod菜单，关闭后您仍可以通过点击横幅标题打开mod菜单（若您没有禁用mod主界面）
+  "showModMenuWenLaunch": true,
+
+  //主菜单界面否显示为替换后的星图背景
+  "mainMenuUniverseBackground": true,
+  //主菜单界面的背景是否为静态渲染的星图，仅在启用星图背景的请胯下有效
+  "staticMainMenuBackground": false,
+  //渲染星图背景时的默认视角位置，在开启星图背景时有效 [x, y, z, rx, ry]
+  "defaultCameraPos": [
+    10,
+    0,
+    15,
+    0,
+    0
+  ],
+  //主菜单背景的视角能移动，启用背景且非静态背景时有效
+  "movementCamera": true,
+
+  //===Adavanced/高级设置===//
+  //是否要可以覆盖游戏本身的内容
+  "modReciprocal": true,//警告：若禁用此选项会造成各种问题，您将不能获得完整的游戏流程
+
+  //=====Debug/调试设置=====//
+  //加载信息打印到日志
+  "loadInfo": true,
+  //调试模式 警告：此选项仅用于调试，正常游戏过程请禁用此选项
+  "debugMode": false
+}

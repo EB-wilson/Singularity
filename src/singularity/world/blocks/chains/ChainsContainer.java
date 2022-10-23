@@ -62,6 +62,11 @@ public class ChainsContainer{
     return (T)localVars.get(key);
   }
 
+  @SuppressWarnings("unchecked")
+  public <T> T getVar(String key, T def){
+    return (T)localVars.get(key, def);
+  }
+
   public void add(ChainsContainer other){
     for(ChainsBuildComp next : other.all){
       add(next);
@@ -122,11 +127,9 @@ public class ChainsContainer{
       for(ChainsBuildComp next : other.chainBuilds()){
         if(added.add(next) && filter.get(next)) findQueue.addFirst(next);
       }
-      all.add(other);
-      updateEdge(other);
-
       ChainsContainer oldContainer = other.chains().container;
-      other.chains().container = this;
+      add(other);
+
       other.chainsFlowed(oldContainer);
     }
   }

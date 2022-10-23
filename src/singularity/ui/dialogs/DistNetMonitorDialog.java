@@ -11,7 +11,7 @@ import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.tables.*;
-import singularity.unit.NumberStrify;
+import singularity.util.NumberStrify;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.MatrixGrid;
 import singularity.world.distribution.buffers.BaseBuffer;
@@ -39,8 +39,8 @@ public class DistNetMonitorDialog extends BaseDialog{
           else totalDownload = totalUpload = -1;
 
           l.setText(Core.bundle.format("data.ioFlow",
-              totalUpload == -1? "--": NumberStrify.toByteFix(totalUpload, 2) + Core.bundle.get("misc.preSecond"),
-              totalDownload == -1? "--": NumberStrify.toByteFix(totalDownload, 2) + Core.bundle.get("misc.preSecond")
+              totalUpload == -1? "--": NumberStrify.toByteFix(totalUpload, 2) + Core.bundle.get("misc.perSecond"),
+              totalDownload == -1? "--": NumberStrify.toByteFix(totalDownload, 2) + Core.bundle.get("misc.perSecond")
           ));
         });
       }),
@@ -98,7 +98,7 @@ public class DistNetMonitorDialog extends BaseDialog{
         t.add("").update(l -> {
           int activity = 0, blocked = 0, sleeping = 0;
           if(n.netStructValid()){
-            for(DistRequestBase<?> task: n.getCore().distCore().requestTasks){
+            for(DistRequestBase task: n.getCore().distCore().requestTasks){
               if(task.isBlocked()) blocked++;
               else if(task.sleeping()) sleeping++;
               else activity++;

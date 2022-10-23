@@ -161,7 +161,7 @@ public class SglTechThree implements ContentList{
         puW.nodeProduce(flocculant, flo -> {});
       });
 
-      nodeProduce(Items.sand, crush_ore, cruOre -> {
+      nodeProduce(Items.sand, black_crystone, cruOre -> {
         cruOre.nodeProduce(mixed_ore_solution, oreSol -> {
           
         });

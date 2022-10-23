@@ -1,7 +1,9 @@
 package singularity.ui.tables;
 
 import arc.Core;
-import arc.func.*;
+import arc.func.Cons;
+import arc.func.Cons2;
+import arc.func.Cons3;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
@@ -21,11 +23,11 @@ import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
+import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
-import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Building;
@@ -49,8 +51,8 @@ public class DistTargetConfigTable extends Table{
   Runnable rebuildItems;
   int index;
   
-  public DistTargetConfigTable(Building build, TargetConfigure defaultCfg, GridChildType[] IOTypes, ContentType[] types,
-                               Func3<Building, GridChildType, Content, Boolean> valid, Cons<TargetConfigure> cons, Runnable close){
+  public DistTargetConfigTable(Building build, TargetConfigure defaultCfg, GridChildType[] IOTypes,
+                               ContentType[] types, Cons<TargetConfigure> cons, Runnable close){
     super(Tex.pane);
     if(defaultCfg != null){
       config.read(defaultCfg.pack());
@@ -62,22 +64,30 @@ public class DistTargetConfigTable extends Table{
     class Flip extends Element{
       float deltaX, deltaY;
       float alpha;
-      boolean selected, valid = true;
+      float pressTime;
+      boolean pressing, valid = true, hovered, hold;
   
       public Flip(){
         setSize(90);
         touchable(() -> currDireBit != null? Touchable.enabled: Touchable.disabled);
         update(() -> {
-          alpha = Mathf.lerpDelta(alpha, selected? 1: 0, 0.045f);
+          alpha = Mathf.lerpDelta(alpha, pressing || hovered || hold? 1: 0, 0.045f);
 
-          if(Core.app.isAndroid()){
-            if(!selected || !valid){
-              deltaX = Mathf.lerpDelta(deltaX, 0, 0.05f);
-              deltaY = Mathf.lerpDelta(deltaY, 0, 0.05f);
-            }
+          if(!(hovered || pressing) || !valid){
+            deltaX = Mathf.lerpDelta(deltaX, 0, 0.05f);
+            deltaY = Mathf.lerpDelta(deltaY, 0, 0.05f);
           }
-          else{
-            selected = Tmp.cr1.set(x, y, 45).contains(Core.input.mouse());
+          if(Core.app.isDesktop() || Core.settings.getBool("keyboard")){
+            if(!pressing){
+              boolean l = hovered;
+              hovered = Tmp.cr1.set(x, y, 45).contains(Core.input.mouse());
+              if(l != hovered){
+                if(hovered){
+                  Core.scene.setKeyboardFocus(this);
+                }
+                else Core.scene.unfocus(this);
+              }
+            }
           }
         });
 
@@ -85,13 +95,17 @@ public class DistTargetConfigTable extends Table{
           @Override
           public void touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
             super.touchDown(event, x, y, pointer, button);
-            selected = true;
+            pressing = true;
+            pressTime = Time.globalTime;
           }
 
           @Override
           public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
             super.touchUp(event, x, y, pointer, button);
-            selected = false;
+            if(Time.globalTime - pressTime <= 20){
+              hold = !hold && valid;
+            }
+            pressing = false;
             valid = true;
           }
 
@@ -120,7 +134,7 @@ public class DistTargetConfigTable extends Table{
         addListener(new InputListener(){
           @Override
           public boolean keyDown(InputEvent event, KeyCode keycode){
-            if(selected){
+            if(hovered && !pressing){
               if(keycode.equals(KeyCode.right)){
                 setDireBit((byte) 1);
               }
@@ -142,7 +156,9 @@ public class DistTargetConfigTable extends Table{
       @Override
       public void draw(){
         validate();
-    
+
+        Draw.scl(scaleX, scaleY);
+
         Draw.color(currDireBit == null? Pal.gray: Color.lightGray);
         Draw.alpha(0.5f + 0.5f*alpha);
         Lines.stroke(4.5f);
@@ -156,11 +172,11 @@ public class DistTargetConfigTable extends Table{
 
             Draw.color(Pal.gray);
             Draw.alpha(alpha);
-            Fill.square(x + deltaX + width/2f + dx*60*alpha, y + deltaY + height/2f + dy*60*alpha, 18, 45);
+            Fill.square(x + deltaX + width/2f + dx*72*alpha, y + deltaY + height/2f + dy*72*alpha, 24, 45);
             if((currDireBit[0] & bit) != 0){
               Draw.color(Pal.accent);
               Draw.alpha(alpha);
-              Fill.square(x + deltaX + width/2f + dx*60*alpha, y + deltaY + height/2f + dy*60*alpha, 15, 45);
+              Fill.square(x + deltaX + width/2f + dx*72*alpha, y + deltaY + height/2f + dy*72*alpha, 20, 45);
             }
 
             bit *= 2;
@@ -187,7 +203,7 @@ public class DistTargetConfigTable extends Table{
             currConfig = config.getOrNew(IOTypes[index], currType);
             rebuildItems.run();
           }
-      ).width(85).padLeft(4).padRight(4).growY().left();
+      ).width(85).padLeft(4).padRight(4).growY().left().touchable(IOTypes.length > 1? Touchable.enabled: Touchable.disabled);
 
       topBar.add(Core.bundle.get("misc.priority")).right().padRight(4);
       topBar.field(Integer.toString(config.priority),
@@ -215,7 +231,6 @@ public class DistTargetConfigTable extends Table{
               }).size(40).get();
               button.getStyle().imageUp = new TextureRegionDrawable(item.uiIcon);
               button.update(() -> button.setChecked(currConfig.contains(item)));
-              button.touchable = valid.get(build, IOTypes[index], item)? Touchable.enabled: Touchable.disabled;
 
               if(counter++ != 0 && counter%5 == 0) items.row();
             }

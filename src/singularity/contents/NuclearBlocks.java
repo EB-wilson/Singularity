@@ -193,6 +193,8 @@ public class NuclearBlocks implements ContentList{
       liquidCapacity = 35;
       
       craftEffect = SglFx.explodeImpWaveBig;
+      craftEffectColor = Pal.reactorPurple;
+
       updateEffect = SglFx.impWave;
       effectRange = 2;
       updateEffectChance = 0.025f;

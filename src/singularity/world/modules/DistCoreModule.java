@@ -9,13 +9,12 @@ import arc.util.io.Writes;
 import mindustry.world.modules.BlockModule;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.request.DistRequestBase;
 import universecore.util.colletion.TreeSeq;
 
-@SuppressWarnings("rawtypes")
 public class DistCoreModule extends BlockModule{
   private static final ObjectSet<DistRequestBase> blocked = new ObjectSet<>();
   private static final Seq<DistRequestBase> tempQueue = new Seq<>();
@@ -24,24 +23,26 @@ public class DistCoreModule extends BlockModule{
 
   public TreeSeq<DistRequestBase> requestTasks = new TreeSeq<>((a, b) -> b.priority() - a.priority());
   protected DistRequestBase[] taskStack;
-  
+
+  public int lastProcessed;
+
   public int calculatePower;
   public int executingAddress;
   public final DistNetworkCoreComp core;
 
   public float process;
   
-  public OrderedMap<DistBuffers<?>, BaseBuffer<?, ?, ?>> buffers = new OrderedMap<>();
+  public OrderedMap<DistBufferType<?>, BaseBuffer<?, ?, ?>> buffers = new OrderedMap<>();
   
   public DistCoreModule(DistElementBuildComp entity){
     core = (DistNetworkCoreComp) entity;
-    for(DistBuffers<?> buffer: DistBuffers.all){
+    for(DistBufferType<?> buffer: DistBufferType.all){
       buffers.put(buffer, buffer.get(core.bufferSize().get(buffer)));
     }
   }
   
   @SuppressWarnings("unchecked")
-  public <T extends BaseBuffer<?, ?, ?>> T getBuffer(DistBuffers<T> buffer){
+  public <T extends BaseBuffer<?, ?, ?>> T getBuffer(DistBufferType<T> buffer){
     return (T)buffers.get(buffer);
   }
   
@@ -55,6 +56,7 @@ public class DistCoreModule extends BlockModule{
     while(process >= 1){
       process -= 1;
 
+      lastProcessed = 0;
       blocked.clear();
       tempQueue.clear();
       int runCounter = calculatePower;
@@ -73,6 +75,7 @@ public class DistCoreModule extends BlockModule{
           taskStack[executingAddress].onExecute();
           taskStack[executingAddress].checkWaking();
           runCounter--;
+          lastProcessed++;
         }
       }
       
@@ -97,17 +100,18 @@ public class DistCoreModule extends BlockModule{
           else request.block(false);
         }
       }
+
+      for(BaseBuffer<?, ?, ?> buffer : buffers.values()){
+        buffer.bufferContAssign(network);
+        buffer.update();
+      }
   
       for(DistRequestBase request : tempQueue){
         if(!request.sleeping() && !blocked.contains(request)){
           request.block(!request.afterHandle());
         }
       }
-  
-      for(BaseBuffer<?, ?, ?> buffer : buffers.values()){
-        buffer.bufferContAssign(network);
-        buffer.update();
-      }
+
     }
 
     for(DistRequestBase req: tempQueue){

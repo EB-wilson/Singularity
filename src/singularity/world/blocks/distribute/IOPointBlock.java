@@ -1,6 +1,8 @@
 package singularity.world.blocks.distribute;
 
 import arc.util.Nullable;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
@@ -20,7 +22,7 @@ import singularity.world.blocks.distribute.matrixGrid.RequestHandlers;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.IOPointBlockComp;
 import singularity.world.components.distnet.IOPointComp;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.buffers.LiquidsBuffer;
@@ -34,7 +36,7 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
   public GridChildType[] configTypes = {GridChildType.output, GridChildType.input, GridChildType.acceptor};
   public ContentType[] supportContentType = {ContentType.item, ContentType.liquid};
   @Nullable protected DistMatrixUnitBuildComp currPlacement;
-  
+
   public IOPointBlock(String name){
     super(name);
     size = 1;
@@ -91,7 +93,9 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     public LiquidModule outLiquid;
 
     protected boolean siphoning;
-    
+
+    int parentPos = -1;
+
     public IOPoint(){
       this.parent = currPlacement;
     }
@@ -115,11 +119,11 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       if(parent != null) parent.ioPoints().put(pos(), this);
       return this;
     }
-  
+
     @Override
-    public void remove(){
+    public void onRemoved(){
       if(parent != null) parent.removeIO(pos());
-      super.remove();
+      super.onRemoved();
     }
   
     @Override
@@ -274,8 +278,8 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       if(config == null) return;
 
       Building parentBuild = parent.getBuilding();
-      ItemsBuffer itsB = parent.getBuffer(DistBuffers.itemBuffer);
-      LiquidsBuffer lisB = parent.getBuffer(DistBuffers.liquidBuffer);
+      ItemsBuffer itsB = parent.getBuffer(DistBufferType.itemBuffer);
+      LiquidsBuffer lisB = parent.getBuffer(DistBufferType.liquidBuffer);
 
       items.each((item, amount) -> {
         int move = parentBuild.acceptItem(this, item)? Math.min(parentBuild.getMaximumAccepted(item) - parentBuild.items.get(item), amount): 0;
@@ -361,6 +365,33 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
 
     public ContentType[] configContentTypes(){
       return supportContentType;
+    }
+
+    @Override
+    public void onProximityAdded(){
+      super.onProximityAdded();
+      if(parentPos == -1) return;
+
+      parent = world.build(parentPos) instanceof DistMatrixUnitBuildComp mat? mat: null;
+      if(parent != null){
+        parent.ioPoints().put(pos(), this);
+      }
+    }
+
+    @Override
+    public void write(Writes write){
+      super.write(write);
+      outItems.write(write);
+      outLiquid.write(write);
+      write.i(parent == null? -1: parent.getTile().pos());
+    }
+
+    @Override
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
+      outItems.read(read);
+      outLiquid.read(read);
+      parentPos = read.i();
     }
   }
 }

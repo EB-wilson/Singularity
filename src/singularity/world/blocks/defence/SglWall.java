@@ -155,7 +155,7 @@ public class SglWall extends Wall{
       if(bullet.type.absorbable && bullet.type.reflectable && bullet.damage < damageFilter){
   
         heal(bullet.damage*bullet.type.buildingDamageMultiplier*healMultiplier);
-        Fx.healBlockFull.at(x, y, size, healColor);
+        Fx.healBlockFull.at(x, y, 0, healColor, block);
         
         return true;
       }

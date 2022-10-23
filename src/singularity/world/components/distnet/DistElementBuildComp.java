@@ -108,7 +108,7 @@ public interface DistElementBuildComp extends BuildCompBase{
   }
 
   @Annotations.MethodEntry(entryMethod = "onProximityAdded")
-  default void onDistNetAdded(){
+  default void distNetAdd(){
     updateNetLinked();
     for(DistElementBuildComp comp: netLinked()){
       if(getDistBlock().isNetLinker()){
@@ -119,7 +119,7 @@ public interface DistElementBuildComp extends BuildCompBase{
   }
 
   @Annotations.MethodEntry(entryMethod = "onProximityRemoved")
-  default void onDistNetRemoved(){
+  default void distNetRemove(){
     IntSeq links = distributor().distNetLinks;
     for(int i=0; i<links.size; i++){
       Building other = Vars.world.build(links.get(i));
@@ -132,7 +132,7 @@ public interface DistElementBuildComp extends BuildCompBase{
   }
   
   default int frequencyUse(){
-    return getDistBlock().frequencyUse();
+    return getDistBlock().topologyUse();
   }
 
   default float matrixEnergyConsume(){

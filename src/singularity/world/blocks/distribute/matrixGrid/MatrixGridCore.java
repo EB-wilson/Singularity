@@ -16,6 +16,7 @@ import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import arc.util.pooling.Pools;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.entities.units.BuildPlan;
@@ -33,19 +34,23 @@ import singularity.world.components.EdgeLinkerBuildComp;
 import singularity.world.components.EdgeLinkerComp;
 import singularity.world.components.distnet.IOPointComp;
 import singularity.world.distribution.GridChildType;
+import singularity.world.meta.SglStat;
 import universecore.annotations.Annotations;
 import universecore.util.DataPackable;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-
 import static mindustry.Vars.tilesize;
 import static mindustry.Vars.world;
+import static singularity.world.blocks.distribute.matrixGrid.MatrixGridCore.MatrixGridCoreBuild.LinkPair.typeID;
 
 @Annotations.ImplEntries
 public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   static {
-    DataPackable.assignType(MatrixGridCoreBuild.LinkPair.typeID, p -> ((MatrixGridCoreBuild)p[0]).new LinkPair());
+    DataPackable.assignType(typeID, param -> {
+      MatrixGridCoreBuild.LinkPair res = Pools.obtain(MatrixGridCoreBuild.LinkPair.class, MatrixGridCoreBuild.LinkPair::new);
+      if(param[0] instanceof MatrixGridBuild build) res.tile = build.tile;
+      else if(param[0] instanceof Tile tile) res.tile = tile;
+      return res;
+    });
   }
   
   public int linkLength = 16;
@@ -71,7 +76,13 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     }
     super.parseConfigObjects(e, obj);
   }
-  
+
+  @Override
+  public void setStats(){
+    super.setStats();
+    stats.add(SglStat.maxChildrenNodes, maxEdges);
+  }
+
   @Override
   public void load(){
     super.load();
@@ -86,38 +97,27 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
     byte[] bytes = (byte[]) req.config;
     if(bytes == null) return;
-    Reads r = new Reads(new DataInputStream(new ByteArrayInputStream(bytes)));
-    r.l();
-    int offset = r.i();
 
-    int length = r.i();
-    IntSeq configs = new IntSeq();
-    for(int i = 0; i < length; i++){
-      Point2 p = Point2.unpack(r.i());
-      int pos = Point2.pack(req.x + p.x, req.y + p.y);
-      DistTargetConfigTable.TargetConfigure cfg = new DistTargetConfigTable.TargetConfigure();
-      int len = r.i();
-      cfg.read(r.b(len));
-      if(!cfg.isContainer()) configs.add(pos);
-    }
-
-    for(int i = 0; i < configs.size; i++){
-      Tile tile = world.tile(configs.get(i));
+    MatrixGridCoreBuild.LinkPair pair = DataPackable.readObject(bytes, req.tile());
+    for(DistTargetConfigTable.TargetConfigure config: pair.configs.values()){
+      Tile tile = world.tile(config.position);
       if(tile != null){
         Sgl.ioPoint.drawPlanConfigTop(new BuildPlan(tile.x, tile.y, 0, Sgl.ioPoint), list);
       }
     }
     
     list.each(plan -> {
-      Point2 p = Point2.unpack(offset);
+      Point2 p = Point2.unpack(pair.linking);
       if(Point2.pack(req.x + p.x, req.y + p.y) == Point2.pack(plan.x, plan.y)){
-        if(plan.block instanceof EdgeLinkerComp){
-          SglDraw.drawLink(req.tile(), req.block.offset, plan.tile(), plan.block.offset, linkRegion, null, 1);
+        if(plan.block instanceof EdgeLinkerComp b){
+          SglDraw.drawLink(req.tile(), req.block.offset, linkOffset, plan.tile(), plan.block.offset, b.linkOffset(), linkRegion, null, 1);
         }
       }
     });
+
+    Pools.free(pair);
   }
-  
+
   @Override
   public void link(EdgeLinkerBuildComp entity, Integer pos){
     EdgeLinkerComp.super.link(entity, pos);
@@ -214,9 +214,11 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     @Override
     public void edgeUpdated(){}
 
+    @Annotations.EntryBlocked
     @Override
     public void draw(){
       super.draw();
+      drawLink();
       for(IntMap.Entry<float[]> entry: childLinkWarmup){
         DistTargetConfigTable.TargetConfigure cfg = configMap.get(entry.key);
         if(cfg == null || entry.value[0] <= 0.01f) continue;
@@ -262,8 +264,8 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
         Draw.z(Layer.effect);
         Draw.alpha(0.65f);
         SglDraw.drawLink(
-            tile, linkOffset,
-            nextEdge().tile(), nextEdge().getEdgeBlock().linkOffset(),
+            tile, offset, linkOffset,
+            nextEdge().tile(), nextEdge().getBlock().offset, nextEdge().getEdgeBlock().linkOffset(),
             linkLightRegion, linkLightCapRegion,
             linkLerp()
         );
@@ -333,12 +335,13 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     @Override
     public byte[] config(){
       LinkPair pair = new LinkPair();
+      pair.tile = tile;
       pair.configs = configMap;
       pair.linking = nextPos;
       return pair.pack();
     }
 
-    protected class LinkPair extends MatrixGridBuild.PosCfgPair{
+    protected static class LinkPair extends MatrixGridBuild.PosCfgPair{
       public static final long typeID = 5463757638164667648L;
   
       @Override
@@ -360,6 +363,12 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
         Point2 p = Point2.unpack(linking);
         write.i(Point2.pack(p.x - tile.x, p.y - tile.y));
         super.write(write);
+      }
+
+      @Override
+      public void reset(){
+        super.reset();
+        linking = -1;
       }
     }
   }

@@ -34,6 +34,10 @@ import mindustry.type.Item;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import mindustry.world.blocks.environment.Floor;
+import mindustry.world.meta.Stat;
+import mindustry.world.meta.StatUnit;
+import mindustry.world.meta.StatValues;
 import singularity.Singularity;
 import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.components.EdgeLinkerBuildComp;
@@ -44,7 +48,7 @@ import universecore.annotations.Annotations;
 
 import java.util.TreeSet;
 
-import static mindustry.Vars.tilesize;
+import static mindustry.Vars.*;
 
 @Annotations.ImplEntries
 public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
@@ -97,6 +101,14 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
   public void init(){
     super.init();
     clipSize = Math.max(clipSize, linkLength * tilesize * 2);
+  }
+
+  @Override
+  public void setStats(){
+    super.setStats();
+    stats.add(Stat.drillTier, StatValues.blocks(b -> b instanceof Floor f
+        && !f.wallOre && f.itemDrop != null && (indexer.isBlockPresent(f) || state.isMenu())));
+    stats.add(Stat.drillSpeed, 60f / drillTime * size * size, StatUnit.itemsSecond);
   }
 
   @Override
@@ -512,6 +524,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
 
     @Override
     public void draw(){
+      super.draw();
       drawArm();
 
       for(MatrixDrillBit bit: mineBits.values()){

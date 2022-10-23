@@ -7,9 +7,10 @@ import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.gen.Building;
 import mindustry.world.Tile;
+import singularity.Sgl;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers.RequestHandler;
-import singularity.world.distribution.DistBuffers;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
 import singularity.world.distribution.buffers.BaseBuffer;
@@ -30,7 +31,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   }
 
   @Annotations.BindField(value = "buffers", initialize = "new arc.struct.OrderedMap()")
-  default OrderedMap<DistBuffers<?>, BaseBuffer<?, ?, ?>> buffers(){
+  default OrderedMap<DistBufferType<?>, BaseBuffer<?, ?, ?>> buffers(){
     return null;
   }
   
@@ -45,12 +46,12 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   }
 
   @SuppressWarnings("unchecked")
-  default <T extends BaseBuffer<?, ?, ?>> T getBuffer(DistBuffers<T> buff){
+  default <T extends BaseBuffer<?, ?, ?>> T getBuffer(DistBufferType<T> buff){
     return (T) buffers().get(buff);
   }
   
   default void initBuffers(){
-    for(DistBuffers<?> buffer : DistBuffers.all){
+    for(DistBufferType<?> buffer : DistBufferType.all){
       buffers().put(buffer, buffer.get(getMatrixBlock().bufferCapacity()));
     }
   }
@@ -72,7 +73,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   
   default boolean configValid(Building entity){
     if(entity instanceof IOPointComp && ((IOPointComp) entity).parent() == this) return true;
-    return entity.block.hasItems || entity.block.hasLiquids;
+    return Sgl.matrixContainers.getContainer(entity.block) != null;
   }
 
   default void resetFactories(){
