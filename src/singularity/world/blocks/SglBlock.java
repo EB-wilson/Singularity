@@ -50,14 +50,14 @@ import universecore.util.DataPackable;
 import universecore.util.UncLiquidStack;
 import universecore.util.handler.FieldHandler;
 import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.UncConsumeLiquids;
-import universecore.world.consumers.UncConsumeType;
+import universecore.world.consumers.ConsumeLiquidBase;
+import universecore.world.consumers.ConsumeType;
 
 import java.util.ArrayList;
 
 import static mindustry.Vars.*;
 
-/**此mod的基础方块类型，对block添加了完善的consume系统，并拥有核能的基础模块*/
+/**此mod的基础方块类型，对block添加了完善的consume系统，并拥有中子能的基础模块*/
 @Annotations.ImplEntries
 public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyBlockComp{
   public boolean autoSelect = false;
@@ -79,7 +79,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   /**独立的液体储罐，为true所有液体具有独立的容量，否则共用液体空间*/
   public boolean independenceLiquidTank = true;
   /**控制在多种可选输入都可用时是全部可用还是其中优先级最高的一种使用*/
-  public boolean oneOfOptionCons = false;
+  public boolean oneOfOptionCons = true;
   
   /**方块是否为核能设备*/
   public boolean hasEnergy;
@@ -143,8 +143,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends ConsumerBuildComp> BaseConsumers newOptionalConsume(Cons2<T, BaseConsumers> validDef, Cons2<Stats,
-      BaseConsumers> displayDef){
+  public <T extends ConsumerBuildComp> BaseConsumers newOptionalConsume(Cons2<T, BaseConsumers> validDef, Cons2<Stats, BaseConsumers> displayDef){
     consume = new SglConsumers(true) {{
         this.optionalDef = (Cons2<ConsumerBuildComp, BaseConsumers>) validDef;
         this.display = displayDef;
@@ -437,8 +436,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       Seq<Liquid> temp = new Seq<>();
       temp.clear();
       if(recipeCurrent >= 0 && consumer.current != null){
-        if(consumer.current.get(SglConsumeType.liquid) != null) for(UncLiquidStack stack : consumer.current.get(SglConsumeType.liquid).liquids) {
-          temp.add(stack.liquid);
+        if(consumer.current.get(SglConsumeType.liquid) != null){
+          for(UncLiquidStack stack: consumer.current.get(SglConsumeType.liquid).consLiquids){
+            temp.add(stack.liquid);
+          }
         }
       }
       liquids.each((key, val) -> {
@@ -497,7 +498,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         bars.row();
       }
 
-      UncConsumeLiquids<?> cl = consumer.current.get(SglConsumeType.liquid);
+      ConsumeLiquidBase<?> cl = consumer.current.get(SglConsumeType.liquid);
       if(cl != null){
         bars.table(Tex.buttonEdge1, t -> t.left().add(Core.bundle.get("fragment.bars.consume")).pad(4)).pad(0).height(38).padTop(4);
         bars.row();
@@ -507,7 +508,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
             liquid.defaults().growX().margin(0).pad(4).height(18);
             liquid.left().add(Core.bundle.get("misc.liquid")).color(Pal.gray);
             liquid.row();
-            for(UncLiquidStack stack: cl.liquids){
+            for(UncLiquidStack stack: cl.consLiquids){
               liquid.add(new Bar(
                   () -> stack.liquid.localizedName,
                   () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
@@ -516,7 +517,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
               liquid.row();
             }
           });
-        }).height(46 + cl.liquids.length*26).padBottom(0).padTop(2);
+        }).height(46 + cl.consLiquids.length*26).padBottom(0).padTop(2);
       }
 
       bars.row();
@@ -546,7 +547,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       return null;
     }
     
-    public boolean acceptAll(UncConsumeType<?> type){
+    public boolean acceptAll(ConsumeType<?> type){
       return autoSelect && (!canSelect || !recipeSelected);
     }
     

@@ -49,14 +49,14 @@ import singularity.world.draw.DrawBottom;
 import singularity.world.draw.DrawDyColorCultivator;
 import singularity.world.draw.DrawRegionDynamic;
 import singularity.world.draw.DrawSpliceBlock;
-import singularity.world.lightnings.LightningContainer;
-import singularity.world.lightnings.generator.CircleGenerator;
-import singularity.world.lightnings.generator.VectorLightningGenerator;
 import singularity.world.meta.SglStat;
 import singularity.world.particles.SglParticleModels;
 import universecore.components.blockcomp.FactoryBuildComp;
 import universecore.util.UncLiquidStack;
 import universecore.world.consumers.*;
+import universecore.world.lightnings.LightningContainer;
+import universecore.world.lightnings.generator.CircleGenerator;
+import universecore.world.lightnings.generator.VectorLightningGenerator;
 import universecore.world.producers.ProduceType;
 
 import static mindustry.Vars.*;
@@ -116,6 +116,7 @@ public class CrafterBlocks implements ContentList{
   /**强子重构仪*/
   hadron_reconstructor;
   
+  @SuppressWarnings("rawtypes")
   public void load(){
     fission_weaver = new NormalCrafter("fission_weaver"){{
       requirements(Category.crafting, ItemStack.with(
@@ -135,7 +136,7 @@ public class CrafterBlocks implements ContentList{
       consume.items(ItemStack.with(Items.silicon, 4, SglItems.uranium_238, 1));
       consume.consValidCondition((NormalCrafterBuild e) -> e.getVar(Integer.class, 0) > 0);
       newProduce();
-      produce.item(Items.phaseFabric, 4);
+      produce.item(Items.phaseFabric, 5);
       
       craftEffect = Fx.smeltsmoke;
   
@@ -192,7 +193,10 @@ public class CrafterBlocks implements ContentList{
         newConsume();
         consume.liquid(Liquids.water, 0.02f);
         newProduce();
-        produce.liquids(UncLiquidStack.with(Liquids.ozone, 0.01f, SglLiquids.algae_mud, 0.006f));
+        produce.liquids(UncLiquidStack.with(
+            Liquids.ozone, 0.01f,
+            SglLiquids.algae_mud, 0.006f
+        ));
         
         ambientSound = Sounds.none;
 
@@ -318,12 +322,12 @@ public class CrafterBlocks implements ContentList{
       liquidCapacity = 20f;
       
       newConsume();
-      consume.time(100);
+      consume.time(90);
       consume.power(2.2f);
       consume.liquid(Liquids.water, 0.4f);
       consume.liquid(SglLiquids.spore_cloud, 0.06f);
       newProduce();
-      produce.item(Items.sporePod, 2);
+      produce.item(Items.sporePod, 3);
       
       setAttrBooster(Attribute.spores, 0.86f);
       setAttrBooster(Attribute.heat, 1.8f, 3f);
@@ -362,7 +366,7 @@ public class CrafterBlocks implements ContentList{
       consume.power(2.5f);
       newProduce();
       produce.liquids(SglLiquidStack.with(
-          Liquids.ozone, 0.2f,
+          Liquids.ozone, 0.15f,
           Liquids.hydrogen, 0.4f
       ));
 
@@ -403,7 +407,7 @@ public class CrafterBlocks implements ContentList{
       consume.liquid(SglLiquids.purified_water, 0.1f);
       consume.power(2);
       consume.time(60);
-      newProduce().color = Items.sporePod.color;
+      newProduce();
       produce.liquid(SglLiquids.spore_cloud, 0.18f);
       
       newConsume();
@@ -421,7 +425,7 @@ public class CrafterBlocks implements ContentList{
             public void draw(Building build){
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               if(e.consumer.current == null) return;
-              Liquid l = e.consumer.current.get(SglConsumeType.liquid).liquids[0].liquid;
+              Liquid l = e.consumer.current.get(SglConsumeType.liquid).consLiquids[0].liquid;
               LiquidBlock.drawTiledFrames(size, e.x, e.y, 4, l, e.liquids.get(l)/liquidCapacity);
             }
           },
@@ -489,7 +493,7 @@ public class CrafterBlocks implements ContentList{
             public void draw(Building build){
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               if(e.consumer.current == null) return;
-              Liquid l = e.consumer.current.get(SglConsumeType.liquid).liquids[0].liquid;
+              Liquid l = e.consumer.current.get(SglConsumeType.liquid).consLiquids[0].liquid;
               LiquidBlock.drawTiledFrames(size, e.x, e.y, 4, l, e.liquids.get(l)/liquidCapacity);
             }
           },
@@ -515,7 +519,7 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.time(60f);
-      consume.item(SglItems.black_crystone, 2);
+      consume.item(SglItems.black_crystone, 3);
       consume.liquid(SglLiquids.acid, 0.3f);
       consume.power(0.8f);
       newProduce();
@@ -574,7 +578,7 @@ public class CrafterBlocks implements ContentList{
             public void draw(Building build){
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               if(e.consumer.current == null || e.producer.current == null) return;
-              Liquid l = e.consumer.current.get(SglConsumeType.liquid).liquids[0].liquid;
+              Liquid l = e.consumer.current.get(SglConsumeType.liquid).consLiquids[0].liquid;
 
               TextureRegion region = renderer.fluidFrames[l.gas ? 1 : 0][l.getAnimationFrame()];
               TextureRegion toDraw = Tmp.tr1;
@@ -685,10 +689,10 @@ public class CrafterBlocks implements ContentList{
       newConsume();
       consume.time(60);
       consume.liquid(SglLiquids.silicon_chloride_sol, 0.4f);
-      consume.item(Items.metaglass, 3);
+      consume.item(Items.metaglass, 4);
       consume.power(1.8f);
       newProduce();
-      produce.item(SglItems.aerogel, 2);
+      produce.item(SglItems.aerogel, 3);
 
       newConsume();
       consume.time(150);
@@ -1029,23 +1033,23 @@ public class CrafterBlocks implements ContentList{
           new DrawRegionDynamic<NormalCrafterBuild>("_point"){{
             color = e -> {
               BaseConsume<?> cons = e.consumer.current == null? null: ((SglConsumers) (e.consumer.current)).first();
-              if(cons instanceof UncConsumeLiquids){
-                Liquid liquid = ((UncConsumeLiquids<?>) cons).liquids[0].liquid;
-                if(liquid == Liquids.water) liquid = ((UncConsumeLiquids<?>) cons).liquids[1].liquid;
+              if(cons instanceof ConsumeLiquids c){
+                Liquid liquid = c.consLiquids[0].liquid;
+                if(liquid == Liquids.water) liquid = c.consLiquids[1].liquid;
                 return liquid.color;
-              }else if(cons instanceof UncConsumeItems){
-                Item item = ((UncConsumeItems<?>) cons).items[0].item;
+              }else if(cons instanceof ConsumeItems c){
+                Item item = c.consItems[0].item;
                 return item.color;
               }else return Color.white;
             };
             alpha = e -> {
               BaseConsume<?> cons = e.consumer.current == null? null: ((SglConsumers) (e.consumer.current)).first();
-              if(cons instanceof UncConsumeLiquids){
-                Liquid liquid = ((UncConsumeLiquids<?>) cons).liquids[0].liquid;
-                if(liquid == Liquids.water) liquid = ((UncConsumeLiquids<?>) cons).liquids[1].liquid;
+              if(cons instanceof ConsumeLiquids c){
+                Liquid liquid = c.consLiquids[0].liquid;
+                if(liquid == Liquids.water) liquid = c.consLiquids[1].liquid;
                 return e.liquids.get(liquid)/e.block.liquidCapacity;
-              }else if(cons instanceof UncConsumeItems){
-                Item item = ((UncConsumeItems<?>) cons).items[0].item;
+              }else if(cons instanceof ConsumeItems c){
+                Item item = c.consItems[0].item;
                 return (float) e.items.get(item)/e.block.itemCapacity;
               }else return 0;
             };
@@ -1183,9 +1187,9 @@ public class CrafterBlocks implements ContentList{
       consume.time(90);
       consume.item(SglItems.black_crystone, 6);
       consume.power(2.8f);
-      consume.trigger = e -> {
-        if(Mathf.chance(0.3f)) if(e.getBuilding().acceptItem(e.getBuild(), Items.thorium))e.items().add(Items.thorium, 1);
-      };
+      consume.setConsTrigger((NormalCrafterBuild e) -> {
+        if(Mathf.chance(0.3f)) if(e.acceptItem(e, Items.thorium))e.items().add(Items.thorium, 1);
+      });
       consume.display = (s, c) -> s.add(Stat.output, t -> {
         t.row();
         t.table(i -> {
@@ -1256,8 +1260,8 @@ public class CrafterBlocks implements ContentList{
             rotation = e -> -e.totalProgress()*1.2f;
             color = e -> e.producer.current != null? e.producer.current.color: transColor;
             alpha = e -> {
-              UncConsumeItems<?> cons = e.consumer.current == null? null: e.consumer.current.get(UncConsumeType.item);
-              Item i = cons.items[0].item;
+              ConsumeItems<?> cons = e.consumer.current == null? null: e.consumer.current.get(ConsumeType.item);
+              Item i = cons == null? null: cons.consItems[0].item;
               return cons == null? 0: ((float) e.items.get(i))/itemCapacity;
             };
           }}
@@ -1425,13 +1429,15 @@ public class CrafterBlocks implements ContentList{
             @Override
             public void draw(Building build){
               NormalCrafterBuild e = (NormalCrafterBuild) build;
-              float dx = 4*Mathf.sin(build.totalProgress()*0.45f);
+              float dx = 5*Mathf.sinDeg(build.totalProgress()*1.35f);
+              float dy = 5*Mathf.cosDeg(build.totalProgress()*1.35f);
 
               Draw.color(Color.valueOf("FF756F"));
               Draw.alpha(e.workEfficiency());
               Lines.stroke(0.8f);
               SglDraw.startBloom(31);
               Lines.line(e.x + dx, e.y + 6, e.x + dx, e.y - 6);
+              Lines.line(e.x + 6, e.y + dy, e.x - 6, e.y + dy);
               SglDraw.endBloom();
               Draw.reset();
             }

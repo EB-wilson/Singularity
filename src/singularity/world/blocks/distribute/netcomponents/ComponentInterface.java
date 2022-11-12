@@ -5,8 +5,8 @@ import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
 import mindustry.gen.Building;
-import singularity.world.DirEdges;
 import singularity.world.components.distnet.DistElementBuildComp;
+import universecore.world.DirEdges;
 
 import java.util.Arrays;
 

@@ -4,12 +4,14 @@ import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
+import arc.math.Angles;
 import arc.math.Interp;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Position;
 import arc.math.geom.Vec2;
 import arc.util.Time;
+import arc.util.Tmp;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
 import mindustry.content.Fx;
@@ -19,18 +21,19 @@ import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import singularity.graphic.SglDraw;
-import singularity.world.lightnings.LightningContainer;
-import singularity.world.lightnings.generator.RandomGenerator;
+import singularity.graphic.SglDrawConst;
 import universecore.math.Functions;
+import universecore.world.lightnings.LightningContainer;
+import universecore.world.lightnings.generator.RandomGenerator;
 
 import static arc.graphics.g2d.Draw.alpha;
 import static arc.graphics.g2d.Draw.color;
 import static arc.graphics.g2d.Lines.lineAngle;
 import static arc.graphics.g2d.Lines.stroke;
-import static arc.math.Angles.randLenVectors;
+import static arc.math.Angles.*;
 
 public class SglFx{
-  public static Effect gasLeak = new Effect(90, e -> {
+  public final static Effect gasLeak = new Effect(90, e -> {
     if(!(e.data() instanceof Number)) return;
     float param = ((Number) e.data()).floatValue();
 
@@ -47,6 +50,37 @@ public class SglFx{
     for(int i : Mathf.signs){
       Drawf.tri(e.x, e.y, 15f * e.fout(), 50f, e.rotation + 40f*i);
     }
+  }),
+
+  polyParticle = new Effect(150, e -> {//这段代码很特殊，闪光线的代码并不是我写的，这来自一个bug，大概是来自Lines的闭合线问题，意料之外，但效果还不错，就留着了
+    randLenVectors(e.id, 1, 24, e.rotation + 180, 20, (x, y) -> {
+      int vertices = Mathf.randomSeed((int) (e.id + x), 3, 6);
+      float step = 360f/vertices;
+
+      Fill.polyBegin();
+      Lines.beginLine();
+
+      for(int i = 0; i < vertices; i++){
+        float radius = Mathf.randomSeed(e.id + i, 1.5f, 4f)*e.fout(Interp.pow3Out);
+        float lerp = e.fin(Interp.pow2Out);
+        float rot = Mathf.randomSeed(e.id + i, -360, 360);
+        float off = Mathf.randomSeed(e.id + i + 1, -step/2, step/2);
+        float angle = step*i + rot*lerp + off;
+        float dx = trnsx(angle, radius) + x*lerp;
+        float dy = trnsy(angle, radius) + y*lerp;
+
+        Fill.polyPoint(e.x + dx, e.y + dy);
+        Lines.linePoint(e.x + dx, e.y + dy);
+      }
+
+      Draw.z(Layer.bullet - 5f);
+      Draw.color(e.color, 0.5f);
+      Fill.polyEnd();
+
+      Draw.z(Layer.effect);
+      Lines.stroke(0.4f*e.fout(), e.color);
+      Lines.endLine(true);
+    });
   }),
 
   impactBubble = new Effect(60, e -> {
@@ -221,6 +255,93 @@ public class SglFx{
     }
   }),
 
+  continuousLaserRecoil = new Effect(12, e -> {
+    Draw.color(e.color);
+
+    randLenVectors(e.id, Mathf.randomSeed(e.id, 2, 4), 24, e.rotation + 180, 60, (x, y) -> {
+      float size = Mathf.randomSeed((int) (e.id + x), 6, 12);
+      float lerp = e.fin(Interp.pow2Out);
+      SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, size, size/2f*e.fout(), Mathf.angle(x, y));
+    });
+  }),
+
+  iceParticle = new Effect(124, e -> {
+    Draw.color(e.color);
+
+    int amo = Mathf.randomSeed(e.id, 2, 5);
+    for(int i = 0; i < amo; i++){
+      float len = Mathf.randomSeed(e.id + i*2L, 40)*e.fin();
+      float off = Mathf.randomSeed(e.id + i, -8, 8);
+      float x = Angles.trnsx(e.rotation, len) + Angles.trnsx(e.rotation + 90, off);
+      float y = Angles.trnsy(e.rotation, len) + Angles.trnsy(e.rotation + 90, off);
+      Fill.circle(e.x + x, e.y + y, 0.9f*e.fout(Interp.pow2Out));
+    }
+  }),
+
+  iceExplode = new Effect(128, e -> {
+    float rate = e.fout(Interp.pow2In);
+    float l = 176*rate;
+    float w = 38*rate;
+
+    Drawf.light(e.x, e.y, e.fout()*192, SglDrawConst.winter, 0.7f);
+
+    Draw.color(SglDrawConst.winter);
+    SglDraw.startBloom(Layer.flyingUnit + 1);
+    float lerp = e.fin(Interp.pow3Out);
+    SglDraw.drawLightEdge(e.x, e.y, l, w, l, w);
+    Lines.stroke(5f*e.fout());
+    Lines.circle(e.x, e.y, 55*e.fout());
+    Lines.stroke(8f*e.fout());
+    Lines.circle(e.x, e.y,  116*lerp);
+
+    float flerp = e.fout(Interp.pow3Out);
+    randLenVectors(e.id, Mathf.randomSeed(e.id, 16, 22), 128, (x, y) -> {
+      float size = Mathf.randomSeed((int) (e.id + x), 14, 24);
+
+      SglDraw.drawCrystal(e.x + x*lerp, e.y + y*lerp, size, size*flerp*0.4f, size*flerp*0.32f, 0, 0, 0.4f*e.fout(),
+          Layer.effect, Layer.bullet - 1, Time.time*2.35f + Mathf.randomSeed((long) (e.id + x), 360), Mathf.angle(x, y),
+          SglDrawConst.frost, Tmp.c1.set(SglDrawConst.winter).a(0.7f));
+    });
+    SglDraw.endBloom();
+  }),
+
+  iceParticleSpread = new Effect(125, e -> {
+    Draw.color(e.color);
+
+    randLenVectors(e.id, 3, 32, (x, y) -> {
+      Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), 0.9f*e.fout(Interp.pow2Out));
+    });
+  }),
+
+  iceCrystal = new Effect(120, e -> {
+    float size = Mathf.randomSeed(e.id, 2, 6)*e.fslope();
+    Draw.color(e.color);
+    float rot = Mathf.randomSeed(e.id + 1, 360);
+    float blingX = Angles.trnsx(rot, size*2), blingY = Angles.trnsy(rot, size*2);
+    SglDraw.drawDiamond(e.x, e.y, size*2, size/2, rot);
+    e.scaled(45, ec -> {
+      SglDraw.drawDiamond(ec.x + blingX, ec.y + blingY, 85*ec.fslope(), 1.2f*ec.fslope(),
+          Mathf.randomSeed(ec.id + 2, 360) + Mathf.randomSeed(ec.id + 3, -15, 15)*ec.fin());
+    });
+  }),
+
+  winterShooting = new Effect(60, e -> {
+    e.scaled(12f, b -> {
+      Lines.stroke(b.fout()*4f + 0.2f, SglDrawConst.winter);
+      Lines.circle(b.x, b.y, b.fin()*75f);
+    });
+
+    float lerp = e.fout(Interp.pow2Out);
+    Draw.color(SglDrawConst.winter);
+    SglDraw.drawLightEdge(e.x, e.y, 64 + 64*lerp, 12*lerp, 60 + 80*lerp, 6*lerp, e.rotation + 90);
+
+    float l = e.fin(Interp.pow2Out);
+    randLenVectors(e.id, Mathf.randomSeed(e.id, 8, 16), 48, e.rotation + 180, 60, (x, y) -> {
+      float size = Mathf.randomSeed((int) (e.id + x), 12, 20);
+      SglDraw.drawDiamond(e.x + x*l, e.y + y*l, size, size/2f*e.fout(), Mathf.angle(x, y));
+    });
+  }),
+
   randomLightning = new LightningEffect(){
     final RandomGenerator branch = new RandomGenerator();
 
@@ -314,6 +435,16 @@ public class SglFx{
     }
   },
 
+  shrinkIceParticleSmall = new Effect(120, e -> {
+    Draw.color(SglDrawConst.winter);
+
+    randLenVectors(e.id, Mathf.randomSeed(e.id, 6, 12), 32, (x, y) -> {
+      float size = Mathf.randomSeed((int) (e.id + x), 8, 16);
+      float lerp = e.fout(Interp.pow3Out);
+      SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, size, size/2f*e.fin(), Mathf.angle(x, y));
+    });
+  }),
+
   shrinkParticleSmall = shrinkParticle(12, 2, 120, null),
 
   blingSmall = new Effect(320, e -> {
@@ -325,6 +456,16 @@ public class SglFx{
     float i = e.fin(Interp.pow3Out);
     float dx = Mathf.randomSeed(e.id, 16), dy = Mathf.randomSeed(e.id + 1, 16);
     SglDraw.drawLightEdge(e.x + dx*i, e.y + dy*i, size, size*0.15f, size, size*0.15f);
+  }),
+
+  staticBlingSmall = new Effect(320, e -> {
+    Draw.z(Layer.effect);
+    Draw.color(e.color);
+    float size = Mathf.randomSeed(e.id, 6, 10);
+    size *= e.fout(Interp.pow4In);
+    size += Mathf.absin(Time.time + Mathf.randomSeed(e.id, 2*Mathf.pi), 3.5f, 2f);
+    float i = e.fin(Interp.pow3Out);
+    SglDraw.drawLightEdge(e.x, e.y, size, size*0.15f, size, size*0.15f);
   }),
 
   lightningBoltWave = new Effect(90, e -> {
@@ -349,14 +490,19 @@ public class SglFx{
   });
 
   public static Effect impactExplode(float size, float lifeTime){
+    return impactExplode(size, lifeTime, false);
+  }
+
+  public static Effect impactExplode(float size, float lifeTime, boolean heightBloom){
     return new Effect(lifeTime, e -> {
       Draw.color(e.color);
       float rate = e.fout(Interp.pow2In);
-      float l = size*1.15f*rate;
-      float w = size*0.15f*rate;
+      float l = size*1.16f*rate;
+      float w = size*0.1f*rate;
 
       Drawf.light(e.x, e.y, e.fout()*size*1.15f, e.color, 0.7f);
 
+      if(heightBloom) SglDraw.startBloom(Layer.flyingUnit + 1);
       SglDraw.drawLightEdge(e.x, e.y, l, w, l, w);
       Lines.stroke(size*0.08f*e.fout());
       Lines.circle(e.x, e.y, size*0.55f*e.fout());
@@ -367,6 +513,7 @@ public class SglFx{
         float s = Mathf.randomSeed((int) (e.id + x), 4f, 8f);
         Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), s*e.fout());
       });
+      if(heightBloom) SglDraw.endBloom();
     });
   }
 

@@ -39,8 +39,8 @@ import universecore.components.blockcomp.FactoryBlockComp;
 import universecore.components.blockcomp.FactoryBuildComp;
 import universecore.util.UncLiquidStack;
 import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.UncConsumeLiquids;
-import universecore.world.consumers.UncConsumePower;
+import universecore.world.consumers.ConsumeLiquidBase;
+import universecore.world.consumers.ConsumePower;
 import universecore.world.producers.BaseProduce;
 import universecore.world.producers.BaseProducers;
 import universecore.world.producers.ProduceLiquids;
@@ -154,13 +154,17 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       
       tempLiquid.clear();
       if(recipeCurrent >= 0 && consumer.current != null){
-        if(consumer.current.get(SglConsumeType.liquid) != null) for(UncLiquidStack stack : consumer.current.get(SglConsumeType.liquid).liquids) {
-          tempLiquid.add(stack.liquid);
+        if(consumer.current.get(SglConsumeType.liquid) != null){
+          for(UncLiquidStack stack: consumer.current.get(SglConsumeType.liquid).consLiquids){
+            tempLiquid.add(stack.liquid);
+          }
         }
       }
       if(recipeCurrent >= 0 && producer.current != null) {
-        if(producer.current.get(SglProduceType.liquid) != null) for(UncLiquidStack stack : producer.current.get(SglProduceType.liquid).liquids) {
-          tempLiquid.add(stack.liquid);
+        if(producer.current.get(SglProduceType.liquid) != null){
+          for(UncLiquidStack stack : producer.current.get(SglProduceType.liquid).liquids) {
+            tempLiquid.add(stack.liquid);
+          }
         }
       }
       liquids.each((key, val) -> {
@@ -174,9 +178,9 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       if(recipeCurrent != -1 && producer.current != null && block.hasPower && block.outputsPower && producer.current.get(SglProduceType.power) != null){
         Floatp prod = () -> powerProdEfficiency*producer.current.get(SglProduceType.power).powerProduction;
         Floatp cons = () -> {
-          UncConsumePower<NormalCrafterBuild> cp;
+          ConsumePower<NormalCrafterBuild> cp;
           return consumesPower && consumer.current != null && (cp =
-              (UncConsumePower<NormalCrafterBuild>) consumer.current.get(SglConsumeType.power)) != null?
+              (ConsumePower<NormalCrafterBuild>) consumer.current.get(SglConsumeType.power)) != null?
               cp.usage*cp.multiple(this): 0;
         };
         bars.add(new Bar(
@@ -189,7 +193,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       super.displayBars(bars);
       if(recipeCurrent == -1 || producer.current == null || consumer.current == null) return;
   
-      UncConsumeLiquids<?> cl = consumer.current.get(SglConsumeType.liquid);
+      ConsumeLiquidBase<?> cl = consumer.current.get(SglConsumeType.liquid);
   
       ProduceLiquids<?> pl = producer.current.get(SglProduceType.liquid);
       if(pl != null){

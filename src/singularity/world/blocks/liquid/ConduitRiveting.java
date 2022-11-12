@@ -5,7 +5,10 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
+import arc.struct.IntSeq;
 import arc.util.Eachable;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.entities.Puddles;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
@@ -16,17 +19,23 @@ import mindustry.ui.Styles;
 import mindustry.world.Tile;
 import mindustry.world.modules.LiquidModule;
 import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ReplaceBuildComp;
 import universecore.components.blockcomp.Takeable;
 
 public class ConduitRiveting extends ClusterConduit{
   public ConduitRiveting(String name){
     super(name);
+    conduitAmount = 1;
     configurable = true;
     outputsLiquid = true;
     
-    config(Integer[].class, (ConduitRivetingBuild e, Integer[] i) -> {
-      e.index = e.index == i[0]? -1: i[0];
-      e.output = i[1] > 0;
+    config(IntSeq.class, (ConduitRivetingBuild e, IntSeq i) -> {
+      e.liquidsBuffer = new ClusterLiquidModule[i.get(0)];
+      for (int l = 0; l < e.liquidsBuffer.length; l++) {
+        e.liquidsBuffer[l] = new ClusterLiquidModule();
+      }
+      e.index = e.index == i.get(1)? -1: i.get(1);
+      e.output = i.get(2) > 0;
     });
     config(Integer.class, (ConduitRivetingBuild e, Integer i) -> {
       e.index = e.index == i? -1: i;
@@ -54,18 +63,23 @@ public class ConduitRiveting extends ClusterConduit{
         arrow
     };
   }
-  
+
   @Annotations.ImplEntries
   public class ConduitRivetingBuild extends ClusterConduitBuild implements Takeable{
     public int index = -1;
     public boolean output;
-  
+
     @Override
     public void draw(){
       Draw.rect(region, x, y);
       Draw.rect(arrow, x, y, rotation*90);
     }
-  
+
+    @Override
+    public void onReplaced(ReplaceBuildComp old) {
+      liquidsBuffer = old.<ClusterConduitBuild>getBuild().liquidsBuffer;
+    }
+
     @Override
     public void buildConfiguration(Table table){
       table.table(Styles.black6, t -> {
@@ -86,7 +100,7 @@ public class ConduitRiveting extends ClusterConduit{
       table.row();
       
       table.table(Styles.black6, conduits -> {
-        for(int i=0; i<conduitAmount; i++){
+        for(int i=0; i<liquidsBuffer.length; i++){
           int index = i;
           conduits.button(t -> t.add(Core.bundle.get("misc.conduit") + "#" + index).left().grow(), Styles.underlineb, () -> configure(index))
               .update(b -> b.setChecked(index == this.index)).size(250, 35).pad(0);
@@ -95,6 +109,7 @@ public class ConduitRiveting extends ClusterConduit{
       });
     }
   
+    @SuppressWarnings("DuplicatedCode")
     @Override
     public float moveLiquidForward(boolean leaks, Liquid liquid){
       if(!output){
@@ -112,8 +127,8 @@ public class ConduitRiveting extends ClusterConduit{
             int i1 = i;
             Building other = getNext("liquids", e -> {
               if(nearby(Mathf.mod(rotation - 1, 4)) == e || nearby(Mathf.mod(rotation + 1, 4)) == e){
-                if(e instanceof MultLiquidBuild){
-                  return ((MultLiquidBuild) e).conduitAccept(this, i1, liquidsBuffer[i1].current());
+                if(e instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
+                  return mu.conduitAccept(this, i1, liquidsBuffer[i1].current());
                 }
                 else return e.block.hasLiquids && e.acceptLiquid(this, liquidsBuffer[i1].current());
               }
@@ -154,10 +169,10 @@ public class ConduitRiveting extends ClusterConduit{
         return flow;
       }
     }
-  
+
     @Override
-    public Object config(){
-      return new Integer[]{index, output? 1: -1};
+    public Object config() {
+      return IntSeq.with(liquidsBuffer.length, index, output? 1: 0);
     }
   
     @Override
@@ -169,6 +184,11 @@ public class ConduitRiveting extends ClusterConduit{
       }
       return source.interactable(team) && liquidsBuffer[index].currentAmount() < 0.01f || liquid == liquidsBuffer[index].current() && liquidsBuffer[index].currentAmount() < liquidCapacity;
     }
+
+    @Override
+    public boolean shouldClusterMove(MultLiquidBuild source) {
+      return super.shouldClusterMove(source) && source.tile.absoluteRelativeTo(tile.x, tile.y) == rotation;
+    }
   
     @Override
     public void handleLiquid(Building source, Liquid liquid, float amount){
@@ -176,6 +196,20 @@ public class ConduitRiveting extends ClusterConduit{
         super.handleLiquid(source, liquid, amount);
       }
       else liquidsBuffer[index].add(liquid, amount);
+    }
+
+    @Override
+    public void write(Writes write) {
+      super.write(write);
+      write.bool(output);
+      write.i(index);
+    }
+
+    @Override
+    public void read(Reads read, byte revision) {
+      super.read(read, revision);
+      output = read.bool();
+      index = read.i();
     }
   }
 }

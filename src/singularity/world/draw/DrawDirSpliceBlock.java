@@ -15,7 +15,7 @@ import mindustry.gen.Building;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
 import singularity.graphic.GraphicUtils;
-import singularity.world.DirEdges;
+import universecore.world.DirEdges;
 
 public class DrawDirSpliceBlock<E> extends DrawBlock{
   public TextureRegion[] region = new TextureRegion[16];
@@ -56,15 +56,16 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
     int move = 0;
 
     Pixmap map = new Pixmap(splicers[move].width, splicers[move].height);
-    while(1 << move < i){
+    while(1 << move <= i){
       int bit = 1 << move;
       if((i & bit) != 0){
         map.draw(splicers[move], true);
       }
       move++;
     }
-
-    return new TextureRegion(new Texture(map));
+    Texture tex = new Texture(map, true);
+    tex.setFilter(Texture.TextureFilter.mipMapNearestLinear);
+    return new TextureRegion(tex);
   }
 
   @SuppressWarnings("unchecked")

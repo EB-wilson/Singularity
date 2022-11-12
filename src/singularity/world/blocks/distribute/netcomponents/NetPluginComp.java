@@ -19,8 +19,6 @@ import mindustry.world.draw.DrawDefault;
 import mindustry.world.draw.DrawMulti;
 import mindustry.world.meta.StatUnit;
 import singularity.graphic.SglDrawConst;
-import singularity.util.NumberStrify;
-import singularity.world.DirEdges;
 import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.components.distnet.DistComponent;
 import singularity.world.components.distnet.DistElementBuildComp;
@@ -28,6 +26,8 @@ import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.draw.DrawDirSpliceBlock;
 import singularity.world.meta.SglStat;
+import universecore.util.NumberStrify;
+import universecore.world.DirEdges;
 
 import java.util.Arrays;
 

@@ -95,11 +95,11 @@ public class NuclearReactor extends NormalCrafter{
       e.add(Stat.output, StatValues.items(s.craftTime, output));
     });
     consume.consValidCondition(ConsumerBuildComp::consumeValid);
-    consume.trigger = ent -> {
+    consume.setConsTrigger((NuclearReactorBuild ent) -> {
       for(int i = 0; i < output.amount; i++){
-        ent.getBuilding().handleItem(ent.getBuilding(), output.item);
+        ent.handleItem(ent, output.item);
       }
-    };
+    });
   }
   
   public void addTransfer(LiquidStack output){
@@ -109,7 +109,7 @@ public class NuclearReactor extends NormalCrafter{
     }, (e, s) -> {
       e.add(Stat.output, StatValues.liquid(output.liquid, output.amount*60, true));
     });
-    consume.valid = ent -> ent.getBuilding(SglBuilding.class).consumeValid();
+    consume.consValidCondition(SglBuilding::consumeValid);
   }
 
   @Override
@@ -133,7 +133,7 @@ public class NuclearReactor extends NormalCrafter{
   public void init(){
     super.init();
     for(BaseConsumers cons: consumers){
-      for(ItemStack stack: cons.get(SglConsumeType.item).items){
+      for(ItemStack stack: cons.get(SglConsumeType.item).consItems){
         consItems.add(stack.item);
       }
     }
@@ -186,7 +186,7 @@ public class NuclearReactor extends NormalCrafter{
       Sounds.explosionbig.at(tile);
       int fuel = 0;
       for(BaseConsumers cons: fuels){
-        for(ItemStack stack: cons.get(SglConsumeType.item).items){
+        for(ItemStack stack: cons.get(SglConsumeType.item).consItems){
           fuel += items.get(stack.item);
         }
       }
@@ -208,7 +208,7 @@ public class NuclearReactor extends NormalCrafter{
     public int fuelItemsTotal(){
       int result = 0;
       for(BaseConsumers cons: fuels){
-        for(ItemStack stack: cons.get(SglConsumeType.item).items){
+        for(ItemStack stack: cons.get(SglConsumeType.item).consItems){
           result += items.get(stack.item);
         }
       }

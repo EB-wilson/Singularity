@@ -23,30 +23,25 @@ import mindustry.world.Tile;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
 import singularity.type.SglLiquidStack;
-import singularity.world.blocks.chains.ChainsContainer;
-import singularity.world.components.ChainsBlockComp;
-import singularity.world.components.ChainsBuildComp;
-import singularity.world.components.SpliceBlockComp;
-import singularity.world.components.SpliceBuildComp;
 import singularity.world.consumers.SglConsumeType;
-import singularity.world.modules.ChainsModule;
 import singularity.world.modules.SglConsumeModule;
 import singularity.world.modules.SglLiquidModule;
 import singularity.world.modules.SglProductModule;
 import singularity.world.products.SglProduceType;
 import universecore.annotations.Annotations;
-import universecore.components.blockcomp.ConsumerBuildComp;
-import universecore.components.blockcomp.ProducerBuildComp;
+import universecore.components.blockcomp.*;
 import universecore.util.UncLiquidStack;
+import universecore.world.blocks.chains.ChainsContainer;
+import universecore.world.blocks.modules.ChainsModule;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.UncConsumeLiquids;
+import universecore.world.consumers.ConsumeLiquidBase;
 import universecore.world.producers.BaseProduce;
 import universecore.world.producers.BaseProducers;
 import universecore.world.producers.ProduceLiquids;
 
 @Annotations.ImplEntries
-public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
+public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
   public int maxChainsWidth = 10;
   public int maxChainsHeight = 10;
 
@@ -99,7 +94,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
   }
 
   @Annotations.ImplEntries
-  public class SpliceCrafterBuild extends NormalCrafterBuild implements SpliceBuildComp{
+  public class SpliceCrafterBuild extends NormalCrafterBuild implements SpliceBuildComp {
     public ChainsModule chains;
     public boolean handling, updateModule = true, firstInit = true;
     public int[] splice;
@@ -186,7 +181,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
         bars.row();
       }
   
-      UncConsumeLiquids<?> cl = consumer.current.get(SglConsumeType.liquid);
+      ConsumeLiquidBase<?> cl = consumer.current.get(SglConsumeType.liquid);
       if(cl != null){
         bars.table(Tex.buttonEdge1, t -> t.left().add(Core.bundle.get("fragment.bars.consume")).pad(4)).pad(0).height(38).padTop(4);
         bars.row();
@@ -196,7 +191,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
             liquid.defaults().growX().margin(0).pad(4).height(18);
             liquid.left().add(Core.bundle.get("misc.liquid")).color(Pal.gray);
             liquid.row();
-            for(UncLiquidStack stack: cl.liquids){
+            for(UncLiquidStack stack: cl.consLiquids){
               Func<Building, Bar> bar = (entity -> new Bar(
                   () -> stack.liquid.localizedName,
                   () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
@@ -206,7 +201,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp{
               liquid.row();
             }
           });
-        }).height(46 + cl.liquids.length*26).padBottom(0).padTop(2);
+        }).height(46 + cl.consLiquids.length*26).padBottom(0).padTop(2);
       }
   
       bars.row();

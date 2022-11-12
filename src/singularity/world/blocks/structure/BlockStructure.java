@@ -7,7 +7,11 @@ import arc.struct.ObjectSet;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import singularity.type.SglContents;
-import singularity.world.components.*;
+import singularity.world.components.StructBlockComp;
+import singularity.world.components.StructCoreBuildComp;
+import singularity.world.components.StructCoreComp;
+import universecore.components.blockcomp.ChainsBlockComp;
+import universecore.components.blockcomp.ChainsBuildComp;
 
 import java.util.Map;
 

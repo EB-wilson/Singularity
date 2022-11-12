@@ -4,6 +4,7 @@ import arc.Core;
 import arc.audio.Sound;
 import arc.func.Boolf;
 import arc.func.Cons2;
+import arc.func.Floatf;
 import arc.graphics.Color;
 import arc.math.Angles;
 import arc.math.Mathf;
@@ -16,6 +17,9 @@ import arc.struct.Seq;
 import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
+import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.content.StatusEffects;
 import mindustry.content.UnitTypes;
@@ -27,6 +31,8 @@ import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.type.ItemStack;
+import mindustry.type.Liquid;
+import mindustry.ui.LiquidDisplay;
 import mindustry.world.Block;
 import mindustry.world.blocks.ControlBlock;
 import mindustry.world.meta.*;
@@ -35,8 +41,10 @@ import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.DrawSglTurret;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ConsumerBuildComp;
-import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.UncConsumeItems;
+import universecore.ui.table.RecipeTable;
+import universecore.util.UncLiquidStack;
+import universecore.world.consumers.*;
+import universecore.world.meta.UncStat;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -55,8 +63,10 @@ public class SglTurret extends SglBlock{
   public boolean targetAir = true;
   /**是否攻击地面目标*/
   public boolean targetGround = true;
-  /**回复友方生命值*/
+  /**是否瞄准生命值未满的友方*/
   public boolean targetHealing;
+  /**瞄准右方时是否瞄准单位*/
+  public boolean targetHealUnit = true;
   /**单位目标选择过滤器*/
   public Boolf<Unit> unitFilter = u -> true;
   /**建筑目标选择过滤器*/
@@ -86,6 +96,8 @@ public class SglTurret extends SglBlock{
   public Effect smokeEffect;
   /**弹药使用特效（例如抛壳）*/
   public Effect ammoUseEffect = Fx.none;
+  /**在炮塔冷却过程中显示的特效*/
+  public Effect coolEffect = Fx.fuelburn;
   /**炮管红热时的光效遮罩层颜色*/
   public Color heatColor = Pal.turretHeat;
 
@@ -127,6 +139,7 @@ public class SglTurret extends SglBlock{
 
   public SglTurret(String name){
     super(name);
+    canOverdrive = false;
     update = true;
     solid = true;
     autoSelect = true;
@@ -143,6 +156,8 @@ public class SglTurret extends SglBlock{
 
   @Override
   public void init(){
+    oneOfOptionCons = false;
+
     if(shootY == Float.NEGATIVE_INFINITY) shootY = size * tilesize / 2f;
     if(elevation < 0) elevation = size / 2f;
 
@@ -171,8 +186,8 @@ public class SglTurret extends SglBlock{
       }
 
       @Override
-      public UncConsumeItems<? extends ConsumerBuildComp> items(ItemStack[] items){
-        UncConsumeItems<? extends ConsumerBuildComp> res = new UncConsumeItems<>(items);
+      public ConsumeItems<? extends ConsumerBuildComp> items(ItemStack[] items){
+        ConsumeItems<? extends ConsumerBuildComp> res = new ConsumeItems<>(items);
         res.showPerSecond = false;
         return add(res);
       }
@@ -184,6 +199,63 @@ public class SglTurret extends SglBlock{
     res.display(value);
 
     return res;
+  }
+
+  public void newCoolant(float scl, float duration){
+    newOptionalConsume((SglTurretBuild e, BaseConsumers c) -> {
+      e.applyCoolant(c, scl, duration);
+    }, (s, c) -> {
+      s.add(Stat.booster, t -> t.add(Core.bundle.format("bullet.reload", Strings.autoFixed(scl, 2))));
+    });
+    BaseConsumers c = consume;
+    consume.optionalAlwaysValid = false;
+    consume.consValidCondition((SglTurretBuild t) -> t.consumer.current != null && t.reloadCounter < t.consumer.current.craftTime
+        && (t.currCoolant == null || t.currCoolant == c));
+  }
+
+  /**使用默认的冷却模式，与原版的冷却稍有不同，液体的温度和热容共同确定冷却力，热容同时影响液体消耗倍率*/
+  public void newCoolant(float baseCoolantScl, float attributeMultipler, Boolf<Liquid> filter, float usageBase, float duration){
+    newCoolant(liquid -> baseCoolantScl + (liquid.heatCapacity*1.2f - (liquid.temperature - 0.35f)*0.6f)*attributeMultipler, filter, usageBase,
+        liquid -> usageBase/(liquid.heatCapacity*0.7f), duration);
+    BaseConsumers c = consume;
+    consume.optionalAlwaysValid = false;
+    consume.consValidCondition((SglTurretBuild t) -> (t.currCoolant == null || t.currCoolant == c));
+  }
+
+  @SuppressWarnings("unchecked")
+  public void newCoolant(Floatf<Liquid> coolEff, Boolf<Liquid> filters, float usageBase, Floatf<Liquid> usageMult, float duration){
+    newOptionalConsume((SglTurretBuild e, BaseConsumers c) -> {
+      ConsumeLiquidCond<SglTurretBuild> cl;
+      if((cl = (ConsumeLiquidCond<SglTurretBuild>) c.get(ConsumeType.liquid)) != null){
+        Liquid curr = cl.getCurrCons(e);
+        if(curr != null) e.applyCoolant(c, coolEff.get(curr), duration);
+      }
+    }, (s, c) -> {
+      s.add(Stat.booster, t -> {
+        t.row();
+        for(Liquid liquid: Vars.content.liquids()){
+          if(filters.get(liquid)){
+            t.add(new LiquidDisplay(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(10).left().top();
+            t.table(Tex.underline, bt -> {
+              bt.left().defaults().padRight(3).left();
+              bt.add(Core.bundle.format("bullet.reload", Strings.autoFixed(coolEff.get(liquid), 2)));
+            }).left().padTop(-9);
+            t.row();
+          }
+        }
+      });
+    });
+    consume.optionalAlwaysValid = false;
+    consume.add(new ConsumeLiquidCond<SglTurretBuild>(){
+      {
+        filter = filters;
+        usage = usageBase;
+        usageMultiplier = usageMult;
+      }
+
+      @Override
+      public void display(Stats stats){}
+    });
   }
 
   @Override
@@ -245,13 +317,14 @@ public class SglTurret extends SglBlock{
       }
 
       if(bullet.status != StatusEffects.none){
-        sep(ta, (bullet.status.minfo.mod == null? bullet.status.emoji(): "") + "[stat]" + bullet.status.localizedName + "[lightgray] ~ [stat]" + ((int) (bullet.statusDuration/60f)) + "[lightgray] " + Core.bundle.get("unit.seconds"));
+        sep(ta, (bullet.status.minfo.mod == null? bullet.status.emoji(): "") + "[stat]" + bullet.status.localizedName + "[lightgray] ~ " +
+            "[stat]" + Strings.autoFixed(bullet.statusDuration/60f, 1) + "[lightgray] " + Core.bundle.get("unit.seconds"));
       }
 
       if(bullet.fragBullet != null){
         sep(ta, Core.bundle.format("bullet.frags", bullet.fragBullets));
         ta.row();
-        ta.table(st -> buildRef.get().get(st, bullet.fragBullet));
+        ta.table(st -> buildRef.get().get(st, bullet.fragBullet)).left().padLeft(15);
       }
 
       ta.row();
@@ -293,6 +366,7 @@ public class SglTurret extends SglBlock{
           }
 
           t.table(bt -> {
+            bt.defaults().left();
             if(!ammoEntry.override){
               buildRef.get().get(bt, type);
             }
@@ -304,6 +378,31 @@ public class SglTurret extends SglBlock{
         });
       }
     });
+
+    if (optionalCons.size() > 0) {
+      optionalRecipeTable(new RecipeTable(optionalCons.size()));
+
+      for(int i = 0; i < optionalCons.size(); ++i) {
+        optionalRecipeTable().stats[i] = new Stats();
+        optionalCons.get(i).display(optionalRecipeTable().stats[i]);
+      }
+
+      optionalRecipeTable().build();
+      stats.add(UncStat.optionalInputs, (table) -> {
+        table.row();
+        table.add(optionalRecipeTable()).grow();
+      });
+    }
+  }
+
+  @Override
+  public void setStats(){
+    super.setStats();
+
+    stats.add(Stat.shootRange, range / tilesize, StatUnit.blocks);
+    stats.add(Stat.inaccuracy, (int)inaccuracy, StatUnit.degrees);
+    stats.add(Stat.targetsAir, targetAir);
+    stats.add(Stat.targetsGround, targetGround);
   }
 
   @Override
@@ -323,7 +422,7 @@ public class SglTurret extends SglBlock{
     public float charge;
     public float reloadCounter;
     public float coolantScl;
-    public int coolantSclTimer;
+    public float coolantSclTimer;
     public float warmup;
     public Posc target;
     public float rotation = 90;
@@ -337,6 +436,14 @@ public class SglTurret extends SglBlock{
 
     int totalShots;
     int queuedBullets;
+
+    BaseConsumers currCoolant;
+
+    void applyCoolant(BaseConsumers consing, float scl, float duration){
+      coolantSclTimer = Math.max(coolantSclTimer, duration);
+      currCoolant = consing;
+      coolantScl = scl;
+    }
 
     @Override
     public SglTurret block(){
@@ -361,13 +468,14 @@ public class SglTurret extends SglBlock{
       currentAmmo = ammoTypes.get(consumer.current).bulletType;
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public void updateTile(){
       wasShooting = false;
       if(consumer.current == null) return;
 
       curRecoil = Mathf.approachDelta(curRecoil, 0, 1/(recoilTime > 0? recoilTime: consumer.current.craftTime));
-      heat = Mathf.approachDelta(heat, 0, 1/cooldownTime);
+      heat = Mathf.approachDelta(heat, 0, 1/cooldownTime*coolantScl);
       charge = charging() ? Mathf.approachDelta(charge, 1, 1/shoot.firstShotDelay) : 0;
 
       unit.tile(this);
@@ -385,12 +493,12 @@ public class SglTurret extends SglBlock{
       boolean tarValid = validateTarget();
       float targetRot = angleTo(targetPos);
 
-      if(consumeValid() && (moveWhileCharging || !charging())){
-        rotation = Angles.moveToward(rotation, targetRot, rotateSpeed*delta()*potentialEfficiency);
+      if(tarValid && (consumeValid() || isControlled()) && (moveWhileCharging || !charging())){
+        turnToTarget(targetRot);
       }
 
       if(wasShooting() && consumeValid()){
-        if(tarValid){
+        if(canShoot() && tarValid){
           warmup = linearWarmup? Mathf.approachDelta(warmup, 1, warmupSpeed*consEfficiency()):
               Mathf.lerpDelta(warmup, 1, warmupSpeed*consEfficiency());
           wasShooting = true;
@@ -407,10 +515,39 @@ public class SglTurret extends SglBlock{
         warmup = linearWarmup? Mathf.approachDelta(warmup, 0, warmupSpeed): Mathf.lerpDelta(warmup, 0, warmupSpeed);
       }
 
-      if(consumeValid() && reloadCounter < consumer.current.craftTime) reloadCounter += consEfficiency()*delta()*coolantScl;
+      if(canShoot() && consumeValid() && reloadCounter < consumer.current.craftTime){
+        reloadCounter += consEfficiency()*delta()*coolantScl;
+        if(coolantSclTimer > 0){
+          ConsumeLiquidBase<SglTurretBuild> c = (ConsumeLiquidBase<SglTurretBuild>) consumer.optionalCurr.get(ConsumeType.liquid);
+          float usage = 0;
+          if(c instanceof ConsumeLiquidCond con){
+            Liquid l = con.getCurrCons(this);
+            if(l != null) usage = con.usageMultiplier.get(l);
+          }
+          else if(c instanceof ConsumeLiquids con){
+            for(UncLiquidStack liquid: con.consLiquids){
+              usage += liquid.amount;
+            }
+          }
+          if(Mathf.chance(0.06*usage)){
+            coolEffect.at(x + Mathf.range(size * tilesize / 2f), y + Mathf.range(size * tilesize / 2f));
+          }
+        }
+      }
 
-      if(coolantSclTimer > 0) coolantSclTimer--;
-      else coolantScl = 1;
+      if(coolantSclTimer > 0) coolantSclTimer -= Time.delta;
+      else{
+        currCoolant = null;
+        coolantScl = 1;
+      }
+    }
+
+    public boolean canShoot(){
+      return true;
+    }
+
+    public void turnToTarget(float targetRot){
+      rotation = Angles.moveToward(rotation, targetRot, rotateSpeed*delta());
     }
 
     protected boolean validateTarget(){
@@ -532,11 +669,11 @@ public class SglTurret extends SglBlock{
       if(targetAir && !targetGround){
         target = Units.bestEnemy(team, x, y, range, e -> !e.dead() && !e.isGrounded() && unitFilter.get(e), unitSort);
       }else{
-        target = Units.bestTarget(team, x, y, range, e -> !e.dead() && unitFilter.get(e) && (e.isGrounded() || targetAir) && (!e.isGrounded() || targetGround), b -> targetGround && buildingFilter.get(b), unitSort);
+        boolean heal = canHeal();
 
-        if(target == null && canHeal()){
-          target = Units.findAllyTile(team, x, y, range, b -> b.damaged() && b != this);
-        }
+        target = Units.bestTarget(null, x, y, range,
+            e -> (e.team != team || (heal && targetHealUnit && e.damaged())) && !e.dead() && unitFilter.get(e) && (e.isGrounded() || targetAir) && (!e.isGrounded() || targetGround),
+            b -> (b.team != team || (heal && b.damaged())) && targetGround && buildingFilter.get(b), unitSort);
       }
     }
 
@@ -562,10 +699,31 @@ public class SglTurret extends SglBlock{
     }
 
     @Override
+    public boolean shouldConsumeOptions(){
+      return consumer.current != null && reloadCounter < consumer.current.craftTime;
+    }
+
+    @Override
     public Unit unit(){
       unit.tile(this);
       unit.team(team);
       return (Unit)unit;
+    }
+
+    @Override
+    public void write(Writes write){
+      super.write(write);
+      write.f(reloadCounter);
+      write.f(warmup);
+      write.f(rotation);
+    }
+
+    @Override
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
+      reloadCounter = read.f();
+      warmup = read.f();
+      rotation = read.f();
     }
   }
 

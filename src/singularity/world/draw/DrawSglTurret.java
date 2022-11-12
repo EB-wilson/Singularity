@@ -16,17 +16,20 @@ import mindustry.graphics.Layer;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
+import singularity.Singularity;
 import singularity.world.blocks.turrets.SglTurret;
 
 public class DrawSglTurret extends DrawBlock{
   protected static final Rand rand = new Rand();
 
   public Seq<DrawPart> parts = new Seq<>();
-  /** Prefix to use when loading base region. */
   public String basePrefix = "";
-  /** Overrides the liquid to draw in the liquid region. */
   public @Nullable Liquid liquidDraw;
   public TextureRegion base, liquid, top, heat, preview, outline;
+
+  public DrawSglTurret(DrawPart... parts){
+    this.parts.addAll(parts);
+  }
 
   public DrawSglTurret(String basePrefix, DrawPart... parts){
     this.basePrefix = basePrefix;
@@ -84,7 +87,6 @@ public class DrawSglTurret extends DrawBlock{
 
       float progress = tb.progress();
 
-      //TODO no smooth reload
       var params = DrawPart.params.set(build.warmup(), 1f - progress, 1f - progress, tb.heat, tb.curRecoil, tb.charge, tb.x + tb.recoilOffset.x, tb.y + tb.recoilOffset.y, tb.rotation);
 
       for(var part : parts){
@@ -132,7 +134,7 @@ public class DrawSglTurret extends DrawBlock{
     }
 
     if(!base.found() && block.minfo.mod != null) base = Core.atlas.find(block.minfo.mod.name + "-" + basePrefix + "block_" + block.size);
-    if(!base.found()) base = Core.atlas.find(basePrefix + "block-" + block.size);
+    if(!base.found()) base = Core.atlas.find(basePrefix + "block-" + block.size, Singularity.getModAtlas(basePrefix + "block-" + block.size));
   }
 
   /** @return the generated icons to be used for this block. */

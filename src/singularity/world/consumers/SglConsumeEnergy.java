@@ -2,7 +2,8 @@ package singularity.world.consumers;
 
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
-import arc.struct.Bits;
+import arc.struct.Seq;
+import mindustry.ctype.Content;
 import mindustry.gen.Building;
 import mindustry.world.meta.Stats;
 import singularity.world.components.NuclearEnergyBuildComp;
@@ -10,7 +11,7 @@ import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.world.consumers.BaseConsume;
-import universecore.world.consumers.UncConsumeType;
+import universecore.world.consumers.ConsumeType;
 
 public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & ConsumerBuildComp> extends BaseConsume<T>{
   public boolean buffer = false;
@@ -25,7 +26,7 @@ public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & Cons
   }
   
   @Override
-  public UncConsumeType<SglConsumeEnergy<?>> type(){
+  public ConsumeType<SglConsumeEnergy<?>> type(){
     return SglConsumeType.energy;
   }
 
@@ -70,9 +71,9 @@ public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & Cons
     }
     return Mathf.clamp(entity.energy().getEnergy()/(usage*12.5f*multiple(entity)));
   }
-  
+
   @Override
-  public Bits filter(T entity) {
+  public Seq<Content> filter(){
     return null;
   }
 }

@@ -4,13 +4,13 @@ import arc.struct.Seq;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatCat;
 import universecore.util.handler.FieldHandler;
+import universecore.world.meta.UncStatCat;
 
 public class SglStat{
   public static final Stat
-      componentBelongs = create("componentBelongs", SglStatCat.structure),
-      maxStructureSize = create("maxStructureSize", SglStatCat.structure),
-      maxChildrenNodes = create("maxChildrenNodes", SglStatCat.structure),
-      linkDirections = create("linkDirections", SglStatCat.structure),
+      componentBelongs = create("componentBelongs", UncStatCat.structure),
+      maxChildrenNodes = create("maxChildrenNodes", UncStatCat.structure),
+      linkDirections = create("linkDirections", UncStatCat.structure),
 
       energyCapacity = create("energyCapacity", SglStatCat.neutron),
       energyResident = create("energyResident", SglStatCat.neutron),
@@ -34,10 +34,16 @@ public class SglStat{
       consume = create("consume", SglStatCat.reaction),
       product = create("product", SglStatCat.reaction),
 
+      bulletCoating = create("bulletCoating", StatCat.function),
+      coatingTime = create("coatingTime", StatCat.function),
+      exShieldDamage = create("exShieldDamage", StatCat.function),
+      exDamageMultiplier = create("exDamageMultiplier", StatCat.function),
+      exPierce = create("exPierce", StatCat.function),
+      maxCoatingBuffer = create("maxcoatingbuffer", StatCat.function),
+
       autoSelect = create("autoSelect", 46, StatCat.crafting),
       controllable = create("controllable", 47, StatCat.crafting),
       special = create("special", 50, StatCat.crafting),
-  
       effect = create("effect", StatCat.function);
 
   private static Stat create(String name, StatCat cat){

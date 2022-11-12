@@ -1,12 +1,19 @@
 package singularity.world.blocks.liquid;
 
 import arc.Core;
+import arc.Events;
 import arc.math.Mathf;
+import arc.math.WindowedMean;
+import arc.scene.ui.layout.Table;
+import arc.struct.Bits;
+import arc.util.Interval;
 import arc.util.Strings;
 import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import mindustry.Vars;
 import mindustry.content.Fx;
+import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.type.Liquid;
@@ -14,7 +21,15 @@ import mindustry.ui.Bar;
 import mindustry.world.Block;
 import mindustry.world.blocks.liquid.LiquidBlock;
 import mindustry.world.modules.LiquidModule;
+import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ReplaceBuildComp;
+import universecore.util.handler.FieldHandler;
 
+import java.util.Arrays;
+
+import static mindustry.Vars.content;
+
+@Annotations.ImplEntries
 public class MultLiquidBlock extends LiquidBlock{
   public int conduitAmount = 4;
   
@@ -27,24 +42,22 @@ public class MultLiquidBlock extends LiquidBlock{
   public void setBars(){
     super.setBars();
     removeBar("liquid");
-    for(int i=0; i<conduitAmount; i++){
-      int index = i;
-      addBar("liquid#" + index, (MultLiquidBuild e) -> {
-        LiquidModule current = e.liquidsBuffer[index];
-        return new Bar(
-            () -> current.currentAmount() <= 0.001f ?
-                Core.bundle.get("bar.liquid") + " #" + index:
-                current.current().localizedName + "     " + (current.getFlowRate(current.current()) >= 0? Strings.autoFixed(current.getFlowRate(current.current()), 0): "...") + Core.bundle.get("misc.perSecond"),
-            () -> current.current().barColor(),
-            () -> current.currentAmount() /liquidCapacity
-        );
+  }
+
+  @Annotations.ImplEntries
+  public class MultLiquidBuild extends Building implements ReplaceBuildComp {
+    static {
+      Events.run(EventType.Trigger.update, () -> {
+        Building nextFlowBuild = FieldHandler.getValueDefault(Vars.ui.hudfrag.blockfrag, "nextFlowBuild");
+
+        if(nextFlowBuild instanceof MultLiquidBuild mulB){
+          mulB.updateLiquidsFlow();
+        }
       });
     }
-  }
-  
-  public class MultLiquidBuild extends Building{
-    public LiquidModule[] liquidsBuffer;
-    public LiquidModule cacheLiquids;
+
+    public ClusterLiquidModule[] liquidsBuffer;
+    public ClusterLiquidModule cacheLiquids;
     
     protected int current;
   
@@ -83,14 +96,42 @@ public class MultLiquidBlock extends LiquidBlock{
     @Override
     public Building create(Block block, Team team){
       super.create(block, team);
-      liquidsBuffer = new LiquidModule[conduitAmount];
+      liquidsBuffer = new ClusterLiquidModule[conduitAmount];
       for(int i=0; i<liquidsBuffer.length; i++){
-        liquidsBuffer[i] = new LiquidModule();
+        liquidsBuffer[i] = new ClusterLiquidModule();
       }
       liquids = liquidsBuffer[0];
-      cacheLiquids = liquids;
+      cacheLiquids = (ClusterLiquidModule) liquids;
     
       return this;
+    }
+
+    @Override
+    public void displayBars(Table table) {
+      super.displayBars(table);
+      for(int i=0; i<liquidsBuffer.length; i++){
+        LiquidModule current = liquidsBuffer[i];
+        int fi = i;
+
+        float[] smooth = new float[]{0};
+        table.add(new Bar(
+            () -> smooth[0] <= 0.001f?
+                Core.bundle.get("bar.liquid") + " #" + fi:
+                current.current().localizedName + "     " + (current.getFlowRate(current.current()) >= 0? Strings.autoFixed(current.getFlowRate(current.current()), 0): "...") + Core.bundle.get("misc.perSecond"),
+            () -> current.current().barColor(),
+            () -> {
+              smooth[0] = Mathf.lerpDelta(smooth[0], current.currentAmount() /liquidCapacity, 0.04f);
+              return smooth[0];
+            }
+        ));
+        table.row();
+      }
+    }
+
+    protected void updateLiquidsFlow() {
+      for (LiquidModule module : liquidsBuffer) {
+        module.updateFlow();
+      }
     }
   
     @Override
@@ -101,17 +142,19 @@ public class MultLiquidBlock extends LiquidBlock{
     @Override
     public void updateTile(){
       super.updateTile();
-      for(LiquidModule liquids: liquidsBuffer){
-        liquids.updateFlow();
-      }
+
       liquids = liquidsBuffer[current = (current + 1)%conduitAmount];
-      cacheLiquids = liquids;
+      cacheLiquids = (ClusterLiquidModule) liquids;
     }
   
     public boolean conduitAccept(MultLiquidBuild source, int index, Liquid liquid){
       noSleep();
       LiquidModule liquids = liquidsBuffer[index];
       return source.interactable(team) && liquids.currentAmount() < 0.01f || liquids.current() == liquid && liquids.currentAmount() < liquidCapacity;
+    }
+
+    public boolean shouldClusterMove(MultLiquidBuild source){
+      return source.liquidsBuffer.length == liquidsBuffer.length;
     }
   
     public void handleLiquid(MultLiquidBuild source, int index, Liquid liquid, float amount){
@@ -120,6 +163,10 @@ public class MultLiquidBlock extends LiquidBlock{
   
     public float moveLiquid(MultLiquidBuild dest, int index, Liquid liquid){
       if(dest == null) return 0;
+
+      if (index >= dest.liquidsBuffer.length || !dest.shouldClusterMove(this)){
+        return moveLiquid(dest, liquid);
+      }
     
       LiquidModule liquids = liquidsBuffer[index], oLiquids = dest.liquidsBuffer[index];
       if(dest.interactable(team) && liquids.get(liquid) > 0f){
@@ -169,6 +216,7 @@ public class MultLiquidBlock extends LiquidBlock{
     @Override
     public void write(Writes write){
       super.write(write);
+      write.i(liquidsBuffer.length);
       for(LiquidModule liquids: liquidsBuffer){
         liquids.write(write);
       }
@@ -177,8 +225,173 @@ public class MultLiquidBlock extends LiquidBlock{
     @Override
     public void read(Reads read, byte revision){
       super.read(read, revision);
-      for(LiquidModule liquids: liquidsBuffer){
-        liquids.read(read);
+      liquidsBuffer = new ClusterLiquidModule[read.i()];
+      for (int i = 0; i < liquidsBuffer.length; i++) {
+        ClusterLiquidModule module = new ClusterLiquidModule();
+        module.read(read);
+        liquidsBuffer[i] = module;
+      }
+    }
+
+    @Override
+    public void onReplaced(ReplaceBuildComp old) {
+    }
+  }
+
+  public static class ClusterLiquidModule extends LiquidModule{
+    final Interval flowTimer = new Interval(2);
+    WindowedMean[] cacheFlow;
+    float[] cacheSums;
+    float[] displayFlow;
+    Liquid current = content.liquid(0);
+    WindowedMean[] flow;
+    final Bits cacheBits = new Bits();
+    final float[] liquids = new float[content.liquids().size];
+
+    @Override
+    public void updateFlow() {
+      if(flowTimer.get(1, 20)){
+        if(flow == null){
+          if(cacheFlow == null || cacheFlow.length != liquids.length){
+            cacheFlow = new WindowedMean[liquids.length];
+            for(int i = 0; i < liquids.length; i++){
+              cacheFlow[i] = new WindowedMean(3);
+            }
+            cacheSums = new float[liquids.length];
+            displayFlow = new float[liquids.length];
+          }else{
+            for(int i = 0; i < liquids.length; i++){
+              cacheFlow[i].reset();
+            }
+            Arrays.fill(cacheSums, 0);
+            cacheBits.clear();
+          }
+
+          Arrays.fill(displayFlow, -1);
+
+          flow = cacheFlow;
+        }
+
+        boolean updateFlow = flowTimer.get(30);
+
+        for(int i = 0; i < liquids.length; i++){
+          flow[i].add(cacheSums[i]);
+          if(cacheSums[i] > 0){
+            cacheBits.set(i);
+          }
+          cacheSums[i] = 0;
+
+          if(updateFlow){
+            displayFlow[i] = flow[i].hasEnoughData() ? flow[i].mean()/20 : -1;
+          }
+        }
+      }
+    }
+
+    @Override
+    public void stopFlow() {
+      flow = null;
+    }
+    public float getFlowRate(Liquid liquid){
+      return flow == null ? -1f : displayFlow[liquid.id] * 60;
+    }
+
+    public boolean hasFlowLiquid(Liquid liquid){
+      return flow != null && cacheBits.get(liquid.id);
+    }
+
+    public Liquid current(){
+      return current;
+    }
+
+    public void reset(Liquid liquid, float amount){
+      Arrays.fill(liquids, 0f);
+      liquids[liquid.id] = amount;
+      current = liquid;
+    }
+
+    public float currentAmount(){
+      return liquids[current.id];
+    }
+
+    public float get(Liquid liquid){
+      return liquids[liquid.id];
+    }
+
+    public void clear(){
+      Arrays.fill(liquids, 0);
+    }
+
+    public void add(Liquid liquid, float amount){
+      liquids[liquid.id] += amount;
+      current = liquid;
+
+      if(flow != null){
+        cacheSums[liquid.id] += Math.max(amount, 0);
+      }
+    }
+
+    public void handleFlow(Liquid liquid, float amount){
+      if(flow != null){
+        cacheSums[liquid.id] += Math.max(amount, 0);
+      }
+    }
+
+    public void remove(Liquid liquid, float amount){
+      //cap to prevent negative removal
+      add(liquid, Math.max(-amount, -liquids[liquid.id]));
+    }
+
+    public void each(LiquidModule.LiquidConsumer cons){
+      for(int i = 0; i < liquids.length; i++){
+        if(liquids[i] > 0){
+          cons.accept(content.liquid(i), liquids[i]);
+        }
+      }
+    }
+
+    public float sum(LiquidModule.LiquidCalculator calc){
+      float sum = 0f;
+      for(int i = 0; i < liquids.length; i++){
+        if(liquids[i] > 0){
+          sum += calc.get(content.liquid(i), liquids[i]);
+        }
+      }
+      return sum;
+    }
+
+    @Override
+    public void write(Writes write){
+      int amount = 0;
+      for(float liquid : liquids){
+        if(liquid > 0) amount++;
+      }
+
+      write.s(amount); //amount of liquids
+
+      for(int i = 0; i < liquids.length; i++){
+        if(liquids[i] > 0){
+          write.s(i); //liquid ID
+          write.f(liquids[i]); //liquid amount
+        }
+      }
+    }
+
+    @Override
+    public void read(Reads read, boolean legacy){
+      Arrays.fill(liquids, 0);
+      int count = legacy ? read.ub() : read.s();
+
+      for(int j = 0; j < count; j++){
+        Liquid liq = content.liquid(legacy ? read.ub() : read.s());
+        float amount = read.f();
+        if(liq != null){
+          int liquidid = liq.id;
+          liquids[liquidid] = amount;
+          if(amount > 0){
+            current = liq;
+          }
+        }
       }
     }
   }

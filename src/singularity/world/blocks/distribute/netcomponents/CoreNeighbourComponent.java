@@ -4,13 +4,13 @@ import arc.Core;
 import arc.struct.ObjectMap;
 import mindustry.gen.Building;
 import mindustry.world.meta.StatUnit;
-import singularity.util.NumberStrify;
 import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.components.distnet.DistComponent;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
 import singularity.world.distribution.DistBufferType;
 import singularity.world.meta.SglStat;
+import universecore.util.NumberStrify;
 
 public class CoreNeighbourComponent extends DistNetBlock{
   public int topologyCapaity = 0;

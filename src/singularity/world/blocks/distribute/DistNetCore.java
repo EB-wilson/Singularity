@@ -14,7 +14,6 @@ import mindustry.gen.Building;
 import mindustry.graphics.Pal;
 import mindustry.world.Block;
 import mindustry.world.meta.StatUnit;
-import singularity.util.NumberStrify;
 import singularity.world.blocks.distribute.netcomponents.CoreNeighbourComponent;
 import singularity.world.components.distnet.DistNetworkCoreComp;
 import singularity.world.distribution.DistBufferType;
@@ -22,6 +21,7 @@ import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.modules.DistCoreModule;
 import universecore.annotations.Annotations;
+import universecore.util.NumberStrify;
 
 import static mindustry.Vars.tilesize;
 

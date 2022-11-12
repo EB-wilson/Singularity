@@ -77,7 +77,7 @@ public class LiquidUnloader extends Block{
         move = Math.min(Math.min(move, dump.block.liquidCapacity - dump.liquids.get(l)), a);
 
         next.liquids.remove(l, move);
-        dump.liquids.add(l, move);
+        dump.handleLiquid(this, l, move);
       });
     }
   

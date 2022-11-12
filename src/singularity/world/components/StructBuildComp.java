@@ -1,8 +1,9 @@
 package singularity.world.components;
 
 import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ChainsBuildComp;
 
-public interface StructBuildComp extends ChainsBuildComp{
+public interface StructBuildComp extends ChainsBuildComp {
   @Annotations.BindField("structCore")
   default StructCoreBuildComp core(){
     return null;

@@ -24,9 +24,9 @@ public class Destructor extends NormalCrafter{
       consume.item(atomSchematic.item, 1);
       consume.energy(8);
       consume.selectable = atomSchematic::researchVisibility;
-      consume.trigger = e -> {
+      consume.setConsTrigger(e -> {
         atomSchematic.destructing(1);
-      };
+      });
       consume.time(6);
     }
 

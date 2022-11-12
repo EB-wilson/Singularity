@@ -11,11 +11,11 @@ import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.tables.*;
-import singularity.util.NumberStrify;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.MatrixGrid;
 import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.request.DistRequestBase;
+import universecore.util.NumberStrify;
 
 public class DistNetMonitorDialog extends BaseDialog{
   DistributeNetwork distNetwork;

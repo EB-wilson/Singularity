@@ -1,13 +1,19 @@
 package singularity.contents;
 
 import arc.Core;
+import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.math.Angles;
 import arc.math.Mathf;
 import arc.struct.ObjectMap;
 import arc.util.Time;
 import arc.util.Tmp;
+import mindustry.content.Fx;
 import mindustry.content.Items;
+import mindustry.content.StatusEffects;
+import mindustry.entities.Damage;
+import mindustry.entities.Effect;
 import mindustry.game.EventType;
 import mindustry.gen.Bullet;
 import mindustry.gen.Unit;
@@ -17,7 +23,10 @@ import mindustry.graphics.Pal;
 import mindustry.type.StatusEffect;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
+import singularity.graphic.SglDraw;
+import singularity.graphic.SglDrawConst;
 import singularity.type.AtomSchematic;
+import singularity.world.SglFx;
 import singularity.world.meta.SglStat;
 import universecore.UncCore;
 import universecore.util.aspect.EntityAspect;
@@ -33,7 +42,12 @@ public class OtherContents implements ContentList{
   iridium_schematic;
 
   public static StatusEffect electric_disturb,
-  locking;
+  locking,
+  spring_coming,
+  wild_growth,
+  frost,
+  frost_freeze,
+  meltdown;
 
   static final ObjectMap<Unit, float[]> lastHealth = new ObjectMap<>();
 
@@ -70,7 +84,7 @@ public class OtherContents implements ContentList{
           t.row();
           t.add(Core.bundle.format("data.bulletDeflectAngle", 12.4f + StatUnit.degrees.localized()));
           t.row();
-          t.add("[lightgray]" + Core.bundle.get("infos,attenuationWithTime") + "[]").padLeft(15);
+          t.add("[lightgray]" + Core.bundle.get("infos.attenuationWithTime") + "[]").padLeft(15);
         });
       }
 
@@ -109,6 +123,126 @@ public class OtherContents implements ContentList{
           );
           Tmp.v1.rotate90(1);
           Tmp.v2.rotate90(1);
+        }
+      }
+    };
+
+    spring_coming = new StatusEffect("spring_coming"){{
+      color = Pal.heal;
+      speedMultiplier = 1.23f;
+      reloadMultiplier = 1.16f;
+      damage = -2;
+    }};
+
+    wild_growth = new StatusEffect("wild_growth"){{
+      color = Tmp.c1.set(Pal.heal).lerp(Color.black, 0.25f).cpy();
+      speedMultiplier = 0.05f;
+      reloadMultiplier = 0.7f;
+      damage = 1.5f;
+    }};
+
+    frost = new StatusEffect("frost"){
+      {
+        color = SglDrawConst.frost;
+        speedMultiplier = 0.5f;
+        reloadMultiplier = 0.8f;
+        effect = Fx.freezing;
+
+        init(() -> {
+          handleOpposite(StatusEffects.burning);
+          handleOpposite(StatusEffects.melting);
+        });
+      }
+
+      @Override
+      public void update(Unit unit, float time){
+        super.update(unit, time);
+        if(time >= 30*unit.hitSize){
+          if(unit.getDuration(frost_freeze) <= 0){
+            unit.unapply(this);
+            unit.apply(frost_freeze, Math.max(time/2, 180));
+          }
+        }
+      }
+    };
+
+    frost_freeze = new StatusEffect("frost_freeze"){
+      {
+        speedMultiplier = 0.05f;
+        reloadMultiplier = 0.05f;
+        effect = SglFx.iceParticleSpread;
+
+        init(() -> {
+          handleOpposite(StatusEffects.burning);
+          handleOpposite(StatusEffects.melting);
+        });
+      }
+
+      @Override
+      public void update(Unit unit, float time){
+        super.update(unit, time);
+        if(unit.getDuration(frost) >= 30*unit.hitSize){
+          unit.apply(StatusEffects.freezing, 240);
+          unit.unapply(frost);
+          unit.unapply(frost_freeze);
+
+          unit.damage(time/3.4f);
+          Damage.damage(unit.x, unit.y, unit.hitSize, unit.getDuration(frost)/2.8f);
+          Fx.pointShockwave.at(unit.x, unit.y);
+          Effect.shake(0.75f, 0.75f, unit);
+        }
+      }
+
+      @Override
+      public void draw(Unit unit, float time){
+        super.draw(unit, time);
+        float ro = Mathf.randomSeed(unit.id, 360);
+        Draw.color(SglDrawConst.frost);
+        Draw.alpha(0.85f);
+        Draw.z(Layer.flyingUnit);
+        SglDraw.drawDiamond(unit.x, unit.y, unit.hitSize*2.35f, unit.hitSize*2, ro, 0.3f);
+
+        Draw.alpha(0.7f);
+        int n = Mathf.randomSeed(unit.id + 1, 4, 8);
+        for(int i = 0; i < n; i++){
+          float off = Mathf.randomSeed(unit.id + 2 + i, unit.hitSize*0.8f, unit.hitSize);
+          float len = Mathf.randomSeed(unit.id + 3 + i, unit.hitSize);
+          float wid = Mathf.randomSeed(unit.id + 4 + i, unit.hitSize*0.4f, unit.hitSize*0.8f);
+          float rot = Mathf.randomSeed(unit.id + 5 + i, 360);
+
+          SglDraw.drawDiamond(unit.x + Angles.trnsx(rot, off), unit.y + Angles.trnsy(rot, off), len, wid, rot, 0.2f);
+        }
+      }
+    };
+
+    meltdown = new StatusEffect("meltdown"){
+      {
+        damage = 1;
+        effect = Fx.melting;
+
+        init(() -> {
+          opposite(StatusEffects.freezing, StatusEffects.wet, frost);
+
+          affinity(StatusEffects.tarred, (unit, result, time) -> {
+            unit.damagePierce(8f);
+            Fx.burning.at(unit.x + Mathf.range(unit.bounds() / 2f), unit.y + Mathf.range(unit.bounds() / 2f));
+            result.set(meltdown, 180 + result.time);
+          });
+
+          trans(frost_freeze, (e, s, t) -> {
+            s.time -= t;
+            e.apply(StatusEffects.blasted);
+            e.damage(Math.max(e.getDuration(frost), t)/2f);
+          });
+        });
+      }
+
+      @Override
+      public void update(Unit unit, float time) {
+        super.update(unit, time);
+        if (unit.shield > 0){
+          unit.shieldAlpha = 1;
+          unit.shield -= Time.delta*time/6;
         }
       }
     };

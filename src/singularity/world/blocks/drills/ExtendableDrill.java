@@ -6,13 +6,13 @@ import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.type.ItemStack;
 import mindustry.world.Tile;
-import singularity.world.components.ChainsBlockComp;
-import singularity.world.components.ChainsBuildComp;
-import singularity.world.modules.ChainsModule;
 import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ChainsBlockComp;
+import universecore.components.blockcomp.ChainsBuildComp;
+import universecore.world.blocks.modules.ChainsModule;
 
 @Annotations.ImplEntries
-public class ExtendableDrill extends BaseDrill implements ChainsBlockComp{
+public class ExtendableDrill extends BaseDrill implements ChainsBlockComp {
   public int maxChainsHeight = 30;
   public int maxChainsWidth = 30;
 
@@ -28,7 +28,7 @@ public class ExtendableDrill extends BaseDrill implements ChainsBlockComp{
   }
 
   @Annotations.ImplEntries
-  public class ExtendableDrillBuild extends BaseDrillBuild implements ChainsBuildComp{
+  public class ExtendableDrillBuild extends BaseDrillBuild implements ChainsBuildComp {
     public ChainsModule chains;
     public boolean valid = true;
 

@@ -35,6 +35,7 @@ import singularity.world.components.EdgeLinkerComp;
 import singularity.world.components.distnet.IOPointComp;
 import singularity.world.distribution.GridChildType;
 import singularity.world.meta.SglStat;
+import universecore.UncCore;
 import universecore.annotations.Annotations;
 import universecore.util.DataPackable;
 
@@ -297,7 +298,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     public void drawConfigure(){
       super.drawConfigure();
       for(IOPointComp io: ioPoints.values()){
-        if(Sgl.ui.secConfig.getConfiguring() == io) continue;
+        if(UncCore.secConfig.getConfiguring() == io) continue;
         float radius = io.getBlock().size * tilesize / 2f + 1f;
         Building building = io.getBuilding();
         Drawf.square(building.x, building.y, radius, Pal.accent);

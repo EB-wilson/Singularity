@@ -10,7 +10,7 @@ import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
-import singularity.world.DirEdges;
+import universecore.world.DirEdges;
 
 import static mindustry.Vars.tilesize;
 

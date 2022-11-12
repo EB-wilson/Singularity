@@ -179,12 +179,12 @@ public class ClusterConduit extends MultLiquidBlock{
     public void display(Table table){
       super.display(table);
     }
-  
+
     @Override
     public boolean conduitAccept(MultLiquidBuild source, int index, Liquid liquid){
-      return super.conduitAccept(source, index, liquid) && (source.block instanceof ClusterConduit || tile == null || source.tile.absoluteRelativeTo(tile.x, tile.y) == rotation);
+      return super.conduitAccept(source, index, liquid) && (source.block instanceof ClusterConduit || source.tile.absoluteRelativeTo(tile.x, tile.y) == rotation);
     }
-  
+
     @Override
     public float moveLiquidForward(boolean leaks, Liquid liquid){
       Tile next = tile.nearby(rotation);
@@ -193,8 +193,8 @@ public class ClusterConduit extends MultLiquidBlock{
       float flow = 0;
       for(int i=0; i<liquidsBuffer.length; i++){
         LiquidModule liquids = liquidsBuffer[i];
-        if(next.build instanceof MultLiquidBuild){
-          flow += moveLiquid((MultLiquidBuild) next.build, i, liquids.current());
+        if(next.build instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
+          flow += moveLiquid(mu, i, liquids.current());
         }
         else if(next.build != null){
           this.liquids = liquids;
@@ -209,17 +209,14 @@ public class ClusterConduit extends MultLiquidBlock{
     @Override
     public float moveLiquid(Building next, Liquid liquid){
       next = next.getLiquidDestination(this, liquid);
-      if(next instanceof MultLiquidBuild){
-        int index=0;
-        boolean found = false;
-        for(; index<liquidsBuffer.length; index++){
-          if(liquidsBuffer[index] == liquids){
-            found = true;
-            break;
+      if(next instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
+        float f = 0;
+        for(int index=0; index<liquidsBuffer.length; index++){
+          if(liquidsBuffer[index] == liquids && mu.conduitAccept(this, index, liquidsBuffer[index].current())){
+            f += moveLiquid(mu, index, liquidsBuffer[index].current());
           }
         }
-        
-        if(found) return moveLiquid((MultLiquidBuild)next, index, liquids.current());
+        if (f > 0) return f;
       }
       return super.moveLiquid(next, liquid);
     }

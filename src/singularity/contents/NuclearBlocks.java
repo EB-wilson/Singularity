@@ -37,8 +37,8 @@ import singularity.world.draw.DrawReactorHeat;
 import singularity.world.draw.DrawRegionDynamic;
 import singularity.world.particles.SglParticleModels;
 import universecore.world.consumers.BaseConsume;
-import universecore.world.consumers.UncConsumeItems;
-import universecore.world.consumers.UncConsumeLiquids;
+import universecore.world.consumers.ConsumeItems;
+import universecore.world.consumers.ConsumeLiquids;
 import universecore.world.particles.Particle;
 import universecore.world.particles.ParticleModel;
 
@@ -64,6 +64,7 @@ public class NuclearBlocks implements ContentList{
   /**核能黑洞*/
   nuclear_energy_void;
   
+  @SuppressWarnings("rawtypes")
   @Override
   public void load(){
     nuclear_pipe_node = new NuclearPipeNode("nuclear_pipe_node"){{
@@ -127,23 +128,23 @@ public class NuclearBlocks implements ContentList{
           new DrawRegionDynamic<NormalCrafterBuild>("_top"){{
             color = e -> {
               BaseConsume<?> cons = e.consumer.current == null? null: ((SglConsumers) (e.consumer.current)).first();
-              if(cons instanceof UncConsumeLiquids){
-                Liquid liquid = ((UncConsumeLiquids<?>) cons).liquids[0].liquid;
-                if(liquid == Liquids.water) liquid = ((UncConsumeLiquids<?>) cons).liquids[1].liquid;
+              if(cons instanceof ConsumeLiquids c){
+                Liquid liquid = c.consLiquids[0].liquid;
+                if(liquid == Liquids.water) liquid = c.consLiquids[1].liquid;
                 return liquid.color;
-              }else if(cons instanceof UncConsumeItems){
-                Item item = ((UncConsumeItems<?>) cons).items[0].item;
+              }else if(cons instanceof ConsumeItems c){
+                Item item = c.consItems[0].item;
                 return item.color;
               }else return Color.white;
             };
             alpha = e -> {
               BaseConsume<?> cons = e.consumer.current == null? null: ((SglConsumers) (e.consumer.current)).first();
-              if(cons instanceof UncConsumeLiquids){
-                Liquid liquid = ((UncConsumeLiquids<?>) cons).liquids[0].liquid;
-                if(liquid == Liquids.water) liquid = ((UncConsumeLiquids<?>) cons).liquids[1].liquid;
+              if(cons instanceof ConsumeLiquids c){
+                Liquid liquid = c.consLiquids[0].liquid;
+                if(liquid == Liquids.water) liquid = ((ConsumeLiquids<?>) cons).consLiquids[1].liquid;
                 return e.liquids.get(liquid)/e.block.liquidCapacity;
-              }else if(cons instanceof UncConsumeItems){
-                Item item = ((UncConsumeItems<?>) cons).items[0].item;
+              }else if(cons instanceof ConsumeItems c){
+                Item item = c.consItems[0].item;
                 return (float) e.items.get(item)/e.block.itemCapacity;
               }else return 0;
             };

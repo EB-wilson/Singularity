@@ -1,54 +1,58 @@
 package singularity.world.draw.part;
 
 import arc.graphics.g2d.Draw;
+import arc.math.Mathf;
+import arc.math.geom.Vec2;
 import arc.struct.Seq;
-import arc.util.Tmp;
 import mindustry.entities.part.DrawPart;
 
 public class CustomPart extends DrawPart{
-  public Seq<Drawer> drawers = new Seq<>();
-  public Seq<PartHandler> offsets = new Seq<>();
+  public Drawer draw;
   public Seq<PartMove> moves = new Seq<>();
 
-  public float layer;
+  public PartProgress progress = p -> 1;
+  public float layer = -1;
 
-  public float x, y, rotation;
+  public float x, y, drawRadius, rotation;
+  public float moveX, moveY, drawRadiusTo, moveRot;
+  public boolean mirror;
+  
+  private final Vec2 vec = new Vec2();
+  private final Vec2 vec2 = new Vec2();
 
   @Override
   public void draw(PartParams params){
-    float mx = 0, my = 0, mr = 0;
+    float prog = Mathf.clamp(progress.get(params));
+    float z = Draw.z();
 
-    if(moves.size > 0){
-      for(int l = 0; l < moves.size; l++){
-        var move = moves.get(l);
-        float p = move.progress.getClamp(params);
-        mx += move.x * p;
-        my += move.y * p;
-        mr += move.rot * p;
-      }
+    float dx = 0, dy = 0, dr = 0;
+    for(PartMove move: moves){
+      dx += move.x*move.progress.get(params);
+      dy += move.y*move.progress.get(params);
+      dr += move.rot*move.progress.get(params);
     }
 
-    float z = Draw.z();
-    for(int i = 0; i < drawers.size; i++){
-      PartHandler hand = offsets.get(i);
-      float progress = hand.progress.get(params);
+    float rot = rotation + moveRot*prog + dr;
+    vec.set(
+        x + moveX*prog + dx,
+        y + moveY*prog + dy
+    ).rotate(params.rotation - 90);
+    vec2.set(drawRadius + (drawRadiusTo - drawRadius)*prog, 0).setAngle(rot).rotate(params.rotation);
 
-      Draw.z(layer + hand.layerOffset);
+    float drawX = vec.x + vec2.x;
+    float drawY = vec.y + vec2.y;
 
-      float rot = rotation + params.rotation + hand.rot*progress + mr;
-      Tmp.v1.set(
-          x + hand.x*progress + mx,
-          y + hand.y*progress + my
-      ).rotate(rot);
+    if(layer >= 0) Draw.z(layer);
+    draw.draw(params.x + drawX, params.y + drawY, params.rotation + rot, prog);
 
-      drawers.get(i).draw(params.x + Tmp.v1.x, params.y + Tmp.v1.y, rot, progress);
+    if(mirror){
+      vec.setAngle(2*params.rotation - vec.angle());
+      vec2.setAngle(-rot).rotate(params.rotation);
+      drawX = vec.x + vec2.x;
+      drawY = vec.y + vec2.y;
+      draw.draw(params.x + drawX, params.y + drawY, params.rotation - rot, prog);
     }
     Draw.z(z);
-  }
-
-  public void set(PartHandler mover, Drawer drawer){
-    offsets.add(mover);
-    drawers.add(drawer);
   }
 
   @Override
@@ -56,21 +60,5 @@ public class CustomPart extends DrawPart{
 
   public interface Drawer{
     void draw(float x, float y, float rotation, float progress);
-  }
-
-  public static class PartHandler{
-    public PartProgress progress = p -> 1;
-    public float x, y, rot, layerOffset;
-
-    public PartHandler(PartProgress progress, float x, float y, float rot, float layerOffset){
-      this.progress = progress;
-      this.x = x;
-      this.y = y;
-      this.rot = rot;
-      this.layerOffset = layerOffset;
-    }
-
-    public PartHandler(){
-    }
   }
 }

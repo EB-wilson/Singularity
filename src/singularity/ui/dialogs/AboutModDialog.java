@@ -49,7 +49,6 @@ public class AboutModDialog extends BaseDialog {
   );
   
   Seq<BaseListDialog.ItemEntry> qqPages = Seq.with(
-      getEntry(Core.bundle.get("dialog.openUriDialog.qqPerson"), Sgl.qq),
       getEntry(Core.bundle.get("dialog.openUriDialog.qqGroup1"), Sgl.qqGroup1),
       getEntry(Core.bundle.get("dialog.openUriDialog.qqGroup2"), Sgl.qqGroup2)
   );

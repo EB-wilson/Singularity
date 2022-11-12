@@ -22,10 +22,8 @@ import mindustry.world.Tile;
 import singularity.Sgl;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.ui.tables.DistTargetConfigTable.TargetConfigure;
-import singularity.util.NumberStrify;
 import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers.RequestHandler;
-import singularity.world.components.SecondableConfigBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitComp;
 import singularity.world.components.distnet.IOPointComp;
@@ -34,8 +32,11 @@ import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
 import singularity.world.distribution.request.DistRequestBase;
 import singularity.world.meta.SglStat;
+import universecore.UncCore;
 import universecore.annotations.Annotations;
+import universecore.components.blockcomp.SecondableConfigBuildComp;
 import universecore.util.DataPackable;
+import universecore.util.NumberStrify;
 import universecore.util.colletion.TreeSeq;
 
 import static mindustry.Vars.control;
@@ -154,7 +155,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   
   @SuppressWarnings("rawtypes")
   @Annotations.ImplEntries
-  public class MatrixGridBuild extends DistNetBuild implements DistMatrixUnitBuildComp, SecondableConfigBuildComp{
+  public class MatrixGridBuild extends DistNetBuild implements DistMatrixUnitBuildComp, SecondableConfigBuildComp {
     public MatrixGrid grid = new MatrixGrid();
     
     protected TreeSeq<TargetConfigure> configs = new TreeSeq<>((a, b) -> b.priority - a.priority);
@@ -236,7 +237,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           target instanceof IOPointComp point? point.configContentTypes()
               : getAcceptType(target.block),
           c -> configure(c.pack()),
-          Sgl.ui.secConfig::hideConfig
+          UncCore.secConfig::hideConfig
       ));
     }
 
@@ -368,7 +369,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       else{
         if(tileValid(other.tile) && gridValid()){
           if(configValid(other)){
-            Sgl.ui.secConfig.showOn(other);
+            UncCore.secConfig.showOn(other);
           }
           return false;
         }

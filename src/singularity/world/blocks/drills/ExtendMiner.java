@@ -17,19 +17,19 @@ import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.world.Tile;
 import mindustry.world.modules.ItemModule;
-import singularity.world.DirEdges;
 import singularity.world.blocks.SglBlock;
-import singularity.world.components.ChainsBlockComp;
-import singularity.world.components.ChainsBuildComp;
-import singularity.world.components.SpliceBlockComp;
-import singularity.world.components.SpliceBuildComp;
 import singularity.world.meta.SglStat;
-import singularity.world.modules.ChainsModule;
 import singularity.world.modules.SglLiquidModule;
 import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ChainsBlockComp;
+import universecore.components.blockcomp.ChainsBuildComp;
+import universecore.components.blockcomp.SpliceBlockComp;
+import universecore.components.blockcomp.SpliceBuildComp;
+import universecore.world.DirEdges;
+import universecore.world.blocks.modules.ChainsModule;
 
 @Annotations.ImplEntries
-public class ExtendMiner extends SglBlock implements SpliceBlockComp{
+public class ExtendMiner extends SglBlock implements SpliceBlockComp {
   public ExtendableDrill master;
   public boolean negativeSplice;
 
@@ -125,7 +125,7 @@ public class ExtendMiner extends SglBlock implements SpliceBlockComp{
   }
 
   @Annotations.ImplEntries
-  public class ExtendMinerBuild extends SglBuilding implements SpliceBuildComp{
+  public class ExtendMinerBuild extends SglBuilding implements SpliceBuildComp {
     public int[] splice;
     public ChainsModule chains;
     public ExtendableDrill.ExtendableDrillBuild masterDrill;

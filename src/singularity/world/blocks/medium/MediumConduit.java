@@ -11,9 +11,11 @@ import mindustry.graphics.Layer;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.blocks.Autotiler;
-import singularity.world.components.*;
-import singularity.world.modules.ChainsModule;
+import singularity.world.components.MediumBuildComp;
+import singularity.world.components.MediumComp;
 import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ChainsBuildComp;
+import universecore.world.blocks.modules.ChainsModule;
 
 import java.util.Arrays;
 
@@ -73,7 +75,7 @@ public class MediumConduit extends Block implements MediumComp, Autotiler{
   }
 
   @Annotations.ImplEntries
-  public class MediumConduitBuild extends Building implements MediumBuildComp, ChainsBuildComp{
+  public class MediumConduitBuild extends Building implements MediumBuildComp, ChainsBuildComp {
     int[] blendData;
 
     ChainsModule chains;

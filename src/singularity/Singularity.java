@@ -5,7 +5,9 @@ import arc.Events;
 import arc.graphics.g2d.TextureRegion;
 import arc.util.Log;
 import mindustry.Vars;
-import mindustry.content.TechTree;
+import mindustry.ctype.Content;
+import mindustry.ctype.ContentType;
+import mindustry.ctype.UnlockableContent;
 import mindustry.mod.Mod;
 import singularity.contents.*;
 import singularity.contents.override.OverrideBlocks;
@@ -24,6 +26,8 @@ import static mindustry.game.EventType.*;
 @Annotations.ImportUNC(requireVersion = 14)
 public class Singularity extends Mod{
   private static final ContentList[] modContents = new ContentList[]{
+      new OtherContents(),//其他内容
+
       new SglItems(),//物品
       new SglLiquids(),//液体
       new Environments(),//环境块
@@ -35,8 +39,6 @@ public class Singularity extends Mod{
       new DistributeBlocks(),//物流运输方块
       new Turrets(),//炮台
       new DefenceBlocks(),//防御方块
-
-      new OtherContents(),//其他内容
 
       new SglTechThree(),//科技树
   };
@@ -118,8 +120,12 @@ public class Singularity extends Mod{
     if(Sgl.config.debugMode){
       new DebugBlocks().load();
 
-      for(TechTree.TechNode node: TechTree.all){
-        node.content.alwaysUnlocked = true;
+      for (ContentType type : ContentType.all) {
+        for (Content content : Vars.content.getBy(type)) {
+          if (content instanceof UnlockableContent uc){
+            uc.alwaysUnlocked = true;
+          }
+        }
       }
     }
 

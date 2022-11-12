@@ -1,6 +1,6 @@
 package singularity.world.components;
 
-import singularity.world.blocks.chains.ChainsContainer;
+import universecore.world.blocks.chains.ChainsContainer;
 
 public interface StructCoreBuildComp extends StructBuildComp{
   default StructCoreComp getStructCore(){

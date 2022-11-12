@@ -70,6 +70,8 @@ public class SglTechThree implements ContentList{
       node(graphitePress, crystallizer, cry -> {
         cry.node(FEX_crystal_charger, charger -> {
           charger.node(lattice_constructor, latCons -> {});
+
+          charger.node(matrix_cutter, matCut -> {});
         });
       });
 

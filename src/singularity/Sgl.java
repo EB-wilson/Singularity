@@ -53,11 +53,10 @@ public class Sgl{
   public static final Fi dataDirectory = modDirectory.child("data").child(modName);
   /**模组配置文件夹*/
   public static final Fi configDirectory = modDirectory.child("config").child(modName);
-  /**模组的mod_config.ini配置文件*/
+  /**模组的mod_config.hjson配置文件*/
   public static final Fi configFile = configDirectory.child("mod_config.hjson");
   
   //URIs
-  public static final String qq = "https://qm.qq.com/cgi-bin/qm/qr?k=wLs-Tki9wGMJtJs2mWSc46fUusYk-oO1&noverify=0";
   public static final String telegram = "https://t.me/EB_wilson";
   public static final String facebook = "https://www.facebook.com/profile.php?id=100024490163405";
   public static final String qqGroup1 = "https://jq.qq.com/?_wv=1027&k=BTHaN7gd";

@@ -7,6 +7,7 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
+import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
@@ -19,7 +20,7 @@ import mindustry.graphics.Layer;
 import mindustry.world.Tile;
 
 public class SglDraw{
-  private static boolean blooming;
+  private static int blooming = -1;
   private static final Rect rect = new Rect();
 
   private static final Vec2 v1 = new Vec2(), v2 = new Vec2(), v3 = new Vec2(), v4 = new Vec2(), v5 = new Vec2(),
@@ -35,6 +36,12 @@ public class SglDraw{
           Vars.renderer.bloom.capturePause();
         });
         Draw.draw(Layer.blockOver - 0.02f, () -> Vars.renderer.bloom.render());
+
+        Draw.draw(Layer.flyingUnit + 0.02f, () -> {
+          Vars.renderer.bloom.capture();
+          Vars.renderer.bloom.capturePause();
+        });
+        Draw.draw(Layer.overlayUI - 0.02f, () -> Vars.renderer.bloom.render());
       }
     });
   }
@@ -88,6 +95,16 @@ public class SglDraw{
     drawDiamond(x, y, horLength, horWidth, 0 + rotation, color, color);
   }
 
+  public static void drawLightEdge(float x, float y, float vertLength, float vertWidth, float horLength, float horWidth, float rotation, float gradientAlpha){
+    drawLightEdge(x, y, vertLength, vertWidth, horLength, horWidth, rotation, Tmp.c1.set(Draw.getColor()).a(gradientAlpha));
+  }
+
+  public static void drawLightEdge(float x, float y, float vertLength, float vertWidth, float horLength, float horWidth, float rotation, Color gradientTo){
+    Color color = Draw.getColor();
+    drawDiamond(x, y, vertLength, vertWidth, 90 + rotation, color, gradientTo);
+    drawDiamond(x, y, horLength, horWidth, 0 + rotation, color, gradientTo);
+  }
+
   public static void drawLightEdge(float x, float y, Color color, float vertLength, float vertWidth, float rotationV, Color gradientV,
                                    float horLength, float horWidth, float rotationH, Color gradientH){
     drawDiamond(x, y, vertLength, vertWidth, 90 + rotationV, color, gradientV);
@@ -103,6 +120,10 @@ public class SglDraw{
 
   public static void drawDiamond(float x, float y, float length, float width, float rotation){
     drawDiamond(x, y, length, width, rotation, Draw.getColor());
+  }
+
+  public static void drawDiamond(float x, float y, float length, float width, float rotation, float gradientAlpha){
+    drawDiamond(x, y, length, width, rotation, Draw.getColor(), gradientAlpha);
   }
 
   public static void drawDiamond(float x, float y, float length, float width, float rotation, Color color){
@@ -134,8 +155,100 @@ public class SglDraw{
         x - v2.x, y - v2.y, gradientColor);
   }
 
+  public static void drawCrystal(float x, float y, float length, float width, float height, float centOffX, float centOffY, float edgeStoke,
+                                 float edgeLayer, float botLayer, float crystalRotation, float rotation, Color color, Color edgeColor){
+    v31.set(length/2, 0, 0);
+    v32.set(0, width/2, 0).rotate(Vec3.X, crystalRotation);
+    v33.set(centOffX, centOffY, height/2).rotate(Vec3.X, crystalRotation);
+
+    float w1, w2;
+    float widthReal = Math.max(w1 = Math.abs(v32.y), w2 = Math.abs(v33.y));
+
+    v31.rotate(Vec3.Z, -rotation);
+    v32.rotate(Vec3.Z, -rotation);
+    v33.rotate(Vec3.Z, -rotation);
+
+    float z = Draw.z();
+    Draw.z(botLayer);
+    Draw.color(color);
+
+    float mx = Angles.trnsx(rotation + 90, widthReal), my = Angles.trnsy(rotation + 90, widthReal);
+    Fill.quad(
+        x + v31.x, y + v31.y,
+        x + mx, y + my,
+        x - v31.x, y - v31.y,
+        x - mx, y - my
+    );
+
+    Lines.stroke(edgeStoke, edgeColor);
+    crystalEdge(x, y, w1 >= widthReal, v32.z > v33.z, edgeLayer, botLayer, v32);
+    crystalEdge(x, y, w2 >= widthReal, v33.z > v32.z, edgeLayer, botLayer, v33);
+
+    Draw.z(z);
+  }
+
+  private static void crystalEdge(float x, float y, boolean w, boolean r, float edgeLayer, float botLayer, Vec3 v){
+    Draw.z(r || w? edgeLayer: botLayer - 0.01f);
+    Lines.line(
+        x + v.x, y + v.y,
+        x + v31.x, y + v31.y
+    );
+    Lines.line(
+        x + v.x, y + v.y,
+        x - v31.x, y - v31.y
+    );
+    Draw.z(!r || w? edgeLayer: botLayer - 0.01f);
+    Lines.line(
+        x - v.x, y - v.y,
+        x + v31.x, y + v31.y
+    );
+    Lines.line(
+        x - v.x, y - v.y,
+        x - v31.x, y - v31.y
+    );
+  }
+
+  public static void gradientTri(float x, float y, float length, float width, float rotation){
+    gradientTri(x, y, length, width, rotation, Draw.getColor());
+  }
+
+  public static void gradientTri(float x, float y, float length, float width, float rotation, float gradientAlpha){
+    gradientTri(x, y, length, width, rotation, Draw.getColor(), gradientAlpha);
+  }
+
+  public static void gradientTri(float x, float y, float length, float width, float rotation, Color color){
+    gradientTri(x, y, length, width, rotation, color, color);
+  }
+
+  public static void gradientTri(float x, float y, float length, float width, float rotation, Color color, float gradientAlpha){
+    gradientTri(x, y, length, width, rotation, color, Tmp.c1.set(color).a(gradientAlpha));
+  }
+
+  public static void gradientTri(float x, float y, float length, float width, float rotation, Color color, Color gradient){
+    v1.set(length/2, 0).rotate(rotation);
+    v2.set(0, width/2).rotate(rotation);
+
+    float originColor = color.toFloatBits();
+    float gradientColor = gradient.toFloatBits();
+
+    Fill.quad(x, y, originColor, x, y, originColor,
+        x + v1.x, y + v1.y, gradientColor,
+        x + v2.x, y + v2.y, gradientColor);
+    Fill.quad(x, y, originColor, x, y, originColor,
+        x + v1.x, y + v1.y, gradientColor,
+        x - v2.x, y - v2.y, gradientColor);
+  }
+
   public static void gradientCircle(float x, float y, float radius, Color gradientColor){
     gradientCircle(x, y, radius, x, y, gradientColor);
+  }
+
+  public static void gradientCircle(float x, float y, float radius, float gradientAlpha){
+    gradientCircle(x, y, radius, x, y, Tmp.c1.set(Draw.getColor()).a(gradientAlpha));
+  }
+
+  public static void gradientCircle(float x, float y, float radius, float offset, float gradientAlpha){
+    gradientCircle(x, y, radius, x, y, offset, Tmp.c1.set(Draw.getColor()).a(gradientAlpha));
   }
 
   public static void gradientCircle(float x, float y, float radius, float offset, Color gradientColor){
@@ -193,18 +306,20 @@ public class SglDraw{
   }
 
   public static void startBloom(float z){
-    if(z < Layer.block + 0.02f || z > Layer.blockOver - 0.02f) throw new IllegalArgumentException("bloom z should 35 > be > 30, given z: " + z);
-    if(blooming) throw new IllegalStateException("current is blooming, please endBloom");
-    blooming = true;
+    if(!(z > Layer.block + 0.02f && z < Layer.blockOver - 0.02f) && !(z > Layer.flyingUnit + 0.02f && z < Layer.overlayUI - 0.02f))
+      throw new IllegalArgumentException("bloom z should be 30 < z < 35 or 115 < z < 120, given " + "z: " + z);
+
+    if(blooming >= 0) throw new IllegalStateException("current is blooming, please endBloom");
+    blooming = z < Layer.blockOver - 0.02f? 0: 1;
     Draw.z(z);
     if(Vars.renderer.bloom != null) Draw.draw(z, () -> Vars.renderer.bloom.captureContinue());
   }
 
   public static void endBloom(){
-    if(!blooming) throw new IllegalStateException("current is not blooming, please statBloom");
-    blooming = false;
+    if(blooming == -1) throw new IllegalStateException("current is not blooming, please statBloom");
     if(Vars.renderer.bloom != null) Draw.draw(Draw.z(), () -> Vars.renderer.bloom.capturePause());
-    Draw.z(Layer.blockOver);
+    Draw.z(blooming == 0? Layer.blockOver: Layer.overlayUI);
+    blooming = -1;
   }
 
   public static void dashCircle(float x, float y, float radius){

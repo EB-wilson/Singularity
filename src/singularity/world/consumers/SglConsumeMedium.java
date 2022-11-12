@@ -6,9 +6,10 @@ import arc.math.Mathf;
 import arc.scene.ui.Image;
 import arc.scene.ui.layout.Stack;
 import arc.scene.ui.layout.Table;
-import arc.struct.Bits;
+import arc.struct.Seq;
 import arc.util.Strings;
 import mindustry.core.UI;
+import mindustry.ctype.Content;
 import mindustry.gen.Building;
 import mindustry.ui.ReqImage;
 import mindustry.ui.Styles;
@@ -19,7 +20,7 @@ import singularity.world.components.MediumBuildComp;
 import singularity.world.meta.SglStat;
 import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.world.consumers.BaseConsume;
-import universecore.world.consumers.UncConsumeType;
+import universecore.world.consumers.ConsumeType;
 
 import static mindustry.Vars.iconMed;
 
@@ -31,7 +32,7 @@ public class SglConsumeMedium<T extends Building & MediumBuildComp & ConsumerBui
   }
 
   @Override
-  public UncConsumeType<?> type(){
+  public ConsumeType<?> type(){
     return SglConsumeType.medium;
   }
 
@@ -92,7 +93,7 @@ public class SglConsumeMedium<T extends Building & MediumBuildComp & ConsumerBui
   }
 
   @Override
-  public Bits filter(T t){
+  public Seq<Content> filter(){
     return null;
   }
 }

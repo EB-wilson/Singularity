@@ -3,7 +3,7 @@ package singularity.world.consumers;
 import arc.struct.ObjectMap;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.UncConsumeType;
+import universecore.world.consumers.ConsumeType;
 
 public class SglConsumers extends BaseConsumers{
   public SglConsumers(boolean optional){
@@ -19,7 +19,7 @@ public class SglConsumers extends BaseConsumers{
   }
   
   public BaseConsume<?> first(){
-    for(ObjectMap.Entry<UncConsumeType<?>, BaseConsume<?>> con: cons){
+    for(ObjectMap.Entry<ConsumeType<?>, BaseConsume<?>> con: cons){
       if(con.value != null) return con.value;
     }
     return null;

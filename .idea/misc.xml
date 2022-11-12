@@ -13,16 +13,17 @@
     <groovy codeStyle="LEGACY" />
   </component>
   <component name="EntryPointsManager">
-    <list size="4">
+    <list size="5">
       <item index="0" class="java.lang.String" itemvalue="universeCore.annotations.Annotations.FieldKey" />
       <item index="1" class="java.lang.String" itemvalue="universeCore.annotations.Annotations.ImplEntries" />
       <item index="2" class="java.lang.String" itemvalue="universeCore.annotations.Annotations.MethodEntry" />
-      <item index="3" class="java.lang.String" itemvalue="universecore.annotations.Annotations.MethodEntry" />
+      <item index="3" class="java.lang.String" itemvalue="universecore.annotations.Annotations.EntrustInst" />
+      <item index="4" class="java.lang.String" itemvalue="universecore.annotations.Annotations.MethodEntry" />
     </list>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="FrameworkDetectionExcludesConfiguration">
     <file type="web" url="file://$PROJECT_DIR$" />
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="azul-17" project-jdk-type="JavaSDK" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="17" project-jdk-type="JavaSDK" />
 </project>

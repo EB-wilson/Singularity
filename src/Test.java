@@ -1,9 +1,8 @@
-import arc.math.Mathf;
 import mindustry.mod.Mod;
 
 public class Test extends Mod{
   public static void main(String[] args){
-    System.out.println(Mathf.mod(-45, 360));
+    System.out.println(System.getenv("ANDROID_HOME"));
   }
 
   private static String getColor(double d){

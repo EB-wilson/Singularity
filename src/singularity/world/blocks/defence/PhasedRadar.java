@@ -22,17 +22,17 @@ import mindustry.world.Tile;
 import singularity.contents.OtherContents;
 import singularity.graphic.SglDraw;
 import singularity.world.blocks.SglBlock;
-import singularity.world.blocks.chains.ChainsContainer;
-import singularity.world.components.ChainsBlockComp;
-import singularity.world.components.SpliceBlockComp;
-import singularity.world.components.SpliceBuildComp;
-import singularity.world.modules.ChainsModule;
 import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ChainsBlockComp;
+import universecore.components.blockcomp.SpliceBlockComp;
+import universecore.components.blockcomp.SpliceBuildComp;
+import universecore.world.blocks.chains.ChainsContainer;
+import universecore.world.blocks.modules.ChainsModule;
 
 import static mindustry.Vars.tilesize;
 
 @Annotations.ImplEntries
-public class PhasedRadar extends SglBlock implements SpliceBlockComp{
+public class PhasedRadar extends SglBlock implements SpliceBlockComp {
   public int maxChainsWidth = 16;
   public int maxChainsHeight = 16;
 
@@ -64,7 +64,7 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp{
   }
 
   @Annotations.ImplEntries
-  public class PhasedRadarBuild extends SglBuilding implements SpliceBuildComp{
+  public class PhasedRadarBuild extends SglBuilding implements SpliceBuildComp {
     public ChainsModule chains;
     public int[] splice;
 
@@ -101,7 +101,7 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp{
         if(timer(timeId, scanTime)){
           for(Unit unit: Groups.unit){
             boolean lenValid = false;
-            if(/*unit.team != team && */unit.isFlying() && (lenValid = Mathf.len(unit.x - x, unit.y - y) < range*Vars.tilesize)
+            if(unit.team != team && unit.isFlying() && (lenValid = Mathf.len(unit.x - x, unit.y - y) < range*Vars.tilesize)
                 && !locking.containsKey(unit) && locking.size < Math.min(chains.container.all.size, 10)){
               locking.put(unit, this);
             }
