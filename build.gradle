@@ -147,10 +147,7 @@ task deploy(type: Jar){
   }
 
   doLast{
-    delete{ delete "$buildDir/libs/${project.archivesBaseName}-desktop.jar" }
-    delete{ delete "$buildDir/libs/${project.archivesBaseName}-android.jar" }
-
-    if(project.properties.get("modOutputDir") != null){
+    if(project.properties.get("modOutputDir") != null && !project.properties.get("modOutputDir")){
       copy {
         into("$modOutputDir/")
         from("$buildDir/libs/${project.archivesBaseName}.jar")
@@ -168,9 +165,7 @@ task deployDesktop(type: Jar){
   }
 
   doLast{
-    delete{ delete "$buildDir/libs/${project.archivesBaseName}-desktop.jar" }
-
-    if(project.properties.get("modOutputDir") != null){
+    if(project.properties.get("modOutputDir") != null && !project.properties.get("modOutputDir").isEmpty()){
       copy {
         into("$modOutputDir/")
         from("$buildDir/libs/${project.archivesBaseName}.jar")
