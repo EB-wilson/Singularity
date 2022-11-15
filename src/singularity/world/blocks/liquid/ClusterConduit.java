@@ -31,7 +31,7 @@ public class ClusterConduit extends MultLiquidBlock{
   public Color botColor = Color.valueOf("565656");
   
   public TextureRegion cornerRegion;
-  public TextureRegion[] botRegions = new TextureRegion[conduitAmount];
+  public TextureRegion[] botRegions;
   public TextureRegion capRegion, arrow;
   
   public @Nullable Block junctionReplacement, bridgeReplacement;
@@ -50,7 +50,8 @@ public class ClusterConduit extends MultLiquidBlock{
   @Override
   public void load(){
     super.load();
-  
+
+    botRegions = new TextureRegion[conduitAmount];
     for(int i=0; i<conduitAmount; i++){
       botRegions[i] = Core.atlas.find(name + "_bottom_" + i);
     }
@@ -143,7 +144,7 @@ public class ClusterConduit extends MultLiquidBlock{
         for(int i=0; i<conduitAmount; i++){
           Draw.color(botColor);
           Draw.rect(botRegions[i], x, y, rotation*90);
-          Drawf.liquid(botRegions[i], x, y, liquidsBuffer[i].currentAmount()/liquidCapacity, liquidsBuffer[i].current().color, rotation*90);
+          Drawf.liquid(botRegions[i], x, y, liquidsBuffer[i].smoothCurrent/liquidCapacity, liquidsBuffer[i].current().color, rotation*90);
         }
   
         Draw.rect(region, x, y, rotation*90);
@@ -223,7 +224,6 @@ public class ClusterConduit extends MultLiquidBlock{
   
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      noSleep();
       return super.acceptLiquid(source, liquid) && (tile == null || source.tile.absoluteRelativeTo(tile.x, tile.y) == rotation);
     }
   }

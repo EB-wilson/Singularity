@@ -68,7 +68,7 @@ public class MultLiquidBlock extends LiquidBlock{
       return null;
     }
   
-    public LiquidModule getModuleAccept(Liquid liquid){
+    public LiquidModule getModuleAccept(Building source, Liquid liquid){
       for(LiquidModule liquids: liquidsBuffer){
         if(liquids.current() == liquid && liquids.currentAmount() < liquidCapacity) return liquids;
       }
@@ -100,7 +100,7 @@ public class MultLiquidBlock extends LiquidBlock{
       for(int i=0; i<liquidsBuffer.length; i++){
         liquidsBuffer[i] = new ClusterLiquidModule();
       }
-      liquids = liquidsBuffer[0];
+      liquids = liquidsBuffer.length == 0? new ClusterLiquidModule(): liquidsBuffer[0];
       cacheLiquids = (ClusterLiquidModule) liquids;
     
       return this;
@@ -110,26 +110,22 @@ public class MultLiquidBlock extends LiquidBlock{
     public void displayBars(Table table) {
       super.displayBars(table);
       for(int i=0; i<liquidsBuffer.length; i++){
-        LiquidModule current = liquidsBuffer[i];
+        ClusterLiquidModule current = liquidsBuffer[i];
         int fi = i;
 
-        float[] smooth = new float[]{0};
         table.add(new Bar(
-            () -> smooth[0] <= 0.001f?
+            () -> current.smoothCurrent <= 0.001f?
                 Core.bundle.get("bar.liquid") + " #" + fi:
                 current.current().localizedName + "     " + (current.getFlowRate(current.current()) >= 0? Strings.autoFixed(current.getFlowRate(current.current()), 0): "...") + Core.bundle.get("misc.perSecond"),
             () -> current.current().barColor(),
-            () -> {
-              smooth[0] = Mathf.lerpDelta(smooth[0], current.currentAmount() /liquidCapacity, 0.04f);
-              return smooth[0];
-            }
+            () -> current.smoothCurrent
         ));
         table.row();
       }
     }
 
     protected void updateLiquidsFlow() {
-      for (LiquidModule module : liquidsBuffer) {
+      for (ClusterLiquidModule module : liquidsBuffer) {
         module.updateFlow();
       }
     }
@@ -143,8 +139,13 @@ public class MultLiquidBlock extends LiquidBlock{
     public void updateTile(){
       super.updateTile();
 
-      liquids = liquidsBuffer[current = (current + 1)%conduitAmount];
-      cacheLiquids = (ClusterLiquidModule) liquids;
+      if (liquidsBuffer.length > 0) {
+        liquids = liquidsBuffer[current = (current + 1) % liquidsBuffer.length];
+        cacheLiquids = (ClusterLiquidModule) liquids;
+      }
+      for (ClusterLiquidModule module : liquidsBuffer) {
+        module.smoothCurrent = Mathf.lerpDelta(module.smoothCurrent, module.currentAmount(), 0.4f);
+      }
     }
   
     public boolean conduitAccept(MultLiquidBuild source, int index, Liquid liquid){
@@ -202,7 +203,7 @@ public class MultLiquidBlock extends LiquidBlock{
   
     @Override
     public void handleLiquid(Building source, Liquid liquid, float amount){
-      LiquidModule liquids = getModuleAccept(liquid);
+      LiquidModule liquids = getModuleAccept(source, liquid);
       if(liquids != null || (liquids = getEmpty()) != null){
         liquids.add(liquid, amount);
       }
@@ -210,7 +211,8 @@ public class MultLiquidBlock extends LiquidBlock{
   
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.interactable(team) && (getModuleAccept(liquid) != null || !isFull());
+      noSleep();
+      return source.interactable(team) && (getModuleAccept(source, liquid) != null || !isFull());
     }
   
     @Override
@@ -247,6 +249,8 @@ public class MultLiquidBlock extends LiquidBlock{
     WindowedMean[] flow;
     final Bits cacheBits = new Bits();
     final float[] liquids = new float[content.liquids().size];
+
+    public float smoothCurrent;
 
     @Override
     public void updateFlow() {

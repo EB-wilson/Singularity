@@ -23,7 +23,7 @@ import universecore.util.OverrideContentList;
 
 import static mindustry.game.EventType.*;
 
-@Annotations.ImportUNC(requireVersion = 14)
+@Annotations.ImportUNC(requireVersion = 15)
 public class Singularity extends Mod{
   private static final ContentList[] modContents = new ContentList[]{
       new OtherContents(),//其他内容
@@ -97,7 +97,7 @@ public class Singularity extends Mod{
     Sgl.init();
 
     //游戏本体更改初始化
-    if(Sgl.config.modReciprocal)Init.init();
+    if(Sgl.config.modReciprocal) Init.init();
 
     initialized = true;
 

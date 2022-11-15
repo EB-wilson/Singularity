@@ -27,7 +27,7 @@ import universecore.components.blockcomp.Takeable;
 public class ClusterValve extends ClusterConduit{
   public ClusterValve(String name) {
     super(name);
-    conduitAmount = 1;
+    conduitAmount = 0;
     configurable = true;
     outputsLiquid = true;
 
@@ -143,7 +143,6 @@ public class ClusterValve extends ClusterConduit{
       }
       else{
         Tile next = tile.nearby(rotation);
-        if(next == null) return 0;
         int index = configuredIndex(liquid);
 
         float flow = 0;
@@ -162,17 +161,10 @@ public class ClusterValve extends ClusterConduit{
               return false;
             });
 
-            if(other == null){
-              if(leaks && !next.block().solid && ! next.block().hasLiquids){
-                float leakAmount = liquids.currentAmount()/1.5f;
-                Puddles.deposit(next, tile, liquids.current(), leakAmount);
-                liquids.remove(liquids.current(), leakAmount);
-              }
-            }
-            else if(other instanceof MultLiquidBuild){
+            if(other instanceof MultLiquidBuild){
               flow += moveLiquid((MultLiquidBuild)other, index, liquidsBuffer[index].current());
             }
-            else{
+            else if (other != null){
               this.liquids = liquidsBuffer[index];
               flow += moveLiquid(other, liquidsBuffer[index].current());
               this.liquids = cacheLiquids;
