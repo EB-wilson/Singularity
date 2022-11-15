@@ -19,7 +19,7 @@ repositories{
 ext{
   //the build number that this mod is made for
   mindustryVersion = 'v137'
-  uncVersion = '1.5.0'
+  uncVersion = '1.5.1'
   //version of SDK you will be using
   minSdkAPI = 30
 
@@ -33,6 +33,7 @@ ext{
 
 allprojects{
   tasks.withType(JavaCompile){
+    options.encoding = "UTF-8"
     options.fork = true
     options.forkOptions.jvmArgs.addAll([
         "--add-opens", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
