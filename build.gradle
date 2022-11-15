@@ -53,7 +53,7 @@ dependencies{
 
   implementation "com.github.EB-wilson.UniverseCore:mindustry:$uncVersion"
   implementation "com.github.EB-wilson.UniverseCore:utilties:$uncVersion"
-  implementation "com.github.EB-wilson.UniverseCore:abstraact:$uncVersion"
+  implementation "com.github.EB-wilson.UniverseCore:abstract:$uncVersion"
   implementation "com.github.EB-wilson.UniverseCore:implabstract:$uncVersion"
   implementation "com.github.EB-wilson.UniverseCore:dynamilizer:$uncVersion"
   implementation "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
