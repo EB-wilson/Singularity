@@ -147,7 +147,7 @@ task deploy(type: Jar){
   }
 
   doLast{
-    if(project.properties.get("modOutputDir") != null && !project.properties.get("modOutputDir")){
+    if(project.properties.get("modOutputDir") != null && !project.properties.get("modOutputDir").isEmpty()){
       copy {
         into("$modOutputDir/")
         from("$buildDir/libs/${project.archivesBaseName}.jar")
