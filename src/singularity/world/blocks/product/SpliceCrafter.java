@@ -65,21 +65,21 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
     tempItemCapacity = itemCapacity;
     tempLiquidCapacity = liquidCapacity;
 
-    for(BaseConsumers consumer: consumers){
+    for(BaseConsumers consumer: consumers()){
       for(BaseConsume<? extends ConsumerBuildComp> cons: consumer.all()){
         Floatf old = cons.consMultiplier;
         cons.setMultiple(old == null? (SpliceCrafterBuild e) -> e.chains.container.all.size:
             (SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
       }
     }
-    for(BaseConsumers consumer: optionalCons){
+    for(BaseConsumers consumer: optionalCons()){
       for(BaseConsume<? extends ConsumerBuildComp> cons: consumer.all()){
         Floatf old = cons.consMultiplier;
         cons.setMultiple(old == null? (SpliceCrafterBuild e) -> e.chains.container.all.size:
             (SpliceCrafterBuild e) -> old.get(e)*e.chains.container.all.size);
       }
     }
-    for(BaseProducers producer: producers){
+    for(BaseProducers producer: producers()){
       for(BaseProduce<?> prod: producer.all()){
         Floatf old = prod.prodMultiplier;
         prod.setMultiple(old == null? (SpliceCrafterBuild e) -> e.chains.container.all.size:
@@ -318,7 +318,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
 
     @Override
     public void drawStatus(){
-      if(this.block.enableDrawStatus && this.block().consumers.size() > 0 && chains.getVar("build") == this){
+      if(this.block.enableDrawStatus && this.block().consumers().size > 0 && chains.getVar("build") == this){
         float multiplier = block.size > 1 || chains.container.all.size > 1 ? 1.0F : 0.64F;
         float brcx = this.tile.drawx() + (float)(this.block.size * 8)/2.0F - 8*multiplier/2;
         float brcy = this.tile.drawy() - (float)(this.block.size * 8)/2.0F + 8*multiplier/2;

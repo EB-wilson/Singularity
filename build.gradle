@@ -19,7 +19,7 @@ repositories{
 ext{
   //the build number that this mod is made for
   mindustryVersion = 'v137'
-  uncVersion = '1.5.1'
+  uncVersion = '1.5.3'
   //version of SDK you will be using
   minSdkAPI = 30
 
@@ -31,33 +31,31 @@ ext{
   }
 }
 
-allprojects{
-  tasks.withType(JavaCompile){
-    options.encoding = "UTF-8"
-    options.fork = true
-    options.forkOptions.jvmArgs.addAll([
-        "--add-opens", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-        "--add-opens", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-        "--add-opens", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-        "--add-opens", "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
-        "--add-opens", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-        "--add-opens", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
-    ])
-    options.compilerArgs.addAll(['--release', '8'])
-  }
+tasks.withType(JavaCompile){
+  options.encoding = "UTF-8"
+  options.fork = true
+  options.forkOptions.jvmArgs.addAll([
+      "--add-opens", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+      "--add-opens", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+      "--add-opens", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+      "--add-opens", "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+      "--add-opens", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+      "--add-opens", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+  ])
+  options.compilerArgs.addAll(['--release', '8'])
 }
 
 dependencies{
   implementation 'org.jetbrains:annotations:23.0.0'
-  implementation "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-  implementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
+  compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+  compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
-  implementation "com.github.EB-wilson.UniverseCore:mindustry:$uncVersion"
-  implementation "com.github.EB-wilson.UniverseCore:utilties:$uncVersion"
-  implementation "com.github.EB-wilson.UniverseCore:abstract:$uncVersion"
-  implementation "com.github.EB-wilson.UniverseCore:implabstract:$uncVersion"
-  implementation "com.github.EB-wilson.UniverseCore:dynamilizer:$uncVersion"
-  implementation "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
+  compileOnly "com.github.EB-wilson.UniverseCore:mindustry:$uncVersion"
+  compileOnly "com.github.EB-wilson.UniverseCore:utilties:$uncVersion"
+  compileOnly "com.github.EB-wilson.UniverseCore:abstract:$uncVersion"
+  compileOnly "com.github.EB-wilson.UniverseCore:implabstract:$uncVersion"
+  compileOnly "com.github.EB-wilson.UniverseCore:dynamilizer:$uncVersion"
+  compileOnly "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
 
   annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
   annotationProcessor "com.github.Anuken:jabel:0.7.0"

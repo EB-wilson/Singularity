@@ -152,7 +152,7 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
 
     @Override
     public void drawStatus(){
-      if(this.block.enableDrawStatus && this.block().consumers.size() > 0 && chains.getVar("build") == this){
+      if(this.block.enableDrawStatus && this.block().consumers().size > 0 && chains.getVar("build") == this){
         float multiplier = block.size > 1 || chains.container.all.size > 1 ? 1.0F : 0.64F;
         float brcx = this.tile.drawx() + (float)(this.block.size * 8)/2.0F - 8*multiplier/2;
         float brcy = this.tile.drawy() - (float)(this.block.size * 8)/2.0F + 8*multiplier/2;

@@ -16,7 +16,7 @@ public class AtomSchematicCrafter extends MediumCrafter{
   @Override
   public void init(){
     for(AtomSchematic atomSchematic: SglContents.atomSchematics()){
-      consumers.add(atomSchematic.request);
+      consumers().add(atomSchematic.request);
       super.newProduce();
       produce.item(atomSchematic.item, 1);
     }

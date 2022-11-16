@@ -45,13 +45,9 @@ import universecore.world.producers.BaseProduce;
 import universecore.world.producers.BaseProducers;
 import universecore.world.producers.ProduceLiquids;
 
-import java.util.ArrayList;
-
 /**常规的工厂类方块，具有强大的consume-produce制造系统的近乎全能的制造类方块*/
 @Annotations.ImplEntries
 public class NormalCrafter extends SglBlock implements FactoryBlockComp{
-  public final ArrayList<BaseProducers> producers = new ArrayList<>();
-
   public float updateEffectChance = 0.05f;
   public Effect updateEffect = Fx.none;
   public Color updateEffectColor = Color.white;
@@ -96,7 +92,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
   public void init(){
     if(effectRange == -1) effectRange = size;
     
-    if(producers.size() > 0) for(BaseProducers prod: producers){
+    if(producers().size > 0) for(BaseProducers prod: producers()){
       hasItems |= outputItems |= prod.get(SglProduceType.item) != null;
       hasLiquids |= outputsLiquid |= prod.get(SglProduceType.liquid) != null;
       hasPower |= outputsPower |= prod.get(SglProduceType.power) != null && prod.get(SglProduceType.power).powerProduction != 0;
@@ -105,14 +101,14 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     
     super.init();
   
-    if(producers.size() > 1) configurable = canSelect;
+    if(producers().size > 1) configurable = canSelect;
     if(shouldConfig) configurable = true;
   }
 
   @Override
   public void setStats() {
     super.setStats();
-    if(producers.size() > 1){
+    if(producers().size > 1){
       stats.add(SglStat.autoSelect, autoSelect);
       stats.add(SglStat.controllable, canSelect);
     }
@@ -271,7 +267,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     
     @Override
     public void buildConfiguration(Table table){
-      if(producers.size() > 1){
+      if(producers().size > 1){
         Table prescripts = new Table(Tex.buttonTrans);
         prescripts.defaults().grow().marginTop(0).marginBottom(0).marginRight(5).marginRight(5);
         prescripts.add(Core.bundle.get("fragment.buttons.selectPrescripts")).padLeft(5).padTop(5).padBottom(5);
@@ -279,10 +275,10 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
 
         TextureRegion icon;
         Table buttons = new Table();
-        for(int i=0; i<producers.size(); i++){
+        for(int i=0; i<producers().size; i++){
           int s = i;
-          BaseProducers p = producers.get(i);
-          BaseConsumers c = consumers.get(i);
+          BaseProducers p = producers().get(i);
+          BaseConsumers c = consumers().get(i);
 
           if(c.selectable.get() == BaseConsumers.Visibility.hidden) continue;
 

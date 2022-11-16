@@ -53,8 +53,6 @@ import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeLiquidBase;
 import universecore.world.consumers.ConsumeType;
 
-import java.util.ArrayList;
-
 import static mindustry.Vars.*;
 
 /**此mod的基础方块类型，对block添加了完善的consume系统，并拥有中子能的基础模块*/
@@ -66,11 +64,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public boolean outputItems;
 
   public DrawBlock draw = new DrawDefault();
-
-  /**方块的输入配方容器*/
-  public final ArrayList<BaseConsumers> consumers = new ArrayList<>();
-  /**方块的可选配方容器*/
-  public final ArrayList<BaseConsumers> optionalCons = new ArrayList<>();
 
   /**这是一个指针，用于标记当前编辑的consume*/
   public SglConsumers consume;
@@ -116,7 +109,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   public void appliedConfig(){
     config(Integer.class, (SglBuilding e, Integer i) -> {
-      if(consumers.size() > 1){
+      if(consumers().size > 1){
         e.recipeSelected = true;
         e.reset();
         if(e.recipeCurrent == i || i == - 1){
@@ -154,14 +147,14 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   @Override
   public void init() {
-    if(consumers.size() > 1){
+    if(consumers().size > 1){
       configurable = true;
       saveConfig = true;
     }
 
-    ArrayList<BaseConsumers> consume = new ArrayList<>();
-    if(consumers().size() > 0) consume.addAll(consumers());
-    if(optionalCons().size() > 0) consume.addAll(optionalCons());
+    Seq<BaseConsumers> consume = new Seq<>();
+    if(consumers().size > 0) consume.addAll(consumers());
+    if(optionalCons().size > 0) consume.addAll(optionalCons());
     for(BaseConsumers cons: consume){
       if(cons.get(SglConsumeType.item) != null){
         hasItems = true;
@@ -295,7 +288,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
       liquids = new SglLiquidModule();
       
-      if(consumers.size() == 1) recipeCurrent = 0;
+      if(consumers().size == 1) recipeCurrent = 0;
       
       consumer = new SglConsumeModule(this);
       
@@ -365,7 +358,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
     @Override
     public void drawStatus(){
-      if(this.block.enableDrawStatus && this.block().consumers.size() > 0) {
+      if(this.block.enableDrawStatus && this.block().consumers().size > 0) {
         float multiplier = block.size > 1 ? 1.0F : 0.64F;
         float brcx = this.tile.drawx() + (float)(this.block.size * 8)/2.0F - 8*multiplier/2;
         float brcy = this.tile.drawy() - (float)(this.block.size * 8)/2.0F + 8*multiplier/2;
@@ -402,13 +395,13 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       updateRecipe = false;
       if(!recipeSelected && autoSelect && consumer.hasConsume() && (consumer.current == null || !consumer.valid())){
         int f = -1;
-        for(BaseConsumers ignored : consumers){
-          int n = select%consumers.size();
-          if(consumer.valid(n) && consumers.get(n).selectable.get() == BaseConsumers.Visibility.usable){
+        for(BaseConsumers ignored : consumers()){
+          int n = select%consumers().size;
+          if(consumer.valid(n) && consumers().get(n).selectable.get() == BaseConsumers.Visibility.usable){
             f = n;
             break;
           }
-          select = (select + 1)%consumers.size();
+          select = (select + 1)%consumers().size;
         }
     
         if(recipeCurrent != f && f >= 0){

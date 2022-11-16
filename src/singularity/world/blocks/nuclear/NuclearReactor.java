@@ -132,7 +132,7 @@ public class NuclearReactor extends NormalCrafter{
   @Override
   public void init(){
     super.init();
-    for(BaseConsumers cons: consumers){
+    for(BaseConsumers cons: consumers()){
       for(ItemStack stack: cons.get(SglConsumeType.item).consItems){
         consItems.add(stack.item);
       }

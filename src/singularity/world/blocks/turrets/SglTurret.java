@@ -192,7 +192,7 @@ public class SglTurret extends SglBlock{
         return add(res);
       }
     };
-    consumers.add(consume);
+    consumers().add(consume);
 
     AmmoDataEntry res;
     ammoTypes.put(consume, res = new AmmoDataEntry(ammoType, override));
@@ -379,12 +379,12 @@ public class SglTurret extends SglBlock{
       }
     });
 
-    if (optionalCons.size() > 0) {
-      optionalRecipeTable(new RecipeTable(optionalCons.size()));
+    if (optionalCons().size > 0) {
+      optionalRecipeTable(new RecipeTable(optionalCons().size));
 
-      for(int i = 0; i < optionalCons.size(); ++i) {
+      for(int i = 0; i < optionalCons().size; ++i) {
         optionalRecipeTable().stats[i] = new Stats();
-        optionalCons.get(i).display(optionalRecipeTable().stats[i]);
+        optionalCons().get(i).display(optionalRecipeTable().stats[i]);
       }
 
       optionalRecipeTable().build();
@@ -453,7 +453,7 @@ public class SglTurret extends SglBlock{
     @Override
     public Building create(Block block, Team team){
       super.create(block, team);
-      if(!consumers.isEmpty()){
+      if(!consumers().isEmpty()){
         recipeCurrent = 0;
         onUpdateCurrent();
       }
