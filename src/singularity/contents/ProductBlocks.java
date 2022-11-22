@@ -11,8 +11,6 @@ import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.draw.*;
-import mindustry.world.meta.Stat;
-import mindustry.world.meta.StatUnit;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.world.SglFx;
@@ -25,7 +23,6 @@ import singularity.world.draw.DrawBottom;
 import singularity.world.draw.DrawDirSpliceBlock;
 import singularity.world.draw.DrawExpandPlasma;
 import singularity.world.meta.SglAttribute;
-import universecore.world.consumers.BaseConsumers;
 
 import static mindustry.type.ItemStack.with;
 
@@ -52,35 +49,23 @@ public class ProductBlocks implements ContentList {
 
       hasLiquids = true;
 
+      autoSelect = true;
+
       setAttrBooster(SglAttribute.bitumen, 1.12f);
       
       newConsume();
       consume.time(90);
-      consume.liquid(Liquids.water, 0.3f);
+      consume.liquid(Liquids.water, 0.2f);
       consume.power(1.75f);
       newProduce();
       produce.item(SglItems.rock_bitumen, 1);
 
-      newOptionalConsume((NormalCrafterBuild e, BaseConsumers c) -> {
-        e.setVar(1.6f);
-      }, (s, c) -> {
-        s.add(Stat.boostEffect, 1.6f, StatUnit.timesSpeed);
-      });
+      newConsume();
+      consume.time(60);
       consume.liquid(Liquids.cryofluid, 0.2f);
-
-
-      buildType = () -> new SglAttributeCrafterBuild(){
-        @Override
-        public float efficiency(){
-          return super.efficiency()*getVar(Float.class, 1f);
-        }
-  
-        @Override
-        public void updateTile(){
-          super.updateTile();
-          setVar(1);
-        }
-      };
+      consume.power(1.75f);
+      newProduce();
+      produce.item(SglItems.rock_bitumen, 1);
 
       draw = new DrawMulti(
           new DrawBottom(),

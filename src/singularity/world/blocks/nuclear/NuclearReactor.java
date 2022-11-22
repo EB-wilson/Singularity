@@ -2,6 +2,7 @@ package singularity.world.blocks.nuclear;
 
 import arc.Core;
 import arc.Events;
+import arc.audio.Sound;
 import arc.math.Angles;
 import arc.math.Mathf;
 import arc.struct.ObjectSet;
@@ -29,7 +30,6 @@ import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.particles.SglParticleModels;
 import universecore.annotations.Annotations;
-import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.world.consumers.BaseConsumers;
 
 import static mindustry.Vars.state;
@@ -47,12 +47,15 @@ public class NuclearReactor extends NormalCrafter{
   
   public Seq<BaseConsumers> coolants = new Seq<>();
   public Seq<BaseConsumers> fuels = new Seq<>();
+  public Sound explosionSound = Sounds.largeExplosion;
+  public float explosionSoundVolume = 3.5f, explosionSoundPitch = 0.8f;
   
   ObjectSet<Item> consItems = new ObjectSet<>();
-  
+
   public NuclearReactor(String name){
     super(name);
     hasEnergy = true;
+    oneOfOptionCons = false;
     outputEnergy = true;
     autoSelect = true;
     canSelect = false;
@@ -94,22 +97,22 @@ public class NuclearReactor extends NormalCrafter{
     newOptionalConsume((e, c) -> {}, (e, s) -> {
       e.add(Stat.output, StatValues.items(s.craftTime, output));
     });
-    consume.consValidCondition(ConsumerBuildComp::consumeValid);
+    consume.consValidCondition((NuclearReactorBuild e) -> e.consumeValid() && e.items.get(output.item) < itemCapacity);
     consume.setConsTrigger((NuclearReactorBuild ent) -> {
       for(int i = 0; i < output.amount; i++){
-        ent.handleItem(ent, output.item);
+        if(ent.items.get(output.item) < itemCapacity) ent.handleItem(ent, output.item);
       }
     });
   }
   
   public void addTransfer(LiquidStack output){
-    newOptionalConsume((e, c) -> {
+    newOptionalConsume((NuclearReactorBuild e, BaseConsumers c) -> {
       NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
-      entity.handleLiquid(entity, output.liquid, output.amount);
+      if(e.liquids.get(output.liquid) < liquidCapacity) entity.handleLiquid(entity, output.liquid, output.amount);
     }, (e, s) -> {
       e.add(Stat.output, StatValues.liquid(output.liquid, output.amount*60, true));
     });
-    consume.consValidCondition(SglBuilding::consumeValid);
+    consume.consValidCondition((NuclearReactorBuild e) -> e.consumeValid() && e.liquids.get(output.liquid) < liquidCapacity);
   }
 
   @Override
@@ -126,6 +129,11 @@ public class NuclearReactor extends NormalCrafter{
         () -> Core.bundle.get("misc.efficiency") + ": " + Strings.autoFixed(e.smoothEfficiency*100, 0) + "%",
         () -> Pal.accent,
         () -> e.smoothEfficiency
+    ));
+    addBar("heat", (NuclearReactorBuild e) -> new Bar(
+        Core.bundle.get("misc.heat"),
+        Pal.lightOrange,
+        () -> e.heat/maxHeat
     ));
   }
   
@@ -152,7 +160,12 @@ public class NuclearReactor extends NormalCrafter{
 
     @Override
     public float consEfficiency(){
-      return (float) fuelItemsTotal()/itemCapacity*super.consEfficiency();
+      return (float) fuelItemsTotal()/itemCapacity*super.consEfficiency()*(1 - Mathf.clamp((items.get(SglItems.nuclear_waste) - itemCapacity/3f)/(itemCapacity), 0, 1));
+    }
+
+    @Override
+    public boolean shouldConsume() {
+      return super.shouldConsume() && (items == null || items.get(SglItems.nuclear_waste) < itemCapacity);
     }
 
     @Override
@@ -183,7 +196,6 @@ public class NuclearReactor extends NormalCrafter{
   
     @Override
     public void onDestroyed(){
-      Sounds.explosionbig.at(tile);
       int fuel = 0;
       for(BaseConsumers cons: fuels){
         for(ItemStack stack: cons.get(SglConsumeType.item).consItems){
@@ -197,6 +209,8 @@ public class NuclearReactor extends NormalCrafter{
       Effect.shake(8f, 120f, x, y);
       float strength = explosionDamageBase*fuel;
       Damage.damage(x, y, (float) explosionRadius*tilesize, strength);
+
+      explosionSound.at(x, y, explosionSoundPitch, explosionSoundVolume);
     
       explodeEffect.at(x, y, 0, (float) explosionRadius*tilesize);
       Angles.randLenVectors(System.nanoTime(), Mathf.random(28, 36), 3f, 7.5f, (x, y) -> {

@@ -85,10 +85,13 @@ public class SglTurret extends SglBlock{
 
   /**开火音效*/
   public Sound shootSound = Sounds.shoot;
-  /**充能音效*/
+  /**开火音效音调*/
+  public float shootSoundPitch = 1, shootSoundVolume = 1;
   public Sound chargeSound = Sounds.none;
+  /**充能音效音调*/
+  public float chargeSoundPitch = 1, chargeSoundVolume = 1;
   /**音效音量范围*/
-  public float soundPitchMin = 0.9f, soundPitchMax = 1.1f;
+  public float soundPitchRange = 0.05f;
 
   /**开火特效*/
   public Effect shootEffect;
@@ -238,7 +241,7 @@ public class SglTurret extends SglBlock{
             t.add(new LiquidDisplay(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(10).left().top();
             t.table(Tex.underline, bt -> {
               bt.left().defaults().padRight(3).left();
-              bt.add(Core.bundle.format("bullet.reload", Strings.autoFixed(coolEff.get(liquid), 2)));
+              bt.add(Core.bundle.format("bullet.reload", Strings.autoFixed(coolEff.get(liquid)*100, 2)));
             }).left().padTop(-9);
             t.row();
           }
@@ -361,7 +364,7 @@ public class SglTurret extends SglBlock{
           BulletType type = ammoEntry.bulletType;
 
           if(type.spawnUnit != null && type.spawnUnit.weapons.size > 0){
-            StatValues.ammo(ObjectMap.of(t, type.spawnUnit.weapons.first().bullet), 0).display(t);
+            StatValues.ammo(ObjectMap.of(t, type.spawnUnit.weapons.first().bullet), false).display(t);
             return;
           }
 
@@ -564,7 +567,7 @@ public class SglTurret extends SglBlock{
           bulletY = y + Angles.trnsy(rotation - 90, shootX, shootY);
 
       if(shoot.firstShotDelay > 0){
-        chargeSound.at(bulletX, bulletY, Mathf.random(soundPitchMin, soundPitchMax));
+        chargeSound.at(bulletX, bulletY, Math.max(chargeSoundPitch + Mathf.random(-soundPitchRange, soundPitchRange), 0.01f), chargeSoundVolume);
         type.chargeEffect.at(bulletX, bulletY, rotation);
       }
 
@@ -598,7 +601,7 @@ public class SglTurret extends SglBlock{
 
       (shootEffect == null ? type.shootEffect : shootEffect).at(bulletX, bulletY, rotation + angleOffset, type.hitColor);
       (smokeEffect == null ? type.smokeEffect : smokeEffect).at(bulletX, bulletY, rotation + angleOffset, type.hitColor);
-      shootSound.at(bulletX, bulletY, Mathf.random(soundPitchMin, soundPitchMax));
+      shootSound.at(bulletX, bulletY, Math.max(shootSoundPitch + Mathf.random(-soundPitchRange, soundPitchRange), 0.01f), shootSoundVolume);
 
       ammoUseEffect.at(
           x - Angles.trnsx(rotation, ammoEjectBack),
@@ -701,6 +704,16 @@ public class SglTurret extends SglBlock{
     @Override
     public boolean shouldConsumeOptions(){
       return consumer.current != null && reloadCounter < consumer.current.craftTime;
+    }
+
+    @Override
+    public boolean shouldActiveSound() {
+      return wasShooting() && warmup > 0.01f;
+    }
+
+    @Override
+    public float activeSoundVolume() {
+      return 1;
     }
 
     @Override

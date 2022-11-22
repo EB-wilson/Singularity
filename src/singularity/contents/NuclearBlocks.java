@@ -104,10 +104,10 @@ public class NuclearBlocks implements ContentList{
       produce.energy(0.25f);
       produce.item(Items.thorium, 1);
       newConsume();
-      consume.time(600);
+      consume.time(540);
       consume.item(SglItems.plutonium_239, 1);
       newProduce();
-      produce.energy(0.25f);
+      produce.energy(0.35f);
       newConsume();
       consume.time(900);
       consume.item(SglItems.uranium_238, 1);
@@ -199,9 +199,11 @@ public class NuclearBlocks implements ContentList{
       updateEffect = SglFx.impWave;
       effectRange = 2;
       updateEffectChance = 0.025f;
-      
-      ambientSoundVolume = 0.6f;
-      craftedSound = Sounds.explosionbig;
+
+      ambientSound = Sounds.spellLoop;
+      ambientSoundVolume = 0.55f;
+
+      craftedSound = Sounds.largeExplosion;
       craftedSoundVolume = 1f;
 
       ParticleModel model = new ParticleModel().setDefault().resetCloudUpdate()
@@ -239,9 +241,9 @@ public class NuclearBlocks implements ContentList{
       consume.item(SglItems.concentration_plutonium_239, 1);
       consume.power(80);
       consume.liquid(Liquids.cryofluid, 0.6f);
-      consume.time(180);
+      consume.time(150);
       newProduce();
-      produce.power(400);
+      produce.power(425);
 
       draw = new DrawMulti(
           new DrawBottom(),
@@ -268,7 +270,7 @@ public class NuclearBlocks implements ContentList{
       ambientSoundVolume = 0.4f;
       
       newReact(SglItems.concentration_uranium_235, 450, 8, true);
-      newReact(SglItems.concentration_plutonium_239, 450, 8, true);
+      newReact(SglItems.concentration_plutonium_239, 420, 9.5f, true);
       
       addCoolant(0.25f);
       consume.liquid(Liquids.cryofluid, 0.2f);
@@ -302,8 +304,8 @@ public class NuclearBlocks implements ContentList{
       productHeat = 0.1f;
       
       newReact(SglItems.uranium_235, 1200, 6f, false);
-      newReact(SglItems.plutonium_239, 1200, 6f, false);
-      newReact(Items.thorium, 900, 5f, false);
+      newReact(SglItems.plutonium_239, 1020, 7f, false);
+      newReact(Items.thorium, 900, 4.5f, false);
   
       addCoolant(0.25f);
       consume.liquid(Liquids.cryofluid, 0.2f);
@@ -335,15 +337,19 @@ public class NuclearBlocks implements ContentList{
       
       explosionDamageBase = 580;
       explosionRadius = 32;
+
+      explosionSoundVolume = 5;
+      explosionSoundPitch = 0.4f;
       
       productHeat = 0.35f;
       
       warmupSpeed = 0.0015f;
-      
+
+      ambientSound = Sounds.pulse;
       ambientSoundVolume = 0.6f;
       
       newReact(SglItems.concentration_uranium_235, 240, 22, false);
-      newReact(SglItems.concentration_plutonium_239, 240, 22, false);
+      newReact(SglItems.concentration_plutonium_239, 210, 25, false);
       
       addCoolant(0.4f);
       consume.liquid(SglLiquids.phase_FEX_liquid, 0.4f);

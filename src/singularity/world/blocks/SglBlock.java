@@ -63,6 +63,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
   public boolean outputItems;
 
+  public final Seq<BaseConsumers> consumers = new Seq<>();
+
   public DrawBlock draw = new DrawDefault();
 
   /**这是一个指针，用于标记当前编辑的consume*/

@@ -1,7 +1,6 @@
 package singularity.contents;
 
 import arc.Core;
-import arc.Events;
 import arc.func.Func;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
@@ -29,7 +28,6 @@ import mindustry.entities.part.HaloPart;
 import mindustry.entities.part.RegionPart;
 import mindustry.entities.part.ShapePart;
 import mindustry.entities.pattern.ShootPattern;
-import mindustry.game.EventType;
 import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
@@ -37,7 +35,6 @@ import mindustry.graphics.Pal;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
-import mindustry.world.blocks.defense.Wall;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.draw.DrawMulti;
 import singularity.graphic.SglDraw;
@@ -58,7 +55,7 @@ import universecore.world.lightnings.generator.RandomGenerator;
 import universecore.world.lightnings.generator.VectorLightningGenerator;
 
 import static arc.math.Angles.randLenVectors;
-import static mindustry.Vars.player;
+import static mindustry.Vars.control;
 import static mindustry.Vars.tilesize;
 import static mindustry.entities.Damage.collideLine;
 import static mindustry.entities.Damage.findPierceLength;
@@ -160,11 +157,6 @@ public class Turrets implements ContentList{
         if(entity instanceof Unit unit){
           unit.apply(OtherContents.frost, unit.getDuration(OtherContents.frost) + 8);
         }
-
-        //for achievements
-        if(b.owner instanceof Wall.WallBuild && player != null && b.team == player.team() && entity instanceof Unit unit && unit.dead){
-          Events.fire(EventType.Trigger.phaseDeflectHit);
-        }
       }
 
       @Override
@@ -191,6 +183,8 @@ public class Turrets implements ContentList{
         super.update(b);
         float radius = 200*b.fout();
         Damage.damage(b.team, b.x, b.y, radius, 12*Time.delta);
+
+        control.sound.loop(Sounds.windhowl, b, 2);
 
         if(Mathf.chanceDelta(0.075f*b.fout())){
           SglFx.iceParticleSpread.at(b.x, b.y, SglDrawConst.winter);
@@ -223,7 +217,11 @@ public class Turrets implements ContentList{
     };
 
     curtain = new SglTurret("curtain"){{
-      requirements(Category.turret, ItemStack.with());
+      requirements(Category.turret, ItemStack.with(
+          Items.titanium, 20,
+          Items.graphite, 20,
+          Items.lead, 12
+      ));
       itemCapacity = 20;
       range = 144;
       targetGround = false;
@@ -269,7 +267,15 @@ public class Turrets implements ContentList{
     }};
 
     thunder = new SglTurret("thunder"){{
-      requirements(Category.turret, ItemStack.with());
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 180,
+          SglItems.aerogel, 150,
+          Items.surgeAlloy, 120,
+          SglItems.matrix_alloy, 100,
+          SglItems.crystal_FEX, 100,
+          SglItems.crystal_FEX_power, 80,
+          SglItems.iridium, 80
+      ));
       float shootRan;
       size = 5;
       scaledHealth = 320;
@@ -286,7 +292,7 @@ public class Turrets implements ContentList{
       shootY = 22;
 
       shake = 4;
-      shootSound = Sounds.laserblast;
+      shootSound = Sounds.largeCannon;
 
       newAmmo(new BulletType(){
         final RandomGenerator branch = new RandomGenerator();
@@ -393,7 +399,7 @@ public class Turrets implements ContentList{
             SglFx.lightningBoltWave.at(shX, shY, Pal.reactorPurple);
             createFrags(b, shX, shY);
             Effect.shake(6, 6, shX, shY);
-            Sounds.laserbig.at(shX, shY, hitSoundPitch, hitSoundVolume);
+            Sounds.largeExplosion.at(shX, shY, hitSoundPitch, hitSoundVolume);
             Damage.damage(b.team, shX, shY, splashDamageRadius, splashDamage);
           });
         }
@@ -586,7 +592,15 @@ public class Turrets implements ContentList{
     }};
 
     dew = new ProjectileTurret("dew"){{
-      requirements(Category.turret, ItemStack.with());
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 150,
+          SglItems.aluminium, 110,
+          SglItems.aerogel, 120,
+          SglItems.matrix_alloy, 160,
+          Items.thorium, 100,
+          Items.silicon, 85,
+          SglItems.uranium_238, 85
+      ));
       size = 5;
       scaledHealth = 360;
       rotateSpeed = 2.5f;
@@ -598,6 +612,8 @@ public class Turrets implements ContentList{
       fireWarmupThreshold = 0.85f;
       shootCone = 15;
       shake = 2.2f;
+
+      shootSound = Sounds.shootAlt;
 
       shoot = new ShootPattern(){
         @Override
@@ -864,7 +880,15 @@ public class Turrets implements ContentList{
     }};
 
     spring = new SglTurret("spring"){{
-      requirements(Category.turret, ItemStack.with());
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 120,
+          SglItems.aluminium, 140,
+          Items.phaseFabric, 80,
+          SglItems.matrix_alloy, 100,
+          SglItems.chlorella, 120,
+          SglItems.crystal_FEX_power, 85,
+          SglItems.iridium, 60
+      ));
       size = 5;
       scaledHealth = 450;
       recoil = 1.8f;
@@ -879,6 +903,8 @@ public class Turrets implements ContentList{
       targetHealing = true;
       shootY = 12;
       shootEffect = Fx.none;
+
+      shootSound = Sounds.malignShoot;
 
       shoot = new ShootPattern(){
         @Override
@@ -919,6 +945,8 @@ public class Turrets implements ContentList{
           trailInterval = 3f;
           trailWidth = hitSize;
           trailLength = 24;
+
+          hitSound = Sounds.plasmadrop;
         }
 
         @Override
@@ -1045,7 +1073,14 @@ public class Turrets implements ContentList{
     }};
 
     frost = new LaserTurret("frost"){{
-      requirements(Category.turret, ItemStack.with());
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 160,
+          SglItems.aluminium, 110,
+          Items.phaseFabric, 100,
+          SglItems.matrix_alloy, 120,
+          SglItems.crystal_FEX_power, 100,
+          SglItems.iridium, 100
+      ));
       size = 5;
       scaledHealth = 420;
       recoil = 2.8f;
@@ -1057,6 +1092,10 @@ public class Turrets implements ContentList{
       targetGround = true;
       targetAir = true;
       shootEffect = SglFx.continuousLaserRecoil;
+
+      shootSound = Sounds.laserbig;
+      loopSound = Sounds.beam;
+      loopSoundVolume = 2f;
 
       updating = e -> {
         SglTurretBuild t = (SglTurretBuild) e;
@@ -1112,10 +1151,6 @@ public class Turrets implements ContentList{
 
           if(entity instanceof Unit unit){
             unit.apply(OtherContents.frost, unit.getDuration(OtherContents.frost) + 18);
-          }
-
-          if(b.owner instanceof Wall.WallBuild && player != null && b.team == player.team() && entity instanceof Unit unit && unit.dead){
-            Events.fire(EventType.Trigger.phaseDeflectHit);
           }
         }
       });
@@ -1237,12 +1272,22 @@ public class Turrets implements ContentList{
     }};
 
     winter = new SglTurret("winter"){{
-      requirements(Category.turret, ItemStack.with());
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 210,
+          SglItems.degenerate_neutron_polymer, 80,
+          Items.phaseFabric, 180,
+          SglItems.iridium, 100,
+          SglItems.aerogel, 200,
+          SglItems.aluminium, 220,
+          SglItems.matrix_alloy, 160,
+          SglItems.crystal_FEX_power, 180
+      ));
       size = 6;
       scaledHealth = 410;
       recoil = 3.6f;
       rotateSpeed = 1.75f;
       warmupSpeed = 0.015f;
+      shake = 6;
       fireWarmupThreshold = 0.925f;
       linearWarmup = false;
       range = 560;
@@ -1256,6 +1301,14 @@ public class Turrets implements ContentList{
       shootY = 4;
 
       shoot.firstShotDelay = 120;
+      chargeSound = Sounds.lasercharge;
+      chargeSoundPitch = 0.9f;
+
+      shootSound = Sounds.plasmaboom;
+      shootSoundPitch = 0.6f;
+      shootSoundVolume = 2;
+
+      soundPitchRange = 0.05f;
 
       newAmmo(new BulletType(){
         {
@@ -1275,6 +1328,7 @@ public class Turrets implements ContentList{
               despawnHit = true;
               splashDamage = 2180;
               splashDamageRadius = 84;
+              hitShake = 12;
 
               trailEffect = Fx.disperseTrail;
               trailLength = 18;
@@ -1283,6 +1337,10 @@ public class Turrets implements ContentList{
 
               hitEffect = SglFx.iceExplode;
               hitColor = SglDrawConst.winter;
+
+              hitSound = Sounds.release;
+              hitSoundPitch = 0.6f;
+              hitSoundVolume = 3;
 
               fragBullet = freezingField;
               fragOnHit = false;
@@ -1304,6 +1362,12 @@ public class Turrets implements ContentList{
               Draw.alpha(1);
               Fill.circle(b.x, b.y, 18*b.fin(Interp.pow3In));
               SglDraw.endBloom();
+            }
+
+            @Override
+            public void update(Bullet b) {
+              super.update(b);
+              control.sound.loop(Sounds.spellLoop, b, 2);
             }
           };
           fragBullets = 1;
@@ -1469,7 +1533,16 @@ public class Turrets implements ContentList{
     }};
 
     summer = new SglTurret("summer"){{
-      requirements(Category.turret, ItemStack.with());
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 210,
+          SglItems.degenerate_neutron_polymer, 80,
+          Items.phaseFabric, 180,
+          SglItems.iridium, 120,
+          SglItems.aerogel, 240,
+          SglItems.matrix_alloy, 140,
+          SglItems.crystal_FEX_power, 150,
+          SglItems.crystal_FEX, 100
+      ));
       size = 6;
       accurateDelay = false;
       scaledHealth = 410;
@@ -1484,6 +1557,10 @@ public class Turrets implements ContentList{
       targetGround = true;
       targetAir = true;
       shootY = 12;
+      shake = 2;
+
+      shootSound = Sounds.release;
+      shootSoundPitch = 2;
 
       shoot = new ShootPattern(){
         @Override
@@ -1519,6 +1596,10 @@ public class Turrets implements ContentList{
           despawnHit = false;
           trailWidth = 2;
           trailLength = 26;
+
+          hitSound = Sounds.spark;
+          hitSoundPitch = 2;
+          hitSoundVolume = 1.6f;
 
           status = OtherContents.meltdown;
           statusDuration = 18;

@@ -18,6 +18,7 @@ import static singularity.contents.NuclearBlocks.*;
 import static singularity.contents.ProductBlocks.*;
 import static singularity.contents.SglItems.*;
 import static singularity.contents.SglLiquids.*;
+import static singularity.contents.Turrets.*;
 import static universecore.util.TechTreeConstructor.*;
 
 public class SglTechThree implements ContentList{
@@ -35,6 +36,10 @@ public class SglTechThree implements ContentList{
 
       node(platedConduit, cluster_conduit, cluCon -> {
         cluCon.node(conduit_riveting, conRiv -> {});
+
+        cluCon.node(bidirectional_valve, bidVal -> {});
+
+        cluCon.node(filter_valve, filVal -> {});
       });
 
       node(cryofluidMixer, FEX_phase_mixer, FEXMixer -> {});
@@ -113,6 +118,8 @@ public class SglTechThree implements ContentList{
             matComp.node(interface_jump_line, jump -> {});
 
             matComp.node(matrix_buffer, buff -> {});
+
+            matComp.node(automatic_recycler_component, recComp -> {});
           });
 
           matCore.node(matrix_energy_manager, matEnm -> {
@@ -128,6 +135,20 @@ public class SglTechThree implements ContentList{
           });
         });
       });
+
+      node(scatter, curtain, curr -> {});
+
+      node(spectre, dew, dew -> {});
+
+      node(duo, frost, frost -> {
+        frost.node(winter, winter -> {});
+      });
+
+      node(duo, spring, spring -> {});
+
+      node(meltdown, summer, summer -> {});
+
+      node(foreshadow, thunder, thunder -> {});
 
       node(thoriumWall, strengthening_alloy_wall, strWall -> {
         strWall.node(strengthening_alloy_wall_large, strWallLarge -> {});

@@ -53,7 +53,10 @@ import singularity.world.meta.SglStat;
 import singularity.world.particles.SglParticleModels;
 import universecore.components.blockcomp.FactoryBuildComp;
 import universecore.util.UncLiquidStack;
-import universecore.world.consumers.*;
+import universecore.world.consumers.BaseConsume;
+import universecore.world.consumers.BaseConsumers;
+import universecore.world.consumers.ConsumeItems;
+import universecore.world.consumers.ConsumeType;
 import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.CircleGenerator;
 import universecore.world.lightnings.generator.VectorLightningGenerator;
@@ -129,6 +132,8 @@ public class CrafterBlocks implements ContentList{
       size = 4;
       oneOfOptionCons = true;
       itemCapacity = 12;
+
+      ambientSound = Sounds.flux;
       
       newConsume();
       consume.time(90);
@@ -136,7 +141,7 @@ public class CrafterBlocks implements ContentList{
       consume.items(ItemStack.with(Items.silicon, 4, SglItems.uranium_238, 1));
       consume.consValidCondition((NormalCrafterBuild e) -> e.getVar(Integer.class, 0) > 0);
       newProduce();
-      produce.item(Items.phaseFabric, 5);
+      produce.item(Items.phaseFabric, 6);
       
       craftEffect = Fx.smeltsmoke;
   
@@ -322,10 +327,12 @@ public class CrafterBlocks implements ContentList{
       liquidCapacity = 20f;
       
       newConsume();
-      consume.time(90);
+      consume.time(60);
       consume.power(2.2f);
-      consume.liquid(Liquids.water, 0.4f);
-      consume.liquid(SglLiquids.spore_cloud, 0.06f);
+      consume.liquids(UncLiquidStack.with(
+          Liquids.water, 0.4f,
+          SglLiquids.spore_cloud, 0.06f
+      ));
       newProduce();
       produce.item(Items.sporePod, 3);
       
@@ -362,49 +369,53 @@ public class CrafterBlocks implements ContentList{
       liquidCapacity = 40;
       
       newConsume();
-      consume.liquid(Liquids.water, 0.4f);
+      consume.liquid(Liquids.water, 0.6f);
       consume.power(2.5f);
       newProduce();
       produce.liquids(SglLiquidStack.with(
-          Liquids.ozone, 0.15f,
-          Liquids.hydrogen, 0.4f
+          Liquids.ozone, 0.6f,
+          Liquids.hydrogen, 0.8f
       ));
 
       newConsume();
-      consume.liquid(SglLiquids.purified_water, 0.6f);
+      consume.liquid(SglLiquids.purified_water, 0.4f);
       consume.power(2.1f);
       newProduce();
       produce.liquids(SglLiquidStack.with(
-          Liquids.ozone, 0.2f,
-          Liquids.hydrogen, 0.6f
+          Liquids.ozone, 0.6f,
+          Liquids.hydrogen, 0.8f
       ));
 
       newConsume();
-      consume.time(150f);
-      consume.liquid(SglLiquids.mixed_ore_solution, 0.4f);
+      consume.time(120f);
+      consume.liquids(UncLiquidStack.with(
+          SglLiquids.mixed_ore_solution, 0.4f,
+          SglLiquids.lye, 0.2f
+      ));
+      consume.item(SglItems.flocculant, 2);
       consume.power(3f);
       newProduce();
       produce.items(ItemStack.with(
-          SglItems.aluminium, 3,
-          Items.lead, 2,
+          SglItems.aluminium, 4,
+          Items.lead, 3,
           Items.titanium, 1,
-          Items.thorium, 1
+          Items.thorium, 2
       ));
 
       newConsume();
       consume.time(60);
-      consume.liquid(SglLiquids.purified_water, 0.4f);
+      consume.liquid(Liquids.water, 0.4f);
       consume.item(SglItems.alkali_stone, 1);
       consume.power(2f);
       newProduce();
       produce.liquids(UncLiquidStack.with(
           SglLiquids.lye, 0.4f,
-          SglLiquids.chlorine, 0.4f
+          SglLiquids.chlorine, 0.6f
       ));
       
       newConsume();
       consume.item(Items.sporePod, 1);
-      consume.liquid(SglLiquids.purified_water, 0.1f);
+      consume.liquid(Liquids.water, 0.1f);
       consume.power(2);
       consume.time(60);
       newProduce();
@@ -412,7 +423,7 @@ public class CrafterBlocks implements ContentList{
       
       newConsume();
       consume.item(SglItems.chlorella_block, 1);
-      consume.liquid(SglLiquids.purified_water, 0.2f);
+      consume.liquid(Liquids.water, 0.2f);
       consume.time(120);
       consume.power(2.4f);
       newProduce();
@@ -458,7 +469,7 @@ public class CrafterBlocks implements ContentList{
       consume.time(60f);
       consume.liquids(UncLiquidStack.with(
           SglLiquids.lye, 0.2f,
-          SglLiquids.uranium_salt_solution, 0.4f,
+          SglLiquids.uranium_salt_solution, 0.2f,
           Liquids.ozone, 0.2f
       ));
       consume.item(SglItems.flocculant, 1);
@@ -467,24 +478,23 @@ public class CrafterBlocks implements ContentList{
       produce.item(SglItems.uranium_rawmaterial, 2);
 
       newConsume();
-      consume.time(90f);
+      consume.time(120f);
       consume.liquids(UncLiquidStack.with(
           SglLiquids.acid, 0.2f,
-          Liquids.nitrogen, 0.4f,
           Liquids.ozone, 0.4f
       ));
-      consume.item(SglItems.iridium_mixed_rawmaterial, 3);
+      consume.item(SglItems.iridium_mixed_rawmaterial, 1);
       consume.power(1.2f);
       newProduce();
-      produce.item(SglItems.iridium_chloride, 2);
+      produce.item(SglItems.iridium_chloride, 1);
 
       newConsume();
-      consume.time(120f);
-      consume.liquid(SglLiquids.chlorine, 0.2f);
+      consume.time(90f);
+      consume.liquid(SglLiquids.chlorine, 0.4f);
       consume.power(0.8f);
       newProduce();
       produce.item(SglItems.chlorella_block, 1);
-      produce.liquid(SglLiquids.purified_water, 0.1f);
+      produce.liquid(SglLiquids.purified_water, 0.2f);
 
       draw = new DrawMulti(
           new DrawBottom(),
@@ -520,18 +530,18 @@ public class CrafterBlocks implements ContentList{
       newConsume();
       consume.time(60f);
       consume.item(SglItems.black_crystone, 3);
-      consume.liquid(SglLiquids.acid, 0.3f);
+      consume.liquid(SglLiquids.acid, 0.2f);
       consume.power(0.8f);
       newProduce();
       produce.liquid(SglLiquids.mixed_ore_solution, 0.4f);
 
       newConsume();
       consume.time(60f);
-      consume.liquid(SglLiquids.acid, 0.4f);
+      consume.liquid(SglLiquids.acid, 0.2f);
       consume.item(SglItems.uranium_rawore, 1);
       consume.power(0.8f);
       newProduce();
-      produce.liquid(SglLiquids.uranium_salt_solution, 0.4f);
+      produce.liquid(SglLiquids.uranium_salt_solution, 0.2f);
 
       newConsume();
       consume.liquids(UncLiquidStack.with(
@@ -541,7 +551,7 @@ public class CrafterBlocks implements ContentList{
       ));
       consume.power(0.6f);
       newProduce();
-      produce.liquid(SglLiquids.acid, 0.4f);
+      produce.liquid(SglLiquids.acid, 0.6f);
 
       newConsume();
       consume.time(120);
@@ -551,7 +561,7 @@ public class CrafterBlocks implements ContentList{
       ));
       consume.liquids(UncLiquidStack.with(
           SglLiquids.purified_water, 0.4f,
-          SglLiquids.chlorine, 0.4f
+          SglLiquids.chlorine, 0.2f
       ));
       consume.power(1.5f);
       newProduce();
@@ -561,15 +571,12 @@ public class CrafterBlocks implements ContentList{
       ));
 
       newConsume();
-      consume.time(90);
-      consume.item(SglItems.aluminium, 2);
-      consume.liquids(UncLiquidStack.with(
-          SglLiquids.lye, 0.4f,
-          Liquids.ozone, 0.2f
-      ));
+      consume.time(60);
+      consume.item(SglItems.aluminium, 1);
+      consume.liquid(SglLiquids.lye, 0.2f);
       consume.power(1f);
       newProduce();
-      produce.item(SglItems.flocculant, 1);
+      produce.item(SglItems.flocculant, 2);
 
       draw = new DrawMulti(
           new DrawBottom(),
@@ -625,7 +632,7 @@ public class CrafterBlocks implements ContentList{
       );
     }};
 
-    combustion_chamber = new NormalCrafter("combustion_chamber"){{
+    combustion_chamber = new BoosterCrafter("combustion_chamber"){{
       requirements(Category.crafting, ItemStack.with(
           Items.titanium, 90,
           Items.graphite, 80,
@@ -636,22 +643,24 @@ public class CrafterBlocks implements ContentList{
       liquidCapacity = 40f;
       itemCapacity = 25;
 
+      ambientSound = Sounds.fire;
+      ambientSoundVolume = 0.1f;
+
       newConsume();
-      consume.liquids(UncLiquidStack.with(
-          Liquids.hydrogen, 0.9f,
-          Liquids.ozone, 0.6f
-      ));
+      consume.liquid(Liquids.hydrogen, 0.8f);
       newProduce();
-      produce.liquid(SglLiquids.purified_water, 0.9f);
+      produce.liquid(SglLiquids.purified_water, 0.4f);
       produce.power(5.2f);
 
       newConsume();
-      consume.time(60);
+      consume.time(120);
       consume.item(Items.pyratite, 1);
-      consume.liquid(Liquids.ozone, 0.4f);
       newProduce();
       produce.liquid(SglLiquids.sulfur_dioxide, 0.4f);
       produce.power(4.5f);
+
+      newBooster(2.65f);
+      consume.liquid(Liquids.ozone, 0.3f);
 
       draw = new DrawMulti(
           new DrawBottom(),
@@ -670,44 +679,45 @@ public class CrafterBlocks implements ContentList{
       ));
       size = 3;
 
+      ambientSound = Sounds.fire;
+      ambientSoundVolume = 0.075f;
+
       squareSprite = false;
 
       liquidCapacity = 45f;
       itemCapacity = 30;
 
       newConsume();
-      consume.time(90);
+      consume.time(60);
       consume.liquids(UncLiquidStack.with(
           SglLiquids.silicon_chloride_sol, 0.2f,
           Liquids.hydrogen, 0.4f
       ));
-      consume.item(Items.sand, 3);
+      consume.item(Items.sand, 5);
       consume.power(2f);
       newProduce();
       produce.item(Items.silicon, 8);
 
       newConsume();
-      consume.time(60);
+      consume.time(120);
       consume.liquid(SglLiquids.silicon_chloride_sol, 0.4f);
-      consume.item(Items.metaglass, 4);
+      consume.item(Items.metaglass, 10);
       consume.power(1.8f);
       newProduce();
-      produce.item(SglItems.aerogel, 3);
+      produce.item(SglItems.aerogel, 5);
 
       newConsume();
-      consume.time(150);
-      consume.liquids(UncLiquidStack.with(
-          SglLiquids.algae_mud, 0.2f,
-          SglLiquids.acid, 0.1f
-      ));
+      consume.time(120);
+      consume.item(SglItems.chlorella_block, 1);
+      consume.liquid(SglLiquids.acid, 0.2f);
       consume.power(1.6f);
       newProduce();
       produce.item(SglItems.flocculant, 1);
 
       newConsume();
-      consume.time(180);
-      consume.item(Items.sporePod, 3);
-      consume.liquid(SglLiquids.acid, 0.1f);
+      consume.time(120);
+      consume.item(Items.sporePod, 1);
+      consume.liquid(SglLiquids.lye, 0.2f);
       consume.power(1.6f);
       newProduce();
       produce.item(SglItems.flocculant, 1);
@@ -729,13 +739,17 @@ public class CrafterBlocks implements ContentList{
       ));
       size = 3;
 
+      ambientSound = Sounds.smelter;
+      ambientSoundVolume = 0.075f;
+
       newConsume();
       consume.time(90f);
       consume.items(ItemStack.with(
           Items.titanium, 3,
-          Items.thorium, 2
+          Items.thorium, 2,
+          SglItems.coke, 1
       ));
-      consume.liquid(SglLiquids.silicon_chloride_sol, 0.4f);
+      consume.liquid(SglLiquids.silicon_chloride_sol, 0.2f);
       consume.power(2.6f);
       newProduce();
       produce.item(SglItems.strengthening_alloy, 3);
@@ -746,7 +760,7 @@ public class CrafterBlocks implements ContentList{
           SglItems.iridium_chloride, 1,
           SglItems.coke, 2
       ));
-      consume.liquid(Liquids.hydrogen, 0.6f);
+      consume.liquid(Liquids.hydrogen, 0.4f);
       consume.power(3f);
       newProduce();
       produce.item(SglItems.iridium, 2);
@@ -805,6 +819,8 @@ public class CrafterBlocks implements ContentList{
       itemCapacity = 12;
       liquidCapacity = 20;
 
+      ambientSound = Sounds.fire;
+
       newConsume();
       consume.time(90f);
       consume.power(2f);
@@ -840,15 +856,18 @@ public class CrafterBlocks implements ContentList{
       size = 3;
       itemCapacity = 20;
       warmupSpeed = 0.01f;
+
+      ambientSound = Sounds.beam;
+      ambientSoundVolume = 0.01f;
       
       newConsume();
-      consume.time(30f);
+      consume.time(60f);
       consume.power(3.2f);
       consume.item(SglItems.nuclear_waste, 1);
       newProduce().color = SglItems.nuclear_waste.color;
       produce.items(ItemStack.with(
           SglItems.iridium_mixed_rawmaterial, 2,
-          Items.lead, 6,
+          Items.lead, 5,
           Items.thorium, 3)
       ).random();
       
@@ -866,15 +885,15 @@ public class CrafterBlocks implements ContentList{
       )).random();
       
       newConsume();
-      consume.time(45f);
-      consume.item(SglItems.black_crystone, 2);
+      consume.time(60f);
+      consume.item(SglItems.black_crystone, 1 );
       consume.power(2.8f);
       newProduce().color = SglItems.black_crystone.color;
       produce.items(ItemStack.with(
           Items.titanium, 2,
           Items.thorium, 1,
           Items.lead, 3,
-          SglItems.aluminium, 5
+          SglItems.aluminium, 4
       )).random();
 
       draw = new DrawMulti(
@@ -953,7 +972,7 @@ public class CrafterBlocks implements ContentList{
       updateEffectChance = 0.035f;
 
       newConsume();
-      consume.time(480);
+      consume.time(240);
       consume.liquid(Liquids.water, 0.2f);
       consume.power(0.4f);
       newProduce();
@@ -983,11 +1002,11 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.time(120);
-      consume.liquid(Liquids.water, 0.5f);
+      consume.liquid(Liquids.water, 0.4f);
       consume.item(Items.graphite, 1);
       consume.power(1f);
       newProduce();
-      produce.liquid(SglLiquids.purified_water, 0.5f);
+      produce.liquid(SglLiquids.purified_water, 0.4f);
       produce.item(SglItems.alkali_stone, 1);
 
       draw = new DrawMulti(
@@ -1008,15 +1027,21 @@ public class CrafterBlocks implements ContentList{
       hasLiquids = true;
       itemCapacity = 20;
       liquidCapacity = 24f;
+
+      ambientSound = Sounds.spray;
       
       newConsume();
       consume.time(120f);
-      consume.liquid(Liquids.water, 0.4f);
+      consume.liquid(Liquids.water, 0.2f);
       consume.item(SglItems.rock_bitumen, 1);
       consume.power(1.8f);
       newProduce();
-      produce.liquid(SglLiquids.FEX_liquid, 0.1f);
-      produce.items(ItemStack.with(Items.sand, 4, SglItems.black_crystone, 1, SglItems.uranium_rawore, 1)).random();
+      produce.liquid(SglLiquids.FEX_liquid, 0.2f);
+      produce.items(ItemStack.with(
+          Items.sand, 5,
+          SglItems.black_crystone, 3,
+          SglItems.uranium_rawore, 2
+      )).random();
       
       craftEffect = Fx.pulverizeMedium;
 
@@ -1033,22 +1058,14 @@ public class CrafterBlocks implements ContentList{
           new DrawRegionDynamic<NormalCrafterBuild>("_point"){{
             color = e -> {
               BaseConsume<?> cons = e.consumer.current == null? null: ((SglConsumers) (e.consumer.current)).first();
-              if(cons instanceof ConsumeLiquids c){
-                Liquid liquid = c.consLiquids[0].liquid;
-                if(liquid == Liquids.water) liquid = c.consLiquids[1].liquid;
-                return liquid.color;
-              }else if(cons instanceof ConsumeItems c){
+              if(cons instanceof ConsumeItems c){
                 Item item = c.consItems[0].item;
                 return item.color;
               }else return Color.white;
             };
             alpha = e -> {
               BaseConsume<?> cons = e.consumer.current == null? null: ((SglConsumers) (e.consumer.current)).first();
-              if(cons instanceof ConsumeLiquids c){
-                Liquid liquid = c.consLiquids[0].liquid;
-                if(liquid == Liquids.water) liquid = c.consLiquids[1].liquid;
-                return e.liquids.get(liquid)/e.block.liquidCapacity;
-              }else if(cons instanceof ConsumeItems c){
+              if(cons instanceof ConsumeItems c){
                 Item item = c.consItems[0].item;
                 return (float) e.items.get(item)/e.block.itemCapacity;
               }else return 0;
@@ -1070,10 +1087,10 @@ public class CrafterBlocks implements ContentList{
       newConsume();
       consume.time(240f);
       consume.item(SglItems.strengthening_alloy, 1);
-      consume.liquid(SglLiquids.FEX_liquid, 0.4f);
+      consume.liquid(SglLiquids.FEX_liquid, 0.2f);
       consume.power(2.8f);
       newProduce();
-      produce.item(SglItems.crystal_FEX, 1);
+      produce.item(SglItems.crystal_FEX, 2);
 
       draw = new DrawMulti(
           new DrawCultivator(){
@@ -1101,9 +1118,12 @@ public class CrafterBlocks implements ContentList{
       size = 2;
       hasLiquids = true;
       liquidCapacity = 12;
+
+      ambientSound = Sounds.glow;
+      ambientSoundVolume = 0.1f;
       
       newConsume();
-      consume.time(90);
+      consume.time(120);
       consume.item(Items.phaseFabric, 1);
       consume.liquid(SglLiquids.FEX_liquid, 0.2f);
       consume.power(1.9f);
@@ -1170,21 +1190,21 @@ public class CrafterBlocks implements ContentList{
       warmupSpeed = 0.006f;
 
       newConsume();
-      consume.time(180);
-      consume.item(SglItems.uranium_rawmaterial, 5);
+      consume.time(120);
+      consume.item(SglItems.uranium_rawmaterial, 4);
       consume.power(3.8f);
       newProduce().color = SglItems.uranium_rawmaterial.color;
       produce.items(ItemStack.with(SglItems.uranium_238, 3, SglItems.uranium_235, 1));
 
       newConsume();
       consume.time(180);
-      consume.item(SglItems.iridium_mixed_rawmaterial, 5);
+      consume.item(SglItems.iridium_mixed_rawmaterial, 4);
       consume.power(3);
       newProduce().color = SglItems.iridium_chloride.color;
       produce.item(SglItems.iridium, 1);
 
       newConsume();
-      consume.time(90);
+      consume.time(120);
       consume.item(SglItems.black_crystone, 6);
       consume.power(2.8f);
       consume.setConsTrigger((NormalCrafterBuild e) -> {
@@ -1199,7 +1219,10 @@ public class CrafterBlocks implements ContentList{
         }).left().padLeft(5);
       });
       newProduce().color = SglItems.black_crystone.color;
-      produce.items(ItemStack.with(SglItems.aluminium, 2, Items.lead, 1));
+      produce.items(ItemStack.with(
+          SglItems.aluminium, 3,
+          Items.lead, 2
+      ));
 
       craftEffect = Fx.smeltsmoke;
       updateEffect = Fx.plasticburn;
@@ -1278,14 +1301,17 @@ public class CrafterBlocks implements ContentList{
       size = 3;
       
       newConsume();
-      consume.time(90);
-      consume.liquid(SglLiquids.phase_FEX_liquid, 0.6f);
+      consume.time(120);
+      consume.liquid(SglLiquids.phase_FEX_liquid, 0.2f);
       consume.item(SglItems.strengthening_alloy, 1);
       consume.energy(1.25f);
       newProduce();
-      produce.item(SglItems.crystal_FEX, 2);
+      produce.item(SglItems.crystal_FEX, 4);
   
       craftEffect = SglFx.FEXsmoke;
+
+      ambientSound = Sounds.tractorbeam;
+      ambientSoundVolume = 0.15f;
 
       initialed = e -> e.setVar("drawAlphas", new float[]{2.9f, 2.2f, 1.5f});
 
@@ -1374,6 +1400,9 @@ public class CrafterBlocks implements ContentList{
       
       craftEffect = SglFx.crystalConstructed;
 
+      ambientSound = Sounds.flux;
+      ambientSoundVolume = 0.1f;
+
       draw = new DrawMulti(
           new DrawDefault(),
           new DrawRegionDynamic<NormalCrafterBuild>(){
@@ -1409,11 +1438,17 @@ public class CrafterBlocks implements ContentList{
           Items.surgeAlloy, 120
       ));
       size = 4;
+
+      ambientSound = Sounds.cutter;
+      ambientSoundVolume = 0.5f;
       
       newConsume();
       consume.time(120);
       consume.energy(4.85f);
-      consume.items(ItemStack.with(SglItems.crystal_FEX_power, 1, SglItems.strengthening_alloy, 2));
+      consume.items(ItemStack.with(
+          SglItems.crystal_FEX_power, 1,
+          SglItems.strengthening_alloy, 2
+      ));
       consume.liquid(SglLiquids.phase_FEX_liquid, 0.2f);
       newProduce();
       produce.item(SglItems.matrix_alloy, 1);
@@ -1459,14 +1494,17 @@ public class CrafterBlocks implements ContentList{
       ));
       size = 5;
       itemCapacity = 20;
+
+      ambientSound = Sounds.spellLoop;
+      ambientSoundVolume = 0.4f;
       
       newConsume();
       consume.energy(5f);
       consume.items(ItemStack.with(
-          SglItems.crystal_FEX_power, 2,
+          SglItems.crystal_FEX_power, 1,
           SglItems.matrix_alloy, 2,
           SglItems.aerogel, 3,
-          SglItems.iridium, 2
+          SglItems.iridium, 1
       ));
       consume.time(240);
       newProduce();
@@ -1540,8 +1578,14 @@ public class CrafterBlocks implements ContentList{
       newProduce();
       produce.item(SglItems.anti_metter, 1);
 
+      ambientSound = Sounds.electricHum;
+      ambientSoundVolume = 0.6f;
+
       craftEffect = SglFx.explodeImpWaveBig;
       craftEffectColor = Pal.reactorPurple;
+
+      craftedSound = Sounds.largeExplosion;
+      craftedSoundVolume = 1f;
 
       clipSize = 150;
 

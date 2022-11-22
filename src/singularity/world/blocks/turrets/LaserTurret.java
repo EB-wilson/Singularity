@@ -68,6 +68,11 @@ public class LaserTurret extends SglTurret{
     }
 
     @Override
+    public float activeSoundVolume() {
+      return 1;
+    }
+
+    @Override
     public boolean shouldActiveSound(){
       return allLaser.any();
     }

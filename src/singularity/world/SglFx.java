@@ -17,6 +17,7 @@ import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.entities.Effect;
+import mindustry.entities.effect.MultiEffect;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
@@ -157,8 +158,7 @@ public class SglFx{
 
   explodeImpWaveLarge = impactExplode(50, 75f),
 
-  reactorExplode = new Effect(180, e -> {
-    if(e.time <= 2) Fx.reactorExplosion.at(e.x, e.y);
+  reactorExplode = new MultiEffect(Fx.reactorExplosion, new Effect(180,e -> {
     float size = e.data() instanceof Float ? e.data() : 120;
 
     float fin1 = Mathf.clamp(e.fin()/0.1f);
@@ -231,7 +231,7 @@ public class SglFx{
         Drawf.light(b.x + x, b.y + y, (out*4*(3f + intensity))*3.5f, Draw.getColor(), 0.8f);
       });
     });
-  }),
+  })),
 
   steam = new Effect(90, e -> {
     Vec2 motion = e.data() instanceof Vec2 ? e.data() : new Vec2(0, 0);
