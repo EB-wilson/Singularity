@@ -22,20 +22,20 @@ public class LiquidBlocks implements ContentList {
   @Override
   public void load() {
     cluster_conduit = new ClusterConduit("cluster_conduit"){{
-      requirements(Category.liquid, ItemStack.with(Items.titanium, 8, SglItems.aerogel, 10, SglItems.aluminium, 12));
+      requirements(Category.liquid, ItemStack.with(Items.titanium, 8, SglItems.aerogel, 10, SglItems.aluminium, 10));
       liquidCapacity = 10;
       liquidPressure = 1.05f;
       health = 360;
     }};
     
     conduit_riveting = new FakeBlock(new ConduitRiveting("conduit_riveting"){{
-      requirements(Category.liquid, ItemStack.with(Items.plastanium, 18, SglItems.aerogel, 10, SglItems.aluminium, 18));
+      requirements(Category.liquid, ItemStack.with(Items.plastanium, 18, SglItems.aerogel, 10, SglItems.aluminium, 16));
       liquidCapacity = 10;
       health = 300;
     }}, (tile, team, rotation) -> tile.build instanceof ClusterConduit.ClusterConduitBuild b && b.rotation == rotation);
 
     filter_valve = new FakeBlock(new ClusterValve("filter_valve"){{
-      requirements(Category.liquid, ItemStack.with(Items.titanium, 20, SglItems.aerogel, 15, Items.graphite, 12));
+      requirements(Category.liquid, ItemStack.with(Items.titanium, 10, SglItems.aerogel, 15, Items.graphite, 12));
       liquidCapacity = 10;
       health = 300;
     }}, (tile, team, rotation) -> tile.build instanceof ClusterConduit.ClusterConduitBuild b && b.rotation == rotation);
@@ -47,7 +47,7 @@ public class LiquidBlocks implements ContentList {
     }}, (tile, team, rotation) -> tile.build instanceof ClusterConduit.ClusterConduitBuild b && b.rotation == rotation);
     
     liquid_unloader = new LiquidUnloader("liquid_unloader"){{
-      requirements(Category.liquid, ItemStack.with(Items.silicon, 30, SglItems.aluminium, 35, Items.graphite, 25));
+      requirements(Category.liquid, ItemStack.with(Items.silicon, 20, SglItems.aluminium, 25, Items.graphite, 15));
       size = 1;
     }};
   }

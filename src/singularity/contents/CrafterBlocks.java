@@ -131,7 +131,7 @@ public class CrafterBlocks implements ContentList{
       ));
       size = 4;
       oneOfOptionCons = true;
-      itemCapacity = 12;
+      itemCapacity = 24;
 
       ambientSound = Sounds.flux;
       
@@ -370,7 +370,7 @@ public class CrafterBlocks implements ContentList{
       
       newConsume();
       consume.liquid(Liquids.water, 0.6f);
-      consume.power(2.5f);
+      consume.power(6f);
       newProduce();
       produce.liquids(SglLiquidStack.with(
           Liquids.ozone, 0.6f,
@@ -379,7 +379,7 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.liquid(SglLiquids.purified_water, 0.4f);
-      consume.power(2.1f);
+      consume.power(5.8f);
       newProduce();
       produce.liquids(SglLiquidStack.with(
           Liquids.ozone, 0.6f,
@@ -393,7 +393,7 @@ public class CrafterBlocks implements ContentList{
           SglLiquids.lye, 0.2f
       ));
       consume.item(SglItems.flocculant, 2);
-      consume.power(3f);
+      consume.power(3.5f);
       newProduce();
       produce.items(ItemStack.with(
           SglItems.aluminium, 4,
@@ -406,7 +406,7 @@ public class CrafterBlocks implements ContentList{
       consume.time(60);
       consume.liquid(Liquids.water, 0.4f);
       consume.item(SglItems.alkali_stone, 1);
-      consume.power(2f);
+      consume.power(3f);
       newProduce();
       produce.liquids(UncLiquidStack.with(
           SglLiquids.lye, 0.4f,
@@ -416,7 +416,7 @@ public class CrafterBlocks implements ContentList{
       newConsume();
       consume.item(Items.sporePod, 1);
       consume.liquid(Liquids.water, 0.1f);
-      consume.power(2);
+      consume.power(2.8f);
       consume.time(60);
       newProduce();
       produce.liquid(SglLiquids.spore_cloud, 0.18f);
@@ -425,7 +425,7 @@ public class CrafterBlocks implements ContentList{
       consume.item(SglItems.chlorella_block, 1);
       consume.liquid(Liquids.water, 0.2f);
       consume.time(120);
-      consume.power(2.4f);
+      consume.power(2.5f);
       newProduce();
       produce.item(SglItems.chlorella, 1);
 
@@ -673,7 +673,7 @@ public class CrafterBlocks implements ContentList{
       requirements(Category.crafting, ItemStack.with(
           Items.titanium, 90,
           Items.silicon, 80,
-          SglItems.strengthening_alloy, 60,
+          Items.plastanium, 60,
           Items.metaglass, 75,
           Items.graphite, 80
       ));
@@ -738,6 +738,8 @@ public class CrafterBlocks implements ContentList{
           Items.plastanium, 70
       ));
       size = 3;
+
+      itemCapacity = 20;
 
       ambientSound = Sounds.smelter;
       ambientSoundVolume = 0.075f;
@@ -960,39 +962,10 @@ public class CrafterBlocks implements ContentList{
 
     distill_purifier = new NormalCrafter("distill_purifier"){{
       requirements(Category.crafting, ItemStack.with(
-          Items.copper, 20,
-          Items.silicon, 12,
-          Items.graphite, 10
-      ));
-      size = 1;
-      hasLiquids = true;
-      liquidCapacity = 30;
-
-      updateEffect = Fx.steam;
-      updateEffectChance = 0.035f;
-
-      newConsume();
-      consume.time(240);
-      consume.liquid(Liquids.water, 0.2f);
-      consume.power(0.4f);
-      newProduce();
-      produce.liquid(SglLiquids.purified_water, 0.1f);
-      produce.item(SglItems.alkali_stone, 1);
-
-      draw = new DrawMulti(
-          new DrawDefault(),
-          new DrawLiquidRegion(Liquids.water){{
-            suffix = "_liquid";
-          }}
-      );
-    }};
-
-    osmotic_purifier = new NormalCrafter("osmotic_purifier"){{
-      requirements(Category.crafting, ItemStack.with(
-          Items.copper, 50,
-          Items.graphite, 60,
-          Items.silicon, 45,
-          Items.titanium, 45
+          Items.copper, 30,
+          Items.silicon, 24,
+          Items.metaglass, 30,
+          Items.graphite, 20
       ));
       size = 2;
       hasLiquids = true;
@@ -1000,18 +973,85 @@ public class CrafterBlocks implements ContentList{
 
       squareSprite = false;
 
+      updateEffect = Fx.steam;
+      updateEffectChance = 0.035f;
+
       newConsume();
       consume.time(120);
-      consume.liquid(Liquids.water, 0.4f);
-      consume.item(Items.graphite, 1);
+      consume.liquid(Liquids.water, 0.5f);
       consume.power(1f);
       newProduce();
       produce.liquid(SglLiquids.purified_water, 0.4f);
       produce.item(SglItems.alkali_stone, 1);
 
       draw = new DrawMulti(
+          new DrawDefault(),
+          new DrawLiquidTile(Liquids.water, 3)
+      );
+    }};
+
+    osmotic_purifier = new NormalCrafter("osmotic_purifier"){{
+      requirements(Category.crafting, ItemStack.with(
+          SglItems.aluminium, 50,
+          Items.graphite, 60,
+          Items.silicon, 45,
+          Items.titanium, 45,
+          SglItems.aerogel, 50
+      ));
+      size = 3;
+      hasLiquids = true;
+      liquidCapacity = 30;
+
+      squareSprite = false;
+
+      newConsume();
+      consume.time(60);
+      consume.liquid(Liquids.water, 2f);
+      consume.item(Items.graphite, 1);
+      consume.power(1f);
+      newProduce();
+      produce.liquid(SglLiquids.purified_water, 2f);
+      produce.item(SglItems.alkali_stone, 2);
+
+      draw = new DrawMulti(
           new DrawBottom(),
           new DrawLiquidTile(Liquids.water, 3),
+          new DrawBlock() {
+            @Override
+            public void draw(Building build){
+              NormalCrafterBuild e = (NormalCrafterBuild) build;
+              TextureRegion region = renderer.fluidFrames[0][Liquids.water.getAnimationFrame()];
+              TextureRegion toDraw = Tmp.tr1;
+
+              float bounds = size/2f * tilesize - 8;
+              Color color = SglLiquids.purified_water.color;
+
+              for(int sx = 0; sx < size; sx++){
+                for(int sy = 0; sy < size; sy++){
+                  float relx = sx - (size-1)/2f, rely = sy - (size-1)/2f;
+
+                  toDraw.set(region);
+                  float rightBorder = relx*tilesize + 8, topBorder = rely*tilesize + 8;
+                  float squishX = rightBorder + tilesize/2f - bounds, squishY = topBorder + tilesize/2f - bounds;
+                  float ox = 0f, oy = 0f;
+
+                  if(squishX >= 8 || squishY >= 8) continue;
+
+                  if(squishX > 0){
+                    toDraw.setWidth(toDraw.width - squishX * 4f);
+                    ox = -squishX/2f;
+                  }
+
+                  if(squishY > 0){
+                    toDraw.setY(toDraw.getY() + squishY * 4f);
+                    oy = -squishY/2f;
+                  }
+
+                  Drawf.liquid(toDraw, e.x + rightBorder + ox, e.y + topBorder + oy, e.warmup(), color);
+                }
+              }
+            }
+          },
           new DrawDefault()
       );
     }};
@@ -1299,6 +1339,8 @@ public class CrafterBlocks implements ContentList{
           Items.phaseFabric, 80
       ));
       size = 3;
+
+      itemCapacity = 20;
       
       newConsume();
       consume.time(120);
@@ -1390,6 +1432,8 @@ public class CrafterBlocks implements ContentList{
           Items.plastanium, 85
       ));
       size = 3;
+
+      itemCapacity = 15;
       
       newConsume();
       consume.time(90f);
@@ -1438,6 +1482,8 @@ public class CrafterBlocks implements ContentList{
           Items.surgeAlloy, 120
       ));
       size = 4;
+
+      itemCapacity = 20;
 
       ambientSound = Sounds.cutter;
       ambientSoundVolume = 0.5f;
@@ -1568,6 +1614,7 @@ public class CrafterBlocks implements ContentList{
       requirements(Category.crafting, ItemStack.with());
       size = 5;
 
+      itemCapacity = 20;
       energyCapacity = 1024f;
 
       newConsume();
