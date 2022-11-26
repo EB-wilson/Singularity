@@ -80,6 +80,12 @@ public class SglTechThree implements ContentList{
         });
       });
 
+      node(itemBridge, transport_node, transNode -> {
+        transNode.node(phase_transport_node, phaNode -> {
+          phaNode.node(iridium_transport_node, iridNode -> {});
+        });
+      });
+
       node(coreShard, decay_bin, decBin -> {
         decBin.node(nuclear_pipe_node, nucNode -> {
           nucNode.node(phase_pipe_node, phaseNode -> {
