@@ -84,6 +84,7 @@ public class DistributeBlocks implements ContentList{
           SglItems.aluminium, 12
       ));
 
+      researchCostMultiplier = 1.5f;
       itemCapacity = 15;
       maxItemCapacity = 60;
       range = 12;
@@ -106,6 +107,7 @@ public class DistributeBlocks implements ContentList{
           SglItems.aluminium, 12
       ));
 
+      researchCostMultiplier = 2;
       itemCapacity = 20;
       maxItemCapacity = 80;
       range = 20;
