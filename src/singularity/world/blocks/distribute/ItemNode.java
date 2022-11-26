@@ -89,7 +89,7 @@ public class ItemNode extends SglBlock {
       }
       else if (conf instanceof NodeConfig c){
         e.link = Point2.pack(c.p.x + e.tileX(), c.p.y + e.tileY());
-        e.config = c.config.isClear()? null: e.config;
+        e.config = c.config.isClear()? null: c.config;
       }
     });
 
@@ -604,7 +604,7 @@ public class ItemNode extends SglBlock {
       NodeConfig res = new NodeConfig();
       res.p = Point2.unpack(link).sub(tile.x, tile.y);
       res.config = config == null? new DistTargetConfigTable.TargetConfigure(): config;
-      return res;
+      return res.pack();
     }
 
     @Override
@@ -645,6 +645,10 @@ public class ItemNode extends SglBlock {
 
   public static class NodeConfig implements DataPackable{
     private static final long typeID = 1549846541194654268L;
+
+    static {
+      DataPackable.assignType(typeID, a -> new NodeConfig());
+    }
 
     public Point2 p;
     public DistTargetConfigTable.TargetConfigure config;
