@@ -65,7 +65,7 @@ public class ProductBlocks implements ContentList {
       consume.liquid(Liquids.cryofluid, 0.2f);
       consume.power(1.75f);
       newProduce();
-      produce.item(SglItems.rock_bitumen, 1);
+      produce.item(SglItems.rock_bitumen, 2);
 
       draw = new DrawMulti(
           new DrawBottom(),

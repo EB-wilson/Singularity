@@ -393,6 +393,11 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     }
 
     @Override
+    public float consEfficiency() {
+      return consumer.hasConsume()? consumer.consEfficiency: 1;
+    }
+
+    @Override
     public void update(){
       updateRecipe = false;
       if(!recipeSelected && autoSelect && consumer.hasConsume() && (consumer.current == null || !consumer.valid())){

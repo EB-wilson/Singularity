@@ -985,8 +985,9 @@ public class CrafterBlocks implements ContentList{
       produce.item(SglItems.alkali_stone, 1);
 
       draw = new DrawMulti(
-          new DrawDefault(),
-          new DrawLiquidTile(Liquids.water, 3)
+          new DrawBottom(),
+          new DrawLiquidTile(Liquids.water, 3),
+          new DrawDefault()
       );
     }};
 

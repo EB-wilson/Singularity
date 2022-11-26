@@ -23,6 +23,7 @@ import singularity.Sgl;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.ui.tables.DistTargetConfigTable.TargetConfigure;
 import singularity.world.blocks.distribute.DistNetBlock;
+import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers.RequestHandler;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitComp;
@@ -236,6 +237,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           config,
           target instanceof IOPointComp point? point.configContentTypes()
               : getAcceptType(target.block),
+          target instanceof IOPointBlock.IOPoint,
           c -> configure(c.pack()),
           UncCore.secConfig::hideConfig
       ));

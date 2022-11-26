@@ -189,17 +189,19 @@ public class ClusterConduit extends MultLiquidBlock{
     @Override
     public float moveLiquidForward(boolean leaks, Liquid liquid){
       Tile next = tile.nearby(rotation);
-      if(next == null) return 0;
+      if(next == null || next.build == null) return 0;
+
+      Building dest = next.build.getLiquidDestination(this, liquid);
       
       float flow = 0;
       for(int i=0; i<liquidsBuffer.length; i++){
         LiquidModule liquids = liquidsBuffer[i];
-        if(next.build instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
+        if(dest instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
           flow += moveLiquid(mu, i, liquids.current());
         }
-        else if(next.build != null){
+        else if(dest != null){
           this.liquids = liquids;
-          flow += moveLiquid(next.build, liquids.current());
+          flow += moveLiquid(dest, liquids.current());
           this.liquids = cacheLiquids;
         }
       }

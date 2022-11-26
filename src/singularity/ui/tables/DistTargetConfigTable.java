@@ -15,7 +15,6 @@ import arc.math.geom.Point2;
 import arc.scene.Element;
 import arc.scene.event.ElementGestureListener;
 import arc.scene.event.InputEvent;
-import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.ImageButton;
@@ -24,7 +23,6 @@ import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
 import arc.util.Time;
-import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -35,7 +33,6 @@ import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
-import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.distribution.GridChildType;
 import universecore.util.DataPackable;
 import universecore.util.Empties;
@@ -52,7 +49,7 @@ public class DistTargetConfigTable extends Table{
   int index;
   
   public DistTargetConfigTable(Building build, TargetConfigure defaultCfg, GridChildType[] IOTypes,
-                               ContentType[] types, Cons<TargetConfigure> cons, Runnable close){
+                               ContentType[] types, boolean flip, Cons<TargetConfigure> cons, Runnable close){
     super(Tex.pane);
     if(defaultCfg != null){
       config.read(defaultCfg.pack());
@@ -65,31 +62,29 @@ public class DistTargetConfigTable extends Table{
       float deltaX, deltaY;
       float alpha;
       float pressTime;
-      boolean pressing, valid = true, hovered, hold;
+      boolean pressing, valid = true, hovering, hold;
   
       public Flip(){
         setSize(90);
         touchable(() -> currDireBit != null? Touchable.enabled: Touchable.disabled);
         update(() -> {
-          alpha = Mathf.lerpDelta(alpha, pressing || hovered || hold? 1: 0, 0.045f);
+          alpha = Mathf.lerpDelta(alpha, pressing || hovering || hold? 1: 0, 0.045f);
 
-          if(!(hovered || pressing) || !valid){
+          if(!pressing || !valid){
             deltaX = Mathf.lerpDelta(deltaX, 0, 0.05f);
             deltaY = Mathf.lerpDelta(deltaY, 0, 0.05f);
           }
-          if(Core.app.isDesktop() || Core.settings.getBool("keyboard")){
-            if(!pressing){
-              boolean l = hovered;
-              hovered = Tmp.cr1.set(x, y, 45).contains(Core.input.mouse());
-              if(l != hovered){
-                if(hovered){
-                  Core.scene.setKeyboardFocus(this);
-                }
-                else Core.scene.unfocus(this);
-              }
-            }
-          }
         });
+
+        if(Core.app.isDesktop() || Core.settings.getBool("keyboard")) {
+          hovered(() -> {
+            hovering = true;
+          });
+
+          exited(() -> {
+            hovering = false;
+          });
+        }
 
         addCaptureListener(new ElementGestureListener(){
           @Override
@@ -97,6 +92,7 @@ public class DistTargetConfigTable extends Table{
             super.touchDown(event, x, y, pointer, button);
             pressing = true;
             pressTime = Time.globalTime;
+            valid = true;
           }
 
           @Override
@@ -128,27 +124,6 @@ public class DistTargetConfigTable extends Table{
               }
             }
             super.pan(event, x, y, deltaX, deltaY);
-          }
-        });
-
-        addListener(new InputListener(){
-          @Override
-          public boolean keyDown(InputEvent event, KeyCode keycode){
-            if(hovered && !pressing){
-              if(keycode.equals(KeyCode.right)){
-                setDireBit((byte) 1);
-              }
-              else if(keycode.equals(KeyCode.up)){
-                setDireBit((byte) 2);
-              }
-              else if(keycode.equals(KeyCode.left)){
-                setDireBit((byte) 4);
-              }
-              else if(keycode.equals(KeyCode.down)){
-                setDireBit((byte) 8);
-              }
-            }
-            return super.keyDown(event, keycode);
           }
         });
       }
@@ -194,7 +169,7 @@ public class DistTargetConfigTable extends Table{
     
     table(topBar -> {
       topBar.image(Icon.settings).size(50).left().padLeft(4);
-      topBar.add(Core.bundle.get("fragments.configs.gridConfig")).left().padLeft(4);
+      topBar.add(Core.bundle.get("fragments.configs.nodeConfig")).left().padLeft(4);
       topBar.button(
           t -> t.add("").update(l -> l.setText(Core.bundle.format("misc.mode", IOTypes[index].locale()))),
           Styles.cleart,
@@ -208,7 +183,14 @@ public class DistTargetConfigTable extends Table{
       topBar.add(Core.bundle.get("misc.priority")).right().padRight(4);
       topBar.field(Integer.toString(config.priority),
           (f, c) -> numbers.contains(c),
-          str -> config.priority = Integer.parseInt(str)).right().width(75).padRight(4);
+          str ->{
+            try {
+              config.priority = str.isEmpty() ? 0 : Integer.parseInt(str);
+            }
+            catch (NumberFormatException ignored){
+              config.priority = 0;
+            }
+          }).right().width(75).padRight(4);
     }).fillY().expandX();
 
     row();
@@ -270,7 +252,7 @@ public class DistTargetConfigTable extends Table{
     });
     
     Element ele;
-    if(build instanceof IOPointBlock.IOPoint){
+    if(flip){
       addChild(ele = new Flip());
       update(() -> {
         ele.setPosition(width/2, height + ele.getHeight(), 2);

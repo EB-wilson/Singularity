@@ -5,7 +5,6 @@ import arc.math.Mathf;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.OrderedSet;
-import arc.util.Time;
 import org.jetbrains.annotations.NotNull;
 import singularity.world.FinderContainerBase;
 import singularity.world.components.distnet.DistComponent;
@@ -183,33 +182,32 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   public void updateEnergy(){
     energyStatus = energyProduct = energyConsume = extraEnergyRequire = 0;
 
+    float energyCapacity = 0;
     if(netStructValid()){
       for(DistElementBuildComp element: elementsIterateArr){
         energyConsume += element.matrixEnergyConsume();
-        extraEnergyRequire += element.extraEnergyRequire();
+        extraEnergyRequire += element.extraEnergyRequire()*element.getBuilding().delta();
       }
       for(DistElementBuildComp element: elementsIterateArr){
-        energyProduct += element.matrixEnergyProduct();
+        energyProduct += element.matrixEnergyProduct()*element.getBuilding().delta();
       }
-      energyStatus = energyConsume == 0? 1: energyProduct/energyConsume;
-
-      if(energyBuffer.isEmpty()) return;
-
-      float avgDelta = (energyStatus - 1)*energyConsume/energyBuffer.size*Time.delta;
-      int count = 0;
-      boolean anyBuffer = false;
-      for(DistElementBuildComp buffer: energyBuffer){
-        count++;
-        float origin = buffer.matrixEnergyBuffered();
-        float set = Mathf.clamp(origin + avgDelta, 0, buffer.getDistBlock().matrixEnergyCapacity());
-        buffer.matrixEnergyBuffered(set);
-
-        if(avgDelta < 0 && set - origin < 0) anyBuffer = true;
-        avgDelta += (avgDelta - set + origin)/(energyBuffer.size - count);
+      for (DistElementBuildComp buff : energyBuffer) {
+        energyCapacity += buff.getDistBlock().matrixEnergyCapacity() - buff.matrixEnergyBuffered();
       }
 
-      energyStatus = Mathf.clamp(energyStatus);
-      if(energyStatus < 1 && anyBuffer) energyStatus = 1;
+      float delta = Math.min(energyCapacity, energyProduct - energyConsume)/energyBuffer.size;
+      int counter = 0;
+      for (DistElementBuildComp buff : energyBuffer) {
+        counter++;
+        float origin = buff.matrixEnergyBuffered();
+        float set = Mathf.clamp(origin + delta, 0, buff.getDistBlock().matrixEnergyCapacity());
+        buff.matrixEnergyBuffered(set);
+
+        energyProduct -= set - origin;
+        delta += (delta - (set - origin))/(energyBuffer.size - counter);
+      }
+
+      energyStatus = Mathf.clamp(energyProduct/energyConsume, 0, 1);
     }
   }
 

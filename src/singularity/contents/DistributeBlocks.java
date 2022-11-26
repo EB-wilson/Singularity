@@ -8,10 +8,12 @@ import arc.util.Eachable;
 import mindustry.content.Items;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
+import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.draw.DrawMulti;
+import mindustry.world.meta.Env;
 import singularity.Sgl;
 import singularity.type.SglCategory;
 import singularity.world.blocks.distribute.*;
@@ -23,8 +25,14 @@ import singularity.world.draw.DrawDirSpliceBlock;
 import singularity.world.draw.DrawEdgeLinkBits;
 
 public class DistributeBlocks implements ContentList{
+  /**运输节点*/
+  public static Block transport_node,
+  /**相位运输节点*/
+  phase_transport_node,
+  /**铱制高效运输节点*/
+  iridium_transport_node,
   /**矩阵中枢*/
-  public static Block matrix_core,
+  matrix_core,
   /**矩阵桥*/
   matrix_bridge,
   /**矩阵塔*/
@@ -56,6 +64,62 @@ public class DistributeBlocks implements ContentList{
   
   @Override
   public void load(){
+    transport_node = new ItemNode("transport_node"){{
+      requirements(Category.distribution, ItemStack.with(
+          Items.silicon, 8,
+          SglItems.aerogel, 8,
+          SglItems.aluminium, 10
+      ));
+
+      range = 4;
+      arrowTimeScl = 6;
+      transportTime = 3;
+    }};
+
+    phase_transport_node = new ItemNode("phase_transport_node"){{
+      requirements(Category.distribution, ItemStack.with(
+          Items.phaseFabric, 6,
+          SglItems.aerogel, 10,
+          SglItems.strengthening_alloy, 8,
+          SglItems.aluminium, 12
+      ));
+
+      itemCapacity = 15;
+      maxItemCapacity = 60;
+      range = 12;
+      arrowPeriod = 0.9f;
+      arrowTimeScl = 2.75f;
+      hasPower = true;
+      pulse = true;
+      envEnabled |= Env.space;
+      transportTime = 1f;
+      newConsume();
+      consume.power(0.4f);
+    }};
+
+    iridium_transport_node = new ItemNode("iridium_transport_node"){{
+      requirements(Category.distribution, ItemStack.with(
+          Items.phaseFabric, 4,
+          SglItems.iridium, 4,
+          SglItems.crystal_FEX, 6,
+          SglItems.aerogel, 12,
+          SglItems.aluminium, 12
+      ));
+
+      itemCapacity = 20;
+      maxItemCapacity = 80;
+      range = 20;
+      siphon = true;
+      arrowPeriod = 1.1f;
+      arrowTimeScl = 2.25f;
+      hasPower = true;
+      pulse = true;
+      envEnabled |= Env.space;
+      transportTime = 0.5f;
+      newConsume();
+      consume.power(1f);
+    }};
+
     Sgl.ioPoint = new IOPointBlock("io_point");
     
     matrix_core = new DistNetCore("matrix_core"){{

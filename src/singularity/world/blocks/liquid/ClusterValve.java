@@ -13,8 +13,6 @@ import mindustry.Vars;
 import mindustry.entities.Puddles;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
-import mindustry.gen.Tex;
-import mindustry.graphics.Pal;
 import mindustry.type.Liquid;
 import mindustry.ui.Styles;
 import mindustry.world.Tile;
@@ -31,22 +29,32 @@ public class ClusterValve extends ClusterConduit{
     configurable = true;
     outputsLiquid = true;
 
-    config(Boolean.class, (ClusterValveBuild e, Boolean c) -> e.outputMode = c);
+    config(Integer.class, (ClusterValveBuild e, Integer i) -> {
+      switch (i){
+        case 0 -> e.input[e.currConfig] = !e.input[e.currConfig];
+        case 1 -> e.output[e.currConfig] = !e.output[e.currConfig];
+        case 2 -> e.blocking[e.currConfig] = !e.blocking[e.currConfig];
+      }
+    });
 
     config(IntSeq.class, (ClusterValveBuild e, IntSeq c) -> {
       if (c.get(0) == 0){
         e.configured[c.get(1)] = Vars.content.liquid(c.get(2));
       }
       else if(c.get(0) == 1){
-        e.outputMode = c.get(1) == 1;
-        int len = c.size - 2;
-        e.liquidsBuffer = new ClusterLiquidModule[len];
-        for (int i = 0; i < e.liquidsBuffer.length; i++) {
-          e.liquidsBuffer[i] = new ClusterLiquidModule();
+        e.liquidsBuffer = new ClusterLiquidModule[c.get(0)];
+        for (int ind = 0; ind < e.liquidsBuffer.length; ind++) {
+          e.liquidsBuffer[ind] = new ClusterLiquidModule();
         }
-        e.configured = new Liquid[len];
-        for (int i = 2; i < c.size; i++) {
-          e.configured[i - 2] = Vars.content.liquid(c.get(i));
+        e.configured = new Liquid[c.get(0)];
+        e.input = new boolean[c.get(0)];
+        e.output = new boolean[c.get(0)];
+        e.blocking = new boolean[c.get(0)];
+        for (int l = 0; l < e.liquidsBuffer.length; l++) {
+          e.configured[l] = Vars.content.liquid(c.get(l*4 + 1));
+          e.input[l] = c.get(l*4 + 2) == 1;
+          e.output[l] = c.get(l*4 + 3) == 1;
+          e.blocking[l] = c.get(l*4 + 4) == 1;
         }
       }
     });
@@ -69,132 +77,130 @@ public class ClusterValve extends ClusterConduit{
   @Annotations.ImplEntries
   public class ClusterValveBuild extends ClusterConduitBuild implements Takeable {
     public Liquid[] configured;
-    boolean outputMode;
+    public boolean[] input;
+    public boolean[] output;
+    public boolean[] blocking;
 
     int currConfig;
-    Runnable buildItemSelect;
 
     @Override
     public void onReplaced(ReplaceBuildComp old) {
       liquidsBuffer = old.<ClusterConduitBuild>getBuild().liquidsBuffer;
       configured = new Liquid[liquidsBuffer.length];
+      input = new boolean[liquidsBuffer.length];
+      output = new boolean[liquidsBuffer.length];
+      blocking = new boolean[liquidsBuffer.length];
     }
 
     @Override
     public void buildConfiguration(Table table){
       table.table(ta -> {
-        ta.table(Styles.black6, t -> {
-          t.defaults().pad(0).margin(0);
-          t.table(Tex.buttonTrans, i -> i.image().size(35)).size(40);
-          t.table(b -> {
-            b.check("", outputMode, this::configure).left();
-            b.table(text -> {
-              text.defaults().grow().left();
-              text.add(Core.bundle.get("misc.currentMode")).color(Pal.accent);
-              text.row();
-              text.add("").update(l -> {
-                l.setText(outputMode ? Core.bundle.get("infos.outputMode"): Core.bundle.get("infos.inputMode"));
-              });
-            }).grow().right().padLeft(8);
-          }).size(194, 40).padLeft(8);
-        }).size(250, 40);
-        ta.row();
-
         ta.table(Styles.black6, conduits -> {
           for(int i=0; i<liquidsBuffer.length; i++){
             int index = i;
-            conduits.button(t -> t.add(Core.bundle.get("misc.conduit") + "#" + index).left().grow(), Styles.underlineb, () -> {
-              currConfig = index;
-              buildItemSelect.run();
-            }).update(b -> b.setChecked(index == currConfig)).size(250, 35).pad(0);
+            conduits.button(t -> t.add(Core.bundle.get("misc.conduit") + "#" + index).left().grow(), Styles.underlineb,
+                () -> currConfig = index).update(b -> b.setChecked(index == currConfig)).size(250, 35).pad(0);
             conduits.row();
           }
         });
-      });
-      table.table(Tex.pane2, tb -> {
-        buildItemSelect = () -> {
-          tb.clearChildren();
-          tb.defaults().left().fill();
-          ItemSelection.buildTable(
-              tb,
-              Vars.content.liquids(),
-              () -> configured[currConfig],
-              li -> configure(IntSeq.with(0, currConfig, li == null? -1: li.id))
-          );
-        };
-        buildItemSelect.run();
-      }).padLeft(0);
+      }).top();
+
+      table.table(tb -> {
+        tb.clearChildren();
+        tb.defaults().left().fill();
+        ItemSelection.buildTable(
+            tb,
+            Vars.content.liquids(),
+            () -> configured[currConfig],
+            li -> configure(IntSeq.with(0, currConfig, li == null? -1: li.id)),
+            false
+        );
+      }).padLeft(0).top();
+
+      table.table(Styles.black6, t -> {
+        t.defaults().left().top();
+        t.check(Core.bundle.get("infos.inputMode"), b -> configure(0)).size(180, 45)
+            .update(c -> c.setChecked(input[currConfig])).get().left();
+        t.row();
+        t.check(Core.bundle.get("infos.outputMode"), b -> configure(1)).size(180, 45)
+            .update(c -> c.setChecked(output[currConfig])).get().left();
+        t.row();
+        t.check(Core.bundle.get("infos.blocking"), b -> configure(2)).size(180, 45)
+            .update(c -> c.setChecked(blocking[currConfig]))
+            .disabled(c -> input[currConfig] || !output[currConfig]).get().left();
+      }).top().fill().padLeft(0);
     }
 
     @Override
     public Object config() {
-      IntSeq res = IntSeq.with(1, outputMode? 1: 0);
-      for(Liquid liquid : configured) {
-        res.add(liquid == null ? -1 : liquid.id);
+      IntSeq req = IntSeq.with(liquidsBuffer.length);
+
+      for (int i = 0; i < configured.length; i++) {
+        req.add(configured[i] == null? -1: configured[i].id);
+        req.add(input[i]? 1: 0);
+        req.add(output[i]? 1: 0);
+        req.add(blocking[i]? 1: 0);
       }
-      return res;
+      return req;
     }
 
     @SuppressWarnings("DuplicatedCode")
     @Override
     public float moveLiquidForward(boolean leaks, Liquid liquid){
-      if(!outputMode){
-        return super.moveLiquidForward(leaks, liquid);
-      }
-      else{
-        Tile next = tile.nearby(rotation);
-        int index = configuredIndex(liquid);
+      Tile next = tile.nearby(rotation);
+      int index = configuredIndex(liquid);
 
-        float flow = 0;
-        for(int i = 0; i < liquidsBuffer.length; i++){
-          LiquidModule liquids = liquidsBuffer[i];
+      float flow = 0;
+      for(int i = 0; i < liquidsBuffer.length; i++){
+        LiquidModule liquids = liquidsBuffer[i];
 
-          if(i == index){
-            int i1 = i;
-            Building other = getNext("liquids", e -> {
-              if(nearby(Mathf.mod(rotation - 1, 4)) == e || nearby(Mathf.mod(rotation + 1, 4)) == e){
-                if(e instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
-                  return mu.conduitAccept(this, i1, liquidsBuffer[i1].current());
-                }
-                else return e.block.hasLiquids && e.acceptLiquid(this, liquidsBuffer[i1].current());
+        if(output[i] && i == index){
+          Building other = getNext("liquids#" + i, e -> {
+            if(nearby(Mathf.mod(rotation - 1, 4)) == e || nearby(Mathf.mod(rotation + 1, 4)) == e){
+              if(e instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
+                return mu.conduitAccept(this, index, liquidsBuffer[index].current());
               }
-              return false;
-            });
+              else return e.block.hasLiquids && e.acceptLiquid(this, liquidsBuffer[index].current());
+            }
+            return false;
+          });
 
-            if(other instanceof MultLiquidBuild){
-              flow += moveLiquid((MultLiquidBuild)other, index, liquidsBuffer[index].current());
-            }
-            else if (other != null){
-              this.liquids = liquidsBuffer[index];
-              flow += moveLiquid(other, liquidsBuffer[index].current());
-              this.liquids = cacheLiquids;
-            }
+          if(other instanceof MultLiquidBuild){
+            flow += moveLiquid((MultLiquidBuild)other, index, liquidsBuffer[index].current());
           }
-          else if(next.build instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
-            flow += moveLiquid((MultLiquidBuild) next.build, i, liquids.current());
-          }
-          else if(next.build != null){
-            this.liquids = liquids;
-            flow += moveLiquid(next.build, liquids.current());
+          else if (other != null){
+            this.liquids = liquidsBuffer[index];
+            flow += moveLiquid(other, liquidsBuffer[index].current());
             this.liquids = cacheLiquids;
           }
-          else if(leaks && !next.block().solid && ! next.block().hasLiquids){
-            float leakAmount = liquids.currentAmount()/1.5f;
-            Puddles.deposit(next, tile, liquids.current(), leakAmount);
-            liquids.remove(liquids.current(), leakAmount);
-          }
+
+          if (blocking[index] && !input[index]) continue;
         }
 
-        return flow;
+        if(next.build instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
+          flow += moveLiquid((MultLiquidBuild) next.build, i, liquids.current());
+        }
+        else if(next.build != null){
+          this.liquids = liquids;
+          flow += moveLiquid(next.build, liquids.current());
+          this.liquids = cacheLiquids;
+        }
+        else if(leaks && !next.block().solid && ! next.block().hasLiquids){
+          float leakAmount = liquids.currentAmount()/1.5f;
+          Puddles.deposit(next, tile, liquids.current(), leakAmount);
+          liquids.remove(liquids.current(), leakAmount);
+        }
       }
+
+      return flow;
     }
 
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
       noSleep();
-      if(outputMode) return false;
       int index = configuredIndex(liquid);
       if(index == -1) return false;
+      if(!input[index]) return false;
       return source.interactable(team) && liquidsBuffer[index].currentAmount() < 0.01f || liquid == liquidsBuffer[index].current() && liquidsBuffer[index].currentAmount() < liquidCapacity;
     }
 
@@ -228,21 +234,28 @@ public class ClusterValve extends ClusterConduit{
     @Override
     public void write(Writes write) {
       super.write(write);
-      write.bool(outputMode);
       write.i(configured.length);
-      for (Liquid liquid : configured) {
-        write.i(liquid == null? -1: liquid.id);
+      for (int i = 0; i < input.length; i++) {
+        write.i(configured[i] == null? -1: configured[i].id);
+        write.bool(input[i]);
+        write.bool(output[i]);
+        write.bool(blocking[i]);
       }
     }
 
     @Override
     public void read(Reads read, byte revision) {
       super.read(read, revision);
-      outputMode = read.bool();
       int len = read.i();
       configured = new Liquid[len];
+      input = new boolean[len];
+      output = new boolean[len];
+      blocking = new boolean[len];
       for (int i = 0; i < len; i++) {
         configured[i] = Vars.content.liquid(read.i());
+        input[i] = read.bool();
+        output[i] = read.bool();
+        blocking[i] = read.bool();
       }
     }
   }

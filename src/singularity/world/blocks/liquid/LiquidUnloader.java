@@ -14,6 +14,7 @@ import mindustry.world.Block;
 import mindustry.world.blocks.ItemSelection;
 import mindustry.world.meta.BlockGroup;
 import mindustry.world.meta.Stat;
+import mindustry.world.modules.LiquidModule;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.Takeable;
 
@@ -67,18 +68,30 @@ public class LiquidUnloader extends Block{
       Building next = getNext("liquidsPeek" , e -> e.block.hasLiquids && e.canUnload());
       if(next == null) return;
       
-      if(next.liquids != null) next.liquids.each((l, a) -> {
-        if(current != null && l != current) return;
+      if(next.liquids != null) {
+        LiquidModule.LiquidConsumer dmp = (l, a) -> {
+          Building dump = getNext("liquids", e -> {
+            Building dest = e.getLiquidDestination(this, l);
+            return dest.acceptLiquid(next, l) && dest != next && dest.liquids.get(l)/dest.block.liquidCapacity < a/next.block.liquidCapacity;
+          });
+          if(dump == null) return;
 
-        Building dump = getNext("liquids", e -> e.acceptLiquid(next, l) && e != next);
-        if(dump == null || dump.liquids.get(l)/dump.block.liquidCapacity >= a/next.block.liquidCapacity) return;
+          dump = dump.getLiquidDestination(this, l);
 
-        float move = (a*dump.block.liquidCapacity - dump.liquids.get(l)*next.block.liquidCapacity)/(dump.block.liquidCapacity + next.block.liquidCapacity);
-        move = Math.min(Math.min(move, dump.block.liquidCapacity - dump.liquids.get(l)), a);
+          float move = (a*dump.block.liquidCapacity - dump.liquids.get(l)*next.block.liquidCapacity)/(dump.block.liquidCapacity + next.block.liquidCapacity);
+          move = Math.min(Math.min(move, dump.block.liquidCapacity - dump.liquids.get(l)), a);
 
-        next.liquids.remove(l, move);
-        dump.handleLiquid(this, l, move);
-      });
+          next.liquids.remove(l, move);
+          dump.handleLiquid(this, l, move);
+        };
+
+        if (current != null){
+          dmp.accept(current, next.liquids.get(current));
+        }
+        else{
+          next.liquids.each(dmp);
+        }
+      }
     }
   
     @Override
@@ -125,13 +138,13 @@ public class LiquidUnloader extends Block{
     @Override
     public void write(Writes write){
       super.write(write);
-      write.s(current == null ? -1 : current.id);
+      write.i(current == null ? -1 : current.id);
     }
 
     @Override
     public void read(Reads read, byte revision){
       super.read(read, revision);
-      int id = revision == 1 ? read.s() : read.b();
+      int id = read.i();
       current = id == -1 ? null : content.liquid(id);
     }
   }

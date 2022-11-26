@@ -11,6 +11,7 @@ import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
+import mindustry.world.Edges;
 import mindustry.world.Tile;
 import mindustry.world.meta.BuildVisibility;
 import mindustry.world.meta.Stat;
@@ -151,13 +152,9 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       return add;
     }
     
-    public byte getDirectBit(Building other){
-      byte result = 1;
-      for(byte i = 0; i < 4; i++){
-        if(nearby(i) == other) return result;
-        result*=2;
-      }
-      return -1;
+    public byte getDirectBit(Building e){
+      byte dir = relativeTo(Edges.getFacingEdge(e, this));
+      return (byte) (dir == 0? 1: dir == 1? 2: dir == 2? 4: dir == 3? 8: 0);
     }
   
     public void applyConfig(DistTargetConfigTable.TargetConfigure config){

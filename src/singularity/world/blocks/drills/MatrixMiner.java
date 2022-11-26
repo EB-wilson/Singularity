@@ -142,6 +142,8 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
     public Element lastController;
     public PutItemsRequest putReq;
 
+    boolean firstMark = true;
+
     @Override
     public void edgeUpdated(){
       if(getEdges().isClosure()){
@@ -166,16 +168,13 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
       else{
         rect = null;
         armPos.set(x, y);
-        for(IntMap.Entry<MatrixDrillBit> bitEntry: mineBits){
-          tempMine.add(bitEntry.key);
-          bitEntry.value.remove();
-        }
         armTasks.clear();
       }
     }
 
-    public void oreUpdated(MatrixDrillBit matrixDrillBit){
+    public void oreUpdated(){
       TMP_ITEMS.clear();
+
       for(MatrixDrillBit bit: mineBits.values()){
         if(bit.ore == null) continue;
         TMP_ITEMS.add(bit.ore);
@@ -220,7 +219,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
       for(IntMap.Entry<MatrixDrillBit> bit: mineBits){
         bit.value.update();
         float[] progRef = progressMap.get(bit.value.ore, () -> new float[1]);
-        if(progRef[0] >= 1){
+        if(progRef[0] >= 1 && bit.value.buffered < drillBufferCapacity){
           bit.value.buffered++;
         }
       }
@@ -228,6 +227,14 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
       for(float[] ref: progressMap.values()){
         if(ref[0] >= 1) ref[0] = 0;
       }
+
+      if (!firstMark && !getEdges().isClosure()){
+        for(IntMap.Entry<MatrixDrillBit> bitEntry: mineBits){
+          tempMine.add(bitEntry.key);
+          bitEntry.value.remove();
+        }
+      }
+      firstMark = false;
 
       if(updateValid()){
         for(ObjectMap.Entry<Item, float[]> entry: progressMap){
@@ -297,7 +304,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
           MatrixDrillBit bit = mineBits.get(Point2.pack(x, y));
           if(bit != null){
             bit.remove();
-            oreUpdated(bit);
+            oreUpdated();
           }
           return true;
         }
@@ -320,6 +327,11 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
     @Override
     public boolean updateValid(){
       return distributor.network.netValid() && rect != null;
+    }
+
+    @Override
+    public float consEfficiency() {
+      return distributor.network.netValid()? distributor.network.netEfficiency(): 0;
     }
 
     @Override
@@ -643,7 +655,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
           remove();
           return;
         }
-        if(lastOre != ore) oreUpdated(this);
+        if(lastOre != ore) oreUpdated();
 
         if(buffered >= drillBufferCapacity*0.75f){
           if(!postedTask){

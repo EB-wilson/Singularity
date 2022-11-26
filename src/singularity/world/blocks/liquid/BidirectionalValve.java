@@ -1,10 +1,13 @@
 package singularity.world.blocks.liquid;
 
 import arc.Core;
+import arc.graphics.g2d.Draw;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
+import arc.util.Eachable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.type.Liquid;
 import mindustry.ui.Styles;
@@ -26,6 +29,12 @@ public class BidirectionalValve extends ClusterConduit{
         e.reverses[i] = c.get(i + 1) == 1;
       }
     });
+  }
+
+  @Override
+  public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
+    Draw.rect(region, req.drawx(), req.drawy());
+    Draw.rect(arrow, req.drawx(), req.drawy(), req.rotation * 90);
   }
 
   public class ThrottleValveBuild extends ClusterConduitBuild{
@@ -104,6 +113,12 @@ public class BidirectionalValve extends ClusterConduit{
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
       return source.interactable(team) && (getModuleAccept(source, liquid) != null || !isFull());
+    }
+
+    @Override
+    public void draw(){
+      Draw.rect(region, x, y);
+      Draw.rect(arrow, x, y, rotation*90);
     }
 
     @Override

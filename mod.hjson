@@ -4,7 +4,7 @@ displayName: "Singularity",
 author: "EBwilson",
 main: "singularity.Singularity",
 description: "A large tech mod, and more things you can interested\n\n大型科技向mod，有很多东西你会感兴趣的",
-version: "alpha-0.7.8",
+version: "alpha-0.7.10",
 minGameVersion: 140,
 hideBrowser: true,
 

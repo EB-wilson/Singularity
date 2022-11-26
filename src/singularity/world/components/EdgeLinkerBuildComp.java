@@ -58,7 +58,7 @@ public interface EdgeLinkerBuildComp extends BuildCompBase{
   @Annotations.BindField("linkLerp")
   default void linkLerp(float lerp){}
 
-  @Annotations.MethodEntry(entryMethod = "update")
+  @Annotations.MethodEntry(entryMethod = "updateTile", insert = Annotations.InsertPosition.HEAD)
   default void updateLinking(){
     if(nextPos() != -1 && (nextEdge() == null || !nextEdge().getBuilding().isAdded() || nextEdge().tile().pos() != nextPos())){
       if(nextEdge() != null && !nextEdge().getBuilding().isAdded()){
