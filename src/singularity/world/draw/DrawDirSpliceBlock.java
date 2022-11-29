@@ -4,6 +4,7 @@ import arc.Core;
 import arc.func.Boolf2;
 import arc.func.Intf;
 import arc.graphics.Pixmap;
+import arc.graphics.Pixmaps;
 import arc.graphics.Texture;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.PixmapRegion;
@@ -63,8 +64,11 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
       }
       move++;
     }
+
+    Pixmaps.bleed(map, 2);
     Texture tex = new Texture(map, true);
-    tex.setFilter(Texture.TextureFilter.mipMapNearestLinear);
+    tex.setFilter(Texture.TextureFilter.nearest);
+    tex.setWrap(Texture.TextureWrap.clampToEdge);
     return new TextureRegion(tex);
   }
 

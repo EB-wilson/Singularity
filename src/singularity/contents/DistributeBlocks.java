@@ -227,7 +227,7 @@ public class DistributeBlocks implements ContentList{
       ));
       size = 3;
 
-      matrixEnergyCapacity = 4096;
+      matrixEnergyCapacity = 16384;
     }};
 
     matrix_power_interface = new DistPowerEntry("matrix_power_interface"){{

@@ -45,10 +45,10 @@ import singularity.world.blocks.function.Destructor;
 import singularity.world.blocks.product.*;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
+import singularity.world.draw.DrawAntiSpliceBlock;
 import singularity.world.draw.DrawBottom;
 import singularity.world.draw.DrawDyColorCultivator;
 import singularity.world.draw.DrawRegionDynamic;
-import singularity.world.draw.DrawSpliceBlock;
 import singularity.world.meta.SglStat;
 import singularity.world.particles.SglParticleModels;
 import universecore.components.blockcomp.FactoryBuildComp;
@@ -225,12 +225,14 @@ public class CrafterBlocks implements ContentList{
 
               @Override
               public void draw(Building build){
+                float alp = Math.max(build.warmup(), 0.7f*build.liquids.get(SglLiquids.algae_mud)/liquidCapacity);
+                if (alp <= 0.01f) return;
+
                 rand.setSeed(build.id);
 
                 int am = (int) (2 + rand.nextInt(2)*build.warmup());
                 float move = 0.2f*Mathf.sinDeg(Time.time + rand.nextInt(360))*build.warmup();
-                Draw.color(Tmp.c1.set(SglLiquids.algae_mud.color)
-                    .a(Math.max(build.warmup(), 0.7f*build.liquids.get(SglLiquids.algae_mud)/liquidCapacity)));
+                Draw.color(Tmp.c1.set(SglLiquids.algae_mud.color).a(alp));
                 Angles.randLenVectors(build.id, am, 3.5f, (dx, dy) -> {
                   Fill.circle(build.x + dx + move, build.y + dy + move,
                       (Mathf.randomSeed(build.id, 0.2f, 0.8f) + Mathf.absin(5, 0.1f))
@@ -273,7 +275,7 @@ public class CrafterBlocks implements ContentList{
                 }
               }
             },
-            new DrawSpliceBlock<SpliceCrafterBuild>(){{
+            new DrawAntiSpliceBlock<SpliceCrafterBuild>(){{
               planSplicer = (plan, other) -> plan.block instanceof SpliceCrafter self && other.block instanceof SpliceCrafter oth
                       && self.chainable(oth) && oth.chainable(self);
               splicer = SpliceCrafterBuild::splice;

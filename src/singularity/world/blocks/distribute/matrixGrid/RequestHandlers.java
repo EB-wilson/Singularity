@@ -7,10 +7,9 @@ import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
-import mindustry.gen.Building;
 import mindustry.type.*;
-import singularity.ui.tables.DistTargetConfigTable.TargetConfigure;
 import singularity.world.blocks.distribute.IOPointBlock;
+import singularity.world.blocks.distribute.TargetConfigure;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.IOPointComp;
 import singularity.world.distribution.DistBufferType;
@@ -69,20 +68,16 @@ public class RequestHandlers{
     }
 
     protected void addParseConfig(TargetConfigure cfg, GridChildType type){
-      Building build = Vars.world.build(cfg.position);
-      if(build == null) return;
 
       ObjectSet<UnlockableContent> set = cfg.get(type, ContentType.liquid);
-      float capacity = build.block.liquidCapacity;
 
       for(UnlockableContent liquid: set){
         LiquidStack stack = liquids.get(liquid.id);
-        float delta = capacity/set.size;
         if(stack == null){
-          liquids.put(liquid.id, new LiquidStack((Liquid) liquid, delta));
+          liquids.put(liquid.id, new LiquidStack((Liquid) liquid, 1));
         }
-        else stack.amount += delta;
-        total += delta;
+        else stack.amount += 1;
+        total += 1;
       }
     }
 

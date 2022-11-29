@@ -8,18 +8,9 @@ import singularity.graphic.SglDrawConst;
 import singularity.world.components.distnet.DistElementBuildComp;
 
 public class DistEnergyBuffer extends DistEnergyEntry{
-  public float extraRequire = -1;
 
   public DistEnergyBuffer(String name){
     super(name);
-  }
-
-  @Override
-  public void init(){
-    super.init();
-    if(extraRequire == -1){
-      extraRequire = matrixEnergyCapacity*0.1f;
-    }
   }
 
   @Override
@@ -38,11 +29,6 @@ public class DistEnergyBuffer extends DistEnergyEntry{
     @Override
     public boolean linkable(DistElementBuildComp other){
       return false;
-    }
-
-    @Override
-    public float extraEnergyRequire(){
-      return matrixEnergyBuffered < matrixEnergyCapacity? 1: 0;
     }
   }
 }

@@ -1,5 +1,6 @@
 package singularity.world.components.distnet;
 
+import arc.math.geom.Point2;
 import arc.struct.IntMap;
 import arc.struct.ObjectMap;
 import arc.struct.OrderedMap;
@@ -8,7 +9,7 @@ import mindustry.ctype.ContentType;
 import mindustry.gen.Building;
 import mindustry.world.Tile;
 import singularity.Sgl;
-import singularity.ui.tables.DistTargetConfigTable;
+import singularity.world.blocks.distribute.TargetConfigure;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers.RequestHandler;
 import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.GridChildType;
@@ -80,8 +81,8 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
     tempFactories().clear();
   }
 
-  default void addConfig(GridChildType type, ContentType contType, DistTargetConfigTable.TargetConfigure cfg){
-    Building build = Vars.world.build(cfg.position);
+  default void addConfig(GridChildType type, ContentType contType, TargetConfigure cfg){
+    Building build = Vars.world.build(getTile().x + Point2.x(cfg.offsetPos), getTile().y + Point2.y(cfg.offsetPos));
 
     RequestHandler factory = build instanceof IOPointComp comp?
         comp.getIOBlock().requestFactories().get(type, Empties.nilMapO()).get(contType): null;
@@ -113,6 +114,6 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   
   default void removeIO(int pos){
     ioPoints().remove(pos);
-    matrixGrid().remove(Vars.world.build(pos));
+    matrixGrid().remove(Vars.world.build(getTile().x + Point2.x(pos), getTile().y + Point2.y(pos)));
   }
 }

@@ -237,6 +237,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     return draw.finalIcons(this);
   }
 
+  public void onPlanRotate(BuildPlan plan, int direction) {}
+
   @Annotations.ImplEntries
   public class SglBuilding extends Building implements ConsumerBuildComp, NuclearEnergyBuildComp{
     private static final FieldHandler<PlacementFragment> fieldHandler = new FieldHandler<>(PlacementFragment.class);

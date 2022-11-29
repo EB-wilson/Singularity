@@ -126,8 +126,9 @@ public class ConduitRiveting extends ClusterConduit{
         if(output[i]){
           int i1 = i;
           Building other = getNext("liquids#" + i, e -> {
-            int rot = e.relativeTo(this);
-            if(rot == rotation - 1 || rot == rotation + 1){
+            if (!e.interactable(team)) return false;
+            int rot = relativeTo(e);
+            if(rot == (rotation + 1)%4 || rot == (rotation + 3)%4){
               if(e instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
                 return mu.conduitAccept(this, i1, liquidsBuffer[i1].current());
               }

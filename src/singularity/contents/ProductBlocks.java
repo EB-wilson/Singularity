@@ -159,7 +159,7 @@ public class ProductBlocks implements ContentList {
             spliceBits = e -> {
               int res = 0;
               for(int i = 0; i < 4; i++){
-                if(e.splice()[i] != -1) res |= 0b0001 << i;
+                if ((e.splice & 1 << i*2) != 0) res |= 1 << i;
               }
               return res;
             };

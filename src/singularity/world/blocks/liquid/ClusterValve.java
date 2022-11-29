@@ -3,7 +3,6 @@ package singularity.world.blocks.liquid;
 import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
-import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
 import arc.util.Eachable;
@@ -156,7 +155,9 @@ public class ClusterValve extends ClusterConduit{
 
         if(output[i] && i == index){
           Building other = getNext("liquids#" + i, e -> {
-            if(nearby(Mathf.mod(rotation - 1, 4)) == e || nearby(Mathf.mod(rotation + 1, 4)) == e){
+            if (!e.interactable(team)) return false;
+            byte rot = relativeTo(e);
+            if(rot == (rotation + 1)%4 || rot == (rotation + 3)%4){
               if(e instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
                 return mu.conduitAccept(this, index, liquidsBuffer[index].current());
               }
@@ -199,8 +200,7 @@ public class ClusterValve extends ClusterConduit{
     public boolean acceptLiquid(Building source, Liquid liquid){
       noSleep();
       int index = configuredIndex(liquid);
-      if(index == -1) return false;
-      if(!input[index]) return false;
+      if(index == -1 || !input[index]) return false;
       return source.interactable(team) && liquidsBuffer[index].currentAmount() < 0.01f || liquid == liquidsBuffer[index].current() && liquidsBuffer[index].currentAmount() < liquidCapacity;
     }
 

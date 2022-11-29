@@ -2,6 +2,8 @@ package singularity.world.components.distnet;
 
 import arc.struct.IntSeq;
 import arc.struct.Seq;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.gen.Building;
 import mindustry.world.Tile;
@@ -33,10 +35,6 @@ public interface DistElementBuildComp extends BuildCompBase{
 
   @Annotations.BindField("matrixEnergyBuffered")
   default void matrixEnergyBuffered(float set){}
-
-  default float extraEnergyRequire(){
-    return 0;
-  }
   
   default void networkValided(){}
 
@@ -141,5 +139,15 @@ public interface DistElementBuildComp extends BuildCompBase{
 
   default float matrixEnergyProduct(){
     return 0;
+  }
+
+  @Annotations.MethodEntry(entryMethod = "write", paramTypes = {"arc.util.io.Writes -> write"})
+  default void writeDistEle(Writes write) {
+    write.f(matrixEnergyBuffered());
+  }
+
+  @Annotations.MethodEntry(entryMethod = "read", paramTypes = {"arc.util.io.Reads -> read", "byte"})
+  default void readDistEle(Reads read) {
+    matrixEnergyBuffered(read.i());
   }
 }

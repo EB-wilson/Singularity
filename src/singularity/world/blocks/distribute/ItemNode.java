@@ -73,6 +73,7 @@ public class ItemNode extends SglBlock {
     underBullets = true;
     hasPower = true;
     itemCapacity = 10;
+    outputItems = true;
     configurable = true;
     hasItems = true;
     unloadable = false;
@@ -84,16 +85,22 @@ public class ItemNode extends SglBlock {
 
     config(byte[].class, (ItemNodeBuild e, byte[] b) -> {
       Object conf = DataPackable.readObject(b);
-      if (conf instanceof DistTargetConfigTable.TargetConfigure c){
+      if (conf instanceof TargetConfigure c){
         e.config = c.isClear()? null: c;
-      }
-      else if (conf instanceof NodeConfig c){
-        e.link = Point2.pack(c.p.x + e.tileX(), c.p.y + e.tileY());
-        e.config = c.config.isClear()? null: c.config;
+        e.link = c.offsetPos > 0? Point2.unpack(c.offsetPos).add(e.tileX(), e.tileY()).pack(): e.link;
       }
     });
 
     config(Integer.class, (ItemNodeBuild tile, Integer i) -> tile.link = i);
+  }
+
+  @Override
+  public void onPlanRotate(BuildPlan plan, int direction) {
+    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof TargetConfigure nodeConfig){
+      nodeConfig.rotateDir(this, direction);
+
+      plan.config = nodeConfig.pack();
+    }
   }
 
   @Override
@@ -241,13 +248,15 @@ public class ItemNode extends SglBlock {
 
   @Annotations.ImplEntries
   public class ItemNodeBuild extends SglBuilding implements Takeable {
-    public DistTargetConfigTable.TargetConfigure config;
+    public TargetConfigure config;
     public int link = -1;
     public IntSeq incoming = new IntSeq(false, 4);
     public float warmup;
     public float time = -8f, timeSpeed;
     public boolean wasMoved, moved;
     public float transportCounter;
+
+    int itemTakeCursor;
 
     @Override
     public void pickedUp(){
@@ -363,15 +372,21 @@ public class ItemNode extends SglBlock {
     public void updateTransport(Building other){
       transportCounter += consEfficiency()*delta();
       while(transportCounter >= transportTime){
-        Item item = items.take();
-        if(item != null && other.acceptItem(this, item)){
-          other.handleItem(this, item);
-          moved = true;
-        }else if(item != null){
-          items.add(item, 1);
-          items.undoFlow(item);
+        Seq<Item> items = Vars.content.items();
+        boolean any = false;
+        for (int i = 0; transportCounter >= transportTime && i < items.size; i++) {
+          int id = itemTakeCursor = (itemTakeCursor + 1)%items.size;
+          if (this.items.get(id) <= 0) continue;
+
+          Item item = items.get(id);
+          if (other.acceptItem(this, item)){
+            this.items.remove(item, 1);
+            other.handleItem(this, item);
+            transportCounter -= transportTime;
+            any = true;
+          }
         }
-        transportCounter -= transportTime;
+        if (!any) transportCounter %= transportTime;
       }
     }
 
@@ -495,14 +510,17 @@ public class ItemNode extends SglBlock {
     @Override
     public void buildConfiguration(Table table) {
       table.add(new DistTargetConfigTable(
-          this,
+          0,
           config,
           siphon?
-              new GridChildType[]{GridChildType.input, GridChildType.output, GridChildType.acceptor}:
+              new GridChildType[]{GridChildType.output, GridChildType.acceptor, GridChildType.input}:
               new GridChildType[]{GridChildType.output, GridChildType.acceptor},
           new ContentType[]{ContentType.item},
           true,
-          c -> configure(c.pack()),
+          c -> {
+            c.offsetPos = 0;
+            configure(c.pack());
+          },
           () -> Vars.control.input.config.hideConfig()
       ));
     }
@@ -551,11 +569,12 @@ public class ItemNode extends SglBlock {
       for(UnlockableContent con : config.get(GridChildType.input, ContentType.item)) {
         Item item = (Item) con;
         Building other = getNext("siphonItem",
-            e -> e.block.hasItems
+            e -> e.interactable(team)
+                && e.block.hasItems
                 && e.items.has(item)
                 && config.directValid(GridChildType.input, item, getDirectBit(e)));
 
-        if (other == null || !interactable(other.team) || !acceptItem(other, item)) return;
+        if (other == null || !(hasItems && items.get(item) < itemCapacity && items.total() < maxItemCapacity)) return;
         other.removeStack(item, 1);
         handleItem(other, item);
       }
@@ -570,7 +589,8 @@ public class ItemNode extends SglBlock {
           Item i = (Item) content;
           if (items.get(i) <= 0) continue;
 
-          Building next = getNext("items", e -> config.directValid(GridChildType.output, i, getDirectBit(e)) &&  e.acceptItem(this, i));
+          Building next = getNext("items",
+              e -> e.interactable(team) && config.directValid(GridChildType.output, i, getDirectBit(e)) &&  e.acceptItem(this, i));
           if (next == null) continue;
 
           items.remove(i, 1);
@@ -601,9 +621,8 @@ public class ItemNode extends SglBlock {
 
     @Override
     public Object config() {
-      NodeConfig res = new NodeConfig();
-      res.p = Point2.unpack(link).sub(tile.x, tile.y);
-      res.config = config == null? new DistTargetConfigTable.TargetConfigure(): config;
+      TargetConfigure res = config == null? new TargetConfigure(): config.clone();
+      res.offsetPos = Point2.unpack(link).sub(tile.x, tile.y).pack();
       return res.pack();
     }
 
@@ -612,6 +631,7 @@ public class ItemNode extends SglBlock {
       super.write(write);
       write.i(link);
       write.f(warmup);
+      write.i(itemTakeCursor);
       write.b(incoming.size);
 
       for(int i = 0; i < incoming.size; i++){
@@ -629,6 +649,7 @@ public class ItemNode extends SglBlock {
       super.read(read, revision);
       link = read.i();
       warmup = read.f();
+      itemTakeCursor = read.i();
       byte links = read.b();
       for(int i = 0; i < links; i++){
         incoming.add(read.i());
@@ -638,37 +659,8 @@ public class ItemNode extends SglBlock {
 
       int len = read.i();
       if (len == 0) return;
-      config = new DistTargetConfigTable.TargetConfigure();
+      config = new TargetConfigure();
       config.read(read.b(len));
-    }
-  }
-
-  public static class NodeConfig implements DataPackable{
-    private static final long typeID = 1549846541194654268L;
-
-    static {
-      DataPackable.assignType(typeID, a -> new NodeConfig());
-    }
-
-    public Point2 p;
-    public DistTargetConfigTable.TargetConfigure config;
-
-    @Override
-    public long typeID() {
-      return typeID;
-    }
-
-    @Override
-    public void write(Writes write) {
-      write.i(p.pack());
-      config.write(write);
-    }
-
-    @Override
-    public void read(Reads read) {
-      p = Point2.unpack(read.i());
-      config = new DistTargetConfigTable.TargetConfigure();
-      config.read(read);
     }
   }
 }

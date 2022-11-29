@@ -3,6 +3,8 @@ package singularity.world.draw;
 import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
+import arc.util.Eachable;
+import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.graphics.Layer;
 import mindustry.world.Block;
@@ -23,6 +25,11 @@ public class DrawBottom extends DrawBlock{
     Draw.z(Layer.blockUnder);
     Draw.rect(bottom, build.x, build.y);
     Draw.z(z);
+  }
+
+  @Override
+  public void drawPlan(Block block, BuildPlan plan, Eachable<BuildPlan> list) {
+    Draw.rect(bottom, plan.drawx(), plan.drawy());
   }
 
   @Override

@@ -1,5 +1,6 @@
 package singularity.world.blocks.distribute;
 
+import arc.math.geom.Point2;
 import arc.util.Nullable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -17,7 +18,6 @@ import mindustry.world.meta.BuildVisibility;
 import mindustry.world.meta.Stat;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
-import singularity.ui.tables.DistTargetConfigTable;
 import singularity.world.blocks.SglBlock;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
@@ -88,7 +88,7 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
   @Annotations.ImplEntries
   public class IOPoint extends SglBuilding implements IOPointComp{
     public DistMatrixUnitBuildComp parent;
-    public DistTargetConfigTable.TargetConfigure config;
+    public TargetConfigure config;
 
     public ItemModule outItems;
     public LiquidModule outLiquid;
@@ -117,13 +117,13 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     @Override
     public Building init(Tile tile, Team team, boolean shouldAdd, int rotation){
       super.init(tile, team, shouldAdd, rotation);
-      if(parent != null) parent.ioPoints().put(pos(), this);
+      if(parent != null) parent.ioPoints().put(Point2.pack(tileX() - Point2.x(parentPos), tileY() - Point2.y(parentPos)), this);
       return this;
     }
 
     @Override
     public void onRemoved(){
-      if(parent != null) parent.removeIO(pos());
+      if(parent != null) parent.removeIO(Point2.pack(tileX() - Point2.x(parentPos), tileY() - Point2.y(parentPos)));
       super.onRemoved();
     }
   
@@ -157,7 +157,7 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       return (byte) (dir == 0? 1: dir == 1? 2: dir == 2? 4: dir == 3? 8: 0);
     }
   
-    public void applyConfig(DistTargetConfigTable.TargetConfigure config){
+    public void applyConfig(TargetConfigure config){
       this.config = config;
     }
 

@@ -72,7 +72,7 @@ public class LiquidUnloader extends Block{
         LiquidModule.LiquidConsumer dmp = (l, a) -> {
           Building dump = getNext("liquids", e -> {
             Building dest = e.getLiquidDestination(this, l);
-            return dest.acceptLiquid(next, l) && dest != next && dest.liquids.get(l)/dest.block.liquidCapacity < a/next.block.liquidCapacity;
+            return dest.acceptLiquid(this, l) && dest != next && dest.liquids.get(l)/dest.block.liquidCapacity < a/next.block.liquidCapacity;
           });
           if(dump == null) return;
 

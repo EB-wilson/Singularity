@@ -2,20 +2,23 @@ package singularity.world.distribution;
 
 import arc.func.Boolf2;
 import arc.func.Cons2;
+import arc.math.geom.Point2;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.gen.Building;
 import mindustry.world.blocks.storage.CoreBlock;
 import singularity.Sgl;
-import singularity.ui.tables.DistTargetConfigTable;
+import singularity.world.blocks.distribute.TargetConfigure;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import universecore.util.colletion.TreeSeq;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class MatrixGrid{
   private static final Seq tmp = new Seq();
   public static final float[] DEF_VALUE = {0f};
-  
+
+  final public DistMatrixUnitBuildComp owner;
   final ObjectMap<Building, BuildingEntry<?>> all = new ObjectMap<>();
   
   final TreeSeq<BuildingEntry<?>> output = new TreeSeq<>((a, b) -> b.config.priority - a.config.priority);
@@ -50,6 +53,10 @@ public class MatrixGrid{
   boolean statUsed;
   
   public int priority;
+
+  public MatrixGrid(DistMatrixUnitBuildComp owner){
+    this.owner = owner;
+  }
 
   public void update(){
     for(Building bu: all.keys()){
@@ -100,18 +107,18 @@ public class MatrixGrid{
     statUsed = false;
   }
 
-  public <T> Seq<BuildingEntry<T>> get(GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req){
+  public <T> Seq<BuildingEntry<T>> get(GridChildType type, Boolf2<T, TargetConfigure> req){
     return get(type, req, tmp);
   }
 
-  public <T> Seq<BuildingEntry<T>> get(GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req, Seq<BuildingEntry<T>> temp){
+  public <T> Seq<BuildingEntry<T>> get(GridChildType type, Boolf2<T, TargetConfigure> req, Seq<BuildingEntry<T>> temp){
     temp.clear();
     each(type, req, (e, entry) -> temp.add((BuildingEntry<T>) all.get((Building) e)));
     return temp;
   }
 
   @SuppressWarnings("unchecked")
-  public <T> void each(GridChildType type, Boolf2<T, DistTargetConfigTable.TargetConfigure> req, Cons2<T, DistTargetConfigTable.TargetConfigure> cons){
+  public <T> void each(GridChildType type, Boolf2<T, TargetConfigure> req, Cons2<T, TargetConfigure> cons){
     TreeSeq<BuildingEntry<?>> temp = switch(type){
       case output -> output;
       case input -> input;
@@ -124,8 +131,8 @@ public class MatrixGrid{
     }
   }
 
-  public void addConfig(DistTargetConfigTable.TargetConfigure c){
-    Building t = Vars.world.build(c.position);
+  public void addConfig(TargetConfigure c){
+    Building t = Vars.world.build(owner.getTile().x + Point2.x(c.offsetPos), owner.getTile().y + Point2.y(c.offsetPos));
     if(t == null) return;
     boolean existed = all.containsKey(t);
     BuildingEntry<?> entry = all.get(t, new BuildingEntry<>(t, c));
@@ -148,6 +155,7 @@ public class MatrixGrid{
   }
   
   public boolean remove(Building building){
+    if (building == null) return false;
     BuildingEntry<?> entry = all.remove(building);
     if(entry != null){
       output.remove(entry);
@@ -167,9 +175,9 @@ public class MatrixGrid{
   
   public static class BuildingEntry<T>{
     public final T entity;
-    public DistTargetConfigTable.TargetConfigure config;
+    public TargetConfigure config;
     
-    public BuildingEntry(T entity, DistTargetConfigTable.TargetConfigure config){
+    public BuildingEntry(T entity, TargetConfigure config){
       this.entity = entity;
       this.config = config;
     }

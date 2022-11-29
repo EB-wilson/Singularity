@@ -66,7 +66,7 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
   @Annotations.ImplEntries
   public class PhasedRadarBuild extends SglBuilding implements SpliceBuildComp {
     public ChainsModule chains;
-    public int[] splice;
+    public int splice;
 
     @Override
     public Building create(Block block, Team team){
@@ -141,12 +141,12 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
     }
 
     @Override
-    public int[] splice(){
+    public int splice(){
       return splice;
     }
 
     @Override
-    public void splice(int[] arr){
+    public void splice(int arr){
       splice = arr;
     }
 

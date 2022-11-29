@@ -97,7 +97,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
   public class SpliceCrafterBuild extends NormalCrafterBuild implements SpliceBuildComp {
     public ChainsModule chains;
     public boolean handling, updateModule = true, firstInit = true;
-    public int[] splice;
+    public int splice;
 
     @Override
     public SpliceItemModule items(){
@@ -278,7 +278,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
         }
         if(producer != tProd) producer = tProd;
 
-        splice = getRegionBits();
+        splice = getSplice();
 
         updateModule = false;
       }
@@ -413,12 +413,12 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
     }
 
     @Override
-    public void splice(int[] arr){
+    public void splice(int arr){
       splice = arr;
     }
 
     @Override
-    public int[] splice(){
+    public int splice(){
       return splice;
     }
   }

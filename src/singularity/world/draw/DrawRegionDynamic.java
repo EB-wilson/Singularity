@@ -40,10 +40,13 @@ public class DrawRegionDynamic<E extends Building> extends DrawBlock{
   @Override
   public void draw(Building build){
     E entity = (E) build;
+    float alp = alpha.get(entity);
+    if (alp <= 0.01f) return;
+
     float z = Draw.z();
     if(layer > 0) Draw.z(layer);
     if(color != null) Draw.color(color.get(entity));
-    Draw.alpha(alpha.get(entity));
+    Draw.alpha(alp);
     if(spinSprite){
       Drawf.spinSprite(region, build.x + x, build.y + y, rotation.get(entity));
     }else{

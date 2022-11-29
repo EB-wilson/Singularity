@@ -71,16 +71,16 @@ public class DistPowerEntry extends DistEnergyEntry{
   }
 
   public static class PowerMarkerBuild extends Building implements DistElementBuildComp{
+    public static final float EnergyScaleOfPower = 10.25f;
     public static final DistElementBlockComp compBlock = new DistElementBlockComp(){};
     public static final Block powerMarker = new Block("powerMarker"){{
       hasPower = true;
       consumesPower = true;
 
-      consumePowerDynamic(
-          (PowerMarkerBuild e) -> (e.distributor.network.energyConsume + e.distributor.network.extraEnergyRequire)*10.25f
-      );
+      consumePowerDynamic((PowerMarkerBuild e) -> e.energyProd*EnergyScaleOfPower);
     }};
     DistributeModule distributor;
+    float energyProd;
 
     PowerMarkerBuild(Team team){
       this.create(powerMarker, team);
@@ -93,6 +93,14 @@ public class DistPowerEntry extends DistEnergyEntry{
     @Override
     public void update(){
       distributor.network.update();
+      float cons = 0;
+      for (Building consumer : power.graph.consumers) {
+        if (consumer == this) continue;
+        cons += consumer.block.consPower.requestedPower(consumer)*consumer.delta();
+      }
+      energyProd = distributor.network.energyCapacity > 0.1f?
+          (power.graph.getLastPowerProduced() - cons)/EnergyScaleOfPower:
+          distributor.network.energyConsume;
     }
 
     @Override
@@ -129,7 +137,7 @@ public class DistPowerEntry extends DistEnergyEntry{
 
     @Override
     public float matrixEnergyProduct(){
-      return power.status*(distributor.network.energyConsume + distributor.network.extraEnergyRequire);
+      return energyProd*power.status;
     }
   }
 }

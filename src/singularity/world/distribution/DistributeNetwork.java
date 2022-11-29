@@ -34,14 +34,12 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
 
   public ObjectMap<String, Object> vars = new ObjectMap<>();
 
-  public MatrixGrid defaultGrid;
-
   public int topologyUsed;
   public int totalTopologyCapacity;
 
   public float energyProduct;
   public float energyConsume;
-  public float extraEnergyRequire;
+  public float energyCapacity;
   public float energyStatus;
 
   private boolean structUpdated = true;
@@ -49,12 +47,6 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   private boolean lock = false;
 
   long frame;
-
-  public DistributeNetwork(){
-    defaultGrid = new MatrixGrid();
-    defaultGrid.priority = Integer.MIN_VALUE;
-    grids.add(defaultGrid);
-  }
 
   public void putVar(String key, Object value){
     vars.put(key, value);
@@ -180,13 +172,11 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   }
 
   public void updateEnergy(){
-    energyStatus = energyProduct = energyConsume = extraEnergyRequire = 0;
+    energyCapacity = energyStatus = energyProduct = energyConsume = 0;
 
-    float energyCapacity = 0;
     if(netStructValid()){
       for(DistElementBuildComp element: elementsIterateArr){
         energyConsume += element.matrixEnergyConsume();
-        extraEnergyRequire += element.extraEnergyRequire()*element.getBuilding().delta();
       }
       for(DistElementBuildComp element: elementsIterateArr){
         energyProduct += element.matrixEnergyProduct()*element.getBuilding().delta();
