@@ -18,6 +18,7 @@ import mindustry.content.Liquids;
 import mindustry.content.StatusEffects;
 import mindustry.entities.Damage;
 import mindustry.entities.Effect;
+import mindustry.entities.UnitSorts;
 import mindustry.entities.Units;
 import mindustry.entities.bullet.BasicBulletType;
 import mindustry.entities.bullet.BulletType;
@@ -40,6 +41,7 @@ import mindustry.world.draw.DrawMulti;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.SglFx;
+import singularity.world.SglUnitSorts;
 import singularity.world.blocks.turrets.LaserTurret;
 import singularity.world.blocks.turrets.ProjectileTurret;
 import singularity.world.blocks.turrets.SglTurret;
@@ -1310,6 +1312,8 @@ public class Turrets implements ContentList{
 
       squareSprite = false;
 
+      unitSort = SglUnitSorts.denser;
+
       shoot.firstShotDelay = 120;
       chargeSound = Sounds.lasercharge;
       chargeSoundPitch = 0.9f;
@@ -1568,6 +1572,8 @@ public class Turrets implements ContentList{
       targetAir = true;
       shootY = 12;
       shake = 2;
+
+      unitSort = UnitSorts.strongest;
 
       squareSprite = false;
 

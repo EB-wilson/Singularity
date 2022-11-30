@@ -383,6 +383,7 @@ public class ItemNode extends SglBlock {
             this.items.remove(item, 1);
             other.handleItem(this, item);
             transportCounter -= transportTime;
+            moved = true;
             any = true;
           }
         }
@@ -539,7 +540,7 @@ public class ItemNode extends SglBlock {
 
       checkIncoming();
 
-      if (config != null && config.priority > 0) {
+      if (config != null && config.priority > 0){
         doDump();
         if (siphon) doSiphon();
       }

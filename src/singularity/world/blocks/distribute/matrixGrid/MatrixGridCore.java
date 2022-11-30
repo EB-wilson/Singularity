@@ -122,7 +122,9 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     for(TargetConfigure config: pair.configs.values()){
       Tile tile = world.tile(req.x + Point2.x(config.offsetPos), req.y + Point2.x(config.offsetPos));
       if(tile != null){
-        Sgl.ioPoint.drawPlanConfigTop(new BuildPlan(tile.x, tile.y, 0, Sgl.ioPoint), list);
+        BuildPlan plan = new BuildPlan(tile.x, tile.y, 0, Sgl.ioPoint);
+        Sgl.ioPoint.drawPlan(plan, list, plan.tile().build == null);
+        Sgl.ioPoint.drawPlanConfigTop(plan, list);
       }
     }
     

@@ -1,18 +1,15 @@
 package singularity.world.draw;
 
 import arc.Core;
-import arc.files.Fi;
 import arc.func.Boolf2;
 import arc.func.Intf;
 import arc.graphics.Pixmap;
-import arc.graphics.PixmapIO;
 import arc.graphics.Pixmaps;
 import arc.graphics.Texture;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.geom.Point2;
 import arc.util.Eachable;
-import mindustry.Vars;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.world.Block;
@@ -47,8 +44,6 @@ public class DrawAntiSpliceBlock<E> extends DrawBlock{
     for (int i = 0; i < drawRegions.length; i++) {
       drawRegions[i] = getRegionWithBit(regions, inner, i);
     }
-    Fi f = Vars.dataDirectory.child("mods").child("n.png");
-    PixmapIO.writePng(f, drawRegions[0].texture.getTextureData().getPixmap());
   }
 
   @Override
