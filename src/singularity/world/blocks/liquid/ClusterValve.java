@@ -29,7 +29,10 @@ public class ClusterValve extends ClusterConduit{
     outputsLiquid = true;
 
     config(Integer.class, (ClusterValveBuild e, Integer i) -> {
-      switch (i){
+      e.currConfig = i;
+    });
+    config(byte[].class, (ClusterValveBuild e, byte[] i) -> {
+      switch (i[0]){
         case 0 -> e.input[e.currConfig] = !e.input[e.currConfig];
         case 1 -> e.output[e.currConfig] = !e.output[e.currConfig];
         case 2 -> e.blocking[e.currConfig] = !e.blocking[e.currConfig];
@@ -41,19 +44,19 @@ public class ClusterValve extends ClusterConduit{
         e.configured[c.get(1)] = Vars.content.liquid(c.get(2));
       }
       else if(c.get(0) == 1){
-        e.liquidsBuffer = new ClusterLiquidModule[c.get(0)];
+        e.liquidsBuffer = new ClusterLiquidModule[c.get(1)];
         for (int ind = 0; ind < e.liquidsBuffer.length; ind++) {
           e.liquidsBuffer[ind] = new ClusterLiquidModule();
         }
-        e.configured = new Liquid[c.get(0)];
-        e.input = new boolean[c.get(0)];
-        e.output = new boolean[c.get(0)];
-        e.blocking = new boolean[c.get(0)];
+        e.configured = new Liquid[c.get(1)];
+        e.input = new boolean[c.get(1)];
+        e.output = new boolean[c.get(1)];
+        e.blocking = new boolean[c.get(1)];
         for (int l = 0; l < e.liquidsBuffer.length; l++) {
-          e.configured[l] = Vars.content.liquid(c.get(l*4 + 1));
-          e.input[l] = c.get(l*4 + 2) == 1;
-          e.output[l] = c.get(l*4 + 3) == 1;
-          e.blocking[l] = c.get(l*4 + 4) == 1;
+          e.configured[l] = Vars.content.liquid(c.get(l*4 + 2));
+          e.input[l] = c.get(l*4 + 3) == 1;
+          e.output[l] = c.get(l*4 + 4) == 1;
+          e.blocking[l] = c.get(l*4 + 5) == 1;
         }
       }
     });
@@ -98,7 +101,7 @@ public class ClusterValve extends ClusterConduit{
           for(int i=0; i<liquidsBuffer.length; i++){
             int index = i;
             conduits.button(t -> t.add(Core.bundle.get("misc.conduit") + "#" + index).left().grow(), Styles.underlineb,
-                () -> currConfig = index).update(b -> b.setChecked(index == currConfig)).size(250, 35).pad(0);
+                () -> configure(index)).update(b -> b.setChecked(index == currConfig)).size(250, 35).pad(0);
             conduits.row();
           }
         });
@@ -118,13 +121,13 @@ public class ClusterValve extends ClusterConduit{
 
       table.table(Styles.black6, t -> {
         t.defaults().left().top();
-        t.check(Core.bundle.get("infos.inputMode"), b -> configure(0)).size(180, 45)
+        t.check(Core.bundle.get("infos.inputMode"), b -> configure(new byte[]{0})).size(180, 45)
             .update(c -> c.setChecked(input[currConfig])).get().left();
         t.row();
-        t.check(Core.bundle.get("infos.outputMode"), b -> configure(1)).size(180, 45)
+        t.check(Core.bundle.get("infos.outputMode"), b -> configure(new byte[]{1})).size(180, 45)
             .update(c -> c.setChecked(output[currConfig])).get().left();
         t.row();
-        t.check(Core.bundle.get("infos.blocking"), b -> configure(2)).size(180, 45)
+        t.check(Core.bundle.get("infos.blocking"), b -> configure(new byte[]{2})).size(180, 45)
             .update(c -> c.setChecked(blocking[currConfig]))
             .disabled(c -> input[currConfig] || !output[currConfig]).get().left();
       }).top().fill().padLeft(0);
@@ -132,8 +135,9 @@ public class ClusterValve extends ClusterConduit{
 
     @Override
     public Object config() {
-      IntSeq req = IntSeq.with(liquidsBuffer.length);
+      IntSeq req = IntSeq.with(1);
 
+      req.add(liquidsBuffer.length);
       for (int i = 0; i < configured.length; i++) {
         req.add(configured[i] == null? -1: configured[i].id);
         req.add(input[i]? 1: 0);

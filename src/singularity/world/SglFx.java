@@ -120,18 +120,15 @@ public class SglFx{
   }),
 
   forceField = new Effect(45, e -> {
-    float end = 4;
-
     Draw.color(e.color);
-    if(e.data instanceof float[]){
-      if(((float[]) e.data)[0] > 0) end = 3;
-      Draw.alpha(((float[]) e.data)[1]);
+    if(e.data instanceof Float f){
+      Draw.alpha(f);
     }
     float endRot = ((int) Math.ceil(e.rotation/45) + 1)*45;
 
     Draw.z(Layer.effect);
     Lines.stroke(Mathf.lerp(1.5f, 0.4f, e.fin()));
-    Lines.square(e.x, e.y, Mathf.lerp(35, end, e.fin()), Mathf.lerp(e.rotation, endRot, e.fin()));
+    Lines.square(e.x, e.y, Mathf.lerp(35, 3, e.fin()), Mathf.lerp(e.rotation, endRot, e.fin()));
   }),
 
   FEXsmoke = new Effect(80, e -> {
@@ -151,6 +148,32 @@ public class SglFx{
     Lines.stroke(e.fout());
     Lines.circle(e.x, e.y, Mathf.randomSeed(e.id, 8, 10)*e.fin());
   }),
+
+  glowParticle = new Effect(45, e -> {
+    Draw.color(e.color, Color.white, e.fin());
+
+    randLenVectors(e.id, 1, 3.5f, e.rotation, 5, (x, y) -> {
+      Fill.circle(e.x + x*e.fin(Interp.pow2Out), e.y + y*e.fin(Interp.pow2Out), 1.6f*e.fout(Interp.pow2Out));
+    });
+  }),
+
+  auroraCoreCharging = new Effect(80, 100, e -> {
+    Draw.color(SglDrawConst.matrixNet);
+    stroke(e.fin() * 2f);
+    Lines.circle(e.x, e.y, 4f + e.fout() * 100f);
+
+    Fill.circle(e.x, e.y, e.fin() * 10);
+
+    randLenVectors(e.id, 20, 40f * e.fout(), (x, y) -> {
+      Fill.circle(e.x + x, e.y + y, e.fin() * 5f);
+      Drawf.light(e.x + x, e.y + y, e.fin() * 15f, Pal.heal, 0.7f);
+    });
+
+    color();
+
+    Fill.circle(e.x, e.y, e.fin() * 8);
+    Drawf.light(e.x, e.y, e.fin() * 16f, Pal.heal, 0.7f);
+  }).rotWithParent(true).followParent(true),
 
   explodeImpWave = impactExplode(32, 50f),
 
@@ -255,6 +278,38 @@ public class SglFx{
     }
   }),
 
+  lightCone = new Effect(16, e -> {
+    Draw.color(e.color);
+
+    SglDraw.drawDiamond(e.x, e.y, 8, 26 * e.fout(), e.rotation);
+  }),
+
+  lightConeHit = new Effect(30, e -> {
+    Draw.color(e.color);
+
+    float fout = e.fout(Interp.pow2Out);
+    float fin = e.fin(Interp.pow2Out);
+    randLenVectors(e.id, Mathf.randomSeed(e.id + 1, 3, 4), 30, e.rotation, 60, (dx, dy) -> {
+      Drawf.tri(e.x - dx*fin, e.y - dy*fin, 6f*fout, 6 + 15*fout, Mathf.angle(dx, dy) + 180);
+      Drawf.tri(e.x - dx*fin, e.y - dy*fin, 6f*fout, 6f*fout, Mathf.angle(dx, dy));
+    });
+  }),
+
+  lightConeTrail = new Effect(20, e -> {
+    Draw.color(e.color);
+
+    int i = Mathf.randomSeed(e.id) > 0.5f? 1: -1;
+    float off = Mathf.randomSeed(e.id, -10, 10);
+    float fout = e.fout(Interp.pow2Out);
+
+    float rot = e.rotation + 156f*i + off;
+    float dx = Angles.trnsx(rot, 24, 0)*e.fin(Interp.pow2Out);
+    float dy = Angles.trnsy(rot, 24, 0)*e.fin(Interp.pow2Out);
+
+    Drawf.tri(e.x + dx, e.y + dy, 8f*fout, 8 + 24*fout, rot);
+    Drawf.tri(e.x + dx, e.y + dy, 8f*fout, 8f*fout, rot + 180);
+  }),
+
   continuousLaserRecoil = new Effect(12, e -> {
     Draw.color(e.color);
 
@@ -262,6 +317,14 @@ public class SglFx{
       float size = Mathf.randomSeed((int) (e.id + x), 6, 12);
       float lerp = e.fin(Interp.pow2Out);
       SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, size, size/2f*e.fout(), Mathf.angle(x, y));
+    });
+  }),
+
+  trailParticle = new Effect(95, e -> {
+    Draw.color(e.color);
+
+    randLenVectors(e.id, 3, 35, (x, y) -> {
+      Fill.circle(e.x + x * e.fin(Interp.pow2In), e.y + y * e.fin(Interp.pow2In), 1.2f * e.fout());
     });
   }),
 
@@ -512,6 +575,13 @@ public class SglFx{
       randLenVectors(e.id, 12, 26, (x, y) -> {
         float s = Mathf.randomSeed((int) (e.id + x), 4f, 8f);
         Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), s*e.fout());
+      });
+
+      Draw.z(Layer.effect + 0.001f);
+      Lines.stroke((size*0.065f* e.fout()));
+      randLenVectors(e.id + 1, e.finpow() + 0.001f, (int)(size/2.25f), size*0.9f, (x, y, in, out) -> {
+        lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), 5 + out*size*0.6f);
+        Drawf.light(e.x + x, e.y + y, out*size/2, Draw.getColor(), 0.8f);
       });
       if(heightBloom) SglDraw.endBloom();
     });

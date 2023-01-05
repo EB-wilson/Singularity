@@ -15,6 +15,7 @@ import arc.util.Interval;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
+import mindustry.content.Blocks;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
@@ -29,16 +30,15 @@ import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.ui.Bar;
-import mindustry.ui.ItemDisplay;
 import mindustry.world.Block;
 import mindustry.world.blocks.liquid.LiquidBlock;
 import mindustry.world.draw.*;
 import mindustry.world.meta.Attribute;
 import mindustry.world.meta.BlockStatus;
-import mindustry.world.meta.Stat;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
+import singularity.graphic.SglShaders;
 import singularity.type.SglLiquidStack;
 import singularity.world.SglFx;
 import singularity.world.blocks.function.Destructor;
@@ -133,7 +133,7 @@ public class CrafterBlocks implements ContentList{
       oneOfOptionCons = true;
       itemCapacity = 24;
 
-      ambientSound = Sounds.flux;
+      loopSound = Sounds.flux;
       
       newConsume();
       consume.time(90);
@@ -203,7 +203,7 @@ public class CrafterBlocks implements ContentList{
             SglLiquids.algae_mud, 0.006f
         ));
         
-        ambientSound = Sounds.none;
+        loopSound = Sounds.none;
 
         structUpdated = e -> {
           e.setVar("highlight",
@@ -216,11 +216,7 @@ public class CrafterBlocks implements ContentList{
 
         draw = new DrawMulti(
             new DrawBottom(),
-            new DrawLiquidRegion(Liquids.water){
-              {
-                suffix = "_liquid";
-              }
-
+            new DrawBlock(){
               final static Rand rand = new Rand();
 
               @Override
@@ -230,7 +226,7 @@ public class CrafterBlocks implements ContentList{
 
                 rand.setSeed(build.id);
 
-                int am = (int) (2 + rand.nextInt(2)*build.warmup());
+                int am = (int) (1 + rand.nextInt(3)*build.warmup());
                 float move = 0.2f*Mathf.sinDeg(Time.time + rand.nextInt(360))*build.warmup();
                 Draw.color(Tmp.c1.set(SglLiquids.algae_mud.color).a(alp));
                 Angles.randLenVectors(build.id, am, 3.5f, (dx, dy) -> {
@@ -238,40 +234,24 @@ public class CrafterBlocks implements ContentList{
                       (Mathf.randomSeed(build.id, 0.2f, 0.8f) + Mathf.absin(5, 0.1f))
                           *Math.max(build.warmup(), build.liquids.get(SglLiquids.algae_mud)/liquidCapacity));
                 });
+                Draw.reset();
               }
             },
             new DrawBlock(){
               @Override
               public void draw(Building build){
-                TextureRegion region = renderer.fluidFrames[0][Liquids.water.getAnimationFrame()];
-                TextureRegion toDraw = Tmp.tr1;
+                Draw.z(Draw.z() + 0.001f);
+                float capacity = build.block.liquidCapacity;
 
-                float bounds = size/2f * tilesize;
-
-                for(int sx = 0; sx < size; sx++){
-                  for(int sy = 0; sy < size; sy++){
-                    float relx = sx - (size-1)/2f, rely = sy - (size-1)/2f;
-
-                    toDraw.set(region);
-                    float rightBorder = relx*tilesize, topBorder = rely*tilesize;
-                    float squishX = rightBorder + tilesize/2f - bounds, squishY = topBorder + tilesize/2f - bounds;
-                    float ox = 0f, oy = 0f;
-
-                    if(squishX >= 8 || squishY >= 8) continue;
-
-                    if(squishX > 0){
-                      toDraw.setWidth(toDraw.width - squishX * 4f);
-                      ox = -squishX/2f;
-                    }
-
-                    if(squishY > 0){
-                      toDraw.setY(toDraw.getY() + squishY * 4f);
-                      oy = -squishY/2f;
-                    }
-
-                    Drawf.liquid(toDraw, build.x + rightBorder + ox, build.y + topBorder + oy, build.liquids.get(Liquids.water)/liquidCapacity,
-                        Tmp.c1.set(Liquids.water.color).a(0.75f));
-                  }
+                if (Core.settings.getBool("animatedwater")) {
+                  SglDraw.drawTask("drawCultBarn", build, SglShaders.boundWater, e -> {
+                    Draw.alpha(0.75f * (e.liquids.get(Liquids.water) / e.block.liquidCapacity));
+                    Draw.rect(Blocks.water.region, e.x, e.y);
+                  });
+                }
+                else{
+                  Draw.alpha(0.75f * (build.liquids.get(Liquids.water) / capacity));
+                  Draw.rect(Blocks.water.region, build.x, build.y);
                 }
               }
             },
@@ -492,8 +472,8 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.time(90f);
-      consume.liquid(SglLiquids.chlorine, 0.4f);
-      consume.power(0.8f);
+      consume.liquid(SglLiquids.algae_mud, 0.4f);
+      consume.power(1f);
       newProduce();
       produce.item(SglItems.chlorella_block, 1);
       produce.liquid(SglLiquids.purified_water, 0.2f);
@@ -645,8 +625,8 @@ public class CrafterBlocks implements ContentList{
       liquidCapacity = 40f;
       itemCapacity = 25;
 
-      ambientSound = Sounds.fire;
-      ambientSoundVolume = 0.1f;
+      loopSound = Sounds.fire;
+      loopSoundVolume = 0.1f;
 
       newConsume();
       consume.liquid(Liquids.hydrogen, 0.8f);
@@ -681,8 +661,8 @@ public class CrafterBlocks implements ContentList{
       ));
       size = 3;
 
-      ambientSound = Sounds.fire;
-      ambientSoundVolume = 0.075f;
+      loopSound = Sounds.fire;
+      loopSoundVolume = 0.075f;
 
       squareSprite = false;
 
@@ -743,8 +723,8 @@ public class CrafterBlocks implements ContentList{
 
       itemCapacity = 20;
 
-      ambientSound = Sounds.smelter;
-      ambientSoundVolume = 0.075f;
+      loopSound = Sounds.smelter;
+      loopSoundVolume = 0.075f;
 
       newConsume();
       consume.time(90f);
@@ -823,7 +803,7 @@ public class CrafterBlocks implements ContentList{
       itemCapacity = 12;
       liquidCapacity = 20;
 
-      ambientSound = Sounds.fire;
+      loopSound = Sounds.fire;
 
       newConsume();
       consume.time(90f);
@@ -861,8 +841,8 @@ public class CrafterBlocks implements ContentList{
       itemCapacity = 20;
       warmupSpeed = 0.01f;
 
-      ambientSound = Sounds.beam;
-      ambientSoundVolume = 0.01f;
+      loopSound = Sounds.beam;
+      loopSoundVolume = 0.01f;
       
       newConsume();
       consume.time(60f);
@@ -1071,7 +1051,7 @@ public class CrafterBlocks implements ContentList{
       itemCapacity = 20;
       liquidCapacity = 24f;
 
-      ambientSound = Sounds.spray;
+      loopSound = Sounds.spray;
       
       newConsume();
       consume.time(120f);
@@ -1162,8 +1142,8 @@ public class CrafterBlocks implements ContentList{
       hasLiquids = true;
       liquidCapacity = 12;
 
-      ambientSound = Sounds.glow;
-      ambientSoundVolume = 0.1f;
+      loopSound = Sounds.glow;
+      loopSoundVolume = 0.1f;
       
       newConsume();
       consume.time(120);
@@ -1250,17 +1230,7 @@ public class CrafterBlocks implements ContentList{
       consume.time(120);
       consume.item(SglItems.black_crystone, 6);
       consume.power(2.8f);
-      consume.setConsTrigger((NormalCrafterBuild e) -> {
-        if(Mathf.chance(0.3f)) if(e.acceptItem(e, Items.thorium))e.items().add(Items.thorium, 1);
-      });
-      consume.display = (s, c) -> s.add(Stat.output, t -> {
-        t.row();
-        t.table(i -> {
-          i.add(Core.bundle.get("misc.extra") + ":");
-          i.add(new ItemDisplay(Items.thorium, 1)).left().padLeft(6);
-          i.add("[gray]30%[]");
-        }).left().padLeft(5);
-      });
+      setByProduct(0.3f, Items.thorium);
       newProduce().color = SglItems.black_crystone.color;
       produce.items(ItemStack.with(
           SglItems.aluminium, 3,
@@ -1355,8 +1325,8 @@ public class CrafterBlocks implements ContentList{
   
       craftEffect = SglFx.FEXsmoke;
 
-      ambientSound = Sounds.tractorbeam;
-      ambientSoundVolume = 0.15f;
+      loopSound = Sounds.tractorbeam;
+      loopSoundVolume = 0.15f;
 
       initialed = e -> e.setVar("drawAlphas", new float[]{2.9f, 2.2f, 1.5f});
 
@@ -1447,8 +1417,8 @@ public class CrafterBlocks implements ContentList{
       
       craftEffect = SglFx.crystalConstructed;
 
-      ambientSound = Sounds.flux;
-      ambientSoundVolume = 0.1f;
+      loopSound = Sounds.flux;
+      loopSoundVolume = 0.1f;
 
       draw = new DrawMulti(
           new DrawDefault(),
@@ -1488,8 +1458,8 @@ public class CrafterBlocks implements ContentList{
 
       itemCapacity = 20;
 
-      ambientSound = Sounds.cutter;
-      ambientSoundVolume = 0.5f;
+      loopSound = Sounds.cutter;
+      loopSoundVolume = 0.5f;
       
       newConsume();
       consume.time(120);
@@ -1544,8 +1514,8 @@ public class CrafterBlocks implements ContentList{
       size = 5;
       itemCapacity = 20;
 
-      ambientSound = Sounds.spellLoop;
-      ambientSoundVolume = 0.4f;
+      loopSound = Sounds.spellLoop;
+      loopSoundVolume = 0.4f;
       
       newConsume();
       consume.energy(5f);
@@ -1571,6 +1541,7 @@ public class CrafterBlocks implements ContentList{
           }},
           new DrawRegion("_rotator"){{
             rotateSpeed = 1.75f;
+            rotation = 45;
           }},
           new DrawRegion("_rotator"){{
             rotateSpeed = -1.75f;
@@ -1585,15 +1556,15 @@ public class CrafterBlocks implements ContentList{
               Draw.alpha(e.workEfficiency());
               Lines.stroke(1.5f);
               float rotation = e.totalProgress()*1.75f;
-              Lines.square(e.x, e.y, 34, 45 + rotation/1.5f);
-              Lines.square(e.x, e.y, 36, -rotation/1.5f);
+              Lines.square(e.x, e.y, 35, 45 + rotation);
+              Lines.square(e.x, e.y, 35, -rotation);
               Lines.stroke(0.4f);
               Lines.square(e.x, e.y, 3 + Mathf.random(-0.15f, 0.15f));
               Lines.square(e.x, e.y, 4 + Mathf.random(-0.15f, 0.15f), 45);
 
               if(e.workEfficiency() > 0.01 && e.<Interval>getVar("timer").get(30)){
-                SglFx.forceField.at(e.x, e.y, (45 + rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.workEfficiency()});
-                Time.run(15, () -> SglFx.forceField.at(e.x, e.y, (-rotation/1.5f)%360, Pal.reactorPurple, new float[]{1, e.workEfficiency()}));
+                SglFx.forceField.at(e.x, e.y, (45 + rotation)%360, Pal.reactorPurple, e.workEfficiency());
+                Time.run(15, () -> SglFx.forceField.at(e.x, e.y, Mathf.mod(-e.totalProgress()*1.75f, 360), Pal.reactorPurple, e.workEfficiency()));
               }
             }
           }
@@ -1628,8 +1599,8 @@ public class CrafterBlocks implements ContentList{
       newProduce();
       produce.item(SglItems.anti_metter, 1);
 
-      ambientSound = Sounds.electricHum;
-      ambientSoundVolume = 0.6f;
+      loopSound = Sounds.electricHum;
+      loopSoundVolume = 0.6f;
 
       craftEffect = SglFx.explodeImpWaveBig;
       craftEffectColor = Pal.reactorPurple;

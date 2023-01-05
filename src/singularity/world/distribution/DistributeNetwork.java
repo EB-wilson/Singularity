@@ -5,6 +5,8 @@ import arc.math.Mathf;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.OrderedSet;
+import arc.util.Time;
+import mindustry.gen.Building;
 import org.jetbrains.annotations.NotNull;
 import singularity.world.FinderContainerBase;
 import singularity.world.components.distnet.DistComponent;
@@ -176,10 +178,10 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
 
     if(netStructValid()){
       for(DistElementBuildComp element: elementsIterateArr){
-        energyConsume += element.matrixEnergyConsume();
+        energyConsume += element.matrixEnergyConsume()*(element instanceof Building b? b.delta(): Time.delta);
       }
       for(DistElementBuildComp element: elementsIterateArr){
-        energyProduct += element.matrixEnergyProduct()*element.getBuilding().delta();
+        energyProduct += element.matrixEnergyProduct()*(element instanceof Building b? b.delta(): Time.delta);
       }
       for (DistElementBuildComp buff : energyBuffer) {
         energyCapacity += buff.getDistBlock().matrixEnergyCapacity() - buff.matrixEnergyBuffered();

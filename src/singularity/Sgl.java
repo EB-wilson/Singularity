@@ -5,12 +5,15 @@ import arc.files.ZipFi;
 import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.gen.Building;
-import singularity.core.*;
+import singularity.core.ModConfig;
+import singularity.core.UpdatePool;
+import singularity.core.UpdateTiles;
 import singularity.graphic.SglDrawConst;
+import singularity.graphic.SglShaders;
 import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
-import singularity.world.distribution.DistSupportContainerTable;
 import singularity.world.blocks.distribute.IOPointBlock;
+import singularity.world.distribution.DistSupportContainerTable;
 import universecore.util.handler.ClassHandler;
 import universecore.util.mods.ModGetter;
 import universecore.util.mods.ModInfo;
@@ -45,8 +48,6 @@ public class Sgl{
   public static final String modVersion = mod.version;
   /**本模组前置版本号*/
   public static final String libVersion = libMod.version;
-  /**本模组前置版本号数值*/
-  public static final long libVersionValue = parseVersion(libVersion);
   /**模组内配置文件存放位置*/
   public static final Fi internalConfigDir = modFile.child("config");
   /**模组数据文件夹*/
@@ -89,6 +90,8 @@ public class Sgl{
   public static DistSupportContainerTable matrixContainers;
   
   public static void init(){
+    //载入着色器
+    SglShaders.load();
     //加载绘制资源
     SglDrawConst.load();
     //载入风格
@@ -109,20 +112,5 @@ public class Sgl{
     if(Vars.state.isPaused()) return;
 
     if(Vars.state.isGame()) updateTiles.update();
-  }
-  
-  public static long parseVersion(String version){
-    long result = -1;
-    if(version != null){
-      String[] vars = version.split("\\.");
-      result = 0;
-      int priority = 10;
-      for(String s: vars){
-        long base = Long.parseLong(s);
-        result += base*priority;
-        priority /= 10;
-      }
-    }
-    return result;
   }
 }

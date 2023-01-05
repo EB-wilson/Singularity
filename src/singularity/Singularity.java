@@ -2,6 +2,7 @@ package singularity;
 
 import arc.Core;
 import arc.Events;
+import arc.files.Fi;
 import arc.graphics.g2d.TextureRegion;
 import arc.util.Log;
 import mindustry.Vars;
@@ -23,7 +24,7 @@ import universecore.util.OverrideContentList;
 
 import static mindustry.game.EventType.*;
 
-@Annotations.ImportUNC(requireVersion = "1.5.9")
+@Annotations.ImportUNC(requireVersion = "1.6.0")
 public class Singularity extends Mod{
   private static final ContentList[] modContents = new ContentList[]{
       new OtherContents(),//其他内容
@@ -37,7 +38,8 @@ public class Singularity extends Mod{
       new LiquidBlocks(),//物流方块
       new ProductBlocks(),//采集方块
       new DistributeBlocks(),//物流运输方块
-      new Turrets(),//炮台
+      new SglTurrets(),//炮台
+      new SglUnits(),//单位相关内容（单位、工厂）
       new DefenceBlocks(),//防御方块
 
       new SglTechThree(),//科技树
@@ -55,13 +57,6 @@ public class Singularity extends Mod{
     //加载模组配置数据
     Sgl.config.load();
     Sgl.classes = UncCore.classes.newInstance(Singularity.class);
-
-    //加载属性类型
-    SglAttribute.load();
-    //加载方块类型
-    SglCategory.load();
-    //载入所有新内容类型
-    SglContentType.load();
     
     Log.info(
        """
@@ -101,12 +96,19 @@ public class Singularity extends Mod{
 
     initialized = true;
 
-    //Sgl.classes.finishGenerate();
+    Sgl.classes.finishGenerate();
     if(Sgl.config.loadInfo) Log.info("[Singularity] mod initialize finished");
   }
   
   @Override
   public void loadContent(){
+    //加载属性类型
+    SglAttribute.load();
+    //加载方块类型
+    SglCategory.load();
+    //载入所有新内容类型
+    SglContentType.load();
+
     for(ContentList list: Singularity.modContents){
       list.load();
     }
@@ -134,5 +136,9 @@ public class Singularity extends Mod{
   
   public static TextureRegion getModAtlas(String name){
     return Core.atlas.find(Sgl.modName + "-" + name);
+  }
+
+  public static Fi getInternalFile(String path){
+    return Sgl.modFile.child(path);
   }
 }

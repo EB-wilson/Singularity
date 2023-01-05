@@ -4,12 +4,14 @@ import arc.Events;
 import arc.struct.Seq;
 import dynamilize.DynamicClass;
 import mindustry.Vars;
+import mindustry.content.Blocks;
 import mindustry.entities.units.BuildPlan;
 import mindustry.input.InputHandler;
 import mindustry.world.Block;
 import mindustry.world.blocks.liquid.Conduit;
 import singularity.Sgl;
 import singularity.world.blocks.SglBlock;
+import singularity.world.meta.SglAttribute;
 
 /**改动游戏原内容重初始化，用于对游戏已定义的实例进行操作*/
 public class Init{
@@ -34,6 +36,8 @@ public class Init{
   public static void init(){
     final InputHandler oldInput = Vars.control.input;
     Vars.control.input = Sgl.classes.getDynamicMaker().newInstance(oldInput.getClass(), InputHandlerAspect).castGet();
+
+    Blocks.stone.attributes.set(SglAttribute.bitumen, 0.5f);
   }
   
   /**内容重载器，用于对已加载的内容做出变更(或者覆盖)*/

@@ -62,7 +62,7 @@ import static mindustry.Vars.tilesize;
 import static mindustry.entities.Damage.collideLine;
 import static mindustry.entities.Damage.findPierceLength;
 
-public class Turrets implements ContentList{
+public class SglTurrets implements ContentList{
   /**石墨粉云团*/
   public static BulletType graphiteCloud,
   /**闪电（SGL）*/
@@ -1344,9 +1344,8 @@ public class Turrets implements ContentList{
               splashDamageRadius = 84;
               hitShake = 12;
 
-              trailEffect = Fx.disperseTrail;
-              trailLength = 18;
-              trailWidth = 7;
+              trailEffect = SglFx.iceParticleSpread;
+              trailInterval = 10;
               trailColor = SglDrawConst.winter;
 
               hitEffect = SglFx.iceExplode;
@@ -1395,7 +1394,13 @@ public class Turrets implements ContentList{
           despawnEffect = Fx.none;
           smokeEffect = Fx.none;
 
-          trailEffect = Fx.disperseTrail;
+          trailEffect = new MultiEffect(
+              SglFx.glowParticle,
+              SglFx.continuousLaserRecoil
+          );
+          trailRotation = true;
+          trailChance = 1;
+
           trailLength = 75;
           trailWidth = 7;
           trailColor = SglDrawConst.winter;
@@ -1605,7 +1610,9 @@ public class Turrets implements ContentList{
           damage = 65;
           hitSize = 2;
           homingPower = 0.06f;
-          trailEffect = Fx.disperseTrail;
+          trailEffect = SglFx.glowParticle;
+          trailRotation = true;
+          trailChance = 0.12f;
           trailColor = Pal.lightishOrange.cpy().a(0.7f);
           hitColor = Pal.lightishOrange;
           shootEffect = Fx.shootSmallColor;

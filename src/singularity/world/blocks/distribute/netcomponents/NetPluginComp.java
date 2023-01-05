@@ -105,7 +105,6 @@ public class NetPluginComp extends DistNetBlock{
         public void draw(){
           validate();
 
-          Draw.scl(scaleX, scaleY);
           Lines.stroke(6, Color.lightGray);
           float rx = x + width/2, ry = y + height/2;
           Lines.quad(x, y, x + width, y, x + width, y + height, x, y + height);

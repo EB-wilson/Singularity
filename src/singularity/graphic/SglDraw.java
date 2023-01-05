@@ -7,17 +7,23 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
+import arc.graphics.gl.FrameBuffer;
+import arc.graphics.gl.Shader;
 import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
 import arc.math.geom.Vec3;
+import arc.struct.ObjectMap;
 import arc.util.Nullable;
 import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.graphics.Layer;
 import mindustry.world.Tile;
+
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SglDraw{
   private static int blooming = -1;
@@ -27,6 +33,9 @@ public class SglDraw{
       v6 = new Vec2(), v7 = new Vec2(), v8 = new Vec2(), v9 = new Vec2(), v10 = new Vec2();
   private static final Vec3 v31 = new Vec3(), v32 = new Vec3(), v33 = new Vec3(), v34 = new Vec3(), v35 = new Vec3(),
       v36 = new Vec3(), v37 = new Vec3(), v38 = new Vec3(), v39 = new Vec3(), v310 = new Vec3();
+
+  private static final ObjectMap<String, DrawTask> drawTasks = new ObjectMap<>();
+  private static final ObjectMap<String, FrameBuffer> taskBuffer = new ObjectMap<>();
 
   static {
     Events.run(EventType.Trigger.drawOver, () -> {
@@ -44,6 +53,89 @@ public class SglDraw{
         Draw.draw(Layer.overlayUI - 0.02f, () -> Vars.renderer.bloom.render());
       }
     });
+  }
+
+  public static void removeTaskCache(String name){
+    drawTasks.remove(name);
+    taskBuffer.remove(name);
+  }
+
+  /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
+   *
+   * @param taskName 任务的标识名称，用于区分任务缓存
+   * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
+   *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
+   * @param drawFirst <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在执行前要进行的操作
+   * @param drawLast <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在完成主绘制后要执行的操作
+   * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
+  public static <T> void drawTask(String taskName, T target, DrawAcceptor<T> drawFirst, DrawAcceptor<T> drawLast, DrawAcceptor<T> draw){
+    DrawTask task = drawTasks.get(taskName, DrawTask::new);
+    if (!task.init){
+      task.defaultFirstTask = drawFirst;
+      task.defaultLastTask = drawLast;
+      task.defaultTarget = target;
+      Draw.draw(Draw.z(), task::flush);
+      task.init = true;
+    }
+    task.addTask(target, draw);
+  }
+
+  /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
+   *
+   * @param taskName 任务的标识名称，用于区分任务缓存
+   * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
+   *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
+   * @param shader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，在这组任务绘制时使用的着色器
+   * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
+  public static <T> void drawTask(String taskName, T target, Shader shader, DrawAcceptor<T> draw){
+    drawTask(taskName, target, e -> {
+      FrameBuffer buffer = taskBuffer.get(taskName, FrameBuffer::new);
+      buffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+      buffer.begin(Color.clear);
+    }, e -> {
+      FrameBuffer buffer = taskBuffer.get(taskName);
+      buffer.end();
+      buffer.blit(shader);
+    }, draw);
+  }
+
+  /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
+   * <p><strong>如果这个方法的调用频率非常高，同时描述绘制行为的lambda表达式需要访问局部变量，那么为了优化堆占用，请使用{@link SglDraw#drawTask(String, Object, Shader, DrawAcceptor)}</strong>
+   *
+   * @param taskName 任务的标识名称，用于区分任务缓存
+   * @param shader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，在这组任务绘制时使用的着色器
+   * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
+  public static void drawTask(String taskName, Shader shader, Runnable draw){
+    drawTask(taskName, null, shader, e -> draw.run());
+  }
+
+  /**发布缓存的任务并在首次发布时的z轴时进行绘制
+   *
+   * @param taskName 任务的标识名称，用于区分任务缓存
+   * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
+   *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
+   * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
+  public static <T> void drawTask(String taskName, T target, DrawAcceptor<T> draw){
+    DrawTask task = drawTasks.get(taskName, DrawTask::new);
+    if (!task.init){
+      Draw.draw(Draw.z(), task::flush);
+      task.init = true;
+    }
+    task.addTask(target, draw);
+  }
+
+  /**发布缓存的任务并在首次发布时的z轴时进行绘制
+   * <p><strong>如果这个方法的调用频率非常高，同时描述绘制行为的lambda表达式需要访问局部变量，那么为了优化堆占用，请使用{@link SglDraw#drawTask(String, Object, DrawAcceptor)}</strong>
+   *
+   * @param taskName 任务的标识名称，用于区分任务缓存
+   * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
+  public static void drawTask(String taskName, Runnable draw){
+    DrawTask task = drawTasks.get(taskName, DrawTask::new);
+    if (!task.init){
+      Draw.draw(Draw.z(), task::flush);
+      task.init = true;
+    }
+    task.addTask(null, e -> draw.run());
   }
 
   public static boolean clipDrawable(float x, float y, float clipSize){
@@ -327,22 +419,32 @@ public class SglDraw{
   }
 
   public static void dashCircle(float x, float y, float radius, float rotate){
-    dashCircle(x, y, radius, 0.6f, rotate);
+    dashCircle(x, y, radius, 1.25f, 6, 180, rotate);
   }
 
-  public static void dashCircle(float x, float y, float radius, float scaleFactor, float rotate){
+  public static void dashCircle(float x, float y, float radius, int dashes, float totalDashDeg, float rotate){
+    dashCircle(x, y, radius, 1.25f, dashes, totalDashDeg, rotate);
+  }
+
+  public static void dashCircle(float x, float y, float radius, float scaleFactor, int dashes, float totalDashDeg, float rotate){
     int sides = 10 + (int)(radius * scaleFactor);
     if(sides % 2 == 1) sides++;
 
     v1.set(0, 0);
+    float per = 360f / sides;
+
+    float rem = 360 - totalDashDeg;
+    float dashDeg = totalDashDeg/dashes;
+    float empDeg = rem/dashes;
 
     for(int i = 0; i < sides; i++){
-      if(i % 2 == 0) continue;
-      v1.set(radius, 0).setAngle(rotate + 360f / sides * i + 90);
+      if(i*per%(dashDeg+empDeg) > dashDeg) continue;
+
+      v1.set(radius, 0).setAngle(rotate + per * i + 90);
       float x1 = v1.x;
       float y1 = v1.y;
 
-      v1.set(radius, 0).setAngle(rotate + 360f / sides * (i + 1) + 90);
+      v1.set(radius, 0).setAngle(rotate + per * (i + 1) + 90);
 
       Lines.line(x1 + x, y1 + y, v1.x + x, v1.y + y);
     }
@@ -486,5 +588,69 @@ public class SglDraw{
         x + v2.x, y + v2.y,
         x + v4.x, y + v4.y
     );
+  }
+
+  public static void gapTri(float x, float y, float width, float length, float insideLength, float rotation) {
+    v1.set(0, width/2).rotate(rotation);
+    v2.set(length, 0).rotate(rotation);
+    v3.set(insideLength, 0).rotate(rotation);
+
+    Fill.quad(
+        x + v1.x, y + v1.y,
+        x + v2.x, y + v2.y,
+        x + v3.x, y + v3.y,
+        x + v1.x, y + v1.y
+    );
+    Fill.quad(
+        x - v1.x, y - v1.y,
+        x + v2.x, y + v2.y,
+        x + v3.x, y + v3.y,
+        x - v1.x, y - v1.y
+    );
+  }
+
+  @SuppressWarnings("unchecked")
+  private static class DrawTask {
+    DrawAcceptor<?> defaultFirstTask, defaultLastTask;
+    protected Object defaultTarget;
+    protected AtomicReference<DrawAcceptor<?>>[] tasks = new AtomicReference[16];
+    protected AtomicReference<Object>[] dataTarget = new AtomicReference[16];
+    int taskCounter;
+    boolean init;
+
+    {
+      for (int i = 0; i < tasks.length; i++) {
+        tasks[i] = new AtomicReference<>();
+        dataTarget[i] = new AtomicReference<>();
+      }
+    }
+
+    <T> void addTask(T dataAcceptor, DrawAcceptor<T> task){
+      if (tasks.length <= taskCounter){
+        tasks = Arrays.copyOf(tasks, tasks.length + 1);
+        tasks[taskCounter] = new AtomicReference<>(task);
+        dataTarget = Arrays.copyOf(dataTarget, tasks.length);
+        dataTarget[taskCounter++] = new AtomicReference<>(dataAcceptor);
+      }
+      else{
+        tasks[taskCounter].set(task);
+        dataTarget[taskCounter++].set(dataAcceptor);
+      }
+    }
+
+    @SuppressWarnings("rawtypes")
+    void flush(){
+      if (defaultFirstTask != null) ((DrawAcceptor)defaultFirstTask).draw(defaultTarget);
+      for (int i = 0; i < taskCounter; i++) {
+        ((DrawAcceptor)tasks[i].get()).draw(dataTarget[i].get());
+      }
+      taskCounter = 0;
+      init = false;
+      if (defaultLastTask != null) ((DrawAcceptor)defaultLastTask).draw(defaultTarget);
+    }
+  }
+
+  public interface DrawAcceptor<T>{
+    void draw(T accept);
   }
 }

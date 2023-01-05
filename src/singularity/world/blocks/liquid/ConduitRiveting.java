@@ -41,7 +41,10 @@ public class ConduitRiveting extends ClusterConduit{
       }
     });
     config(Integer.class, (ConduitRivetingBuild e, Integer i) -> {
-      switch (i){
+      e.currConf = i;
+    });
+    config(byte[].class, (ConduitRivetingBuild e, byte[] b) -> {
+      switch (b[0]){
         case 0 -> e.input[e.currConf] = !e.input[e.currConf];
         case 1 -> e.output[e.currConf] = !e.output[e.currConf];
         case 2 -> e.blocking[e.currConf] = !e.blocking[e.currConf];
@@ -95,20 +98,20 @@ public class ConduitRiveting extends ClusterConduit{
       table.table(Styles.black6, t -> {
         for(int i=0; i<liquidsBuffer.length; i++){
           int index = i;
-          t.button(ta -> ta.add(Core.bundle.get("misc.conduit") + "#" + index).left().grow(), Styles.underlineb, () -> currConf = index)
+          t.button(ta -> ta.add(Core.bundle.get("misc.conduit") + "#" + index).left().grow(), Styles.underlineb, () -> configure(index))
               .update(b -> b.setChecked(index == currConf)).size(250, 35).pad(0);
           t.row();
         }
       }).fill();
       table.table(Styles.black6, t -> {
         t.defaults().left();
-        t.check(Core.bundle.get("infos.inputMode"), b -> configure(0)).size(180, 45)
+        t.check(Core.bundle.get("infos.inputMode"), b -> configure(new byte[]{0})).size(180, 45)
             .update(c -> c.setChecked(input[currConf])).get().left();
         t.row();
-        t.check(Core.bundle.get("infos.outputMode"), b -> configure(1)).size(180, 45)
+        t.check(Core.bundle.get("infos.outputMode"), b -> configure(new byte[]{1})).size(180, 45)
             .update(c -> c.setChecked(output[currConf])).get().left();
         t.row();
-        t.check(Core.bundle.get("infos.blocking"), b -> configure(2)).size(180, 45)
+        t.check(Core.bundle.get("infos.blocking"), b -> configure(new byte[]{2})).size(180, 45)
             .update(c -> c.setChecked(blocking[currConf]))
             .disabled(c -> input[currConf] || !output[currConf]).get().left();
       }).top().fill().padLeft(0);

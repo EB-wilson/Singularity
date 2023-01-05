@@ -556,14 +556,14 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public boolean acceptItem(Building source, Item item){
       return source.interactable(this.team) && hasItems
-          && (!(consumer.hasConsume() || consumer.hasOptional()) || consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item)))
+          && (source == this || (!(consumer.hasConsume() || consumer.hasOptional()) || consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item))))
           && (independenceInventory? items.get(item): items.total()) < block().itemCapacity;
     }
 
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
       return source.interactable(this.team) && hasLiquids
-          && (!(consumer.hasConsume() || consumer.hasOptional()) || consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)))
+          && (source == this || (!(consumer.hasConsume() || consumer.hasOptional()) || consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid))))
           && (independenceLiquidTank? liquids.get(liquid): ((SglLiquidModule)liquids).total()) <= block().liquidCapacity - 0.0001f;
     }
   
@@ -581,13 +581,22 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
     @Override
     public void drawLight(){
-      super.drawLight();
       draw.drawLight(this);
     }
     
     @Override
     public SglBlock block(){
       return SglBlock.this;
+    }
+
+    @Override
+    public float activeSoundVolume() {
+      return warmup()*loopSoundVolume;
+    }
+
+    @Override
+    public boolean shouldActiveSound() {
+      return shouldConsume();
     }
 
     @Override

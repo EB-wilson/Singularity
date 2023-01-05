@@ -18,7 +18,7 @@ import static singularity.contents.NuclearBlocks.*;
 import static singularity.contents.ProductBlocks.*;
 import static singularity.contents.SglItems.*;
 import static singularity.contents.SglLiquids.*;
-import static singularity.contents.Turrets.*;
+import static singularity.contents.SglTurrets.*;
 import static universecore.util.TechTreeConstructor.*;
 
 public class SglTechThree implements ContentList{

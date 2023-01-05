@@ -2,6 +2,7 @@ package singularity.world.blocks.nuclear;
 
 import arc.Core;
 import arc.func.Boolf;
+import arc.func.Cons;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
@@ -168,7 +169,7 @@ public class NuclearPipeNode extends NuclearBlock{
     Draw.color(Pal.placing);
     Drawf.circles(x * tilesize + offset, y * tilesize + offset, linkRange * tilesize);
     
-    getPotentialLink(tile, player.team()).each(other -> {
+    getPotentialLink(tile, player.team(), other -> {
       Draw.color(linkColor, laserOpacity * 0.5f);
       drawLink(tile.worldx() + offset, tile.worldy() + offset, size, other.getBuilding().x, other.getBuilding().y, other.getBlock().size);
       
@@ -178,8 +179,7 @@ public class NuclearPipeNode extends NuclearBlock{
     Draw.reset();
   }
   
-  public Seq<NuclearEnergyBuildComp> getPotentialLink(Tile tile, Team team){
-    Seq<NuclearEnergyBuildComp> temp = new Seq<>();
+  public void getPotentialLink(Tile tile, Team team, Cons<NuclearEnergyBuildComp> cons){
     Boolf<NuclearEnergyBuildComp> valid = other -> other != null && other.getBuilding().tile() != tile && other.energy() != null &&
         (other.getNuclearBlock().outputEnergy() || other.getNuclearBlock().consumeEnergy() || other.getBlock() instanceof NuclearPipeNode) &&
         inRange(tile, other.getBuilding().tile(), linkRange * tilesize) && other.getBuilding().team == team &&
@@ -224,17 +224,15 @@ public class NuclearPipeNode extends NuclearBlock{
     tempNuclearEntity.each(valid, e -> {
       if(returnInt++ < maxLinks){
         nets.add(e.getEnergyNetwork());
-        temp.add(e);
+        cons.get(e);
       }
     });
-    
-    return temp;
   }
   
   public static Seq<NuclearEnergyBuildComp> getNodeLinks(Tile tile, NuclearEnergyBlockComp block, Team team){
     Boolf<NuclearEnergyBuildComp> valid = other -> other != null && other.getBuilding().tile() != tile && other.getBlock() instanceof NuclearPipeNode &&
         other.energy().linked.size < other.getBlock(NuclearPipeNode.class).maxLinks &&
-        other.getBlock(NuclearPipeNode.class).inRange(other.getBuilding().tile, tile, other.getBlock(NuclearPipeNode.class).linkRange * tilesize) && other.getBuilding().team == team
+        other.getBlock(NuclearPipeNode.class).inRange(other.getBuilding().tile, tile, other.getBlock(NuclearPipeNode.class).linkRange*tilesize) && other.getBuilding().team == team
         && !nets.contains(other.getEnergyNetwork()) &&
         !Structs.contains(Edges.getEdges(((Block) block).size), p -> { //do not link to adjacent buildings
           Tile t = world.tile(tile.x + p.x, tile.y + p.y);
@@ -325,9 +323,9 @@ public class NuclearPipeNode extends NuclearBlock{
     public void placed(){
       if(net.client()) return;
   
-      for(NuclearEnergyBuildComp target: getPotentialLink(tile, team)){
-        if(!energy.linked.contains(target.getBuilding().pos())) configure(target.getBuilding().pos());
-      }
+      getPotentialLink(tile, team, e -> {
+        if(!energy.linked.contains(e.getBuilding().pos())) configure(Point2.unpack(e.getBuilding().pos()));
+      });
   
       super.placed();
     }
@@ -351,9 +349,7 @@ public class NuclearPipeNode extends NuclearBlock{
           }
         }
         else{
-          for(NuclearEnergyBuildComp target: getPotentialLink(tile, team)){
-            configure(Point2.unpack(target.getBuilding().pos()));
-          }
+          getPotentialLink(tile, team, e -> configure(Point2.unpack(e.getBuilding().pos())));
         }
         return false;
       }
@@ -394,7 +390,7 @@ public class NuclearPipeNode extends NuclearBlock{
       if(energy.linked.size == 0) return;
       for(int i = 0; i < energy.linked.size; i++){
         Building entity = world.build(energy.linked.get(i));
-        if(entity == null || entity.block instanceof NuclearPipeNode && entity.id() >= id) continue;
+        if(!(entity instanceof NuclearEnergyBuildComp) || entity.block instanceof NuclearPipeNode && entity.id() >= id) continue;
         drawLink(this, (NuclearEnergyBuildComp) entity);
       }
       

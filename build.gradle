@@ -5,7 +5,7 @@ plugins {
   id 'java'
 }
 
-version 'alpha-0.7.12'
+version 'alpha-0.7.13'
 
 sourceSets.main.java.srcDirs = ["src"]
 
@@ -15,7 +15,7 @@ ext{
   //the build number that this mod is made for
   mindustryVersion = "v140"
   arcVersion = "v140.3"
-  uncVersion = "1.5.9"
+  uncVersion = "1.6.0"
   //version of SDK you will be using
   minSdkAPI = 30
 
@@ -69,10 +69,6 @@ dependencies{
 
   annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
   annotationProcessor "com.github.Anuken:jabel:0.7.0"
-}
-
-tasks.withType(JavaCompile) {
-  options.encoding = "UTF-8"
 }
 
 task jarAndroid{

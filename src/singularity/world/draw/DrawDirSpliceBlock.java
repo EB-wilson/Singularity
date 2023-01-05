@@ -19,7 +19,7 @@ import singularity.graphic.GraphicUtils;
 import universecore.world.DirEdges;
 
 public class DrawDirSpliceBlock<E> extends DrawBlock{
-  public TextureRegion[] region = new TextureRegion[16];
+  public TextureRegion[] regions = new TextureRegion[16];
   public Intf<E> spliceBits = e -> 0;
   public Boolf2<BuildPlan, BuildPlan> planSplicer = (plan, other) -> false;
 
@@ -44,8 +44,8 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
       }
     }
 
-    for(int i = 0; i < region.length; i++){
-      region[i] = getSpliceRegion(splicers, i);
+    for(int i = 0; i < regions.length; i++){
+      regions[i] = getSpliceRegion(splicers, i);
     }
 
     for(Pixmap pixmap: splicers){
@@ -53,7 +53,7 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
     }
   }
 
-  private TextureRegion getSpliceRegion(Pixmap[] splicers, int i){
+  protected TextureRegion getSpliceRegion(Pixmap[] splicers, int i){
     int move = 0;
 
     Pixmap map = new Pixmap(splicers[move].width, splicers[move].height);
@@ -75,7 +75,7 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
   @SuppressWarnings("unchecked")
   @Override
   public void draw(Building build){
-    Draw.rect(region[spliceBits.get((E) build)], build.x, build.y);
+    Draw.rect(regions[spliceBits.get((E) build)], build.x, build.y);
   }
 
   @Override
@@ -116,6 +116,6 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
       bits |= 0b0001 << i;
     }
 
-    Draw.rect(region[bits], plan.drawx(), plan.drawy());
+    Draw.rect(regions[bits], plan.drawx(), plan.drawy());
   }
 }

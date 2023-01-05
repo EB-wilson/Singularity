@@ -266,6 +266,8 @@ public class NuclearBlocks implements ContentList{
       itemCapacity = 35;
       liquidCapacity = 25;
       energyCapacity = 2048;
+
+      hasLiquids = true;
       
       ambientSoundVolume = 0.4f;
       
@@ -281,6 +283,7 @@ public class NuclearBlocks implements ContentList{
 
       draw = new DrawMulti(
           new DrawDefault(),
+          new DrawLiquidRegion(Liquids.cryofluid){{suffix = "_top";}},
           new DrawReactorHeat()
       );
     }};
@@ -297,6 +300,8 @@ public class NuclearBlocks implements ContentList{
       itemCapacity = 25;
       liquidCapacity = 20;
       energyCapacity = 1024;
+
+      hasLiquids = true;
       
       explosionDamageBase = 260;
       explosionRadius = 12;
@@ -316,6 +321,7 @@ public class NuclearBlocks implements ContentList{
 
       draw = new DrawMulti(
           new DrawDefault(),
+          new DrawLiquidRegion(Liquids.cryofluid){{suffix = "_top";}},
           new DrawReactorHeat()
       );
     }};
