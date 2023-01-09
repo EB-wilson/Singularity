@@ -1,6 +1,7 @@
 package singularity.world.unit;
 
 import arc.math.Mathf;
+import mindustry.ai.ControlPathfinder;
 import mindustry.ai.Pathfinder;
 import mindustry.ai.types.FlyingAI;
 import mindustry.ai.types.GroundAI;
@@ -10,17 +11,20 @@ import mindustry.gen.Unit;
 import mindustry.gen.UnitWaterMove;
 import mindustry.type.UnitType;
 import mindustry.world.Tile;
+import mindustry.world.meta.Env;
 
 import static mindustry.Vars.state;
 import static mindustry.Vars.tilesize;
 
 public class AirSeaAmphibiousUnit extends UnitType {
-  public float airReloadMulti = 0.7f;
-  public float airShootingSpeedMulti = 0.65f;
+  public float airReloadMulti = 0.75f;
+  public float airShootingSpeedMulti = 0.7f;
 
   public AirSeaAmphibiousUnit(String name) {
     super(name);
 
+    envEnabled |= Env.space;
+    pathCost = ControlPathfinder.costHover;
     canBoost = true;
 
     aiController = () -> new GroundAI() {

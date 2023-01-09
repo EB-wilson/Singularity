@@ -3,7 +3,6 @@ package singularity.ui.fragments.override;
 import arc.Core;
 import arc.Events;
 import arc.graphics.Color;
-import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.TextureRegion;
 import arc.graphics.gl.FrameBuffer;
 import arc.input.KeyCode;
@@ -28,6 +27,7 @@ import mindustry.game.EventType;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
+import mindustry.graphics.Shaders;
 import mindustry.graphics.g3d.PlanetParams;
 import mindustry.graphics.g3d.PlanetRenderer;
 import mindustry.ui.Fonts;
@@ -47,6 +47,8 @@ public class SglMenuFrag extends MenuFragment{
   private final Vec3 camRight = new Vec3(1, 0, 0);
   
   private final PlanetRenderer renderer = new SglPlanetRender();
+  FrameBuffer buff = new FrameBuffer();
+  private static TextureRegion region;
   
   WindowedMean dxMean = new WindowedMean(12), dyMean = new WindowedMean(12);
   float lastDx, lastDy, speed;
@@ -83,15 +85,17 @@ public class SglMenuFrag extends MenuFragment{
           .rotate(Tmp.v32, pos[4]);
 
       if(Sgl.config.staticMainMenuBackground){
-        FrameBuffer buff = new FrameBuffer();
-        buff.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-        buff.begin(Color.clear);
-        renderer.render(params);
-        Draw.flush();
-        buff.end();
-        TextureRegion region = new TextureRegion(buff.getTexture());
-
-        group.fill((x, y, w, h) -> Draw.rect(region, x - w/2, y - h/2, w, h));
+        Events.on(EventType.ResizeEvent.class, e -> region = null);
+        group.fill((x, y, w, h) -> {
+          if (region == null) {
+            buff.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+            buff.begin(Color.clear);
+            renderer.render(params);
+            buff.end();
+            region = new TextureRegion(buff.getTexture());
+          }
+          buff.blit(Shaders.screenspace);
+        });
       }
       else{
         group.fill((x, y, w, h) -> renderer.render(params));
@@ -226,6 +230,7 @@ public class SglMenuFrag extends MenuFragment{
 
       Runnable r = () -> {
         float scl = Math.min(Core.graphics.getHeight()/3.4f/ Scl.scl(270), 1);
+        scl = Math.min(scl, Math.min(Core.graphics.getWidth()/Scl.scl(940), 1));
         i.size(940*scl, 270*scl);
         t.invalidateHierarchy();
       };

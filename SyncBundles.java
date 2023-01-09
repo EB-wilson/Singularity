@@ -38,6 +38,8 @@ public class SyncBundles{
     ArrayList<Line> lines = new ArrayList<>();
     LinkedHashMap<String, Pair> map = new LinkedHashMap<>();
 
+    String mark;
+
     public Properties(){}
 
     public Properties(File file){
@@ -45,6 +47,7 @@ public class SyncBundles{
     }
 
     public Properties(Properties source, String mark){
+      this.mark = mark;
       for(Line line: source.lines){
         Line l;
         if(line instanceof Pair){
@@ -120,7 +123,7 @@ public class SyncBundles{
             if(strs.length != 2)
               continue;
             Pair pair = map.get(strs[0].trim());
-            if(pair != null){
+            if(pair != null && !strs[1].trim().startsWith(mark)){
               pair.value = strs[1].trim();
               if(strs[1].endsWith(String.valueOf(SEP))){
                 last = pair;

@@ -15,6 +15,7 @@ import arc.scene.event.InputEvent;
 import arc.scene.event.Touchable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.ImageButton;
+import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectSet;
 import arc.struct.Seq;
@@ -124,12 +125,10 @@ public class DistTargetConfigTable extends Table{
       public void draw(){
         validate();
 
-        Draw.scl(scaleX, scaleY);
-
         Draw.color(currDireBit == null? Pal.gray: Color.lightGray);
         Draw.alpha(0.5f + 0.5f*alpha);
         Lines.stroke(4.5f);
-        Lines.circle(x + deltaX + width/2f, y + deltaY + height/2f, 45);
+        Lines.circle(x + deltaX + this.width/2f, y + deltaY + this.height/2f,  Scl.scl(45));
     
         if(currDireBit != null){
           byte bit = 1;
@@ -139,11 +138,11 @@ public class DistTargetConfigTable extends Table{
 
             Draw.color(Pal.gray);
             Draw.alpha(alpha);
-            Fill.square(x + deltaX + width/2f + dx*72*alpha, y + deltaY + height/2f + dy*72*alpha, 24, 45);
+            Fill.square(x + deltaX + this.width/2f + Scl.scl(dx*72)*alpha, y + deltaY + this.height/2f + Scl.scl(dy*72)*alpha, Scl.scl(24), 45);
             if((currDireBit[0] & bit) != 0){
               Draw.color(Pal.accent);
               Draw.alpha(alpha);
-              Fill.square(x + deltaX + width/2f + dx*72*alpha, y + deltaY + height/2f + dy*72*alpha, 20, 45);
+              Fill.square(x + deltaX + this.width/2f + Scl.scl(dx*72)*alpha, y + deltaY + this.height/2f + Scl.scl(dy*72)*alpha,  Scl.scl(20), 45);
             }
 
             bit *= 2;

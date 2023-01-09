@@ -47,11 +47,11 @@ public class MainMenu extends BaseDialog {
       main.row();
       main.image().color(Pal.accent).growX().height(3).pad(0).padTop(4).padBottom(4);
       main.row();
-      main.add(new WarningBar()).growX().height(14).color(Color.lightGray).padBottom(30);
+      main.add(new WarningBar()).growX().height(14).color(Color.lightGray).padBottom(30).padLeft(-5).padRight(-5);
       main.row();
       main.add("S  I  N  G  U  L  A  R  I  T  Y").get().setFontScale(2);
       main.row();
-      main.add(new WarningBar()).growX().height(14).color(Color.lightGray).padTop(30);
+      main.add(new WarningBar()).growX().height(14).color(Color.lightGray).padTop(30).padLeft(-5).padRight(-5);
       main.row();
       main.image().color(Pal.accent).growX().height(3).pad(0).padTop(4);
       main.row();
@@ -84,11 +84,11 @@ public class MainMenu extends BaseDialog {
     image().color(Color.white).growX().height(2).pad(0).padTop(4);
     row();
     table(t -> {
-      t.add("Singularity v." + Sgl.modVersion).left().padLeft(3);
+      t.add("Singularity:" + Sgl.modVersion).left().padLeft(3);
       t.image().color(Color.white).growY().width(2).pad(0).margin(0).padLeft(4).colspan(4);
       t.add().growX();
       t.image().color(Color.white).width(2).growY().pad(0).margin(0).padRight(4).colspan(4);
-      t.add("powered by UniverseCore-coreVersion:" + Sgl.libVersion).right().padRight(3);
+      t.add("powered by UniverseCore:" + Sgl.libVersion).right().padRight(3);
     }).growX();
   }
   

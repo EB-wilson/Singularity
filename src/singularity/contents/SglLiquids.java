@@ -1,8 +1,10 @@
 package singularity.contents;
 
 import arc.graphics.Color;
+import mindustry.content.Fx;
 import mindustry.graphics.Pal;
 import mindustry.type.Liquid;
+import singularity.type.ReactLiquid;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class SglLiquids implements ContentList{
@@ -73,7 +75,7 @@ public class SglLiquids implements ContentList{
       boilPoint = 0.5f;
     }};
 
-    acid = new Liquid("acid", Color.valueOf("#EDF3A9").a(0.75f)){{
+    acid = new ReactLiquid("acid", Color.valueOf("#EDF3A9").a(0.75f)){{
       heatCapacity = 0.5f;
       temperature = 0.45f;
       flammability = 0;
@@ -81,9 +83,13 @@ public class SglLiquids implements ContentList{
       viscosity = 0.5f;
 
       boilPoint = 0.55f;
+
+      init = () -> {
+        effectWith(lye, Fx.vapor, 0.16f, Color.white);
+      };
     }};
 
-    lye = new Liquid("lye", Color.valueOf("#DBFAFF").a(0.75f)){{
+    lye = new ReactLiquid("lye", Color.valueOf("#DBFAFF").a(0.75f)){{
       heatCapacity = 0.5f;
       temperature = 0.45f;
       flammability = 0;

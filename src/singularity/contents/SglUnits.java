@@ -10,6 +10,7 @@ import arc.math.Mathf;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.content.Fx;
+import mindustry.entities.Damage;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.bullet.ContinuousLaserBulletType;
 import mindustry.entities.bullet.LaserBulletType;
@@ -74,13 +75,10 @@ public class SglUnits implements ContentList{
         hitSize = 75;
         targetFlags = BlockFlag.allLogic;
 
+        engineOffset = 50;
+        engineSize = 16;
+
         engines.addAll(
-            new UnitEngine(){{
-              x = 0;
-              y = -50f;
-              radius = 16;
-              rotation = -90;
-            }},
             new UnitEngine(){{
               x = 38f;
               y = -12;
@@ -128,17 +126,21 @@ public class SglUnits implements ContentList{
                     trailColor = SglDrawConst.matrixNet;
                     trailRotation = true;
                     trailChance = 1;
+                    hitSize = 8;
                     speed = 12;
                     lifetime = 40;
-                    damage = 680;
+                    damage = 520;
                     range = 480;
 
                     homingRange = 30;
                     homingPower = 0.15f;
 
+                    pierce = true;
+                    hittable = false;
+                    reflectable = false;
                     pierceArmor = true;
                     pierceBuilding = true;
-                    pierceCap = 5;
+                    absorbable = false;
 
                     trailEffect = new MultiEffect(
                         SglFx.lightConeTrail,
@@ -156,6 +158,12 @@ public class SglUnits implements ContentList{
                     for(int i : Mathf.signs){
                       Drawf.tri(b.x, b.y, 8f, 26f, b.rotation() + 156f*i);
                     }
+                  }
+
+                  @Override
+                  public void update(Bullet b) {
+                    super.update(b);
+                    Damage.damage(b.team, b.x, b.y, hitSize, damage*Time.delta);
                   }
                 };
             }},
@@ -286,7 +294,7 @@ public class SglUnits implements ContentList{
                 Weapon s = this;
                 bullet = new ContinuousLaserBulletType(){
                   {
-                    damage = 240;
+                    damage = 260;
                     lifetime = 180;
                     fadeTime = 30;
                     length = 720;
@@ -318,16 +326,9 @@ public class SglUnits implements ContentList{
                   }
 
                   @Override
-                  public void init(Bullet b) {
-                    super.init(b);
-                    b.fdata = b.owner instanceof Unit u? u.rotation: 0;
-                  }
-
-                  @Override
                   public void update(Bullet b) {
                     super.update(b);
                     if (b.owner instanceof Unit u){
-                      u.rotation = b.fdata;
                       u.vel.lerp(0, 0, 0.1f);
 
                       float bulletX = u.x + Angles.trnsx(u.rotation - 90, x + shootX, y + shootY),
@@ -369,9 +370,9 @@ public class SglUnits implements ContentList{
                 alternativeBullet = new BulletType(){
                   {
                     pierceArmor = true;
-                    damage = 320;
-                    splashDamageRadius = 40;
-                    splashDamage = 120;
+                    damage = 360;
+                    splashDamageRadius = 60;
+                    splashDamage = 180;
                     speed = 10;
                     lifetime = 60;
                     homingRange = 450;
@@ -388,7 +389,7 @@ public class SglUnits implements ContentList{
                     fragBullet = new BulletType(){
                       {
                         pierceCap = 3;
-                        damage = 90;
+                        damage = 120;
                         speed = 18;
                         lifetime = 10;
                         hitEffect = Fx.colorSpark;

@@ -8,6 +8,7 @@ import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.scene.Element;
+import arc.scene.ui.layout.Scl;
 import arc.struct.ObjectMap;
 import arc.util.Eachable;
 import arc.util.Tmp;
@@ -105,16 +106,17 @@ public class NetPluginComp extends DistNetBlock{
         public void draw(){
           validate();
 
-          Lines.stroke(6, Color.lightGray);
+          Lines.stroke(Scl.scl(6), Color.lightGray);
           float rx = x + width/2, ry = y + height/2;
+
           Lines.quad(x, y, x + width, y, x + width, y + height, x, y + height);
-          Tmp.v1.set(width/2 - 22, 0);
+          Tmp.v1.set(width/2 - Scl.scl(22), 0);
           Draw.color();
           for(int i = 0; i < 4; i++){
             if((connectReq & 0b0001 << i) == 0) continue;
 
             Tmp.v1.setAngle(i*90);
-            Draw.rect(SglDrawConst.matrixArrow, rx + Tmp.v1.x, ry + Tmp.v1.y, 40, 40, (i - 1)*90);
+            Draw.rect(SglDrawConst.matrixArrow, rx + Tmp.v1.x, ry + Tmp.v1.y, Scl.scl(40), Scl.scl(40), (i - 1)*90);
           }
         }
       }).size(90);

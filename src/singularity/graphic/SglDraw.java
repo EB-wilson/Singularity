@@ -19,8 +19,10 @@ import arc.util.Nullable;
 import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.game.EventType;
+import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.world.Tile;
+import singularity.util.func.Floatc3;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,10 +31,13 @@ public class SglDraw{
   private static int blooming = -1;
   private static final Rect rect = new Rect();
 
-  private static final Vec2 v1 = new Vec2(), v2 = new Vec2(), v3 = new Vec2(), v4 = new Vec2(), v5 = new Vec2(),
+  static final Vec2 v1 = new Vec2(), v2 = new Vec2(), v3 = new Vec2(), v4 = new Vec2(), v5 = new Vec2(),
       v6 = new Vec2(), v7 = new Vec2(), v8 = new Vec2(), v9 = new Vec2(), v10 = new Vec2();
-  private static final Vec3 v31 = new Vec3(), v32 = new Vec3(), v33 = new Vec3(), v34 = new Vec3(), v35 = new Vec3(),
+  static final Vec3 v31 = new Vec3(), v32 = new Vec3(), v33 = new Vec3(), v34 = new Vec3(), v35 = new Vec3(),
       v36 = new Vec3(), v37 = new Vec3(), v38 = new Vec3(), v39 = new Vec3(), v310 = new Vec3();
+
+  static final Color c1 = new Color(), c2 = new Color(), c3 = new Color(), c4 = new Color(), c5 = new Color(),
+      c6 = new Color(), c7 = new Color(), c8 = new Color(), c9 = new Color(), c10 = new Color();
 
   private static final ObjectMap<String, DrawTask> drawTasks = new ObjectMap<>();
   private static final ObjectMap<String, FrameBuffer> taskBuffer = new ObjectMap<>();
@@ -136,6 +141,26 @@ public class SglDraw{
       task.init = true;
     }
     task.addTask(null, e -> draw.run());
+  }
+
+  public static void drawDistortion(String taskName, Distortion distortion, DrawAcceptor<Distortion> draw){
+    drawTask(taskName, distortion, e -> {
+      e.resize();
+      e.capture();
+    }, Distortion::render, draw);
+  }
+
+  public static void drawTransform(float originX, float originY, Vec2 vec, float rotate, Floatc3 draw){
+    drawTransform(originX, originY, 0, vec.x, vec.y, rotate, draw);
+  }
+
+  public static void drawTransform(float originX, float originY, float dx, float dy, float rotate, Floatc3 draw){
+    drawTransform(originX, originY, 0, dx, dy, rotate, draw);
+  }
+
+  public static void drawTransform(float originX, float originY, float originAngle, float dx, float dy, float rotate, Floatc3 draw){
+    v1.set(dx, dy).rotate(rotate);
+    draw.get(originX + v1.x, originY + v1.y, originAngle + rotate);
   }
 
   public static boolean clipDrawable(float x, float y, float clipSize){
@@ -298,6 +323,15 @@ public class SglDraw{
         x - v.x, y - v.y,
         x - v31.x, y - v31.y
     );
+  }
+
+  public static void drawHaloPart(float x, float y, float width, float len, float rotate){
+    drawHaloPart(x, y, width*0.2f, len*0.8f, width, len*0.2f, rotate);
+  }
+
+  public static void drawHaloPart(float x, float y, float interWidth, float interLen, float width, float len, float rotate){
+    Drawf.tri(x, y, interWidth, interLen, rotate + 180);
+    Drawf.tri(x, y, width, len, rotate);
   }
 
   public static void gradientTri(float x, float y, float length, float width, float rotation){
