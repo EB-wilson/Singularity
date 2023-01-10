@@ -2,11 +2,14 @@ package singularity.contents;
 
 import arc.Core;
 import arc.audio.Sound;
+import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
-import arc.math.Mathf;
+import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.Lines;
 import arc.scene.ui.layout.Table;
 import arc.util.Strings;
 import arc.util.Time;
+import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.gen.Building;
 import mindustry.gen.Sounds;
@@ -17,6 +20,7 @@ import mindustry.type.ItemStack;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
+import singularity.graphic.Distortion;
 import singularity.graphic.SglDraw;
 import singularity.type.SglCategory;
 import singularity.ui.SglStyles;
@@ -26,7 +30,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 public class DebugBlocks implements ContentList{
-  public static Block drawTest, volTest;
+  public static Block drawTest, voidDrawTest, volTest;
 
   @Override
   public void load(){
@@ -34,19 +38,41 @@ public class DebugBlocks implements ContentList{
       requirements(SglCategory.debugging, ItemStack.with());
 
       draw = new DrawBlock(){
-        @Override
-        public void draw(Building build){
-          super.draw(build);
 
-          for(int i = 0; i < 12; i++){
-            SglDraw.drawRectAsCylindrical(
-                build.x, build.y + i*4 + Mathf.randomSeed(build.id + i, -6, 6),
-                Mathf.randomSeed(build.id + 1 + i, 18), Mathf.randomSeed(build.id + 2 + i, 8),
-                10 + i + Mathf.randomSeed(build.id + 3 + i, -5, 5),
-                Time.time + Mathf.randomSeed(build.id + 4 + i, 360),
-                0, Pal.reactorPurple, Pal.reactorPurple2, Draw.z(), Layer.effect
-            );
-          }
+        @Override
+        public void draw(Building e) {
+          Draw.color(Pal.accent);
+          SglDraw.oval(e.x, e.y, 16, 24, Time.time, 5, Tmp.c1.set(Pal.accent).a(0));
+        }
+      };
+    }};
+
+    voidDrawTest = new TestBlock("void_draw_test"){{
+      requirements(SglCategory.debugging, ItemStack.with());
+
+      draw = new DrawBlock(){
+        static final Distortion dist = new Distortion(Layer.min, Layer.flyingUnit - 0.02f);
+
+        @Override
+        public void draw(Building e) {
+          dist.setStrength(64*Vars.renderer.getScale());
+
+          Draw.z(Layer.flyingUnit);
+          SglDraw.drawDistortion("testDis", dist, d -> {
+            Distortion.drawVoidDistortion(e.x, e.y, 16, 30);
+          });
+
+          Tmp.v1.set(5, 0).setAngle(Time.time);
+
+          Draw.z(Layer.flyingUnit + 0.5f);
+          Draw.color(Color.black);
+          Fill.circle(e.x, e.y, 14);
+
+          SglDraw.startBloom(Layer.flyingUnit + 1);
+          Lines.stroke(4, Pal.orangeSpark);
+          Lines.circle(e.x, e.y, 16);
+
+          SglDraw.endBloom();
         }
       };
     }};

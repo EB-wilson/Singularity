@@ -537,6 +537,33 @@ public class SglDraw{
     );
   }
 
+  public static void oval(float x, float y, float horLen, float vertLen, float rotation, float offset, Color gradientColor){
+    int sides = Lines.circleVertices(Math.max(horLen, vertLen));
+    float step = 360f/sides;
+
+    for (int i = 0; i < sides; i++) {
+      float dx = horLen*Mathf.sinDeg(i*step);
+      float dy = vertLen*Mathf.cosDeg(i*step);
+      float dx1 = horLen*Mathf.sinDeg((i + 1)*step);
+      float dy1 = vertLen*Mathf.cosDeg((i + 1)*step);
+
+      v1.set(dx, dy).setAngle(rotation);
+      v2.set(dx1, dy1).setAngle(rotation);
+      v3.set(v1).setLength(v1.len() + offset);
+      v4.set(v2).setLength(v2.len() + offset);
+
+      float c1 = Draw.getColor().toFloatBits();
+      float c2 = gradientColor.toFloatBits();
+
+      Fill.quad(
+          x + v1.x, y + v1.y, c1,
+          x + v2.x, y + v2.y, c1,
+          x + v4.x, y + v4.y, c2,
+          x + v3.x, y + v3.y, c2
+      );
+    }
+  }
+
   public static void drawRectAsCylindrical(float x, float y, float rowWidth, float rowHeight,
                                            float cycRadius, float cycRotation, float rotation){
     drawRectAsCylindrical(x, y, rowWidth, rowHeight, cycRadius, cycRotation, rotation, Draw.getColor());

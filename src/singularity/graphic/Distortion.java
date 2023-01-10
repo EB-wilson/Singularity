@@ -103,6 +103,7 @@ public class Distortion implements Disposable {
   }
 
   public void setStrength(float strength){
+    distortion.bind();
     distortion.setUniformf("strength", strength);
   }
 
