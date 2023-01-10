@@ -25,5 +25,12 @@
   <component name="FrameworkDetectionExcludesConfiguration">
     <file type="web" url="file://$PROJECT_DIR$" />
   </component>
+  <component name="LibGDXGdxJsonFiles">
+    <file url="file://$PROJECT_DIR$/mod.hjson" />
+  </component>
+  <component name="LibGDXNonSkins">
+    <file url="file://$PROJECT_DIR$/src/singularity/diagram.uml" />
+    <file url="file://$PROJECT_DIR$/src/singularity/world/blocks/SglBlock.java" />
+  </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="17" project-jdk-type="JavaSDK" />
 </project>

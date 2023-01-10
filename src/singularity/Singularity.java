@@ -57,7 +57,7 @@ public class Singularity extends Mod{
     //加载模组配置数据
     Sgl.config.load();
     Sgl.classes = UncCore.classes.newInstance(Singularity.class);
-    
+
     Log.info(
        """
        [Singularity] Singularity mod is loading!
@@ -78,7 +78,7 @@ public class Singularity extends Mod{
         Init.reloadContent();
       });
     }
-    
+
     Events.on(ResetEvent.class, e -> {
       Sgl.updateTiles.clear();
     });
