@@ -4,7 +4,7 @@ import arc.graphics.Color;
 import mindustry.graphics.g3d.HexMesh;
 import mindustry.graphics.g3d.SunMesh;
 import mindustry.type.Planet;
-import singularity.world.gen.ForyustPlanetGenerator;
+import singularity.world.gen.ForyustGenerator;
 
 public class SglPlanets implements ContentList{
   /**曦泽*/
@@ -31,7 +31,7 @@ public class SglPlanets implements ContentList{
     }};
 
     foryust = new Planet("foryust", seazer, 3.2f){{
-      generator = new ForyustPlanetGenerator();
+      generator = new ForyustGenerator();
       meshLoader = () -> new HexMesh(this, 4);
 
     }};

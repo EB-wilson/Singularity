@@ -7,6 +7,7 @@ import mindustry.world.blocks.defense.Wall;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.draw.DrawMulti;
 import mindustry.world.draw.DrawRegion;
+import singularity.world.blocks.defence.GameOfLife;
 import singularity.world.blocks.defence.PhasedRadar;
 import singularity.world.blocks.defence.SglWall;
 import singularity.world.draw.DrawDirSpliceBlock;
@@ -21,7 +22,9 @@ public class DefenceBlocks implements ContentList{
   /**简并态中子聚合物墙*/
   neutron_polymer_wall,
   /**大型简并态中子聚合物墙*/
-  neutron_polymer_wall_large;
+  neutron_polymer_wall_large,
+  /**生命游戏*/
+  game_of_life;
   
   @Override
   public void load(){
@@ -63,14 +66,27 @@ public class DefenceBlocks implements ContentList{
     neutron_polymer_wall = new SglWall("neutron_polymer_wall"){{
       requirements(Category.defense, ItemStack.with(SglItems.degenerate_neutron_polymer, 8, SglItems.strengthening_alloy, 4));
       health = 2400;
-      damageFilter = 62;
+      damageFilter = 72;
+      absorbLasers = true;
     }};
     
     neutron_polymer_wall_large = new SglWall("neutron_polymer_wall_large"){{
       requirements(Category.defense, ItemStack.with(SglItems.degenerate_neutron_polymer, 32, SglItems.strengthening_alloy, 16, SglItems.aerogel, 8));
       size = 2;
       health = 2400*4;
-      damageFilter = 85;
+      damageFilter = 95;
+      absorbLasers = true;
+    }};
+
+    game_of_life = new GameOfLife("game_of_life"){{
+      requirements(Category.defense, ItemStack.with());
+      size = 5;
+      health = 5200;
+
+      newConsume();
+      consume.power(24);
+
+      damageWhenDeath(180);
     }};
   }
 }

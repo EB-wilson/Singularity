@@ -38,24 +38,24 @@ public class DebugBlocks implements ContentList{
       requirements(SglCategory.debugging, ItemStack.with());
 
       draw = new DrawBlock(){
-
         @Override
         public void draw(Building e) {
           Draw.color(Pal.accent);
-          SglDraw.oval(e.x, e.y, 16, 24, Time.time, 5, Tmp.c1.set(Pal.accent).a(0));
+          SglDraw.oval(e.x, e.y, 24, 32, Time.time, 8, Tmp.c1.set(Pal.accent).a(0));
         }
       };
     }};
 
     voidDrawTest = new TestBlock("void_draw_test"){{
       requirements(SglCategory.debugging, ItemStack.with());
+      hasShadow = false;
 
       draw = new DrawBlock(){
         static final Distortion dist = new Distortion(Layer.min, Layer.flyingUnit - 0.02f);
 
         @Override
         public void draw(Building e) {
-          dist.setStrength(64*Vars.renderer.getScale());
+          dist.setStrength(-64*Vars.renderer.getScale());
 
           Draw.z(Layer.flyingUnit);
           SglDraw.drawDistortion("testDis", dist, d -> {
@@ -69,8 +69,10 @@ public class DebugBlocks implements ContentList{
           Fill.circle(e.x, e.y, 14);
 
           SglDraw.startBloom(Layer.flyingUnit + 1);
-          Lines.stroke(4, Pal.orangeSpark);
+          Lines.stroke(4, Color.orange);
           Lines.circle(e.x, e.y, 16);
+
+          SglDraw.drawDiamond(e.x, e.y, 180, 18, 0);
 
           SglDraw.endBloom();
         }

@@ -13,6 +13,7 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Bullet;
+import mindustry.gen.Groups;
 import mindustry.world.Tile;
 import mindustry.world.blocks.defense.Wall;
 import universecore.UncCore;
@@ -24,6 +25,8 @@ import universecore.util.aspect.triggers.TriggerEntry;
 import universecore.util.path.BFSPathFinder;
 import universecore.util.path.IPath;
 import universecore.util.path.PathFindFunc;
+
+import static mindustry.Vars.tilesize;
 
 @Annotations.ImplEntries
 public class SglWall extends Wall{
@@ -144,6 +147,16 @@ public class SglWall extends Wall{
           );
         }
       }
+
+      float rad = size*tilesize/1.44f;
+      for(Bullet bullet: Groups.bullet.intersect(x, y, rad, rad)){
+        if(!bullet.type.collides && bullet.type.absorbable && bullet.damage <= damageFilter){
+          heal(bullet.damage*bullet.type.buildingDamageMultiplier*healMultiplier);
+          Fx.healBlockFull.at(x, y, 0, healColor, block);
+
+          bullet.remove();
+        }
+      }
     }
 
     private boolean gravitable(BulletGravitySystem e){
@@ -152,10 +165,12 @@ public class SglWall extends Wall{
 
     @Override
     public boolean collision(Bullet bullet){
-      if(bullet.type.absorbable && bullet.type.reflectable && bullet.damage < damageFilter){
+      if(bullet.type.absorbable && bullet.damage < damageFilter){
   
         heal(bullet.damage*bullet.type.buildingDamageMultiplier*healMultiplier);
         Fx.healBlockFull.at(x, y, 0, healColor, block);
+
+        bullet.remove();
         
         return true;
       }

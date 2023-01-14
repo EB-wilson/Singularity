@@ -16,6 +16,7 @@ import mindustry.game.EventType;
 import mindustry.gen.Building;
 import mindustry.gen.Sounds;
 import mindustry.graphics.Pal;
+import mindustry.logic.LAccess;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.LiquidStack;
@@ -187,6 +188,15 @@ public class NuclearReactor extends NormalCrafter{
               y + Mathf.range(size * tilesize / 2f));
         }
       }
+    }
+
+    @Override
+    public double sense(LAccess sensor){
+      if(sensor == LAccess.heat){
+        return heat/maxHeat;
+      }
+
+      return super.sense(sensor);
     }
 
     public void onOverTemperature(){

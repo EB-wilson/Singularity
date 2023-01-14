@@ -42,7 +42,7 @@ public class Distortion implements Disposable {
     distortion.bind();
     distortion.setUniformi("u_texture0", 0);
     distortion.setUniformi("u_texture1", 1);
-    distortion.setUniformf("strength", 64);
+    distortion.setUniformf("strength", -64);
 
     buffer = new FrameBuffer();
     samplerBuffer = new FrameBuffer();
@@ -55,6 +55,7 @@ public class Distortion implements Disposable {
 
   public void startSampling(){
     if (!sampleComplete) return;
+    samplerBuffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
     samplerBuffer.begin(Color.clear);
 
     sampleComplete = false;
@@ -99,6 +100,9 @@ public class Distortion implements Disposable {
     buffer.end();
 
     samplerBuffer.getTexture().bind(1);
+    distortion.bind();
+    distortion.setUniformf("width", samplerBuffer.getWidth());
+    distortion.setUniformf("height", samplerBuffer.getHeight());
     buffer.blit(distortion);
   }
 

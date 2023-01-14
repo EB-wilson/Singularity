@@ -374,7 +374,6 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           configIOPoint = false;
           Sgl.ioPoint.resetCurrPlacement();
           control.input.block = null;
-          return false;
         }
         else{
           configIOPoint = true;

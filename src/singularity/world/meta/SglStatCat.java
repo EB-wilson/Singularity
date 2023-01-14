@@ -19,8 +19,11 @@ public class SglStatCat{
     Seq<StatCat> all = StatCat.all;
     StatCat res = new StatCat(name);
 
-    FieldHandler.setValueDefault(res, "id", index);
     all.insert(index, res);
+
+    for(int i = 0; i < all.size; i++){
+      FieldHandler.setValueDefault(all.get(i), "id", i);
+    }
 
     return res;
   }

@@ -102,6 +102,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
   public SglBlock(String name) {
     super(name);
+    update = true;
     consumesPower = false;
     appliedConfig();
     config(byte[].class, (SglBuilding e, byte[] code) -> {

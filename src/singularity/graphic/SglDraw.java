@@ -541,19 +541,19 @@ public class SglDraw{
     int sides = Lines.circleVertices(Math.max(horLen, vertLen));
     float step = 360f/sides;
 
+    float c1 = Draw.getColor().toFloatBits();
+    float c2 = gradientColor.toFloatBits();
+
     for (int i = 0; i < sides; i++) {
-      float dx = horLen*Mathf.sinDeg(i*step);
-      float dy = vertLen*Mathf.cosDeg(i*step);
-      float dx1 = horLen*Mathf.sinDeg((i + 1)*step);
-      float dy1 = vertLen*Mathf.cosDeg((i + 1)*step);
+      float dx = horLen*Mathf.cosDeg(i*step);
+      float dy = vertLen*Mathf.sinDeg(i*step);
+      float dx1 = horLen*Mathf.cosDeg((i + 1)*step);
+      float dy1 = vertLen*Mathf.sinDeg((i + 1)*step);
 
       v1.set(dx, dy).setAngle(rotation);
       v2.set(dx1, dy1).setAngle(rotation);
       v3.set(v1).setLength(v1.len() + offset);
       v4.set(v2).setLength(v2.len() + offset);
-
-      float c1 = Draw.getColor().toFloatBits();
-      float c2 = gradientColor.toFloatBits();
 
       Fill.quad(
           x + v1.x, y + v1.y, c1,

@@ -5,7 +5,7 @@ import arc.math.geom.Vec3;
 import mindustry.maps.generators.PlanetGenerator;
 import mindustry.world.Block;
 
-public class ForyustPlanetGenerator extends PlanetGenerator{
+public class ForyustGenerator extends PlanetGenerator{
   public float pole, tropic;
 
 

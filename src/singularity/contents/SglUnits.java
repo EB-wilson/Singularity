@@ -119,6 +119,8 @@ public class SglUnits implements ContentList{
                 reload = 60;
                 shadow = 45;
 
+                layerOffset = 1;
+
                 bullet = new BulletType(){
                   {
                     trailLength = 36;
@@ -177,6 +179,7 @@ public class SglUnits implements ContentList{
               rotateSpeed = 6;
               recoil = 4;
               recoilTime = 45;
+              cooldownTime = 60;
               reload = 30;
               shadow = 25;
 
@@ -351,19 +354,48 @@ public class SglUnits implements ContentList{
 
                   @Override
                   public void draw(Bullet b) {
-                    super.draw(b);
-                    Draw.color(SglDrawConst.matrixNet);
+                    float realLength = Damage.findLaserLength(b, length);
                     float fout = Mathf.clamp(b.time > b.lifetime - fadeTime ? 1f - (b.time - (lifetime - fadeTime)) / fadeTime : 1f);
+                    float baseLen = realLength * fout;
+                    float rot = b.rotation();
+
+                    for(int i = 0; i < colors.length; i++){
+                      Draw.color(Tmp.c1.set(colors[i]).mul(1f + Mathf.absin(Time.time, 1f, 0.1f)));
+
+                      float colorFin = i / (float)(colors.length - 1);
+                      float baseStroke = Mathf.lerp(strokeFrom, strokeTo, colorFin);
+                      float stroke = (width + Mathf.absin(Time.time, oscScl, oscMag)) * fout * baseStroke;
+                      float ellipseLenScl = Mathf.lerp(1 - i / (float)(colors.length), 1f, pointyScaling);
+
+                      Lines.stroke(stroke);
+                      Lines.lineAngle(b.x, b.y, rot, baseLen - frontLength, false);
+
+                      //back ellipse
+                      Drawf.flameFront(b.x, b.y, divisions, rot + 180f, backLength, stroke / 2f);
+
+                      //front ellipse
+                      Tmp.v1.trnsExact(rot, baseLen - frontLength);
+                      Drawf.flameFront(b.x + Tmp.v1.x, b.y + Tmp.v1.y, divisions, rot, frontLength * ellipseLenScl, stroke / 2f);
+                    }
+
+                    Tmp.v1.trns(b.rotation(), baseLen * 1.1f);
+
+                    Drawf.light(b.x, b.y, b.x + Tmp.v1.x, b.y + Tmp.v1.y, lightStroke, lightColor, 0.7f);
+
+                    Draw.color(SglDrawConst.matrixNet);
 
                     float step = 1/45f;
                     Tmp.v1.set(length, 0).setAngle(b.rotation());
                     float dx = Tmp.v1.x;
                     float dy = Tmp.v1.y;
                     for (int i = 0; i < 45; i++) {
+                      if(i*step*length > realLength) break;
+
                       float lerp = Mathf.clamp(b.time/(fadeTime*step*i))*Mathf.sin(Time.time/2 - i*step*Mathf.pi*6);
                       Draw.alpha(0.4f + 0.6f*lerp);
                       SglDraw.drawDiamond(b.x + dx*step*i, b.y + dy*step*i, 8*fout, 16 + 20*lerp + 80*(1 - fout), b.rotation());
                     }
+                    Draw.reset();
                   }
                 };
 

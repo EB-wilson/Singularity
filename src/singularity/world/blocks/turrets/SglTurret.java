@@ -23,6 +23,7 @@ import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.content.StatusEffects;
 import mindustry.content.UnitTypes;
+import mindustry.core.World;
 import mindustry.entities.*;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.pattern.ShootPattern;
@@ -30,6 +31,8 @@ import mindustry.game.Team;
 import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
+import mindustry.logic.LAccess;
+import mindustry.logic.Ranged;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.ui.LiquidDisplay;
@@ -49,6 +52,7 @@ import universecore.world.meta.UncStat;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static mindustry.Vars.tilesize;
+import static mindustry.world.blocks.defense.turrets.Turret.logicControlCooldown;
 
 @Annotations.ImplEntries
 public class SglTurret extends SglBlock{
@@ -73,6 +77,9 @@ public class SglTurret extends SglBlock{
   public Boolf<Building> buildingFilter = b -> !b.block.underBullets;
   /**单位索敌排序准则，默认为最近目标*/
   public Units.Sortf unitSort = UnitSorts.closest;
+
+  /**能否由玩家控制*/
+  public boolean playerControllable = true;
 
   /**索敌时间间隔，以刻为单位*/
   public float targetInterval = 20;
@@ -420,7 +427,7 @@ public class SglTurret extends SglBlock{
   }
 
   @Annotations.ImplEntries
-  public class SglTurretBuild extends SglBuilding implements ControlBlock{
+  public class SglTurretBuild extends SglBuilding implements ControlBlock, Ranged{
     public Vec2 recoilOffset = new Vec2();
     public float charge;
     public float reloadCounter;
@@ -436,9 +443,11 @@ public class SglTurret extends SglBlock{
     public float heat;
 
     public boolean wasShooting;
+    public boolean logicShooting;
 
     int totalShots;
     int queuedBullets;
+    float logicControlTime;
 
     BaseConsumers currCoolant;
 
@@ -471,6 +480,10 @@ public class SglTurret extends SglBlock{
       currentAmmo = ammoTypes.get(consumer.current).bulletType;
     }
 
+    public boolean logicControlled(){
+      return logicControlTime > 0;
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public void updateTile(){
@@ -491,6 +504,10 @@ public class SglTurret extends SglBlock{
       if(!isControlled()){
         unit.aimX(targetPos.x);
         unit.aimY(targetPos.y);
+      }
+
+      if(logicControlTime > 0){
+        logicControlTime -= Time.delta;
       }
 
       boolean tarValid = validateTarget();
@@ -554,7 +571,7 @@ public class SglTurret extends SglBlock{
     }
 
     protected boolean validateTarget(){
-      return !Units.invalidateTarget(target, canHeal() ? Team.derelict : team, x, y) || isControlled();
+      return !Units.invalidateTarget(target, canHeal() ? Team.derelict : team, x, y) || isControlled() || logicControlled();
     }
 
     @Override
@@ -617,15 +634,63 @@ public class SglTurret extends SglBlock{
       heat = 1f;
     }
 
-    protected void handleBullet(Bullet bullet, float offsetX, float offsetY, float angleOffset){
+    @Override
+    public boolean canControl(){
+      return playerControllable;
     }
+
+    @Override
+    public void control(LAccess type, double p1, double p2, double p3, double p4){
+      if(type == LAccess.shoot && !unit.isPlayer()){
+        targetPos.set(World.unconv((float)p1), World.unconv((float)p2));
+        logicControlTime = logicControlCooldown;
+        logicShooting = !Mathf.zero(p3);
+      }
+
+      super.control(type, p1, p2, p3, p4);
+    }
+
+    @Override
+    public void control(LAccess type, Object p1, double p2, double p3, double p4){
+      if(type == LAccess.shootp && (unit == null || !unit.isPlayer())){
+        logicControlTime = logicControlCooldown;
+        logicShooting = !Mathf.zero(p2);
+
+        if(p1 instanceof Posc pos){
+          targetPosition(pos);
+        }
+      }
+
+      super.control(type, p1, p2, p3, p4);
+    }
+
+    @Override
+    public double sense(LAccess sensor){
+      return switch(sensor){
+        case ammo -> items.total();
+        case ammoCapacity -> itemCapacity;
+        case rotation -> rotation;
+        case shootX -> World.conv(targetPos.x);
+        case shootY -> World.conv(targetPos.y);
+        case shooting -> wasShooting() ? 1 : 0;
+        case progress -> progress();
+        default -> super.sense(sensor);
+      };
+    }
+
+    @Override
+    public float progress(){
+      return consumer.current == null? 0: Mathf.clamp(reloadCounter/consumer.current.craftTime);
+    }
+
+    protected void handleBullet(Bullet bullet, float offsetX, float offsetY, float angleOffset){}
 
     public boolean charging(){
       return queuedBullets > 0 && shoot.firstShotDelay > 0;
     }
 
     public boolean wasShooting(){
-      return isControlled()? unit.isShooting(): target != null;
+      return isControlled()? unit.isShooting(): logicControlled()? logicShooting: target != null;
     }
 
     public void updateTraget(){
@@ -659,6 +724,7 @@ public class SglTurret extends SglBlock{
       }
     }
 
+    @Override
     public float range(){
       if(currentAmmo != null){
         return range + currentAmmo.rangeChange;

@@ -22,6 +22,7 @@ import mindustry.game.Team;
 import mindustry.gen.Sounds;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
+import mindustry.logic.LAccess;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.ui.Bar;
@@ -344,6 +345,15 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
         table.add(prescripts);
         table.row();
       }
+    }
+
+    @Override
+    public double sense(LAccess sensor){
+      if(sensor == LAccess.progress){
+        progress();
+      }
+
+      return super.sense(sensor);
     }
 
     @Override
