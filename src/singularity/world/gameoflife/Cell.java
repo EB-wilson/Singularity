@@ -18,7 +18,6 @@ public class Cell{
   }
 
   public void kill(){
-    years = -1;
     isLife = false;
   }
 

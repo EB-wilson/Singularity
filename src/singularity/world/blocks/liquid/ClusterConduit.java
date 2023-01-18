@@ -131,7 +131,7 @@ public class ClusterConduit extends MultLiquidBlock{
     return new TextureRegion[]{Core.atlas.find("conduit-bottom"), region};
   }
   
-  public class ClusterConduitBuild extends MultLiquidBlock.MultLiquidBuild{
+  public class ClusterConduitBuild extends MultLiquidBuild{
     public boolean capped, isCorner;
   
     @Override

@@ -24,6 +24,7 @@ public class BidirectionalValve extends ClusterConduit{
     config(Integer.class, (ThrottleValveBuild e, Integer c) -> e.reverses[c] = !e.reverses[c]);
     config(IntSeq.class, (ThrottleValveBuild e, IntSeq c) -> {
       e.liquidsBuffer = new ClusterLiquidModule[c.get(0)];
+      e.reverses = new boolean[c.get(0)];
       for (int i = 0; i < e.liquidsBuffer.length; i++) {
         e.liquidsBuffer[i] = new ClusterLiquidModule();
         e.reverses[i] = c.get(i + 1) == 1;

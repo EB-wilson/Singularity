@@ -40,7 +40,13 @@ public class SglStat{
       exDamageMultiplier = create("exDamageMultiplier", StatCat.function),
       exPierce = create("exPierce", StatCat.function),
       maxCoatingBuffer = create("maxcoatingbuffer", StatCat.function),
+      flushTime = create("flushtime", StatCat.function),
+      maxCellYears = create("maxcellyears", StatCat.function),
+      gridSize = create("gridsize", StatCat.function),
+      launchTime = create("launchtime", StatCat.function),
+      launchConsume = create("launchconsume", 53, StatCat.function),
 
+      multiple = create("multiple", StatCat.crafting),
       autoSelect = create("autoSelect", 46, StatCat.crafting),
       controllable = create("controllable", 47, StatCat.crafting),
       special = create("special", 50, StatCat.crafting),

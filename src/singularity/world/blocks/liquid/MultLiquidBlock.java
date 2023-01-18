@@ -60,6 +60,19 @@ public class MultLiquidBlock extends LiquidBlock{
     public ClusterLiquidModule cacheLiquids;
     
     protected int current;
+
+    static private String[] groupName = new String[0];
+
+    public static String groupName(int i){
+      if(groupName.length <= i){
+        groupName = Arrays.copyOf(groupName, i + 1);
+        for(int n = 0; n < groupName.length; n++){
+          if(groupName[n] == null) groupName[n] = "liquids#" + n;
+        }
+      }
+
+      return groupName[i];
+    }
   
     public LiquidModule getModule(Liquid liquid){
       for(LiquidModule liquids: liquidsBuffer){

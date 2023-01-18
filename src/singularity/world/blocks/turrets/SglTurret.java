@@ -21,7 +21,6 @@ import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.content.Fx;
-import mindustry.content.StatusEffects;
 import mindustry.content.UnitTypes;
 import mindustry.core.World;
 import mindustry.entities.*;
@@ -39,6 +38,7 @@ import mindustry.ui.LiquidDisplay;
 import mindustry.world.Block;
 import mindustry.world.blocks.ControlBlock;
 import mindustry.world.meta.*;
+import singularity.ui.StatUtils;
 import singularity.world.blocks.SglBlock;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.DrawSglTurret;
@@ -48,8 +48,6 @@ import universecore.ui.table.RecipeTable;
 import universecore.util.UncLiquidStack;
 import universecore.world.consumers.*;
 import universecore.world.meta.UncStat;
-
-import java.util.concurrent.atomic.AtomicReference;
 
 import static mindustry.Vars.tilesize;
 import static mindustry.world.blocks.defense.turrets.Turret.logicControlCooldown;
@@ -270,76 +268,6 @@ public class SglTurret extends SglBlock{
 
   @Override
   public void setConsumeStats(Stats stats){
-    AtomicReference<Cons2<Table, BulletType>> buildRef = new AtomicReference<>();
-    buildRef.set((ta, bullet) -> {
-      ta.left().defaults().padRight(3).left();
-
-      if(bullet.damage > 0 && (bullet.collides || bullet.splashDamage <= 0)){
-        if(bullet.continuousDamage() > 0){
-          ta.add(Core.bundle.format("bullet.damage", bullet.continuousDamage()) + StatUnit.perSecond.localized());
-        }else{
-          ta.add(Core.bundle.format("bullet.damage", bullet.damage));
-        }
-      }
-
-      if(bullet.buildingDamageMultiplier != 1){
-        sep(ta, Core.bundle.format("bullet.buildingdamage", (int) (bullet.buildingDamageMultiplier*100)));
-      }
-
-      if(bullet.rangeChange != 0){
-        sep(ta, Core.bundle.format("bullet.range", (bullet.rangeChange > 0? "+": "-") + Strings.autoFixed(bullet.rangeChange/tilesize, 1)));
-      }
-
-      if(bullet.splashDamage > 0){
-        sep(ta, Core.bundle.format("bullet.splashdamage", (int) bullet.splashDamage, Strings.fixed(bullet.splashDamageRadius/tilesize, 1)));
-      }
-
-      if(bullet.knockback > 0){
-        sep(ta, Core.bundle.format("bullet.knockback", Strings.autoFixed(bullet.knockback, 2)));
-      }
-
-      if(bullet.healPercent > 0f){
-        sep(ta, Core.bundle.format("bullet.healpercent", Strings.autoFixed(bullet.healPercent, 2)));
-      }
-
-      if(bullet.healAmount > 0f){
-        sep(ta, Core.bundle.format("bullet.healamount", Strings.autoFixed(bullet.healAmount, 2)));
-      }
-
-      if(bullet.pierce || bullet.pierceCap != -1){
-        sep(ta, bullet.pierceCap == -1? "@bullet.infinitepierce": Core.bundle.format("bullet.pierce", bullet.pierceCap));
-      }
-
-      if(bullet.incendAmount > 0){
-        sep(ta, "@bullet.incendiary");
-      }
-
-      if(bullet.homingPower > 0.01f){
-        sep(ta, "@bullet.homing");
-      }
-
-      if(bullet.lightning > 0){
-        sep(ta, Core.bundle.format("bullet.lightning", bullet.lightning, bullet.lightningDamage < 0? bullet.damage: bullet.lightningDamage));
-      }
-
-      if(bullet.pierceArmor){
-        sep(ta, "@bullet.armorpierce");
-      }
-
-      if(bullet.status != StatusEffects.none){
-        sep(ta, (bullet.status.minfo.mod == null? bullet.status.emoji(): "") + "[stat]" + bullet.status.localizedName + "[lightgray] ~ " +
-            "[stat]" + Strings.autoFixed(bullet.statusDuration/60f, 1) + "[lightgray] " + Core.bundle.get("unit.seconds"));
-      }
-
-      if(bullet.fragBullet != null){
-        sep(ta, Core.bundle.format("bullet.frags", bullet.fragBullets));
-        ta.row();
-        ta.table(st -> buildRef.get().get(st, bullet.fragBullet)).left().padLeft(15);
-      }
-
-      ta.row();
-    });
-
     stats.add(Stat.ammo, table -> {
       table.defaults().padLeft(15);
       for(ObjectMap.Entry<BaseConsumers, AmmoDataEntry> entry: ammoTypes){
@@ -378,7 +306,7 @@ public class SglTurret extends SglBlock{
           t.table(bt -> {
             bt.defaults().left();
             if(!ammoEntry.override){
-              buildRef.get().get(bt, type);
+              StatUtils.buildAmmo(bt, type);
             }
 
             for(Cons2<Table, BulletType> value: ammoEntry.statValues){
@@ -419,11 +347,6 @@ public class SglTurret extends SglBlock{
   public void drawPlace(int x, int y, int rotation, boolean valid){
     super.drawPlace(x, y, rotation, valid);
     Drawf.dashCircle(x * tilesize + offset, y * tilesize + offset, range, Pal.placing);
-  }
-
-  private static void sep(Table table, String text){
-    table.row();
-    table.add(text);
   }
 
   @Annotations.ImplEntries

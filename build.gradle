@@ -13,8 +13,8 @@ sourceSets.main.java.srcDirs = ["src"]
 
 ext{
   //the build number that this mod is made for
-  mindustryVersion = "v140"
-  arcVersion = "v140.3"
+  mindustryVersion = "v141"
+  arcVersion = "v141"
   uncVersion = "1.6.1"
   //version of SDK you will be using
   minSdkAPI = 30

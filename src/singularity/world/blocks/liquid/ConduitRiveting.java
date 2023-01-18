@@ -128,7 +128,7 @@ public class ConduitRiveting extends ClusterConduit{
 
         if(output[i]){
           int i1 = i;
-          Building other = getNext("liquids#" + i, e -> {
+          Building other = getNext(groupName(i), e -> {
             if (!e.interactable(team)) return false;
             int rot = relativeTo(e);
             if(rot == (rotation + 1)%4 || rot == (rotation + 3)%4){

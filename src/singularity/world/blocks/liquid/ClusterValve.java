@@ -158,7 +158,7 @@ public class ClusterValve extends ClusterConduit{
         LiquidModule liquids = liquidsBuffer[i];
 
         if(output[i] && i == index){
-          Building other = getNext("liquids#" + i, e -> {
+          Building other = getNext(groupName(i), e -> {
             if (!e.interactable(team)) return false;
             byte rot = relativeTo(e);
             if(rot == (rotation + 1)%4 || rot == (rotation + 3)%4){

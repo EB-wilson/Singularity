@@ -23,6 +23,7 @@ import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
+import singularity.world.blocks.defence.GameOfLife;
 import universecore.math.Functions;
 import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.RandomGenerator;
@@ -114,9 +115,16 @@ public class SglFx{
     Draw.color(Pal.reactorPurple);
     Lines.stroke(6*e.fout());
 
-    Draw.z(Layer.effect);
     Lines.square(e.x, e.y, 30*e.fin());
     Lines.square(e.x, e.y, 30*e.fin(), 45);
+  }),
+
+  spreadField = new Effect(60, e -> {
+    Draw.color(e.color);
+    Lines.stroke(8*e.fout());
+
+    Lines.square(e.x, e.y, 38*e.fin(Interp.pow2Out));
+    Lines.square(e.x, e.y, 38*e.fin(Interp.pow2Out), 45);
   }),
 
   forceField = new Effect(45, e -> {
@@ -155,6 +163,13 @@ public class SglFx{
     randLenVectors(e.id, 1, 3.5f, e.rotation, 5, (x, y) -> {
       Fill.circle(e.x + x*e.fin(Interp.pow2Out), e.y + y*e.fin(Interp.pow2Out), 1.6f*e.fout(Interp.pow2Out));
     });
+  }),
+
+  crossLight = new Effect(30, e -> {
+    Draw.color(e.color);
+    for(int i: Mathf.signs){
+      SglDraw.drawDiamond(e.x, e.y, 32 + 128*e.fin(Interp.pow3Out), 12*e.fout(Interp.pow3Out), e.rotation + 45 + i*45);
+    }
   }),
 
   auroraCoreCharging = new Effect(80, 100, e -> {
@@ -527,7 +542,6 @@ public class SglFx{
     float size = Mathf.randomSeed(e.id, 6, 10);
     size *= e.fout(Interp.pow4In);
     size += Mathf.absin(Time.time + Mathf.randomSeed(e.id, 2*Mathf.pi), 3.5f, 2f);
-    float i = e.fin(Interp.pow3Out);
     SglDraw.drawLightEdge(e.x, e.y, size, size*0.15f, size, size*0.15f);
   }),
 
@@ -550,6 +564,38 @@ public class SglFx{
       float size = Mathf.randomSeed((int) (e.id + x), 18, 26);
       SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, size, size*0.23f*e.fout(), Mathf.angle(x, y));
     });
+  }),
+
+  cellScan = new Effect(45, e -> {
+    Draw.color(e.color, 0.6f);
+
+    if(e.data instanceof GameOfLife b){
+      Fill.square(e.x, e.y, b.cellSize/2*e.fslope(), e.rotation);
+    }
+  }),
+
+  spreadDiamond = new Effect(35, e -> {
+    Draw.color(e.color);
+
+    Lines.stroke(12f*e.fout());
+    Lines.square(e.x, e.y, 32*e.fin(Interp.pow2Out), 45);
+  }),
+
+  spreadDiamondSmall = new Effect(25, e -> {
+    Draw.color(e.color);
+
+    Lines.stroke(8f*e.fout());
+    Lines.square(e.x, e.y, 18*e.fin(Interp.pow2Out), 45);
+  }),
+
+  cellDeath = new Effect(45, e -> {
+    Draw.color(e.color);
+
+    if(e.data instanceof GameOfLife b){
+      Lines.stroke(b.cellSize/2*e.fout());
+
+      Lines.square(e.x, e.y, b.gridSize*2*e.fin(Interp.pow2Out), e.rotation);
+    }
   });
 
   public static Effect impactExplode(float size, float lifeTime){
