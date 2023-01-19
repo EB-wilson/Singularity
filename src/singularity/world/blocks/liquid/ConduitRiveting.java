@@ -104,14 +104,14 @@ public class ConduitRiveting extends ClusterConduit{
         }
       }).fill();
       table.table(Styles.black6, t -> {
-        t.defaults().left();
-        t.check(Core.bundle.get("infos.inputMode"), b -> configure(new byte[]{0})).size(180, 45)
+        t.defaults().left().top().height(45).minWidth(170).padRight(12).left().growX();
+        t.check(Core.bundle.get("infos.inputMode"), b -> configure(new byte[]{0}))
             .update(c -> c.setChecked(input[currConf])).get().left();
         t.row();
-        t.check(Core.bundle.get("infos.outputMode"), b -> configure(new byte[]{1})).size(180, 45)
+        t.check(Core.bundle.get("infos.outputMode"), b -> configure(new byte[]{1}))
             .update(c -> c.setChecked(output[currConf])).get().left();
         t.row();
-        t.check(Core.bundle.get("infos.blocking"), b -> configure(new byte[]{2})).size(180, 45)
+        t.check(Core.bundle.get("infos.blocking"), b -> configure(new byte[]{2}))
             .update(c -> c.setChecked(blocking[currConf]))
             .disabled(c -> input[currConf] || !output[currConf]).get().left();
       }).top().fill().padLeft(0);
@@ -125,6 +125,8 @@ public class ConduitRiveting extends ClusterConduit{
       float flow = 0;
       for(int i = 0; i < liquidsBuffer.length; i++){
         ClusterLiquidModule liquids = liquidsBuffer[i];
+
+        if(liquid != null && liquids.current != liquid) continue;
 
         if(output[i]){
           int i1 = i;
@@ -201,9 +203,9 @@ public class ConduitRiveting extends ClusterConduit{
     @Override
     public boolean conduitAccept(MultLiquidBuild source, int index, Liquid liquid) {
       noSleep();
-      if (source.tile.absoluteRelativeTo(tile.x, tile.y) != rotation && (input[index])) return false;
+      if (source.tile.absoluteRelativeTo(tile.x, tile.y) != rotation && !input[index]) return false;
       LiquidModule liquids = liquidsBuffer[index];
-      return source.interactable(team) && liquids.currentAmount() < 0.01f || liquids.current() == liquid && liquids.currentAmount() < liquidCapacity;
+      return source.interactable(team) && (liquids.currentAmount() < 0.01f || liquids.current() == liquid && liquids.currentAmount() < liquidCapacity);
     }
 
     @Override

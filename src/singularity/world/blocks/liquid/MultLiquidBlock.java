@@ -176,26 +176,30 @@ public class MultLiquidBlock extends LiquidBlock{
     }
   
     public float moveLiquid(MultLiquidBuild dest, int index, Liquid liquid){
+      return moveLiquid(dest, index, index, liquid);
+    }
+
+    public float moveLiquid(MultLiquidBuild dest, int index, int otherIndex, Liquid liquid){
       if(dest == null) return 0;
 
       if (index >= dest.liquidsBuffer.length || !dest.shouldClusterMove(this)){
         return moveLiquid(dest, liquid);
       }
-    
-      LiquidModule liquids = liquidsBuffer[index], oLiquids = dest.liquidsBuffer[index];
+
+      LiquidModule liquids = liquidsBuffer[index], oLiquids = dest.liquidsBuffer[otherIndex];
       if(dest.interactable(team) && liquids.get(liquid) > 0f){
         float ofract = oLiquids.get(liquid) / dest.block().liquidCapacity;
         float fract = liquids.get(liquid) / block().liquidCapacity* block.liquidPressure;
         float flow = Math.min(Mathf.clamp((fract - ofract)) * (block().liquidCapacity), liquids.get(liquid));
         flow = Math.min(flow, dest.block().liquidCapacity - oLiquids.get(liquid));
-      
-        if(flow > 0f && ofract <= fract && dest.conduitAccept(this, index, liquid)){
-          dest.handleLiquid(this, index, liquid, flow);
+
+        if(flow > 0f && ofract <= fract && dest.conduitAccept(this, otherIndex, liquid)){
+          dest.handleLiquid(this, otherIndex, liquid, flow);
           liquids.remove(liquid, flow);
           return flow;
         }else if(oLiquids.currentAmount() / dest.block().liquidCapacity > 0.1f && fract > 0.1f){
           float fx = (x + dest.x) / 2f, fy = (y + dest.y) / 2f;
-        
+
           Liquid other = oLiquids.current();
           if((other.flammability > 0.3f && liquid.temperature > 0.7f) || (liquid.flammability > 0.3f && other.temperature > 0.7f)){
             damage(1 * Time.delta);

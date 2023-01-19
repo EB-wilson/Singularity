@@ -33,9 +33,9 @@ public class ClusterValve extends ClusterConduit{
     });
     config(byte[].class, (ClusterValveBuild e, byte[] i) -> {
       switch (i[0]){
-        case 0 -> e.input[e.currConfig] = !e.input[e.currConfig];
-        case 1 -> e.output[e.currConfig] = !e.output[e.currConfig];
-        case 2 -> e.blocking[e.currConfig] = !e.blocking[e.currConfig];
+        case 0 -> e.input = !e.input;
+        case 1 -> e.output = !e.output;
+        case 2 -> e.blocking = !e.blocking;
       }
     });
 
@@ -44,19 +44,18 @@ public class ClusterValve extends ClusterConduit{
         e.configured[c.get(1)] = Vars.content.liquid(c.get(2));
       }
       else if(c.get(0) == 1){
-        e.liquidsBuffer = new ClusterLiquidModule[c.get(1)];
+        e.liquidsBuffer = new ClusterLiquidModule[c.get(4)];
         for (int ind = 0; ind < e.liquidsBuffer.length; ind++) {
           e.liquidsBuffer[ind] = new ClusterLiquidModule();
         }
-        e.configured = new Liquid[c.get(1)];
-        e.input = new boolean[c.get(1)];
-        e.output = new boolean[c.get(1)];
-        e.blocking = new boolean[c.get(1)];
+
+        e.input = c.get(1) == 1;
+        e.output = c.get(2) == 1;
+        e.blocking = c.get(3) == 1;
+
+        e.configured = new Liquid[c.get(4)];
         for (int l = 0; l < e.liquidsBuffer.length; l++) {
-          e.configured[l] = Vars.content.liquid(c.get(l*4 + 2));
-          e.input[l] = c.get(l*4 + 3) == 1;
-          e.output[l] = c.get(l*4 + 4) == 1;
-          e.blocking[l] = c.get(l*4 + 5) == 1;
+          e.configured[l] = Vars.content.liquid(c.get(l + 5));
         }
       }
     });
@@ -78,10 +77,12 @@ public class ClusterValve extends ClusterConduit{
 
   @Annotations.ImplEntries
   public class ClusterValveBuild extends ClusterConduitBuild implements Takeable {
+    private static final IntSeq tmp = new IntSeq();
+
     public Liquid[] configured;
-    public boolean[] input;
-    public boolean[] output;
-    public boolean[] blocking;
+    public boolean input;
+    public boolean output;
+    public boolean blocking;
 
     int currConfig;
 
@@ -89,9 +90,6 @@ public class ClusterValve extends ClusterConduit{
     public void onReplaced(ReplaceBuildComp old) {
       liquidsBuffer = old.<ClusterConduitBuild>getBuild().liquidsBuffer;
       configured = new Liquid[liquidsBuffer.length];
-      input = new boolean[liquidsBuffer.length];
-      output = new boolean[liquidsBuffer.length];
-      blocking = new boolean[liquidsBuffer.length];
     }
 
     @Override
@@ -120,16 +118,16 @@ public class ClusterValve extends ClusterConduit{
       }).padLeft(0).top();
 
       table.table(Styles.black6, t -> {
-        t.defaults().left().top();
-        t.check(Core.bundle.get("infos.inputMode"), b -> configure(new byte[]{0})).size(180, 45)
-            .update(c -> c.setChecked(input[currConfig])).get().left();
+        t.defaults().left().top().height(45).minWidth(170).padRight(12).left().growX();
+        t.check(Core.bundle.get("infos.inputMode"), b -> configure(new byte[]{0}))
+            .update(c -> c.setChecked(input)).get().left();
         t.row();
-        t.check(Core.bundle.get("infos.outputMode"), b -> configure(new byte[]{1})).size(180, 45)
-            .update(c -> c.setChecked(output[currConfig])).get().left();
+        t.check(Core.bundle.get("infos.outputMode"), b -> configure(new byte[]{1}))
+            .update(c -> c.setChecked(output)).get().left();
         t.row();
-        t.check(Core.bundle.get("infos.blocking"), b -> configure(new byte[]{2})).size(180, 45)
-            .update(c -> c.setChecked(blocking[currConfig]))
-            .disabled(c -> input[currConfig] || !output[currConfig]).get().left();
+        t.check(Core.bundle.get("infos.blocking"), b -> configure(new byte[]{2}))
+            .update(c -> c.setChecked(blocking))
+            .disabled(c -> input || !output).get().left();
       }).top().fill().padLeft(0);
     }
 
@@ -137,12 +135,13 @@ public class ClusterValve extends ClusterConduit{
     public Object config() {
       IntSeq req = IntSeq.with(1);
 
+      req.add(input? 1: 0);
+      req.add(output? 1: 0);
+      req.add(blocking? 1: 0);
+
       req.add(liquidsBuffer.length);
-      for (int i = 0; i < configured.length; i++) {
-        req.add(configured[i] == null? -1: configured[i].id);
-        req.add(input[i]? 1: 0);
-        req.add(output[i]? 1: 0);
-        req.add(blocking[i]? 1: 0);
+      for(Liquid liquid: configured){
+        req.add(liquid == null? -1: liquid.id);
       }
       return req;
     }
@@ -151,35 +150,42 @@ public class ClusterValve extends ClusterConduit{
     @Override
     public float moveLiquidForward(boolean leaks, Liquid liquid){
       Tile next = tile.nearby(rotation);
-      int index = configuredIndex(liquid);
 
       float flow = 0;
       for(int i = 0; i < liquidsBuffer.length; i++){
         LiquidModule liquids = liquidsBuffer[i];
+        if(liquid != null && liquids.current() != liquid) continue;
 
-        if(output[i] && i == index){
-          Building other = getNext(groupName(i), e -> {
-            if (!e.interactable(team)) return false;
-            byte rot = relativeTo(e);
-            if(rot == (rotation + 1)%4 || rot == (rotation + 3)%4){
-              if(e instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
-                return mu.conduitAccept(this, index, liquidsBuffer[index].current());
+        Liquid li = liquids.current();
+        IntSeq index = configuredIndex(li);
+        if(output && !index.isEmpty()){
+          for(int l = 0; l < index.size; l++){
+            int in = index.get(l);
+            Building other = getNext(groupName(i), e -> {
+              if(!e.interactable(team)) return false;
+              byte rot = relativeTo(e);
+              if(rot == (rotation + 1)%4 || rot == (rotation + 3)%4){
+                if(e instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
+                  return mu.conduitAccept(this, in, liquids.current());
+                }else{
+                  return e.block.hasLiquids && e.acceptLiquid(this, liquids.current());
+                }
               }
-              else return e.block.hasLiquids && e.acceptLiquid(this, liquidsBuffer[index].current());
+              return false;
+            });
+
+            if(other instanceof MultLiquidBuild mu){
+              if(!mu.conduitAccept(this, in, li)) continue;
+
+              flow += moveLiquid(mu, i, in, li);
+            }else if(other != null){
+              this.liquids = liquids;
+              flow += moveLiquid(other, liquids.current());
+              this.liquids = cacheLiquids;
             }
-            return false;
-          });
-
-          if(other instanceof MultLiquidBuild){
-            flow += moveLiquid((MultLiquidBuild)other, index, liquidsBuffer[index].current());
-          }
-          else if (other != null){
-            this.liquids = liquidsBuffer[index];
-            flow += moveLiquid(other, liquidsBuffer[index].current());
-            this.liquids = cacheLiquids;
           }
 
-          if (blocking[index] && !input[index]) continue;
+          if(blocking && !input) continue;
         }
 
         if(next.build instanceof MultLiquidBuild mu && mu.shouldClusterMove(this)){
@@ -203,9 +209,14 @@ public class ClusterValve extends ClusterConduit{
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
       noSleep();
-      int index = configuredIndex(liquid);
-      if(index == -1 || !input[index]) return false;
-      return source.interactable(team) && liquidsBuffer[index].currentAmount() < 0.01f || liquid == liquidsBuffer[index].current() && liquidsBuffer[index].currentAmount() < liquidCapacity;
+      IntSeq index = configuredIndex(liquid);
+      for(int i = 0; i < index.size; i++){
+        int in = index.get(i);
+        if(input && (source.interactable(team) && liquidsBuffer[in].currentAmount() < 0.01f
+        || liquid == liquidsBuffer[in].current() && liquidsBuffer[in].currentAmount() < liquidCapacity)) return true;
+      }
+
+      return false;
     }
 
     @Override
@@ -215,18 +226,24 @@ public class ClusterValve extends ClusterConduit{
 
     @Override
     public void handleLiquid(Building source, Liquid liquid, float amount) {
-      int index = configuredIndex(liquid);
-      if(index == -1){
+      IntSeq index = configuredIndex(liquid);
+      if(index.isEmpty()){
         super.handleLiquid(source, liquid, amount);
       }
-      else liquidsBuffer[index].add(liquid, amount);
+      else{
+        float am = amount/index.size;
+        for(int i = 0; i < index.size; i++){
+          liquidsBuffer[index.get(i)].add(liquid, am);
+        }
+      }
     }
 
-    public int configuredIndex(Liquid liquid){
+    public IntSeq configuredIndex(Liquid liquid){
+      tmp.clear();
       for (int i = 0; i < configured.length; i++) {
-        if (configured[i] == liquid) return i;
+        if (configured[i] == liquid) tmp.add(i);
       }
-      return -1;
+      return tmp;
     }
 
     @Override
@@ -238,12 +255,13 @@ public class ClusterValve extends ClusterConduit{
     @Override
     public void write(Writes write) {
       super.write(write);
+      write.bool(input);
+      write.bool(output);
+      write.bool(blocking);
+
       write.i(configured.length);
-      for (int i = 0; i < input.length; i++) {
-        write.i(configured[i] == null? -1: configured[i].id);
-        write.bool(input[i]);
-        write.bool(output[i]);
-        write.bool(blocking[i]);
+      for(Liquid liquid: configured){
+        write.i(liquid == null? -1: liquid.id);
       }
     }
 
@@ -251,15 +269,13 @@ public class ClusterValve extends ClusterConduit{
     public void read(Reads read, byte revision) {
       super.read(read, revision);
       int len = read.i();
+      input = read.bool();
+      output = read.bool();
+      blocking = read.bool();
+
       configured = new Liquid[len];
-      input = new boolean[len];
-      output = new boolean[len];
-      blocking = new boolean[len];
       for (int i = 0; i < len; i++) {
         configured[i] = Vars.content.liquid(read.i());
-        input[i] = read.bool();
-        output[i] = read.bool();
-        blocking[i] = read.bool();
       }
     }
   }

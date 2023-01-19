@@ -21,8 +21,8 @@ public class BidirectionalValve extends ClusterConduit{
     conduitAmount = 0;
     configurable = true;
 
-    config(Integer.class, (ThrottleValveBuild e, Integer c) -> e.reverses[c] = !e.reverses[c]);
-    config(IntSeq.class, (ThrottleValveBuild e, IntSeq c) -> {
+    config(Integer.class, (BidirectionalValveBuild e, Integer c) -> e.reverses[c] = !e.reverses[c]);
+    config(IntSeq.class, (BidirectionalValveBuild e, IntSeq c) -> {
       e.liquidsBuffer = new ClusterLiquidModule[c.get(0)];
       e.reverses = new boolean[c.get(0)];
       for (int i = 0; i < e.liquidsBuffer.length; i++) {
@@ -38,7 +38,7 @@ public class BidirectionalValve extends ClusterConduit{
     Draw.rect(arrow, req.drawx(), req.drawy(), req.rotation * 90);
   }
 
-  public class ThrottleValveBuild extends ClusterConduitBuild{
+  public class BidirectionalValveBuild extends ClusterConduitBuild{
     public boolean[] reverses;
 
     @Override
@@ -46,6 +46,7 @@ public class BidirectionalValve extends ClusterConduit{
       super.onReplaced(old);
       liquidsBuffer = old.<ClusterConduitBuild>getBuild().liquidsBuffer;
       reverses = new boolean[liquidsBuffer.length];
+
     }
 
     @Override
@@ -67,6 +68,8 @@ public class BidirectionalValve extends ClusterConduit{
       float flow = 0;
       for(int i=0; i<liquidsBuffer.length; i++){
         LiquidModule liquids = liquidsBuffer[i];
+        if(liquid != null && liquids.current() != liquid) continue;
+
         Tile tar = reverses[i]? pre: next;
 
         if (tar == null) continue;
