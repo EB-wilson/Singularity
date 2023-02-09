@@ -38,7 +38,7 @@ public class DrawReactorHeat extends DrawBlock{
     Fill.rect(e.x, e.y, e.block.size * tilesize, e.block.size * tilesize);
 
     if(e.heat > flashThreshold){
-      e.setVar("flash", e.getVar("flash", 0f) + (1f + ((e.heat - flashThreshold) / (e.block().maxHeat - flashThreshold)) * 5.4f) * Time.delta);
+      e.handleVar("flash", (Float f) -> f + (1f + ((e.heat - flashThreshold) / (e.block().maxHeat - flashThreshold)) * 5.4f) * Time.delta, 0f);
       Draw.color(Color.red, Color.yellow, Mathf.absin(e.getVar("flash"), 9f, 1f));
       Draw.alpha(0.3f);
       Draw.rect(lightsRegion, e.x, e.y);

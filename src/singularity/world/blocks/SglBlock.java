@@ -11,7 +11,6 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.Eachable;
 import arc.util.io.Reads;
@@ -38,6 +37,7 @@ import singularity.type.SglLiquidStack;
 import singularity.world.blocks.nuclear.NuclearPipeNode;
 import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
+import singularity.world.components.ExtraVariableComp;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.modules.NuclearEnergyModule;
@@ -241,15 +241,13 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public void onPlanRotate(BuildPlan plan, int direction) {}
 
   @Annotations.ImplEntries
-  public class SglBuilding extends Building implements ConsumerBuildComp, NuclearEnergyBuildComp{
+  public class SglBuilding extends Building implements ConsumerBuildComp, NuclearEnergyBuildComp, ExtraVariableComp{
     private static final FieldHandler<PlacementFragment> fieldHandler = new FieldHandler<>(PlacementFragment.class);
 
     public SglConsumeModule consumer;
     public NuclearEnergyModule energy;
 
     public boolean recipeSelected;
-
-    protected final ObjectMap<Object, Object> vars = new ObjectMap<>();
 
     protected final Seq<SglLiquidStack> displayLiquids = new Seq<>();
 
@@ -258,34 +256,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public boolean updateRecipe;
     
     public int select;
-
-    @SuppressWarnings("unchecked")
-    public <T> T getVar(String name){
-      return (T)vars.get(name);
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T getVar(Class<T> type){
-      return (T)vars.get(type);
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T getVar(String name, T def){
-      return (T)vars.get(name, () -> def);
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T getVar(Class<T> type, T def){
-      return (T)vars.get(type, () -> def);
-    }
-
-    public Object setVar(Object obj){
-      return vars.put(obj.getClass(), obj);
-    }
-
-    public Object setVar(String field, Object obj){
-      return vars.put(field, obj);
-    }
 
     @Override
     public Building create(Block block, Team team) {
@@ -557,14 +527,18 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public boolean acceptItem(Building source, Item item){
       return source.interactable(this.team) && hasItems
-          && (source == this || (!(consumer.hasConsume() || consumer.hasOptional()) || consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item))))
+          && ((source == this && consumer.current != null && consumer.current.selfAccess(ConsumeType.item, item))
+          || !(consumer.hasConsume() || consumer.hasOptional())
+          || filter().filter(this, SglConsumeType.item, item, acceptAll(SglConsumeType.item)))
           && (independenceInventory? items.get(item): items.total()) < block().itemCapacity;
     }
 
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
       return source.interactable(this.team) && hasLiquids
-          && (source == this || (!(consumer.hasConsume() || consumer.hasOptional()) || consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid))))
+          && ((source == this && consumer.current != null && consumer.current.selfAccess(ConsumeType.liquid, liquid))
+          || !(consumer.hasConsume() || consumer.hasOptional())
+          || filter().filter(this, SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)))
           && (independenceLiquidTank? liquids.get(liquid): ((SglLiquidModule)liquids).total()) <= block().liquidCapacity - 0.0001f;
     }
   

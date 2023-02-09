@@ -47,6 +47,7 @@ import universecore.util.UncLiquidStack;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeLiquidBase;
 import universecore.world.consumers.ConsumePower;
+import universecore.world.consumers.ConsumeType;
 import universecore.world.producers.BaseProduce;
 import universecore.world.producers.BaseProducers;
 import universecore.world.producers.ProduceLiquids;
@@ -111,6 +112,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
    * @param chance 副产物产出的机会，为任意大于0的值，实际机会计算值从0到chance之间随机取值，结果将超出1的部分直接作为产出数量，与1取模后剩余机会取{@link Mathf#chance(double)}
    * @param item 副产物物品*/
   public void setByProduct(int base, float chance, Item item){
+    consume.addSelfAccess(ConsumeType.item, item);
     consume.setConsTrigger((NormalCrafterBuild e) -> {
       float chanceV = Mathf.random(chance) + base;
       while(chanceV >= 1){

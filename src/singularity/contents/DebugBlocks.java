@@ -21,6 +21,7 @@ import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
 import singularity.graphic.Distortion;
+import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.type.SglCategory;
 import singularity.ui.SglStyles;
@@ -41,7 +42,16 @@ public class DebugBlocks implements ContentList{
         @Override
         public void draw(Building e) {
           Draw.color(Pal.accent);
-          SglDraw.oval(e.x, e.y, 24, 32, Time.time, 8, Tmp.c1.set(Pal.accent).a(0));
+          Draw.draw(Draw.z(), () -> {
+            MathRenderer.setDispersion(0.01f);
+            MathRenderer.setThreshold(0.4f, 0.7f);
+            MathRenderer.drawOval(
+                e.x, e.y,
+                40,
+                20,
+                Time.time
+            );
+          });
         }
       };
     }};
@@ -51,7 +61,7 @@ public class DebugBlocks implements ContentList{
       hasShadow = false;
 
       draw = new DrawBlock(){
-        static final Distortion dist = new Distortion(Layer.min, Layer.flyingUnit - 0.02f);
+        static final Distortion dist = new Distortion(Layer.min, Layer.flyingUnit - 0.5f);
 
         @Override
         public void draw(Building e) {
@@ -72,7 +82,7 @@ public class DebugBlocks implements ContentList{
           Lines.stroke(4, Color.orange);
           Lines.circle(e.x, e.y, 16);
 
-          SglDraw.drawDiamond(e.x, e.y, 180, 18, 0);
+          SglDraw.drawDiamond(e.x, e.y, 180, 5, 0);
 
           SglDraw.endBloom();
         }

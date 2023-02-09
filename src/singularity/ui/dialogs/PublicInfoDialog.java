@@ -100,8 +100,7 @@ public class PublicInfoDialog extends BaseListDialog{
     initialized = false;
   
     Http.get(directory, request -> {
-      while(! titleLoaded){
-      }
+      while(!titleLoaded){}
       if(titleStatus != null){
         infoTable.clearChildren();
         infoTable.resetZoom();

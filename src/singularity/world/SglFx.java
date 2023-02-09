@@ -54,6 +54,24 @@ public class SglFx{
     }
   }),
 
+  impactWaveSmall = new Effect(18, e -> {
+    Draw.color(e.color);
+    Lines.stroke(5*e.fout());
+    Lines.circle(e.x, e.y, 36*e.fin(Interp.pow3Out));
+  }),
+
+  impactWave = new Effect(24, e -> {
+    Draw.color(e.color);
+    Lines.stroke(6*e.fout());
+    Lines.circle(e.x, e.y, 48*e.fin(Interp.pow3Out));
+  }),
+
+  impactWaveBig = new Effect(30, e -> {
+    Draw.color(e.color);
+    Lines.stroke(6.5f*e.fout());
+    Lines.circle(e.x, e.y, 55*e.fin(Interp.pow3Out));
+  }),
+
   polyParticle = new Effect(150, e -> {//这段代码很特殊，闪光线的代码并不是我写的，这来自一个bug，大概是来自Lines的闭合线问题，意料之外，但效果还不错，就留着了
     randLenVectors(e.id, 1, 24, e.rotation + 180, 20, (x, y) -> {
       int vertices = Mathf.randomSeed((int) (e.id + x), 3, 6);
@@ -323,6 +341,33 @@ public class SglFx{
 
     Drawf.tri(e.x + dx, e.y + dy, 8f*fout, 8 + 24*fout, rot);
     Drawf.tri(e.x + dx, e.y + dy, 8f*fout, 8f*fout, rot + 180);
+  }),
+
+  spreadSparkLarge = new Effect(28, e -> {
+    color(Color.white, e.color, e.fin());
+    stroke(e.fout()*1.2f + 0.5f);
+
+    randLenVectors(e.id, 20, 10f*e.fin(), 27f, (x, y) -> {
+      lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), e.fslope()*5f + 0.5f);
+    });
+  }),
+
+  diamondSpark = new Effect(30, e -> {
+    color(Color.white, e.color, e.fin());
+    stroke(e.fout()*1.2f + 0.5f);
+
+    randLenVectors(e.id, 7, 6f*e.fin(), 20f, (x, y) -> {
+      SglDraw.drawDiamond(e.x + x, e.y + y, 10, e.fout(Interp.pow2Out)*4f, Mathf.angle(x, y));
+    });
+  }),
+
+  diamondSparkLarge = new Effect(30, e -> {
+    color(Color.white, e.color, e.fin());
+    stroke(e.fout()*1.2f + 0.5f);
+
+    randLenVectors(e.id, 9, 8f*e.fin(), 24f, (x, y) -> {
+      SglDraw.drawDiamond(e.x + x, e.y + y, 12, e.fout(Interp.pow2Out)*5f, Mathf.angle(x, y));
+    });
   }),
 
   continuousLaserRecoil = new Effect(12, e -> {

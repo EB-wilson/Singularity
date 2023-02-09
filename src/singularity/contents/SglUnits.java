@@ -1,5 +1,6 @@
 package singularity.contents;
 
+import arc.func.Func2;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
@@ -7,6 +8,8 @@ import arc.graphics.g2d.Lines;
 import arc.math.Angles;
 import arc.math.Interp;
 import arc.math.Mathf;
+import arc.math.geom.Vec2;
+import arc.struct.Seq;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.content.Fx;
@@ -14,29 +17,34 @@ import mindustry.entities.Damage;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.bullet.ContinuousLaserBulletType;
 import mindustry.entities.bullet.LaserBulletType;
+import mindustry.entities.bullet.PointLaserBulletType;
 import mindustry.entities.effect.MultiEffect;
+import mindustry.entities.part.DrawPart;
 import mindustry.entities.part.HaloPart;
+import mindustry.entities.part.RegionPart;
 import mindustry.entities.pattern.ShootPattern;
 import mindustry.entities.units.WeaponMount;
 import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
+import mindustry.graphics.Trail;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.type.UnitType;
 import mindustry.type.Weapon;
+import mindustry.type.weapons.PointDefenseWeapon;
 import mindustry.world.Block;
 import mindustry.world.meta.BlockFlag;
 import singularity.Sgl;
+import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
+import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.blocks.product.PayloadCrafter;
 import singularity.world.draw.part.CustomPart;
-import singularity.world.unit.AirSeaAmphibiousUnit;
-import singularity.world.unit.RelatedWeapon;
-import singularity.world.unit.UnitEntityType;
-import singularity.world.unit.UnitTypeRegister;
+import singularity.world.unit.*;
+import universecore.util.handler.ObjectHandler;
 
 public class SglUnits implements ContentList{
   /**棱镜*/
@@ -46,9 +54,11 @@ public class SglUnits implements ContentList{
   /**黎明*/
   dawn,
   /**晨星*/
-  mornstar,
+  mornstar;
+
   /**辉夜*/
-  kaguya;
+  @UnitEntityType(UnitEntity.class)
+  public static UnitType kaguya;
 
   /**极光*/
   @UnitEntityType(AirSeaAmphibiousUnit.AirSeaUnit.class)
@@ -60,6 +70,452 @@ public class SglUnits implements ContentList{
   @Override
   public void load() {
     UnitTypeRegister.registerAll();
+
+    kaguya = new UnitType("kaguya"){
+      {
+        speed = 0.8f;
+        accel = 0.06f;
+        drag = 0.04f;
+        rotateSpeed = 1.5f;
+        faceTarget = true;
+        flying = true;
+        health = 45000;
+        lowAltitude = true;
+        //canBoost = true;
+        //boostMultiplier = 2.5f;
+        hitSize = 70;
+        targetFlags = BlockFlag.all;
+
+        engineSize = 0;
+
+        Func2<Float, Float, Weapon> laser = (dx, dy) -> new Weapon(Sgl.modName + "-kaguya_laser"){{
+          this.x = dx;
+          this.y = dy;
+          mirror = true;
+          reload = 30;
+          recoil = 4;
+          recoilTime = 30;
+          shadow = 4;
+          rotate = true;
+          layerOffset = 0.1f;
+          shootSound = Sounds.laser;
+
+          shake = 3;
+
+          bullet = new LaserBulletType(){{
+            damage = 165f;
+            lifetime = 20;
+            sideAngle = 90f;
+            sideWidth = 1.25f;
+            sideLength = 15f;
+            width = 16f;
+            length = 450f;
+            shootEffect = Fx.colorSparkBig;
+            colors = new Color[]{SglDrawConst.matrixNetDark, SglDrawConst.matrixNet, Color.white};
+            hitColor = colors[0];
+          }};
+        }};
+
+        weapons.addAll(
+            laser.get(19.25f, 16f),
+            laser.get(13.5f, 33.5f),
+            new Weapon(Sgl.modName + "-kaguya_cannon"){
+              {
+                x = 30.5f;
+                y = -3.5f;
+                mirror = true;
+
+                cooldownTime = 120;
+                recoil = 0;
+                recoilTime = 120;
+                reload = 90;
+                shootX = 2;
+                shootY = 22;
+                rotate = true;
+                rotationLimit = 30;
+                rotateSpeed = 10;
+
+                shake = 5;
+
+                layerOffset = 0.1f;
+
+                shootSound = Sounds.shockBlast;
+
+                shoot.shots = 3;
+                shoot.shotDelay = 10;
+
+                parts.addAll(
+                    new RegionPart("_shooter"){{
+                      heatColor = SglDrawConst.matrixNet;
+                      heatProgress = PartProgress.heat;
+                      moveY = -6;
+                      progress = PartProgress.recoil;
+                    }},
+                    new RegionPart("_body")
+                );
+
+                bullet = new BulletType(){
+                  {
+                    speed = 6;
+                    lifetime = 75;
+                    damage = 180;
+                    splashDamage = 240;
+                    splashDamageRadius = 36;
+
+                    hitEffect = new MultiEffect(
+                        Fx.shockwave,
+                        Fx.bigShockwave,
+                        SglFx.impactWaveSmall,
+                        SglFx.spreadSparkLarge,
+                        SglFx.diamondSparkLarge
+                    );
+                    despawnHit = true;
+
+                    shootEffect = SglFx.continuousLaserRecoil;
+                    hitColor = SglDrawConst.matrixNet;
+                    trailColor = SglDrawConst.matrixNet;
+                    hitSize = 8;
+                    trailLength = 36;
+                    trailWidth = 4;
+
+                    hitShake = 4;
+                    hitSound = Sounds.dullExplosion;
+                    hitSoundVolume = 3.5f;
+
+                    trailEffect = SglFx.trailParticle;
+                    trailChance = 0.5f;
+
+                    fragBullet = new BulletType(){
+                      {
+                        damage = 80;
+                        splashDamage = 80;
+                        splashDamageRadius = 24;
+                        speed = 4;
+                        hitSize = 3;
+                        lifetime = 120;
+                        despawnHit = true;
+                        hitEffect = SglFx.diamondSpark;
+                        hitColor = SglDrawConst.matrixNet;
+
+                        collidesTiles = false;
+
+                        homingRange = 160;
+                        homingPower = 0.075f;
+
+                        trailColor = SglDrawConst.matrixNet;
+                        trailLength = 25;
+                        trailWidth = 3f;
+                      }
+
+                      @Override
+                      public void draw(Bullet b){
+                        super.draw(b);
+                        SglDraw.drawDiamond(b.x, b.y, 10, 4, b.rotation());
+                      }
+
+                      @Override
+                      public void update(Bullet b){
+                        super.update(b);
+
+                        b.vel.lerpDelta(Vec2.ZERO, 0.04f);
+                      }
+                    };
+                    fragBullets = 4;
+                    fragOnHit = true;
+                    fragOnAbsorb = true;
+                  }
+
+                  @Override
+                  public void init(Bullet b){
+                    super.init(b);
+                    b.data = new Trail[]{
+                        new Trail(trailLength/2),
+                        new Trail(trailLength/2)
+                    };
+                  }
+
+                  @Override
+                  public void removed(Bullet b){
+                    super.removed(b);
+                    if(b.data instanceof Trail[] trails){
+                      for(Trail trail: trails){
+                        Fx.trailFade.at(b.x, b.y, 2, trailColor, trail.copy());
+                      }
+                    }
+                  }
+
+                  @Override
+                  public void update(Bullet b){
+                    super.update(b);
+                    if(b.data instanceof Trail[] trails){
+                      float step = 360f/trails.length;
+                      Tmp.v1.set(4 + 8*b.fslope(), 0).setAngle(b.rotation() + 90);
+                      for(int i = 0; i < trails.length; i++){
+                        float lerp = Mathf.sinDeg(Mathf.randomSeed(b.id, 0f, 360f) + Time.time*8f + step*i);
+                        trails[i].update(b.x + Tmp.v1.x*lerp, b.y + Tmp.v1.y*lerp);
+                      }
+                    }
+                  }
+
+                  @Override
+                  public void draw(Bullet b){
+                    super.draw(b);
+                    Drawf.tri(b.x, b.y, 12, 30, b.rotation());
+                    Drawf.tri(b.x, b.y, 12, 12, b.rotation() + 180);
+                  }
+
+                  @Override
+                  public void drawTrail(Bullet b){
+                    super.drawTrail(b);
+                    if(b.data instanceof Trail[] trails){
+                      float step = 360f/trails.length;
+                      Tmp.v1.set(4 + 8*b.fslope(), 0).setAngle(b.rotation() + 90);
+                      for(int i = 0; i < trails.length; i++){
+                        float lerp = Mathf.sinDeg(Mathf.randomSeed(b.id, 0f, 360f) + Time.time*8f + step*i);
+                        SglDraw.drawDiamond(
+                            b.x + Tmp.v1.x*lerp, b.y + Tmp.v1.y*lerp,
+                            8, 4,
+                            b.rotation() + Tmp.v2.set(b.vel.len(), -Mathf.sinDeg(Time.time*8f + step*i)*2*b.fslope()).angle()
+                        );
+                        trails[i].draw(trailColor, 2);
+                      }
+                    }
+                  }
+                };
+              }
+
+              @Override
+              public void flip(){
+                super.flip();
+
+                parts = new Seq<>(parts);
+                for(int i = 0; i < parts.size; i++){
+                  DrawPart part = parts.get(i);
+                  if(part instanceof RegionPart p){
+                    RegionPart n = new RegionPart(p.suffix);
+                    ObjectHandler.copyField(p, n);
+                    n.xScl *= -1;
+                    parts.set(i, n);
+                  }
+                }
+              }
+            },
+            new PointDefenseWeapon(Sgl.modName + "-kaguya_point_laser"){{
+              x = 30.5f;
+              y = -3.5f;
+              mirror = true;
+
+              recoil = 0;
+              reload = 6;
+              targetInterval = 0;
+              targetSwitchInterval = 0;
+
+              layerOffset = 0.2f;
+
+              bullet = new BulletType(){{
+                damage = 100;
+                rangeOverride = 420;
+              }};
+            }},
+            new DataWeapon(){
+              {
+                x = 0;
+                y = -14;
+                minWarmup = 0.98f;
+                shootWarmupSpeed = 0.02f;
+                linearWarmup = false;
+                rotate = false;
+                shootCone = 10;
+                rotateSpeed = 10;
+                shootY = 80;
+                reload = 30;
+                recoilTime = 60;
+                recoil = 2;
+                recoilPow = 0;
+                targetSwitchInterval = 300;
+                targetInterval = 0;
+
+                mirror = false;
+                continuous = true;
+                alwaysContinuous = true;
+
+                Weapon s = this;
+
+                bullet = new PointLaserBulletType(){
+                  {
+                    damage = 240;
+                    damageInterval = 5;
+                    rangeOverride = 450;
+                    shootEffect = SglFx.continuousLaserRecoil;
+                    hitColor = SglDrawConst.matrixNet;
+                    hitEffect = SglFx.diamondSparkLarge;
+                    shake = 5;
+                  }
+
+                  @Override
+                  public float continuousDamage(){
+                    return damage*(60/damageInterval);
+                  }
+
+                  @Override
+                  public void update(Bullet b){
+                    super.update(b);
+
+                    if(b.owner instanceof Unit u){
+                      for(WeaponMount mount: u.mounts){
+                        if(mount.weapon == s){
+                          float bulletX = u.x + Angles.trnsx(u.rotation - 90, x + shootX, y + shootY),
+                              bulletY = u.y + Angles.trnsy(u.rotation - 90, x + shootX, y + shootY);
+
+                          b.set(bulletX, bulletY);
+                          Tmp.v2.set(mount.aimX - bulletX, mount.aimY - bulletY);
+                          float angle = Mathf.clamp(Tmp.v2.angle() - u.rotation, -shootCone, shootCone);
+                          Tmp.v2.setAngle(u.rotation).rotate(angle);
+
+                          Tmp.v1.set(b.aimX - bulletX, b.aimY - bulletY).lerpDelta(Tmp.v2, 0.1f).clampLength(80, range);
+
+                          b.aimX = bulletX + Tmp.v1.x;
+                          b.aimY = bulletY + Tmp.v1.y;
+
+                          shootEffect.at(bulletX, bulletY, Tmp.v1.angle(), hitColor);
+                        }
+                      }
+                    }
+                  }
+
+                  @Override
+                  public void draw(Bullet b){
+                    super.draw(b);
+                    Draw.draw(Draw.z(), () -> {
+                      Draw.color(hitColor);
+                      MathRenderer.setDispersion(0.015f);
+                      MathRenderer.setThreshold(0.4f, 0.7f);
+
+                      for(int i = 0; i < 3; i++){
+                        MathRenderer.drawSin(b.x, b.y, b.aimX, b.aimY,
+                            Mathf.randomSeed(b.id + i, 4f, 6f)*b.fslope(),
+                            Mathf.randomSeed(b.id + i + 1, 360f, 720f),
+                            Mathf.randomSeed(b.id + i + 2, 360f) - Time.time*Mathf.randomSeed(b.id + i + 3, 4f, 7f)
+                        );
+                      }
+                    });
+                  }
+                };
+
+                parts.addAll(
+                    new CustomPart(){{
+                      layer = Layer.effect;
+                      progress = PartProgress.warmup;
+                      draw = (x, y, r, p) -> {
+                        Draw.color(SglDrawConst.matrixNet);
+                        Fill.circle(x, y, 8);
+                        Lines.stroke(1.4f);
+                        SglDraw.dashCircle(x, y, 12, Time.time);
+                        Lines.stroke(1f);
+                        Lines.circle(x, y, 14);
+                        Draw.alpha(0.65f);
+                        SglDraw.gradientCircle(x, y, 20, 12, 0);
+
+                        Draw.alpha(1);
+                        SglDraw.drawDiamond(x, y, 24 + 18*p, 3 + 3*p, Time.time*1.2f);
+                        SglDraw.drawDiamond(x, y, 30 + 18*p, 4 + 4*p, -Time.time*1.2f);
+                      };
+                    }}
+                );
+              }
+
+              @Override
+              public void init(DataWeaponMount mount){
+                Shooter[] shooters = new Shooter[3];
+                for(int i = 0; i < shooters.length; i++){
+                  shooters[i] = new Shooter();
+                }
+                mount.setVar("shooters", shooters);
+              }
+
+              @Override
+              public void update(Unit unit, DataWeaponMount mount){
+                Shooter[] shooters = mount.getVar("shooters");
+                for(Shooter shooter: shooters){
+                  Vec2 v = MathTransform.fourierTransform(Time.time, shooter.param).scl(mount.warmup);
+                  Tmp.v1.set(mount.weapon.x, mount.weapon.y).rotate(unit.rotation - 90);
+                  shooter.x = Tmp.v1.x + v.x;
+                  shooter.y = Tmp.v1.y + v.y;
+                  shooter.trail.update(unit.x + shooter.x, unit.y + shooter.y);
+                }
+              }
+
+              @Override
+              protected void shoot(Unit unit, DataWeaponMount mount, float shootX, float shootY, float rotation){
+                float mountX = unit.x + Angles.trnsx(unit.rotation - 90, x, y),
+                    mountY = unit.y + Angles.trnsy(unit.rotation - 90, x, y);
+
+                SglFx.shootRecoilWave.at(shootX, shootY, rotation, SglDrawConst.matrixNet);
+                SglFx.impactWave.at(shootX, shootY, SglDrawConst.matrixNet);
+
+                SglFx.impactWave.at(mountX, mountY, SglDrawConst.matrixNet);
+                SglFx.crossLight.at(mountX, mountY, SglDrawConst.matrixNet);
+                Shooter[] shooters = mount.getVar("shooters");
+                for(Shooter shooter: shooters){
+                  SglFx.impactWaveSmall.at(mountX + shooter.x, mountY + shooter.y);
+                }
+              }
+
+              @Override
+              public void draw(Unit unit, DataWeaponMount mount){
+                Shooter[] shooters = mount.getVar("shooters");
+                Draw.z(Layer.effect);
+
+                float mountX = unit.x + Angles.trnsx(unit.rotation - 90, x, y),
+                    mountY = unit.y + Angles.trnsy(unit.rotation - 90, x, y);
+
+                float bulletX = mountX + Angles.trnsx(unit.rotation - 90, shootX, shootY),
+                    bulletY = mountY + Angles.trnsy(unit.rotation - 90, shootX, shootY);
+
+                Draw.color(SglDrawConst.matrixNet);
+                Fill.circle(bulletX, bulletY, 6*mount.recoil);
+                Draw.color(Color.white);
+                Fill.circle(bulletX, bulletY, 3*mount.recoil);
+                for(Shooter shooter: shooters){
+                  Draw.color(SglDrawConst.matrixNet);
+                  shooter.trail.draw(SglDrawConst.matrixNet, 3*mount.warmup);
+
+                  float drawx = unit.x + shooter.x, drawy = unit.y + shooter.y;
+                  Fill.circle(drawx, drawy, 4*mount.warmup);
+                  Lines.stroke(0.65f*mount.warmup);
+                  SglDraw.dashCircle(drawx, drawy, 6f*mount.warmup, 4, 180, Time.time);
+                  SglDraw.drawDiamond(drawx, drawy, 4 + 8*mount.warmup, 3*mount.warmup, Time.time*1.45f);
+                  SglDraw.drawDiamond(drawx, drawy, 8 + 10*mount.warmup, 3.6f*mount.warmup, -Time.time*1.45f);
+
+                  Lines.stroke(3*mount.recoil, SglDrawConst.matrixNet);
+                  Lines.line(drawx, drawy, bulletX, bulletY);
+                  Lines.stroke(1.75f*mount.recoil, Color.white);
+                  Lines.line(drawx, drawy, bulletX, bulletY);
+
+                  Draw.alpha(0.5f);
+                  Lines.line(mountX, mountY, drawx, drawy);
+                }
+              }
+
+              class Shooter{
+                final Trail trail = new Trail(45);
+                final float[] param;
+
+                float x, y;
+
+                {
+                  param = new float[9];
+                  for(int d = 0; d < 3; d++){
+                    param[d*3] = Mathf.random(0.5f, 3f)/(d + 1)*(Mathf.randomBoolean()? 1: -1);
+                    param[d*3 + 1] = Mathf.random(0f, 360f);
+                    param[d*3 + 2] = Mathf.random(18f, 48f)/((d + 1)*(d + 1));
+                  }
+                }
+              }
+            }
+        );
+      }
+    };
 
     aurora = new AirSeaAmphibiousUnit("aurora"){
       {
@@ -78,7 +534,7 @@ public class SglUnits implements ContentList{
         engineOffset = 50;
         engineSize = 16;
 
-        engines.addAll(
+        setEnginesMirror(
             new UnitEngine(){{
               x = 38f;
               y = -12;
@@ -86,29 +542,17 @@ public class SglUnits implements ContentList{
               rotation = -45;
             }},
             new UnitEngine(){{
-              x = -38f;
-              y = -12;
-              radius = 8;
-              rotation = -135;
-            }},
-            new UnitEngine(){{
               x = 40f;
               y = -54;
               radius = 10;
               rotation = -45;
-            }},
-            new UnitEngine(){{
-              x = -40f;
-              y = -54;
-              radius = 10;
-              rotation = -135;
             }}
         );
 
         weapons.addAll(
             new Weapon(Sgl.modName + "-aurora_lightcone"){{
                 shake = 5f;
-                shootSound = Sounds.laser;
+                shootSound = Sounds.pulseBlast;
                 x = 29;
                 y = -30;
                 shootY = 8;
@@ -178,21 +622,22 @@ public class SglUnits implements ContentList{
               rotate = true;
               rotateSpeed = 6;
               recoil = 4;
-              recoilTime = 45;
+              recoilTime = 20;
               cooldownTime = 60;
               reload = 30;
               shadow = 25;
 
               bullet = new LaserBulletType(){{
-                damage = 285f;
+                damage = 385f;
                 lifetime = 24;
-                sideAngle = 20f;
-                sideWidth = 1.75f;
-                sideLength = 80f;
+                sideAngle = 90f;
+                sideWidth = 1.45f;
+                sideLength = 20f;
                 width = 24f;
                 length = 480f;
-                shootEffect = Fx.shockwave;
+                shootEffect = SglFx.shootRecoilWave;
                 colors = new Color[]{SglDrawConst.matrixNetDark, SglDrawConst.matrixNet, Color.white};
+                hitColor = colors[0];
               }};
             }},
             new RelatedWeapon(){

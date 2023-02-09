@@ -18,7 +18,7 @@ import static mindustry.Vars.tilesize;
 
 public class AirSeaAmphibiousUnit extends UnitType {
   public float airReloadMulti = 0.75f;
-  public float airShootingSpeedMulti = 0.7f;
+  public float airShootingSpeedMulti = 0.8f;
 
   public AirSeaAmphibiousUnit(String name) {
     super(name);

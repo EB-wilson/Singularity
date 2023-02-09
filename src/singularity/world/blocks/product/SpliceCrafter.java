@@ -96,6 +96,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
   @Annotations.ImplEntries
   public class SpliceCrafterBuild extends NormalCrafterBuild implements SpliceBuildComp {
     public ChainsModule chains;
+    public SpliceCrafterBuild b = this;
     public boolean handling, updateModule = true, firstInit = true;
     public int splice;
 
@@ -270,6 +271,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
         if(consumer != tCons){
           consumer = tCons;
         }
+        b = chains.getVar("curr");
         
         SpliceProduceModule tProd = chains.getVar("producer");
         if(!tProd.loaded){
@@ -299,12 +301,14 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
   
     @Override
     public boolean acceptItem(Building source, Item item){
-      return source.interactable(this.team) && hasItems && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item)) && items.get(item) < items().allCapacity;
+      return source.interactable(this.team) && hasItems && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source))
+          && filter().filter(b, SglConsumeType.item, item, acceptAll(SglConsumeType.item)) && items.get(item) < items().allCapacity;
     }
   
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return source.interactable(this.team) && hasLiquids && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source)) && consumer.filter(SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)) && liquids.get(liquid) <= liquids().allCapacity - 0.0001f;
+      return source.interactable(this.team) && hasLiquids && !(source instanceof ChainsBuildComp && chains.container.all.contains((ChainsBuildComp) source))
+          && filter().filter(b, SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)) && liquids.get(liquid) <= liquids().allCapacity - 0.0001f;
     }
 
     @Override
@@ -334,6 +338,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
     @Override
     public void containerCreated(ChainsContainer old){
       chains.container.putVar("consumer", new SpliceConsumeModule(this));
+      chains.container.putVar("curr", this);
       chains.container.putVar("producer", new SpliceProduceModule(this));
 
       if(hasItems) chains.container.putVar("items", new SpliceItemModule(itemCapacity, firstInit));

@@ -8,6 +8,7 @@ import mindustry.gen.Building;
 import singularity.core.ModConfig;
 import singularity.core.UpdatePool;
 import singularity.core.UpdateTiles;
+import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDrawConst;
 import singularity.graphic.SglShaders;
 import singularity.ui.SglStyles;
@@ -92,6 +93,8 @@ public class Sgl{
   public static void init(){
     //载入着色器
     SglShaders.load();
+    //载入数学着色器
+    MathRenderer.load();
     //加载绘制资源
     SglDrawConst.load();
     //载入风格

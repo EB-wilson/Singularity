@@ -44,6 +44,7 @@ public class MultLiquidBlock extends LiquidBlock{
     removeBar("liquid");
   }
 
+  @SuppressWarnings("ZeroLengthArrayAllocation")
   @Annotations.ImplEntries
   public class MultLiquidBuild extends Building implements ReplaceBuildComp {
     static {

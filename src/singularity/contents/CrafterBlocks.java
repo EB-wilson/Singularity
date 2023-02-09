@@ -139,7 +139,7 @@ public class CrafterBlocks implements ContentList{
       consume.time(90);
       consume.power(2.5f);
       consume.items(ItemStack.with(Items.silicon, 4, SglItems.uranium_238, 1));
-      consume.consValidCondition((NormalCrafterBuild e) -> e.getVar(Integer.class, 0) > 0);
+      consume.consValidCondition((NormalCrafterBuild e) -> e.getVar("status", 0) > 0);
       newProduce();
       produce.item(Items.phaseFabric, 6);
       
@@ -147,7 +147,7 @@ public class CrafterBlocks implements ContentList{
   
       Cons<Item> recipe = item -> {
         newOptionalConsume((NormalCrafterBuild e, BaseConsumers c) -> {
-          e.setVar(2);
+          e.setVar("status", 2);
         }, (s, c) -> {
           s.add(SglStat.effect, t -> t.add(Core.bundle.get("misc.doConsValid")));
         }).overdriveValid(false);
@@ -162,13 +162,13 @@ public class CrafterBlocks implements ContentList{
         @Override
         public void updateTile(){
           super.updateTile();
-          if(getVar(Integer.class, 0) > 0) setVar(getVar(Integer.class) - 1);
+          handleVar("status", (Integer i) -> i > 0? i - 1: 0, 0);
         }
   
         @Override
         public BlockStatus status(){
           BlockStatus status = super.status();
-          if(status == BlockStatus.noInput && getVar(Integer.class, 0) > 0) return BlockStatus.noOutput;
+          if(status == BlockStatus.noInput && getVar("status", 0) > 0) return BlockStatus.noOutput;
           return status;
         }
       };

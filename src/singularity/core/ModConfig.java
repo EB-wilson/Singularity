@@ -12,6 +12,7 @@ import java.lang.reflect.Field;
 
 public class ModConfig{
   private static final int configVersion = 2;
+  private static final Field[] configs = ModConfig.class.getFields();
 
   //basic/基础设置
   public boolean disableModMainMenu;
@@ -38,18 +39,43 @@ public class ModConfig{
     }
     else{
       if(!load(Sgl.configFile)){
-        Sgl.configFile.copyTo(Sgl.configDirectory.child("mod_config.hjson.backup"));
+        Fi backup;
+        Sgl.configFile.copyTo(backup = Sgl.configDirectory.child("mod_config.hjson.backup"));
         Sgl.internalConfigDir.child("mod_config.hjson").copyTo(Sgl.configFile);
         Log.info("default configuration file version updated, eld config should be override(backup file for old file was created)");
         load(Sgl.configFile);
+        load(backup, true);
+
+        try{
+          save();
+        }catch(IOException e){
+          throw new RuntimeException(e);
+        }
       }
     }
+
+    if(loadInfo) printConfig();
+  }
+
+  public void printConfig(){
+    StringBuilder results = new StringBuilder();
+
+    for(Field cfg: configs){
+      try{
+        results.append("  ").append(cfg.getName()).append(" = ").append(cfg.get(this)).append(";").append(System.lineSeparator());
+      }catch(IllegalAccessException e){
+        throw new RuntimeException(e);
+      }
+    }
+
+    Log.info("Mod config loaded! The config data:[" + System.lineSeparator() + results + "]");
   }
 
   public boolean load(Fi file){
-    Field[] configs = ModConfig.class.getFields();
-    StringBuilder results = new StringBuilder();
+    return load(file, false);
+  }
 
+  public boolean load(Fi file, boolean loadOld){
     int n;
     char[] part = new char[8192];
     StringBuilder sb = new StringBuilder();
@@ -63,10 +89,15 @@ public class ModConfig{
 
     lastContext = sb.toString();
     Jval config = Jval.read(lastContext);
-    if(config.get("configVersion").asInt() != configVersion) return false;
+
+    boolean old = config.get("configVersion").asInt() != configVersion;
+
+    if(!loadOld && old) return false;
+
     for(Field cfg: configs){
+      if(!config.has(cfg.getName())) continue;
+
       String temp = config.get(cfg.getName()).toString();
-      results.append("  ").append(cfg.getName()).append(" = ").append(temp).append(";").append(System.lineSeparator());
       try{
         cfg.set(this, warp(cfg.getType(), temp));
       }
@@ -74,9 +105,8 @@ public class ModConfig{
         Log.err(e);
       }
     }
-    if(loadInfo) Log.info("Mod config loaded! The config data:[" + System.lineSeparator() + results + "]");
 
-    return true;
+    return !old;
   }
 
   public void save() throws IOException{

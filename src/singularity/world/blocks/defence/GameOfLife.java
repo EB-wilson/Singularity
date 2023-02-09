@@ -14,7 +14,6 @@ import arc.math.geom.Vec2;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
-import arc.struct.ObjectSet;
 import arc.struct.Seq;
 import arc.util.Strings;
 import arc.util.Time;
@@ -22,6 +21,7 @@ import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
+import mindustry.ctype.Content;
 import mindustry.entities.Damage;
 import mindustry.entities.Effect;
 import mindustry.entities.Units;
@@ -160,6 +160,14 @@ public class GameOfLife extends SglBlock{
 
   @Override
   public void init(){
+    for(BaseConsumers consumer: consumers){
+      for(BaseConsume<? extends ConsumerBuildComp> cons: launchCons.all()){
+        for(Content content: cons.filter()){
+          consumer.addToFilter(cons.type(), content);
+        }
+      }
+    }
+
     super.init();
     clipSize = cellSize*gridSize*(rot45? Mathf.sqrt2: 1);
   }
@@ -398,9 +406,6 @@ public class GameOfLife extends SglBlock{
       grid = new LifeGrid(gridSize);
       grid.maxYears = maxCellYears;
 
-      for(BaseConsume<? extends ConsumerBuildComp> cons: launchCons.all()){
-        consumer.filter.get(0).get(cons.type(), ObjectSet::new).addAll(cons.filter());
-      }
       return this;
     }
 

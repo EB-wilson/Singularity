@@ -11,9 +11,8 @@ import mindustry.entities.bullet.BulletType;
 import mindustry.entities.pattern.ShootPattern;
 import mindustry.entities.units.WeaponMount;
 import mindustry.gen.Unit;
-import mindustry.type.Weapon;
 
-public class RelatedWeapon extends Weapon {
+public class RelatedWeapon extends DataWeapon {
   public ShootPattern alternativeShoot;
   public BulletType alternativeBullet;
   public Boolf<Unit> useAlternative = e -> false;

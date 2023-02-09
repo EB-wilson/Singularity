@@ -77,7 +77,7 @@ public class PayloadCrafter extends NormalCrafter{
     public boolean carried;
 
     public boolean acceptUnitPayload(Unit unit){
-      return inputting == null && !consumer.hasConsume() || consumer.filter(ConsumeType.payload, unit.type, true);
+      return inputting == null && !consumer.hasConsume() || filter().filter(this, ConsumeType.payload, unit.type, true);
     }
 
     @Override
@@ -110,7 +110,8 @@ public class PayloadCrafter extends NormalCrafter{
 
     @Override
     public boolean acceptPayload(Building source, Payload payload){
-      return (source == this || (acceptsPayload && inputting == null  && (!consumer.hasConsume() || consumer.filter(ConsumeType.payload, payload.content(), true)))) && payloads.size < payloadCapacity;
+      return (source == this || (acceptsPayload && inputting == null  && (!consumer.hasConsume()
+          || filter().filter(this, ConsumeType.payload, payload.content(), true)))) && payloads.size < payloadCapacity;
     }
 
     @Override
@@ -280,7 +281,7 @@ public class PayloadCrafter extends NormalCrafter{
     public boolean acceptItem(Building source, Item item) {
       ItemStack stack;
       return source.interactable(this.team) && hasItems
-          && (source == this || (!(consumer.hasConsume() || consumer.hasOptional()) || consumer.filter(SglConsumeType.item, item, acceptAll(SglConsumeType.item))))
+          && (source == this || (!(consumer.hasConsume() || consumer.hasOptional()) || filter().filter(this, SglConsumeType.item, item, acceptAll(SglConsumeType.item))))
           && items.get(item) < ((stack = Structs.find(consumer.current.get(ConsumeType.item).consItems, e -> e.item == item)) != null? stack.amount*itemCapacityMulti: 0);
     }
 

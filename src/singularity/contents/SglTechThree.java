@@ -48,7 +48,9 @@ public class SglTechThree implements ContentList{
 
       node(cultivator, culturing_barn, culB -> {});
 
-      node(phaseWeaver, fission_weaver, fisWea -> {});
+      node(phaseWeaver, fission_weaver, fisWea -> {
+        fisWea.node(polymer_gravitational_generator, pgg -> {});
+      });
 
       node(melter, thermal_centrifuge, theCen -> {
         theCen.node(laser_resolver, lasRes -> {});
@@ -76,9 +78,7 @@ public class SglTechThree implements ContentList{
         cry.node(FEX_crystal_charger, charger -> {
           charger.node(lattice_constructor, latCons -> {});
 
-          charger.node(matrix_cutter, matCut -> {
-            matCut.node(polymer_gravitational_generator, pgg -> {});
-          });
+          charger.node(matrix_cutter, matCut -> {});
         });
       });
 

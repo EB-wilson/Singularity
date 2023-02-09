@@ -1,27 +1,25 @@
 package singularity.world.blocks.defence;
 
 import arc.Core;
-import arc.Events;
 import arc.graphics.Color;
+import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.math.geom.Vec2;
 import arc.struct.*;
+import arc.util.Time;
+import arc.util.Tmp;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.content.Fx;
-import mindustry.game.EventType;
+import mindustry.entities.Effect;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Bullet;
 import mindustry.gen.Groups;
 import mindustry.world.Tile;
 import mindustry.world.blocks.defense.Wall;
-import universecore.UncCore;
 import universecore.annotations.Annotations;
 import universecore.math.gravity.GravityField;
-import universecore.math.gravity.GravitySystem;
-import universecore.util.aspect.EntityAspect;
-import universecore.util.aspect.triggers.TriggerEntry;
 import universecore.util.path.BFSPathFinder;
 import universecore.util.path.IPath;
 import universecore.util.path.PathFindFunc;
@@ -30,43 +28,14 @@ import static mindustry.Vars.tilesize;
 
 @Annotations.ImplEntries
 public class SglWall extends Wall{
-  protected static final ObjectMap<Bullet, BulletGravitySystem> bulletMap = new ObjectMap<>(128);
-  protected static long bulletsMark;
-
-  static {
-    UncCore.aspects.addAspect(new EntityAspect<Bullet>(EntityAspect.Group.bullet, e -> true))
-        .setTrigger(new TriggerEntry<>(EventType.Trigger.update, e -> {
-          BulletGravitySystem sys = bulletMap.get(e);
-          if(sys != null) sys.field().update();
-        }))
-        .setEntryTrigger(e -> {
-          if(!bulletMap.containsKey(e)){
-            BulletGravitySystem sys;
-            bulletMap.put(e, sys = Pools.obtain(BulletGravitySystem.class, BulletGravitySystem::new));
-            sys.setOwner(e);
-            bulletsMark = Core.graphics.getFrameId();
-          }})
-        .setExitTrigger(e -> {
-          BulletGravitySystem sys;
-          if((sys = bulletMap.remove(e)) != null){
-            Pools.free(sys);
-            bulletsMark = Core.graphics.getFrameId();
-          }
-        });
-
-    Events.on(EventType.ResetEvent.class, e -> {
-      bulletMap.clear();
-      bulletsMark = 0;
-    });
-  }
-
-  /**一格方块的质量，mass不指定的情况下用size计算质量*/
-  public float density = 1024;
-  public float mass = -1;
+  /**一格方块的质量，mass不指定的情况下用size计算质量，设为0禁用*/
+  public float density = 0;
+  public float mass = 0;
   
   public float damageFilter = -1;
   public float healMultiplier = 1f/3;
-  public Color healColor = Color.valueOf("84f491");
+  public Effect absorbEffect = Fx.healBlockFull;
+  public Color absorbEffColor = Color.valueOf("84f491");
 
   public SglWall(String name){
     super(name);
@@ -76,20 +45,14 @@ public class SglWall extends Wall{
   @Override
   public void init(){
     super.init();
-    if(mass == -1){
+    if(mass == 0 && density != 0){
       mass = size*size*density;
     }
   }
 
   public class SglWallBuild extends WallBuild{
-    private static final ObjectSet<GravityGroup> ITERATED = new ObjectSet<>();
-
     protected GravityGroup gravGroup;
     private final OrderedSet<SglWallBuild> proximityGrav = new OrderedSet<>();
-
-    static{
-      Events.run(EventType.Trigger.update, ITERATED::clear);
-    }
 
     @Override
     public SglWall block(){
@@ -99,7 +62,7 @@ public class SglWall extends Wall{
     @Override
     public Building init(Tile tile, Team team, boolean shouldAdd, int rotation){
       super.init(tile, team, shouldAdd, rotation);
-      new GravityGroup().add(this);
+      if(mass != 0) new GravityGroup().add(this);
 
       return this;
     }
@@ -110,71 +73,57 @@ public class SglWall extends Wall{
 
       proximityGrav.clear();
       for(Building building: proximity){
-        if(building instanceof SglWallBuild w && w.block().mass > 256){
+        if(building instanceof SglWallBuild w && w.gravGroup != null){
           proximityGrav.add(w);
         }
       }
 
-      for(SglWallBuild build: proximityGrav){
-        gravGroup.add(build.gravGroup);
+      if(gravGroup != null){
+        for(SglWallBuild build: proximityGrav){
+          gravGroup.add(build.gravGroup);
+        }
+        gravGroup.clip(16);
       }
-      gravGroup.clip(16);
     }
 
     @Override
-    public void onProximityRemoved(){
-      super.onProximityRemoved();
-
-      for(ClipGravitySystem system: gravGroup.childGroup){
-        Pools.free(system);
-      }
-      gravGroup.childGroup.clear();
-      gravGroup.remove(this);
+    public void onRemoved(){
+      if(gravGroup != null) gravGroup.remove(this);
     }
 
     @Override
     public void updateTile(){
       super.updateTile();
 
-      if(Core.graphics.getFrameId() - bulletsMark <= 1){
-        if(!ITERATED.add(gravGroup)) return;
-
-        for(ClipGravitySystem system: gravGroup.childGroup){
-          system.field().setAssociatedFields(
-              bulletMap.values(),
-              this::gravitable,
-              GravitySystem::field
-          );
-        }
-      }
+      if(gravGroup != null) gravGroup.update();
 
       float rad = size*tilesize/1.44f;
-      for(Bullet bullet: Groups.bullet.intersect(x, y, rad, rad)){
+      for(Bullet bullet: Groups.bullet.intersect(x - rad/2, y - rad/2, rad, rad)){
         if(!bullet.type.collides && bullet.type.absorbable && bullet.damage <= damageFilter){
-          heal(bullet.damage*bullet.type.buildingDamageMultiplier*healMultiplier);
-          Fx.healBlockFull.at(x, y, 0, healColor, block);
-
-          bullet.remove();
+          absorbed(bullet);
         }
       }
     }
 
-    private boolean gravitable(BulletGravitySystem e){
-      return e.bullet.team != team && (e.bullet.type.collides || e.bullet.type.absorbable || e.bullet.type.hittable);
+    public boolean gravitable(Bullet e){
+      return e.team != team && (e.type.collides || e.type.absorbable || e.type.hittable);
     }
 
     @Override
     public boolean collision(Bullet bullet){
       if(bullet.type.absorbable && bullet.damage < damageFilter){
-  
-        heal(bullet.damage*bullet.type.buildingDamageMultiplier*healMultiplier);
-        Fx.healBlockFull.at(x, y, 0, healColor, block);
+        absorbed(bullet);
 
-        bullet.remove();
-        
         return true;
       }
       return super.collision(bullet);
+    }
+
+    public void absorbed(Bullet bullet){
+      heal(bullet.damage*bullet.type.buildingDamageMultiplier*healMultiplier);
+      absorbEffect.at(x, y, 0, absorbEffColor, block);
+
+      bullet.remove();
     }
 
     public float mass(){
@@ -191,6 +140,8 @@ public class SglWall extends Wall{
 
     OrderedSet<SglWallBuild> child = new OrderedSet<>();
     Seq<ClipGravitySystem> childGroup = new Seq<>();
+
+    long frameID;
 
     public void clip(int clipStep){
       clips.clear();
@@ -233,6 +184,15 @@ public class SglWall extends Wall{
 
           childGroup.add(clip);
         }
+      }
+    }
+
+    public void update(){
+      if(frameID == Core.graphics.getFrameId()) return;
+      frameID = Core.graphics.getFrameId();
+
+      for(ClipGravitySystem system: childGroup){
+        system.update();
       }
     }
 
@@ -309,19 +269,20 @@ public class SglWall extends Wall{
   }
 
   @Annotations.ImplEntries
-  protected static class ClipGravitySystem implements GravitySystem, Pool.Poolable{
+  protected static class ClipGravitySystem implements Pool.Poolable{
     float mass;
     float argX, argY;
     Vec2 position = new Vec2();
 
-    private final GravityField gravityField = new GravityField(this);
-    private long curr;
+    SglWallBuild mark;
 
     public static ClipGravitySystem make(){
       return Pools.obtain(ClipGravitySystem.class, ClipGravitySystem::new);
     }
 
     public void add(SglWallBuild build){
+      if(mark == null) mark = build;
+
       mass += build.mass();
       argX += build.mass()*build.x;
       argY += build.mass()*build.y;
@@ -329,19 +290,18 @@ public class SglWall extends Wall{
       position.set(argX/mass, argY/mass);
     }
 
-    @Override
-    public float mass(){
-      return mass;
-    }
+    public void update(){
+      for(Bullet bullet: Groups.bullet){
+        if(mark != null && mark.gravitable(bullet)){
+          Tmp.v1.set(position)
+              .sub(bullet.x, bullet.y)
+              .setLength(Math.min(64/(bullet.damage + bullet.type.splashDamage), 2.5f)*mass/(Mathf.pow(Tmp.v1.len(), 2)*GravityField.GRAV_CONST))
+              .clamp(0, 32)
+              .scl(Time.delta/60);
 
-    @Override
-    public Vec2 position(){
-      return position;
-    }
-
-    @Override
-    public void gravityUpdate(Vec2 vec2){
-      //no actions
+          bullet.vel.add(Tmp.v1);
+        }
+      }
     }
 
     @Override
@@ -349,41 +309,7 @@ public class SglWall extends Wall{
       mass = 0;
       position.setZero();
       argX = argY = 0;
-
-      field().remove();
-    }
-  }
-
-  @Annotations.ImplEntries
-  protected static class BulletGravitySystem implements GravitySystem, Pool.Poolable{
-    public Bullet bullet;
-    public Vec2 position = new Vec2();
-
-    public GravityField gravityField = new GravityField(this);
-
-    public void setOwner(Bullet owner){
-      bullet = owner;
-    }
-
-    @Override
-    public float mass(){
-      return 1;
-    }
-
-    @Override
-    public Vec2 position(){
-      return position.set(bullet.x, bullet.y);
-    }
-
-    @Override
-    public void gravityUpdate(Vec2 vec2){
-      bullet.vel.add(vec2);
-    }
-
-    @Override
-    public void reset(){
-      bullet = null;
-      position.setZero();
+      mark = null;
     }
   }
 }

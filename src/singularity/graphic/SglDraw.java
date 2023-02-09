@@ -453,15 +453,15 @@ public class SglDraw{
   }
 
   public static void dashCircle(float x, float y, float radius, float rotate){
-    dashCircle(x, y, radius, 1.25f, 6, 180, rotate);
+    dashCircle(x, y, radius, 1.5f, 8, 180, rotate);
   }
 
   public static void dashCircle(float x, float y, float radius, int dashes, float totalDashDeg, float rotate){
-    dashCircle(x, y, radius, 1.25f, dashes, totalDashDeg, rotate);
+    dashCircle(x, y, radius, 1.5f, dashes, totalDashDeg, rotate);
   }
 
   public static void dashCircle(float x, float y, float radius, float scaleFactor, int dashes, float totalDashDeg, float rotate){
-    int sides = 10 + (int)(radius * scaleFactor);
+    int sides = 24 + (int)(radius * scaleFactor);
     if(sides % 2 == 1) sides++;
 
     v1.set(0, 0);

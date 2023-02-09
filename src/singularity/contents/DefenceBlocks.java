@@ -98,6 +98,7 @@ public class DefenceBlocks implements ContentList{
     neutron_polymer_wall = new SglWall("neutron_polymer_wall"){{
       requirements(Category.defense, ItemStack.with(SglItems.degenerate_neutron_polymer, 8, SglItems.strengthening_alloy, 4));
       health = 2400;
+      density = 1024;
       damageFilter = 72;
       absorbLasers = true;
     }};
@@ -106,6 +107,7 @@ public class DefenceBlocks implements ContentList{
       requirements(Category.defense, ItemStack.with(SglItems.degenerate_neutron_polymer, 32, SglItems.strengthening_alloy, 16, SglItems.aerogel, 8));
       size = 2;
       health = 2400*4;
+      density = 1024;
       damageFilter = 95;
       absorbLasers = true;
     }};
@@ -165,7 +167,7 @@ public class DefenceBlocks implements ContentList{
 
       addDeathTrigger(3, shootBullet(new BulletType(){
         {
-          damage = 380;
+          damage = 420;
           speed = 6f;
           lifetime = 72;
           homingRange = 300;
@@ -238,7 +240,7 @@ public class DefenceBlocks implements ContentList{
           fragRandomSpread = 0;
           fragBullet = new LaserBulletType(){{
             length = 280;
-            damage = 258;
+            damage = 280;
             layer = Layer.bullet - 1;
             colors = new Color[]{Color.black.cpy().a(0.4f), Color.black, Color.white};
           }};
@@ -276,7 +278,7 @@ public class DefenceBlocks implements ContentList{
         private static final Unit[] result = new Unit[3];
 
         {
-          damage = 230;
+          damage = 180;
           clipSize = 200;
           speed = 0;
           homingRange = 320;

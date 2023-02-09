@@ -78,7 +78,7 @@ public class ProjectileTurret extends SglTurret{
       });
       s.add(SglStat.coatingTime, c.craftTime/60, StatUnit.seconds);
     };
-    optionalCons.add(consume);
+    optionalCons().add(consume);
 
     BaseConsumers cons = consume;
     consume.setConsTrigger((ProjectileTurretBuild e) -> {

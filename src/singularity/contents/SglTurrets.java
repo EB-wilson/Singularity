@@ -264,7 +264,7 @@ public class SglTurrets implements ContentList{
         bt.row();
         bt.add(OtherContents.electric_disturb.emoji() + "[stat]" + OtherContents.electric_disturb.localizedName + "[lightgray] ~ [stat]2[lightgray] " + Core.bundle.get("unit.seconds"));
       });
-      consume.item(Items.graphite, 5);
+      consume.item(Items.graphite, 1);
       consume.time(90);
     }};
 
