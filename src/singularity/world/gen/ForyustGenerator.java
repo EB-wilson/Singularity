@@ -7,9 +7,6 @@ import mindustry.world.Block;
 
 public class ForyustGenerator extends PlanetGenerator{
   public float pole, tropic;
-
-
-
   @Override
   public float getHeight(Vec3 position){
     return 0;

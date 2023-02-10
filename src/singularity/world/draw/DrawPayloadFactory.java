@@ -63,4 +63,13 @@ public class DrawPayloadFactory<E> extends DrawDirSpliceBlock<E>{
 
     Draw.rect(topRegion, build.x, build.y);
   }
+
+  @Override
+  public TextureRegion[] icons(Block block) {
+    return new TextureRegion[]{
+        block.region,
+        outRegion,
+        topRegion
+    };
+  }
 }

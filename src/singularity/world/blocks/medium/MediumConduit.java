@@ -131,8 +131,6 @@ public class MediumConduit extends Block implements MediumComp, Autotiler{
     protected void drawConduit(float x, float y, int bits, float rotation, SliceMode slice){
       Draw.rect(sliced(regions[bits], slice), x, y, rotation);
 
-
-
       Draw.rect(sliced(tops[bits], slice), x, y, rotation);
     }
   }

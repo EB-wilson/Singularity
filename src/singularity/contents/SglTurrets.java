@@ -291,8 +291,6 @@ public class SglTurrets implements ContentList{
 
       energyCapacity = 1024;
 
-      squareSprite = false;
-
       shootY = 22;
 
       shake = 4;
@@ -617,8 +615,6 @@ public class SglTurrets implements ContentList{
       shootCone = 15;
       shake = 2.2f;
 
-      squareSprite = false;
-
       shootSound = Sounds.shootAlt;
 
       shoot = new ShootPattern(){
@@ -910,8 +906,6 @@ public class SglTurrets implements ContentList{
       shootY = 12;
       shootEffect = Fx.none;
 
-      squareSprite = false;
-
       shootSound = Sounds.malignShoot;
 
       shoot = new ShootPattern(){
@@ -1104,8 +1098,6 @@ public class SglTurrets implements ContentList{
       shootSound = Sounds.laserbig;
       loopSound = Sounds.beam;
       loopSoundVolume = 2f;
-
-      squareSprite = false;
 
       updating = e -> {
         SglTurretBuild t = (SglTurretBuild) e;
@@ -1309,8 +1301,6 @@ public class SglTurrets implements ContentList{
       );
       moveWhileCharging = true;
       shootY = 4;
-
-      squareSprite = false;
 
       unitSort = SglUnitSorts.denser;
 
@@ -1579,8 +1569,6 @@ public class SglTurrets implements ContentList{
       shake = 2;
 
       unitSort = UnitSorts.strongest;
-
-      squareSprite = false;
 
       shootSound = Sounds.release;
       shootSoundPitch = 2;

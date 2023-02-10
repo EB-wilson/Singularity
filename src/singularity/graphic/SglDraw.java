@@ -21,7 +21,6 @@ import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
-import mindustry.world.Tile;
 import singularity.util.func.Floatc3;
 
 import java.util.Arrays;
@@ -168,19 +167,17 @@ public class SglDraw{
     return rect.overlaps(x - clipSize/2, y - clipSize/2, clipSize, clipSize);
   }
 
-  public static void drawLink(Tile origin, Tile other, TextureRegion linkRegion, TextureRegion capRegion, float lerp){
-    drawLink(origin, origin.block() != null? origin.block().offset: 0, 0,
-        other, other.block() != null? other.block().offset: 0, 0, linkRegion, capRegion, lerp);
+  public static void drawLink(float origX, float origY, float othX, float othY, TextureRegion linkRegion, TextureRegion capRegion, float lerp){
+    drawLink(origX, origY, 0, othX, othY, 0, linkRegion, capRegion, lerp);
   }
   
-  public static void drawLink(Tile origin, float blockOffsetOri, float offsetO, Tile other, float blockOffsetOth, float offset,
-                              TextureRegion linkRegion, @Nullable TextureRegion capRegion, float lerp){
-    v1.set(other.drawx() - origin.drawx(), other.drawy() - origin.drawy()).setLength(offsetO);
-    float ox = origin.worldx() + blockOffsetOri + v1.x;
-    float oy = origin.worldy() + blockOffsetOri + v1.y;
+  public static void drawLink(float origX, float origY, float offsetO, float othX, float othY, float offset, TextureRegion linkRegion, @Nullable TextureRegion capRegion, float lerp){
+    v1.set(othX - origX, othY - origY).setLength(offsetO);
+    float ox = origX + v1.x;
+    float oy = origY + v1.y;
     v1.scl(-1).setLength(offset);
-    float otx = other.worldx() + blockOffsetOth + v1.x;
-    float oty = other.worldy() + blockOffsetOth + v1.y;
+    float otx = othX + v1.x;
+    float oty = othY + v1.y;
 
     v1.set(otx, oty).sub(ox, oy);
     v2.set(v1).scl(lerp);

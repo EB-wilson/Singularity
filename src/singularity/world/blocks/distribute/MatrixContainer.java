@@ -10,7 +10,7 @@ import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistSupportContainerTable.Container;
 
 public class MatrixContainer extends SglBlock{
-  public boolean isIntegrate;
+  public boolean isIntegrate = true;
 
   public MatrixContainer(String name){
     super(name);

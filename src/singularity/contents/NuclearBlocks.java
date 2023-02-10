@@ -156,6 +156,7 @@ public class NuclearBlocks implements ContentList{
       requirements(Category.power, ItemStack.with(
           SglItems.strengthening_alloy, 100,
           SglItems.crystal_FEX_power, 80,
+          SglItems.uranium_238, 75,
           Items.phaseFabric, 70,
           SglItems.aerogel, 90
       ));
@@ -184,6 +185,7 @@ public class NuclearBlocks implements ContentList{
       requirements(Category.power, ItemStack.with(
           SglItems.strengthening_alloy, 260,
           SglItems.aerogel, 240,
+          SglItems.uranium_238, 300,
           Items.plastanium, 220,
           Items.silicon, 280,
           Items.phaseFabric, 160,
@@ -259,6 +261,7 @@ public class NuclearBlocks implements ContentList{
           SglItems.strengthening_alloy, 200,
           SglItems.crystal_FEX, 160,
           SglItems.aerogel, 180,
+          SglItems.uranium_238, 200,
           Items.lead, 180,
           Items.phaseFabric, 140
       ));
@@ -293,6 +296,7 @@ public class NuclearBlocks implements ContentList{
           SglItems.strengthening_alloy, 120,
           SglItems.crystal_FEX, 90,
           SglItems.crystal_FEX_power, 70,
+          SglItems.uranium_238, 100,
           Items.phaseFabric, 60,
           Items.surgeAlloy, 80
       ));
@@ -332,6 +336,7 @@ public class NuclearBlocks implements ContentList{
           SglItems.crystal_FEX, 260,
           SglItems.crystal_FEX_power, 280,
           SglItems.degenerate_neutron_polymer, 100,
+          SglItems.uranium_238, 320,
           Items.surgeAlloy, 375,
           Items.phaseFabric, 240
       ));

@@ -8,6 +8,7 @@ import arc.func.Floatp;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.PixmapRegion;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
@@ -35,9 +36,9 @@ import mindustry.world.draw.DrawDefault;
 import mindustry.world.meta.*;
 import singularity.type.SglLiquidStack;
 import singularity.world.blocks.nuclear.NuclearPipeNode;
+import singularity.world.components.ExtraVariableComp;
 import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
-import singularity.world.components.ExtraVariableComp;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.modules.NuclearEnergyModule;
@@ -193,8 +194,11 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public void load(){
     super.load();
     draw.load(this);
+
+    PixmapRegion image = Core.atlas.getPixmap(region);
+    squareSprite = image.getA(0, 0) > 0.5f;
   }
-  
+
   @Override
   public void setStats() {
     stats.add(Stat.size, "@x@", size, size);

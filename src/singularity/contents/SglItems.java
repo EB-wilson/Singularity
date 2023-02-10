@@ -150,6 +150,7 @@ public class SglItems implements ContentList{
       explosiveness = 0f;
       flammability = 0f;
       radioactivity = 0.4f;
+      cost = 1.5f;
     }};
     
     uranium_235 = new Item("uranium_235", Color.valueOf("#B5D980")){{

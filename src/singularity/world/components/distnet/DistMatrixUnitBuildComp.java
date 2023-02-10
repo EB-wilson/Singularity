@@ -1,8 +1,8 @@
 package singularity.world.components.distnet;
 
 import arc.math.geom.Point2;
-import arc.struct.IntMap;
 import arc.struct.ObjectMap;
+import arc.struct.ObjectSet;
 import arc.struct.OrderedMap;
 import mindustry.Vars;
 import mindustry.ctype.ContentType;
@@ -37,7 +37,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   }
   
   @Annotations.BindField("ioPoints")
-  default IntMap<IOPointComp> ioPoints(){
+  default ObjectSet<IOPointComp> ioPoints(){
     return null;
   }
 
@@ -73,7 +73,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   }
   
   default boolean configValid(Building entity){
-    if(entity instanceof IOPointComp && ((IOPointComp) entity).parent() == this) return true;
+    if(entity instanceof IOPointComp) return true;
     return Sgl.matrixContainers.getContainer(entity.block) != null;
   }
 
@@ -112,8 +112,8 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   
   void drawValidRange();
   
-  default void removeIO(int pos){
-    ioPoints().remove(pos);
-    matrixGrid().remove(Vars.world.build(getTile().x + Point2.x(pos), getTile().y + Point2.y(pos)));
+  default void removeIO(IOPointComp io){
+    ioPoints().remove(io);
+    matrixGrid().remove(io.getBuilding());
   }
 }

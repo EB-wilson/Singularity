@@ -1,7 +1,5 @@
 package singularity.world.blocks.distribute;
 
-import arc.math.geom.Point2;
-import arc.util.Nullable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.ctype.Content;
@@ -13,11 +11,9 @@ import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.Edges;
-import mindustry.world.Tile;
-import mindustry.world.meta.BuildVisibility;
-import mindustry.world.meta.Stat;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
+import singularity.contents.DistributeBlocks;
 import singularity.world.blocks.SglBlock;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
@@ -27,6 +23,7 @@ import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.buffers.LiquidsBuffer;
+import singularity.world.meta.SglStat;
 import universecore.annotations.Annotations;
 
 import static mindustry.Vars.*;
@@ -36,7 +33,6 @@ import static mindustry.Vars.*;
 public class IOPointBlock extends SglBlock implements IOPointBlockComp{
   public GridChildType[] configTypes = {GridChildType.output, GridChildType.input, GridChildType.acceptor};
   public ContentType[] supportContentType = {ContentType.item, ContentType.liquid};
-  @Nullable protected DistMatrixUnitBuildComp currPlacement;
 
   public IOPointBlock(String name){
     super(name);
@@ -64,25 +60,15 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     setFactory(GridChildType.input, ContentType.liquid, new RequestHandlers.PutLiquidRequestHandler());
     setFactory(GridChildType.acceptor, ContentType.liquid, new RequestHandlers.AcceptLiquidRequestHandler());
   }
-  
-  @Override
-  public boolean canPlaceOn(Tile tile, Team team, int rotate){
-    return currPlacement != null && currPlacement.tileValid(tile);
-  }
 
   @Override
-  public void setStats(){
-    stats.add(Stat.size, "@x@", size, size);
-  }
-
-  public void resetCurrPlacement(){
-    currPlacement = null;
-    buildVisibility = BuildVisibility.hidden;
-  }
-  
-  public void setCurrPlacement(DistMatrixUnitBuildComp parent){
-    currPlacement = parent;
-    buildVisibility = BuildVisibility.shown;
+  public void setStats() {
+    super.setStats();
+    stats.add(SglStat.componentBelongs, t -> {
+      t.defaults().left();
+      t.image(DistributeBlocks.matrix_controller.fullIcon).size(35).padRight(8);
+      t.add(DistributeBlocks.matrix_controller.localizedName);
+    });
   }
 
   @Annotations.ImplEntries
@@ -95,17 +81,6 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
 
     protected boolean siphoning;
 
-    int parentPos = -1;
-
-    public IOPoint(){
-      this.parent = currPlacement;
-    }
-
-    @Override
-    public Object config(){
-      return super.config();
-    }
-
     @Override
     public Building create(Block block, Team team){
       super.create(block, team);
@@ -115,22 +90,14 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     }
 
     @Override
-    public Building init(Tile tile, Team team, boolean shouldAdd, int rotation){
-      super.init(tile, team, shouldAdd, rotation);
-      if(parent != null) parent.ioPoints().put(Point2.pack(tileX() - Point2.x(parentPos), tileY() - Point2.y(parentPos)), this);
-      return this;
-    }
-
-    @Override
     public void onRemoved(){
-      if(parent != null) parent.removeIO(Point2.pack(tileX() - Point2.x(parentPos), tileY() - Point2.y(parentPos)));
+      if(parent != null) parent.removeIO(this);
       super.onRemoved();
     }
   
     @Override
     public void updateTile(){
       if(parent == null || !parent.getBuilding().isAdded()){
-        remove();
         return;
       }
       if(parent.gridValid() && config != null){
@@ -155,10 +122,6 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     public byte getDirectBit(Building e){
       byte dir = relativeTo(Edges.getFacingEdge(e, this));
       return (byte) (dir == 0? 1: dir == 1? 2: dir == 2? 4: dir == 3? 8: 0);
-    }
-  
-    public void applyConfig(TargetConfigure config){
-      this.config = config;
     }
 
     @Override
@@ -365,22 +328,10 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     }
 
     @Override
-    public void onProximityAdded(){
-      super.onProximityAdded();
-      if(parentPos == -1) return;
-
-      parent = world.build(parentPos) instanceof DistMatrixUnitBuildComp mat? mat: null;
-      if(parent != null){
-        parent.ioPoints().put(pos(), this);
-      }
-    }
-
-    @Override
     public void write(Writes write){
       super.write(write);
       outItems.write(write);
       outLiquid.write(write);
-      write.i(parent == null? -1: parent.getTile().pos());
     }
 
     @Override
@@ -388,7 +339,6 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       super.read(read, revision);
       outItems.read(read);
       outLiquid.read(read);
-      parentPos = read.i();
     }
   }
 }

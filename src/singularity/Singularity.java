@@ -24,7 +24,7 @@ import universecore.util.OverrideContentList;
 
 import static mindustry.game.EventType.*;
 
-@Annotations.ImportUNC(requireVersion = "1.6.0")
+@Annotations.ImportUNC(requireVersion = "1.6.2")
 public class Singularity extends Mod{
   private static final ContentList[] modContents = new ContentList[]{
       new OtherContents(),//其他内容

@@ -2,9 +2,7 @@ package singularity;
 
 import arc.files.Fi;
 import arc.files.ZipFi;
-import arc.struct.Seq;
 import mindustry.Vars;
-import mindustry.gen.Building;
 import singularity.core.ModConfig;
 import singularity.core.UpdatePool;
 import singularity.core.UpdateTiles;
@@ -13,7 +11,6 @@ import singularity.graphic.SglDrawConst;
 import singularity.graphic.SglShaders;
 import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
-import singularity.world.blocks.distribute.IOPointBlock;
 import singularity.world.distribution.DistSupportContainerTable;
 import universecore.util.handler.ClassHandler;
 import universecore.util.mods.ModGetter;
@@ -32,10 +29,6 @@ public class Sgl{
   public static final String modName = "singularity";
   /**此mod前置的内部名称*/
   public static final String libName = "universe-core";
-  /**最大多方块结构尺寸限制*/
-  public static final int maxStructureSize = 50;
-  /**空白实体数组*/
-  public static final Seq<Building> empty = new Seq<>(0);
   
   /**模组文件夹位置*/
   public static final Fi modDirectory = settings.getDataDirectory().child("mods");
@@ -85,8 +78,6 @@ public class Sgl{
   public static Contributors contributors;
   
   public static UpdateTiles updateTiles;
-  
-  public static IOPointBlock ioPoint;
 
   public static DistSupportContainerTable matrixContainers;
   

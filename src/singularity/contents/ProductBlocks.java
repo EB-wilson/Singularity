@@ -92,8 +92,6 @@ public class ProductBlocks implements ContentList {
       ));
       size = 4;
 
-      squareSprite = false;
-
       itemCapacity = 50;
       liquidCapacity = 30;
 
@@ -144,8 +142,6 @@ public class ProductBlocks implements ContentList {
           SglItems.strengthening_alloy, 30
       ));
       size = 2;
-
-      squareSprite = false;
 
       master = (ExtendableDrill) tidal_drill;
       mining = SglFx.shrinkParticle(10, 1.5f, 120, Pal.reactorPurple);

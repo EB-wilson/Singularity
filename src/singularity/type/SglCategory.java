@@ -1,6 +1,7 @@
 package singularity.type;
 
 import mindustry.type.Category;
+import singularity.Sgl;
 import universecore.UncCore;
 
 import static singularity.Sgl.modName;
@@ -16,6 +17,7 @@ public class SglCategory{
   public static void load(){
     nuclear = UncCore.categories.add("nuclear", 5, modName + "-nuclear");
     matrix = UncCore.categories.add("matrix", 6, modName + "-matrix");
-    debugging = UncCore.categories.add("debugging", modName + "-debugging");
+
+    if (Sgl.config.debugMode) debugging = UncCore.categories.add("debugging", modName + "-debugging");
   }
 }

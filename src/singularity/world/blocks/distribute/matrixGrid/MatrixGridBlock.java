@@ -11,6 +11,7 @@ import arc.util.io.Reads;
 import arc.util.io.Writes;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
+import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
@@ -27,6 +28,7 @@ import singularity.world.blocks.distribute.TargetConfigure;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers.RequestHandler;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitComp;
+import singularity.world.components.distnet.IOPointBlockComp;
 import singularity.world.components.distnet.IOPointComp;
 import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.GridChildType;
@@ -40,7 +42,6 @@ import universecore.util.DataPackable;
 import universecore.util.NumberStrify;
 import universecore.util.colletion.TreeSeq;
 
-import static mindustry.Vars.control;
 import static mindustry.Vars.world;
 import static singularity.world.blocks.distribute.matrixGrid.MatrixGridBlock.MatrixGridBuild.PosCfgPair.typeID;
 
@@ -92,20 +93,21 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       if(t == null) return;
 
       if(c.isClear()){
-        if(t instanceof IOPointComp){
-          ((IOPointComp) t).gridConfig(null);
+        if(t instanceof IOPointComp io){
+          io.gridConfig(null);
+          io.parent(null);
+          entity.ioPoints.remove(io);
         }
         TargetConfigure oldCfg = entity.configMap.remove(c.offsetPos);
         if (oldCfg != null) {
           entity.configs.remove(oldCfg);
         }
-        if (!(t instanceof IOPointComp)) {
-          entity.grid.remove(t);
-        }
+        entity.grid.remove(t);
       }
       else{
-        if(t instanceof IOPointComp){
-          ((IOPointComp) t).applyConfig(c);
+        if(t instanceof IOPointComp io){
+          io.gridConfig(c);
+          entity.ioPointConfigBackEntry(io);
         }
 
         TargetConfigure old = entity.configMap.put(c.offsetPos, c);
@@ -132,10 +134,13 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           if(cfg.isContainer()) continue;
           Tile tile = world.tile(e.tileX() + Point2.x(cfg.offsetPos), e.tileY() + Point2.y(cfg.offsetPos));
           if(tile == null) continue;
-          Sgl.ioPoint.setCurrPlacement(entity);
-          tile.setBlock(Sgl.ioPoint, entity.team, 0);
+
+          IOPointBlockComp ioBlock = pair.ioPoints.get(cfg.offsetPos);
+          if (ioBlock == null) continue;
+
+          tile.setBlock(ioBlock.getBlock(), entity.team, 0);
           b = tile.build;
-          ((IOPointComp)b).applyConfig(cfg);
+          ((IOPointComp)b).gridConfig(cfg);
           entity.ioPointConfigBackEntry((IOPointComp) b);
         }
         else{
@@ -145,8 +150,6 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           entity.grid.addConfig(cfg);
         }
       }
-      
-      Sgl.ioPoint.resetCurrPlacement();
       entity.shouldUpdateTask = true;
 
       Pools.free(pair);
@@ -156,9 +159,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   @Override
   public void onPlanRotate(BuildPlan plan, int direction) {
     if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof MatrixGridBuild.PosCfgPair posPair){
-      for (TargetConfigure cfg : posPair.configs.values()) {
-        cfg.rotateDir(this, direction);
-      }
+      posPair.rotate(this, direction);
 
       plan.config = posPair.pack();
     }
@@ -171,7 +172,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
     
     protected TreeSeq<TargetConfigure> configs = new TreeSeq<>((a, b) -> b.priority - a.priority);
     protected IntMap<TargetConfigure> configMap = new IntMap<>();
-    protected IntMap<IOPointComp> ioPoints = new IntMap<>();
+    protected ObjectSet<IOPointComp> ioPoints = new ObjectSet<>();
 
     protected ObjectMap<DistRequestBase, RequestHandler<?>> requestHandlerMap = new ObjectMap<>();
 
@@ -209,10 +210,9 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
             continue;
           }
 
-          if(other instanceof IOPointComp){
-            ((IOPointComp) other).parent(this);
-            ((IOPointComp) other).applyConfig(config);
-            ioPointConfigBackEntry((IOPointComp) other);
+          if(other instanceof IOPointComp io){
+            io.gridConfig(config);
+            ioPointConfigBackEntry(io);
           }
           else{
             grid.addConfig(config);
@@ -229,7 +229,8 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   
     @Override
     public void ioPointConfigBackEntry(IOPointComp ioPoint){
-      ioPoints.put(ioPoint.getBuilding().pos(), ioPoint);
+      ioPoint.parent(this);
+      ioPoints.add(ioPoint);
       configMap.put(ioPoint.gridConfig().offsetPos, ioPoint.gridConfig());
       configs.add(ioPoint.gridConfig());
       grid.addConfig(ioPoint.gridConfig());
@@ -308,10 +309,10 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
     public void drawValidRange(){}
     
     @Override
-    public void removeIO(int pos){
+    public void removeIO(IOPointComp io){
       if(isAdded()){
-        DistMatrixUnitBuildComp.super.removeIO(pos);
-        TargetConfigure cfg = configMap.remove(pos);
+        DistMatrixUnitBuildComp.super.removeIO(io);
+        TargetConfigure cfg = configMap.remove(Point2.pack(io.getTile().x - tileX(), io.getTile().y - tileY()));
         if(cfg != null) configs.remove(cfg);
         shouldUpdateTask = true;
       }
@@ -321,13 +322,17 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
     public void updateTile(){
       if(gridValid()){
         for(TargetConfigure cfg: configMap.values()){
-          IOPointComp b = ioPoints.get(cfg.offsetPos);
-          if(b != null && !b.getBuilding().isAdded()){
+          Building b = Vars.world.build(tileX() + Point2.x(cfg.offsetPos), tileY() + Point2.y(cfg.offsetPos));
+          if(b == null || !b.isAdded()){
             TargetConfigure c = configMap.remove(cfg.offsetPos);
             if (c != null) {
               configs.remove(c);
             }
             shouldUpdateTask = true;
+
+            if (b instanceof IOPointComp io){
+              ioPoints.remove(io);
+            }
           }
         }
 
@@ -358,40 +363,23 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       }
 
       super.updateTile();
-      
-      if((control.input.config.getSelected() != this && configIOPoint && control.input.block == Sgl.ioPoint)
-          || (configIOPoint && control.input.block != Sgl.ioPoint)){
-        configIOPoint =  false;
-        Sgl.ioPoint.resetCurrPlacement();
-        if(control.input.block == Sgl.ioPoint) control.input.block = null;
-      }
     }
   
     @Override
     public boolean onConfigureBuildTapped(Building other){
       if(other == this){
-        if(control.input.block == Sgl.ioPoint){
-          configIOPoint = false;
-          Sgl.ioPoint.resetCurrPlacement();
-          control.input.block = null;
-        }
-        else{
-          configIOPoint = true;
-          Sgl.ioPoint.setCurrPlacement(this);
-          control.input.block = Sgl.ioPoint;
+        configIOPoint = !configIOPoint;
+        return false;
+      }
+      else if(tileValid(other.tile) && gridValid()){
+        if(configValid(other)){
+          UncCore.secConfig.showOn(other);
         }
         return false;
       }
       else{
-        if(tileValid(other.tile) && gridValid()){
-          if(configValid(other)){
-            UncCore.secConfig.showOn(other);
-          }
-          return false;
-        }
-        else{
-          return true;
-        }
+        configIOPoint = false;
+        return true;
       }
     }
   
@@ -399,17 +387,24 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
     public byte[] config(){
       PosCfgPair pair = new PosCfgPair();
       pair.configs = configMap;
+      for (IOPointComp point : ioPoints) {
+        pair.ioPoints.put(
+            Point2.pack(point.getTile().x - tileX(), point.getTile().y - tileY()),
+            point.getIOBlock()
+        );
+      }
+
       return pair.pack();
     }
 
     @Override
     public boolean acceptItem(Building source, Item item){
-      return ioPoints.containsKey(source.pos());
+      return source instanceof IOPointComp io && ioPoints.contains(io);
     }
 
     @Override
     public boolean acceptLiquid(Building source, Liquid liquid){
-      return ioPoints.containsKey(source.pos());
+      return source instanceof IOPointComp io && ioPoints.contains(io);
     }
 
     @Override
@@ -421,6 +416,12 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       pair.read(bytes);
 
       configMap = pair.configs;
+      for (IntMap.Entry<IOPointBlockComp> entry : pair.ioPoints) {
+        Building b = world.build(tileX() + Point2.x(entry.key), tileY() + Point2.y(entry.key));
+        if (b instanceof IOPointComp io && io.getIOBlock() == entry.value){
+          ioPoints.add(io);
+        }
+      }
 
       Pools.free(pair);
     }
@@ -430,6 +431,15 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       super.write(write);
       PosCfgPair pair = new PosCfgPair();
       pair.configs = configMap;
+      pair.ioPoints = new IntMap<>();
+
+      for (IOPointComp point : ioPoints) {
+        pair.ioPoints.put(
+            Point2.pack(point.getTile().x - tileX(), point.getTile().y - tileY()),
+            point.getIOBlock()
+        );
+      }
+
       byte[] bytes = pair.pack();
       write.i(bytes.length);
       write.b(bytes);
@@ -441,6 +451,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
       public static final long typeID = 1679658234266591164L;
     
       IntMap<TargetConfigure> configs;
+      IntMap<IOPointBlockComp> ioPoints;
     
       @Override
       public long typeID(){
@@ -455,6 +466,12 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           write.i(bytes.length);
           write.b(bytes);
         }
+
+        write.i(ioPoints.size);
+        for(IntMap.Entry<IOPointBlockComp> entry : ioPoints){
+          write.i(entry.key);
+          write.i(entry.value.getBlock().id);
+        }
       }
     
       @Override
@@ -467,11 +484,48 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           cfg.read(read.b(len));
           configs.put(cfg.offsetPos, cfg);
         }
+
+        length = read.i();
+        ioPoints = new IntMap<>();
+        for (int i = 0; i < length; i++) {
+          int off = read.i();
+          Block b = Vars.content.block(read.i());
+          if (b instanceof IOPointBlockComp io) {
+            ioPoints.put(off, io);
+          }
+        }
       }
 
       @Override
       public void reset(){
         configs = null;
+        ioPoints = null;
+      }
+
+      public void rotate(Block block, int direction) {
+        for (TargetConfigure cfg : configs.values()) {
+          cfg.rotateDir(block, direction);
+        }
+
+        IntMap<IOPointBlockComp> tmp = new IntMap<>();
+        for (IntMap.Entry<IOPointBlockComp> entry : ioPoints) {
+          int off = block.offset > 0? 1: 0;
+          int cx = Point2.x(entry.key), cy = Point2.y(entry.key);
+
+          int lx = cx;
+
+          if (direction >= 0) {
+            cx = -cy + off;
+            cy = lx;
+          } else {
+            cx = cy;
+            cy = -lx + off;
+          }
+
+          tmp.put(Point2.pack(cx, cy), entry.value);
+        }
+
+        ioPoints = tmp;
       }
     }
   }

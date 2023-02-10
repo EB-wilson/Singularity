@@ -71,6 +71,7 @@ public class GameOfLife extends SglBlock{
   public boolean rot45 = true;
 
   public int maxCellYears = 5;
+  public boolean cellSenescence = true;
   public float warmupSpeed = 0.025f;
   public Effect cellBornEffect;
   public Effect cellDeathEffect = SglFx.cellDeath;
@@ -152,9 +153,9 @@ public class GameOfLife extends SglBlock{
   @Override
   public void load(){
     super.load();
-    cellRegion = new TextureRegion[maxCellYears + 1];
+    cellRegion = new TextureRegion[maxCellYears + 1 + (cellSenescence? 1: 0)];
     for(int i = 0; i < cellRegion.length; i++){
-      cellRegion[i] = Core.atlas.find(name + "_cell_" + i);
+      cellRegion[i] = Core.atlas.find(name + "_cell_" + i, Core.atlas.find(name + "_cell_death", Core.atlas.white()));
     }
   }
 
@@ -241,10 +242,20 @@ public class GameOfLife extends SglBlock{
             trigger.setStats(stat);
           }
         }
+
         t.add(Core.bundle.format("infos.cellYears", i)).left().top().color(Pal.gray).fill();
         t.table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray), item -> {
           item.defaults().grow().left();
           StatUtils.buildTable(item, stat);
+        }).fill().pad(5).left().margin(5);
+        t.row();
+      }
+
+      if (cellSenescence){
+        t.add().left().top();
+        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray), item -> {
+          item.defaults().grow().left();
+          item.add(Core.bundle.get("infos.cellYearsOverflow"));
         }).fill().pad(5).left().margin(5);
         t.row();
       }
@@ -404,7 +415,7 @@ public class GameOfLife extends SglBlock{
     public Building create(Block block, Team team){
       super.create(block, team);
       grid = new LifeGrid(gridSize);
-      grid.maxYears = maxCellYears;
+      grid.maxYears = maxCellYears + (cellSenescence? 1: 0);
 
       return this;
     }

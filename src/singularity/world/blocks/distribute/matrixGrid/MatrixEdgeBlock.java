@@ -69,8 +69,10 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
     list.each(plan -> {
       if(Point2.pack(req.x + pos.x, req.y + pos.y) == Point2.pack(plan.x, plan.y)){
         if(plan.block instanceof EdgeLinkerComp b){
-          SglDraw.drawLink(req.tile(), req.block.offset, linkOffset,
-              plan.tile(), plan.block.offset, b.linkOffset(), linkRegion, null, 1);
+          SglDraw.drawLink(req.drawx(), req.drawy(), linkOffset,
+              plan.drawx(), plan.drawy(), b.linkOffset(),
+              linkRegion, null, 1
+          );
         }
       }
     });
@@ -101,10 +103,9 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
         Draw.z(Layer.effect);
         Draw.alpha(0.65f);
         SglDraw.drawLink(
-            tile, offset, linkOffset,
-            nextEdge().tile(), nextEdge().getBlock().offset, nextEdge().getEdgeBlock().linkOffset(),
-            linkLightRegion, linkLightCapRegion,
-            linkLerp()
+            x, y, linkOffset,
+            nextEdge().tile().drawx(), nextEdge().tile().drawy(), nextEdge().getEdgeBlock().linkOffset(),
+            linkLightRegion, linkLightCapRegion, linkLerp()
         );
       }
     }

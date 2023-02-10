@@ -134,9 +134,9 @@ public class RequestHandlers{
       ReadItemsRequest result = seq.isEmpty()? null: new ReadItemsRequest(sender, sender.getBuffer(DistBufferType.itemBuffer), seq);
       if(result == null) return null;
       result.waker = (DistMatrixUnitBuildComp e) -> {
-        for(IntMap.Entry<IOPointComp> point: e.ioPoints()){
+        for(IOPointComp point: e.ioPoints()){
           for(ItemStack stack: seq){
-            if(point.value.valid(e, GridChildType.output, stack.item)) return true;
+            if(point.valid(e, GridChildType.output, stack.item)) return true;
           }
         }
 
@@ -242,9 +242,9 @@ public class RequestHandlers{
       ReadLiquidsRequest result = liquids.isEmpty()? null: new ReadLiquidsRequest(sender, sender.getBuffer(DistBufferType.liquidBuffer), seq);
       if(result == null) return null;
       result.waker = (DistMatrixUnitBuildComp e) -> {
-        for(IntMap.Entry<IOPointComp> point: e.ioPoints()){
+        for(IOPointComp point: e.ioPoints()){
           for(LiquidStack stack: seq){
-            if(point.value.valid(e, GridChildType.output, stack.liquid)) return true;
+            if(point.valid(e, GridChildType.output, stack.liquid)) return true;
           }
         }
         return false;

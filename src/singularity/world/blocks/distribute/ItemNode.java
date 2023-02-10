@@ -121,6 +121,7 @@ public class ItemNode extends SglBlock {
   public void setStats() {
     super.setStats();
     stats.remove(Stat.itemCapacity);
+    stats.add(Stat.linkRange, range, StatUnit.blocks);
     stats.add(Stat.itemCapacity, Core.bundle.format("infos.mixedItemCapacity", itemCapacity, maxItemCapacity));
     stats.add(Stat.itemsMoved, 60/transportTime, StatUnit.itemsSecond);
   }

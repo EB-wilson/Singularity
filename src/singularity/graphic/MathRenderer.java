@@ -22,6 +22,9 @@ public class MathRenderer{
   static float dispersion = 0.02f;
   static float minThreshold = 0.01f;
   static float maxThreshold = 1;
+  static float sclX = 1;
+  static float sclY = 1;
+
   static TextureRegion blank;
 
   static class MathShader extends Shader{
@@ -51,14 +54,17 @@ public class MathRenderer{
         uniform float maxThreshold;
         uniform float minThreshold;
                 
+        uniform float sclX;
+        uniform float sclY;
+                
         %args%
                 
         varying vec4 v_color;
         varying vec2 v_texCoords;
                 
         void main(){
-            float x = (v_texCoords.x - 0.5)*2.0*%wScl%;
-            float y = (v_texCoords.y - 0.5)*2.0*%hScl%;
+            float x = (v_texCoords.x - 0.5)*%wScl%*sclX;
+            float y = (v_texCoords.y - 0.5)*%hScl%*sclY;
                 
             vec4 c = texture2D(u_texture, v_texCoords);
             vec4 mixed = v_color*c;
@@ -72,7 +78,7 @@ public class MathRenderer{
         }
         """;
 
-    public final Object[] argsCount;
+    public final Object[] argsArr;
     public final String function;
 
     public MathShader(String function, String gradMod, String... argTypes){
@@ -82,15 +88,15 @@ public class MathRenderer{
     public MathShader(float widthScl, float heightScl, String function, String gradMod, String... argTypes){
       super(vert, genFrag(widthScl, heightScl, function, gradMod, argTypes));
       this.function = function;
-      argsCount = new Object[argTypes.length];
+      argsArr = new Object[argTypes.length];
     }
 
     public static String genFrag(float widthScl, float heightScl, String function, String gradMod, String... argTypes){
       String res = frag.replace("%fx%", function)
           .replace("%gradMod%", gradMod)
           .replace("%args%", genArgList(argTypes))
-          .replace("%wScl%", Float.toString(widthScl))
-          .replace("%hScl%", Float.toString(heightScl));
+          .replace("%wScl%", Float.toString(widthScl*2f))
+          .replace("%hScl%", Float.toString(heightScl*2f));
 
       if(Sgl.config.loadInfo && Sgl.config.debugMode){
         Log.info("[DEBUG] [Singularity] math shader generate, frag shader content:\n" + res);
@@ -114,7 +120,12 @@ public class MathRenderer{
     }
 
     public void setArg(int index, Object value){
-      argsCount[index] = value;
+      argsArr[index] = value;
+    }
+
+    public void setScl(float sclX, float sclY){
+      MathRenderer.sclX = sclX;
+      MathRenderer.sclY = sclY;
     }
 
     @Override
@@ -126,9 +137,11 @@ public class MathRenderer{
 
       setUniformf("minThreshold", minThreshold);
       setUniformf("maxThreshold", maxThreshold);
+      setUniformf("sclX", sclX);
+      setUniformf("sclY", sclY);
 
-      for(int i = 0; i < argsCount.length; i++){
-        Object o = argsCount[i];
+      for(int i = 0; i < argsArr.length; i++){
+        Object o = argsArr[i];
         if(o instanceof Float f){
           setUniformf("arg" + i, f);
         }
@@ -182,8 +195,9 @@ public class MathRenderer{
     MathRenderer.maxThreshold = maxThreshold;
   }
 
-  public static void drawSin(float x1, float y1, float x2, float y2, float max, float omiga, float fine){
-    sinShader.setArg(0, omiga*Mathf.degRad);
+  public static void drawSin(float x1, float y1, float x2, float y2, float max, float scl, float fine){
+    sinShader.setScl(scl*Mathf.degRad, 1);
+    sinShader.setArg(0, 1f);
     sinShader.setArg(1, fine*Mathf.degRad);
 
     Draw.shader(sinShader);
@@ -197,9 +211,10 @@ public class MathRenderer{
   }
 
   public static void drawCircle(float x, float y, float radius){
-    ovalShader.setArg(0, 1);
-    ovalShader.setArg(1, 1);
-    ovalShader.setArg(2, 1);
+    ovalShader.setScl(radius, radius);
+    ovalShader.setArg(0, 1f);
+    ovalShader.setArg(1, 1f);
+    ovalShader.setArg(2, radius*radius);
 
     Draw.shader(ovalShader);
     float r = radius*4;
@@ -209,12 +224,14 @@ public class MathRenderer{
 
   //其实好像直接缩放就好，但线条宽度会受到影响，所以还是实现了椭圆的函数绘制工具
   public static void drawOval(float x, float y, float horizon, float vert, float rotation){
+    float max = Math.max(horizon, vert);
+    ovalShader.setScl(max, max);
     ovalShader.setArg(0, Mathf.pow(1/horizon, 2));
     ovalShader.setArg(1, Mathf.pow(1/vert, 2));
-    ovalShader.setArg(2, Mathf.pow(Math.min(1/horizon, 1/vert), 2));
+    ovalShader.setArg(2, 1f);
 
     Draw.shader(ovalShader);
-    float r = Math.max(horizon, vert)*4;
+    float r = max*4;
     Draw.rect(getBlank(), x, y, r, r, rotation);
     Draw.shader();
   }

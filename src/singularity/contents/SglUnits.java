@@ -388,8 +388,8 @@ public class SglUnits implements ContentList{
                     super.draw(b);
                     Draw.draw(Draw.z(), () -> {
                       Draw.color(hitColor);
-                      MathRenderer.setDispersion(0.015f);
-                      MathRenderer.setThreshold(0.4f, 0.7f);
+                      MathRenderer.setDispersion(0.1f);
+                      MathRenderer.setThreshold(0.4f, 0.6f);
 
                       for(int i = 0; i < 3; i++){
                         MathRenderer.drawSin(b.x, b.y, b.aimX, b.aimY,

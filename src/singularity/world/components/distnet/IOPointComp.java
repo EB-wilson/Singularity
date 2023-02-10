@@ -32,7 +32,5 @@ public interface IOPointComp extends BuildCompBase{
 
   ContentType[] configContentTypes();
 
-  void applyConfig(TargetConfigure value);
-
   boolean valid(DistMatrixUnitBuildComp unit, GridChildType type, Content content);
 }

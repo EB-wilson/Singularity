@@ -264,7 +264,7 @@ public class CrafterBlocks implements ContentList{
               alpha = e -> e.getVar("highlight", false)? 1: 0;
             }}
         );
-        
+
         buildType = () -> new SpliceCrafterBuild(){
           float efficiency;
           
@@ -344,9 +344,6 @@ public class CrafterBlocks implements ContentList{
           Items.plastanium, 35
       ));
       size = 3;
-
-      squareSprite = false;
-
       itemCapacity = 25;
       liquidCapacity = 40;
       
@@ -442,8 +439,6 @@ public class CrafterBlocks implements ContentList{
       ));
       size = 3;
 
-      squareSprite = false;
-
       itemCapacity = 20;
       liquidCapacity = 40;
 
@@ -503,8 +498,6 @@ public class CrafterBlocks implements ContentList{
           Items.plastanium, 75
       ));
       size = 3;
-
-      squareSprite = false;
 
       itemCapacity = 35;
       liquidCapacity = 45;
@@ -663,8 +656,6 @@ public class CrafterBlocks implements ContentList{
 
       loopSound = Sounds.fire;
       loopSoundVolume = 0.075f;
-
-      squareSprite = false;
 
       liquidCapacity = 45f;
       itemCapacity = 30;
@@ -952,8 +943,6 @@ public class CrafterBlocks implements ContentList{
       size = 2;
       hasLiquids = true;
       liquidCapacity = 30;
-
-      squareSprite = false;
 
       updateEffect = Fx.steam;
       updateEffectChance = 0.035f;

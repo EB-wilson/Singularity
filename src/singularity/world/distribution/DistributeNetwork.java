@@ -41,6 +41,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
 
   public float energyProduct;
   public float energyConsume;
+  public float energyBuffered;
   public float energyCapacity;
   public float energyStatus;
 
@@ -174,7 +175,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   }
 
   public void updateEnergy(){
-    energyCapacity = energyStatus = energyProduct = energyConsume = 0;
+    energyCapacity = energyBuffered = energyStatus = energyProduct = energyConsume = 0;
 
     if(netStructValid()){
       for(DistElementBuildComp element: elementsIterateArr){
@@ -184,10 +185,11 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
         energyProduct += element.matrixEnergyProduct()*(element instanceof Building b? b.delta(): Time.delta);
       }
       for (DistElementBuildComp buff : energyBuffer) {
-        energyCapacity += buff.getDistBlock().matrixEnergyCapacity() - buff.matrixEnergyBuffered();
+        energyBuffered += buff.matrixEnergyBuffered();
+        energyCapacity += buff.getDistBlock().matrixEnergyCapacity();
       }
 
-      float delta = Math.min(energyCapacity, energyProduct - energyConsume)/energyBuffer.size;
+      float delta = energyBuffer.isEmpty()? 0: Math.min(energyCapacity - energyBuffered, energyProduct - energyConsume) / energyBuffer.size;
       int counter = 0;
       for (DistElementBuildComp buff : energyBuffer) {
         counter++;
@@ -196,7 +198,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
         buff.matrixEnergyBuffered(set);
 
         energyProduct -= set - origin;
-        delta += (delta - (set - origin))/(energyBuffer.size - counter);
+        delta += (delta - (set - origin)) / (energyBuffer.size - counter);
       }
 
       energyStatus = Mathf.clamp(energyProduct/energyConsume, 0, 1);

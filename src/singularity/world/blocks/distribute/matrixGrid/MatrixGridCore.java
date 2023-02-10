@@ -24,8 +24,8 @@ import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
+import mindustry.world.Block;
 import mindustry.world.Tile;
-import singularity.Sgl;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
@@ -65,29 +65,6 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   }
 
   @Override
-  public void onPlanRotate(BuildPlan plan, int direction) {
-    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof MatrixGridCoreBuild.LinkPair linkPair){
-      int cx = linkPair.linking.x, cy = linkPair.linking.y;
-      int lx = cx;
-
-      if(direction >= 0){
-        cx = -cy;
-        cy = lx;
-      }else{
-        cx = cy;
-        cy = -lx;
-      }
-      linkPair.linking.set(cx, cy);
-
-      for (TargetConfigure cfg : linkPair.configs.values()) {
-        cfg.rotateDir(this, direction);
-      }
-
-      plan.config = linkPair.pack();
-    }
-  }
-
-  @Override
   public void parseConfigObjects(SglBuilding e, Object obj){
     MatrixGridCoreBuild entity = (MatrixGridCoreBuild) e;
     if(obj instanceof MatrixGridCoreBuild.LinkPair linkPair){
@@ -113,18 +90,19 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     childLinkRegion = Core.atlas.find(name + "_child_linker", Singularity.getModAtlas("matrix_grid_child_linker"));
   }
 
+  static MatrixGridCoreBuild.LinkPair pair = new MatrixGridCoreBuild.LinkPair();
   @Override
   public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
     byte[] bytes = (byte[]) req.config;
     if(bytes == null) return;
 
-    MatrixGridCoreBuild.LinkPair pair = DataPackable.readObject(bytes, req.tile());
+    pair.read(bytes);
     for(TargetConfigure config: pair.configs.values()){
       Tile tile = world.tile(req.x + Point2.x(config.offsetPos), req.y + Point2.x(config.offsetPos));
       if(tile != null){
-        BuildPlan plan = new BuildPlan(tile.x, tile.y, 0, Sgl.ioPoint);
-        Sgl.ioPoint.drawPlan(plan, list, plan.tile().build == null);
-        Sgl.ioPoint.drawPlanConfigTop(plan, list);
+        BuildPlan plan = new BuildPlan(tile.x, tile.y, 0, pair.ioPoints.get(config.offsetPos).getBlock());
+        plan.block.drawPlan(plan, list, plan.build() == null);
+        plan.block.drawPlanConfigTop(plan, list);
       }
     }
     
@@ -132,7 +110,11 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       Point2 p = pair.linking;
       if(Point2.pack(req.x + p.x, req.y + p.y) == Point2.pack(plan.x, plan.y)){
         if(plan.block instanceof EdgeLinkerComp b){
-          SglDraw.drawLink(req.tile(), req.block.offset, linkOffset, plan.tile(), plan.block.offset, b.linkOffset(), linkRegion, null, 1);
+          SglDraw.drawLink(
+              req.drawx(), req.drawy(), linkOffset,
+              plan.drawx(), plan.drawy(), b.linkOffset(),
+              linkRegion, null, 1
+          );
         }
       }
     });
@@ -288,10 +270,9 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
         Draw.z(Layer.effect);
         Draw.alpha(0.65f);
         SglDraw.drawLink(
-            tile, offset, linkOffset,
-            nextEdge().tile(), nextEdge().getBlock().offset, nextEdge().getEdgeBlock().linkOffset(),
-            linkLightRegion, linkLightCapRegion,
-            linkLerp()
+            x, y, linkOffset,
+            nextEdge().tile().drawx(), nextEdge().tile().drawy(), nextEdge().getEdgeBlock().linkOffset(),
+            linkLightRegion, linkLightCapRegion, linkLerp()
         );
       }
     }
@@ -320,7 +301,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     @Override
     public void drawConfigure(){
       super.drawConfigure();
-      for(IOPointComp io: ioPoints.values()){
+      for(IOPointComp io: ioPoints){
         if(UncCore.secConfig.getConfiguring() == io) continue;
         float radius = io.getBlock().size * tilesize / 2f + 1f;
         Building building = io.getBuilding();
@@ -361,6 +342,14 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       LinkPair pair = new LinkPair();
       pair.configs = configMap;
       pair.linking = new Point2(Point2.x(nextPos) - tileX(), Point2.y(nextPos) - tileY());
+
+      pair.ioPoints = new IntMap<>();
+      for (IOPointComp point : ioPoints) {
+        pair.ioPoints.put(
+            Point2.pack(point.getTile().x - tileX(), point.getTile().y - tileY()),
+            point.getIOBlock()
+        );
+      }
       return pair.pack();
     }
 
@@ -390,6 +379,23 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       public void reset(){
         super.reset();
         linking = null;
+      }
+
+      @Override
+      public void rotate(Block block, int direction) {
+        super.rotate(block, direction);
+
+        int cx = linking.x, cy = linking.y;
+        int lx = cx;
+
+        if(direction >= 0){
+          cx = -cy;
+          cy = lx;
+        }else{
+          cx = cy;
+          cy = -lx;
+        }
+        linking.set(cx, cy);
       }
     }
   }

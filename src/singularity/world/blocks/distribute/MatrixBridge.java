@@ -171,15 +171,13 @@ public class MatrixBridge extends DistNetBlock{
       }
     });
 
-    Draw.rect(topRegion, req.tile().drawx(), req.tile().drawy());
+    Draw.rect(topRegion, req.drawx(), req.drawy());
 
-    float off1 = req.block.offset;
     for(BuildPlan plan : links){
       if(plan != null){
-        float off2 = plan.block.offset;
         SglDraw.drawLaser(
-            req.tile().worldx() + off1, req.tile().worldy() + off1,
-            plan.tile().worldx() + off2, plan.tile().worldy() + off2,
+            req.drawx(), req.drawy(),
+            plan.drawx(), plan.drawy(),
             linkRegion,
             null,
             linkStoke

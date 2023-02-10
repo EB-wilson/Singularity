@@ -1,5 +1,6 @@
 package singularity.world.blocks.distribute;
 
+import arc.math.Mathf;
 import arc.struct.Seq;
 import mindustry.Vars;
 import mindustry.game.Team;
@@ -98,9 +99,11 @@ public class DistPowerEntry extends DistEnergyEntry{
         if (consumer == this) continue;
         cons += consumer.block.consPower.requestedPower(consumer)*consumer.delta();
       }
-      energyProd = distributor.network.energyCapacity > 0.1f?
-          (power.graph.getLastPowerProduced() - cons)/EnergyScaleOfPower:
-          distributor.network.energyConsume;
+      energyProd = Mathf.lerp(
+          (power.graph.getLastPowerProduced() - cons)/EnergyScaleOfPower,
+          distributor.network.energyConsume,
+          distributor.network.energyCapacity == 0? 1: distributor.network.energyBuffered/distributor.network.energyCapacity
+      );
     }
 
     @Override

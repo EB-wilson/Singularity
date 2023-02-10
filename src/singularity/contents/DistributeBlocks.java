@@ -14,7 +14,6 @@ import mindustry.world.Block;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.draw.DrawMulti;
 import mindustry.world.meta.Env;
-import singularity.Sgl;
 import singularity.type.SglCategory;
 import singularity.world.blocks.distribute.*;
 import singularity.world.blocks.distribute.matrixGrid.MatrixEdgeBlock;
@@ -41,6 +40,8 @@ public class DistributeBlocks implements ContentList{
   matrix_controller,
   /**网格框架*/
   matrix_grid_node,
+  /**io端点*/
+  io_point,
   /**能源管理器*/
   matrix_energy_manager,
   /**能量接口*/
@@ -121,8 +122,6 @@ public class DistributeBlocks implements ContentList{
       newConsume();
       consume.power(1f);
     }};
-
-    Sgl.ioPoint = new IOPointBlock("io_point");
     
     matrix_core = new DistNetCore("matrix_core"){{
       requirements(SglCategory.matrix, ItemStack.with(
@@ -135,7 +134,7 @@ public class DistributeBlocks implements ContentList{
           Items.graphite, 220,
           Items.phaseFabric, 180
       ));
-      squareSprite = false;
+
       size = 6;
 
       matrixEnergyUse = 1f;
@@ -149,7 +148,7 @@ public class DistributeBlocks implements ContentList{
           SglItems.aerogel, 16,
           Items.phaseFabric, 8
       ));
-      squareSprite = false;
+
       size = 2;
 
       newConsume();
@@ -166,7 +165,7 @@ public class DistributeBlocks implements ContentList{
           SglItems.iridium, 6,
           Items.phaseFabric, 12
       ));
-      squareSprite = false;
+
       crossLinking = true;
       size = 3;
       maxLinks = 4;
@@ -188,7 +187,7 @@ public class DistributeBlocks implements ContentList{
           Items.phaseFabric, 60,
           Items.silicon, 80
       ));
-      squareSprite = false;
+
       linkOffset = 8;
       size = 4;
 
@@ -204,6 +203,15 @@ public class DistributeBlocks implements ContentList{
       ));
       linkOffset = 4.5f;
       size = 2;
+    }};
+
+    io_point = new IOPointBlock("io_point"){{
+      requirements(SglCategory.matrix, ItemStack.with(
+          SglItems.matrix_alloy, 6,
+          SglItems.strengthening_alloy, 10,
+          SglItems.aerogel, 4
+      ));
+      size = 1;
     }};
 
     matrix_energy_manager = new DistEnergyManager("matrix_energy_manager"){{

@@ -43,8 +43,8 @@ public class DebugBlocks implements ContentList{
         public void draw(Building e) {
           Draw.color(Pal.accent);
           Draw.draw(Draw.z(), () -> {
-            MathRenderer.setDispersion(0.01f);
-            MathRenderer.setThreshold(0.4f, 0.7f);
+            MathRenderer.setDispersion(0.2f);
+            MathRenderer.setThreshold(0.3f, 0.6f);
             MathRenderer.drawOval(
                 e.x, e.y,
                 40,

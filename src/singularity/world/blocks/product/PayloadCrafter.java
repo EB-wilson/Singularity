@@ -48,6 +48,7 @@ public class PayloadCrafter extends NormalCrafter{
       };
     }};
     outputFacing = true;
+    outputsPayload = true;
     rotate = true;
     group = BlockGroup.payloads;
     envEnabled |= Env.space | Env.underwater;

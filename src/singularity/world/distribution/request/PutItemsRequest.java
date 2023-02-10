@@ -51,7 +51,7 @@ public class PutItemsRequest extends DistRequestBase{
   public boolean handleTask(){
     if(all){
       for(ItemsBuffer.ItemPacket packet : source){
-        int move = Math.min(packet.amount(), destination.remainingCapacity().intValue());
+        int move = Math.min(packet.amount(), destination.remainingCapacity());
         if(move <= 0) continue;
 
         packet.remove(move);
