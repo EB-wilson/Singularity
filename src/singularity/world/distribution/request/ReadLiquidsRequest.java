@@ -17,7 +17,7 @@ import java.util.Arrays;
 /**从网络中读取液体，此操作将液体从网络缓存读出并写入到目标缓存，网络缓存会优先提供已缓存液体，若不足则从网络子容器申请液体到网络缓存再分配*/
 public class ReadLiquidsRequest extends DistRequestBase{
   private static final Seq<MatrixGrid.BuildingEntry<Building>> temp = new Seq<>();
-  private static final float[] tempLiquid = new float[Vars.content.liquids().size];
+  private static float[] tempLiquid;
 
   private final LiquidsBuffer destination;
   private LiquidsBuffer source;
@@ -43,6 +43,10 @@ public class ReadLiquidsRequest extends DistRequestBase{
 
   @Override
   public boolean preHandleTask(){
+    if (tempLiquid == null || tempLiquid.length != Vars.content.liquids().size){
+      tempLiquid = new float[Vars.content.liquids().size];
+    }
+
     Arrays.fill(tempLiquid, 0);
     for(LiquidStack stack: reqLiquids){
       tempLiquid[stack.liquid.id] = stack.amount - source.get(stack.liquid);

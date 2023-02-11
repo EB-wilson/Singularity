@@ -256,7 +256,7 @@ public class SglItems implements ContentList{
       hardness = 4;
       explosiveness = 0f;
       flammability = 0f;
-      radioactivity = 0f;
+      radioactivity = 0.04f;
     }};
     
     uranium_rawmaterial = new Item("uranium_rawmaterial", Color.valueOf("#B5D980")){{

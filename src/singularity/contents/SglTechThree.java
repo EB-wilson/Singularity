@@ -37,8 +37,6 @@ public class SglTechThree implements ContentList{
       node(platedConduit, cluster_conduit, cluCon -> {
         cluCon.node(conduit_riveting, conRiv -> {});
 
-        cluCon.node(bidirectional_valve, bidVal -> {});
-
         cluCon.node(filter_valve, filVal -> {});
       });
 

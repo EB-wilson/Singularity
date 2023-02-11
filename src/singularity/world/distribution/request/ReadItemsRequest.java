@@ -17,7 +17,7 @@ import java.util.Arrays;
 /**从网络中读取物品，此操作将物品从网络缓存读出并写入到目标缓存，网络缓存会优先提供已缓存物品，若不足则从网络子容器申请物品到网络缓存再分配*/
 public class ReadItemsRequest extends DistRequestBase{
   private static final Seq<MatrixGrid.BuildingEntry<Building>> temp = new Seq<>();
-  private static final int[] tempItems = new int[Vars.content.liquids().size];
+  private static int[] tempItems;
 
   private final ItemsBuffer destination;
   private ItemsBuffer source;
@@ -43,6 +43,10 @@ public class ReadItemsRequest extends DistRequestBase{
   
   @Override
   public boolean preHandleTask(){
+    if (tempItems == null || tempItems.length != Vars.content.items().size){
+      tempItems = new int[Vars.content.items().size];
+    }
+
     Arrays.fill(tempItems, 0);
     
     for(ItemStack stack : reqItems){

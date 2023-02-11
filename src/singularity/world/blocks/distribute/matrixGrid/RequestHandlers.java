@@ -192,7 +192,7 @@ public class RequestHandlers{
           coreBuffer.dePutFlow(packet.get(), transBack);
           coreBuffer.deReadFlow(packet.get(), transBack);
 
-          coreBuffer.bufferContAssign(sender.distributor().network, packet.get(), transBack);
+          coreBuffer.bufferContAssign(sender.distributor().network, packet.get(), transBack, true);
         }
       }
 
@@ -302,7 +302,7 @@ public class RequestHandlers{
           coreBuffer.dePutFlow(packet.get(), transBack);
           coreBuffer.deReadFlow(packet.get(), transBack);
 
-          coreBuffer.bufferContAssign(sender.distributor().network, packet.get(), transBack);
+          coreBuffer.bufferContAssign(sender.distributor().network, packet.get(), transBack, true);
         }
       }
 

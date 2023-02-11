@@ -268,13 +268,12 @@ public class ClusterValve extends ClusterConduit{
     @Override
     public void read(Reads read, byte revision) {
       super.read(read, revision);
-      int len = read.i();
       input = read.bool();
       output = read.bool();
       blocking = read.bool();
 
-      configured = new Liquid[len];
-      for (int i = 0; i < len; i++) {
+      configured = new Liquid[read.i()];
+      for (int i = 0; i < configured.length; i++) {
         configured[i] = Vars.content.liquid(read.i());
       }
     }

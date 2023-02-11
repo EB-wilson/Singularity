@@ -193,7 +193,9 @@ public abstract class BaseBuffer<C, CType extends UnlockableContent, T extends B
   public abstract void bufferContAssign(DistributeNetwork network, CType ct);
 
   public abstract void bufferContAssign(DistributeNetwork network, CType ct, Number amount);
-  
+
+  public abstract void bufferContAssign(DistributeNetwork network, CType ct, Number amount, boolean deFlow);
+
   public abstract BlockModule generateBindModule();
 
   public abstract String localization();

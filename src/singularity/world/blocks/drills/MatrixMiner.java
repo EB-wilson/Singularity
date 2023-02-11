@@ -57,7 +57,8 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
   public float rotatorSpeed = 1.5f;
   public int drillBufferCapacity = 20;
 
-  public float armSpeed = 0.0375f;
+  public float armSpeed = 1.2f;
+  public float armSpeedDelta = 0.085f;
   public float armIdleWait = 120;
 
   public float bitPostTime = 45;
@@ -138,6 +139,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
     public ItemsBuffer itemBuffer = new ItemsBuffer();
     public Rect rect;
     public Vec2 armPos = new Vec2();
+    public Vec2 armVel = new Vec2();
 
     public Element lastController;
     public PutItemsRequest putReq;
@@ -217,7 +219,14 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
       super.updateTile();
 
       for(IntMap.Entry<MatrixDrillBit> bit: mineBits){
+        if (bit.value == null){
+          mineBits.remove(bit.key);
+          continue;
+        }
+
         bit.value.update();
+        if (bit.value.ore == null) continue;
+
         float[] progRef = progressMap.get(bit.value.ore, () -> new float[1]);
         if(progRef[0] >= 1 && bit.value.buffered < drillBufferCapacity){
           bit.value.buffered++;
@@ -258,7 +267,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
             }
           }
           else{
-            armPos.lerpDelta(armTasks.get(0)*tilesize, armTasks.get(1)*tilesize, armSpeed);
+            trnsArmSpeed(armTasks.get(0)*tilesize, armTasks.get(1)*tilesize);
           }
 
           for(int i = 4; i < armTasks.size; i += 4){
@@ -277,9 +286,35 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
           }
         }
         else{
-          if(Time.time - armWaiting >= armIdleWait) armPos.lerpDelta(x, y, armSpeed);
+          if(Time.time - armWaiting >= armIdleWait){
+            trnsArmSpeed(x, y);
+          }
+          else armVel.approachDelta(Vec2.ZERO, armSpeedDelta);
+        }
+
+        armPos.add(armVel);
+        if (armPos.x < rect.x){
+          armPos.x = rect.x;
+          armVel.x *= -0.2f;
+        }
+        if (armPos.y < rect.y){
+          armPos.y = rect.y;
+          armVel.y *= -0.2f;
+        }
+        if (armPos.x > rect.x + rect.width){
+          armPos.x = rect.x + rect.width;
+          armVel.x *= -0.2f;
+        }
+        if (armPos.y > rect.y + rect.height){
+          armPos.y = rect.y + rect.height;
+          armVel.y *= -0.2f;
         }
       }
+    }
+
+    private void trnsArmSpeed(float x, float y) {
+      Tmp.v1.set(x, y).sub(armPos).setLength(armSpeed);
+      armVel.approachDelta(Tmp.v1, armSpeedDelta);
     }
 
     public boolean handleTask(int x, int y, int cmdCode){
@@ -667,6 +702,8 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
       }
 
       public void draw(){
+        if (ore == null) return;
+
         float x = this.x*tilesize, y = this.y*tilesize;
         if(warmup > 0.5f) Draw.z(Layer.bullet);
         Draw.color(ore.color);

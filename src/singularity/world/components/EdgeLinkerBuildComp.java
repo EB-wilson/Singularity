@@ -134,8 +134,8 @@ public interface EdgeLinkerBuildComp extends BuildCompBase{
 
   @Annotations.MethodEntry(entryMethod = "pickedUp")
   default void edgePickedUp(){
-    perEdge().delink(this);
-    delink(nextEdge());
+    if (perEdge() != null) perEdge().delink(this);
+    if (nextEdge() != null) delink(nextEdge());
   }
 
   @Annotations.MethodEntry(entryMethod = "drawConfigure")

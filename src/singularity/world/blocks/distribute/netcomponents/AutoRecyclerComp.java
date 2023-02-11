@@ -150,8 +150,15 @@ public class AutoRecyclerComp extends NetPluginComp{
     }
 
     @Override
+    public byte version() {
+      return 1;
+    }
+
+    @Override
     public void write(Writes write){
       super.write(write);
+      write.bool(isBlackList);
+
       write.i(list.size);
       for(ObjectMap.Entry<DistBufferType<?>, ObjectSet<UnlockableContent>> entry: list){
         write.i(entry.key.id);
@@ -166,6 +173,10 @@ public class AutoRecyclerComp extends NetPluginComp{
     @Override
     public void read(Reads read, byte revision){
       super.read(read, revision);
+      if (revision == 1){
+        isBlackList = read.bool();
+      }
+
       list.clear();
       int size = read.i();
       for(int i = 0; i < size; i++){

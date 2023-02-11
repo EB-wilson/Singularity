@@ -1,7 +1,6 @@
 package singularity.world.blocks.liquid;
 
 import arc.Core;
-import arc.Events;
 import arc.math.Mathf;
 import arc.math.WindowedMean;
 import arc.scene.ui.layout.Table;
@@ -13,7 +12,6 @@ import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.content.Fx;
-import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.type.Liquid;
@@ -23,7 +21,6 @@ import mindustry.world.blocks.liquid.LiquidBlock;
 import mindustry.world.modules.LiquidModule;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ReplaceBuildComp;
-import universecore.util.handler.FieldHandler;
 
 import java.util.Arrays;
 
@@ -32,6 +29,7 @@ import static mindustry.Vars.content;
 @Annotations.ImplEntries
 public class MultLiquidBlock extends LiquidBlock{
   public int conduitAmount = 4;
+  public boolean displayLiquids;
   
   public MultLiquidBlock(String name){
     super(name);
@@ -47,16 +45,6 @@ public class MultLiquidBlock extends LiquidBlock{
   @SuppressWarnings("ZeroLengthArrayAllocation")
   @Annotations.ImplEntries
   public class MultLiquidBuild extends Building implements ReplaceBuildComp {
-    static {
-      Events.run(EventType.Trigger.update, () -> {
-        Building nextFlowBuild = FieldHandler.getValueDefault(Vars.ui.hudfrag.blockfrag, "nextFlowBuild");
-
-        if(nextFlowBuild instanceof MultLiquidBuild mulB){
-          mulB.updateLiquidsFlow();
-        }
-      });
-    }
-
     public ClusterLiquidModule[] liquidsBuffer;
     public ClusterLiquidModule cacheLiquids;
     
@@ -123,6 +111,8 @@ public class MultLiquidBlock extends LiquidBlock{
     @Override
     public void displayBars(Table table) {
       super.displayBars(table);
+      if (!displayLiquids) return;
+
       for(int i=0; i<liquidsBuffer.length; i++){
         ClusterLiquidModule current = liquidsBuffer[i];
         int fi = i;
@@ -157,6 +147,11 @@ public class MultLiquidBlock extends LiquidBlock{
         liquids = liquidsBuffer[current = (current + 1) % liquidsBuffer.length];
         cacheLiquids = (ClusterLiquidModule) liquids;
       }
+
+      if (displayLiquids && Vars.ui.hudfrag.blockfrag.hover() == this){
+        updateLiquidsFlow();
+      }
+
       for (ClusterLiquidModule module : liquidsBuffer) {
         module.smoothCurrent = Mathf.lerpDelta(module.smoothCurrent, module.currentAmount(), 0.4f);
       }

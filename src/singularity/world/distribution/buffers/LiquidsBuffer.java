@@ -95,6 +95,10 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
 
   @Override
   public void bufferContAssign(DistributeNetwork network, Liquid ct, Number amount){
+    bufferContAssign(network, ct, amount, false);
+  }
+
+  public void bufferContAssign(DistributeNetwork network, Liquid ct, Number amount, boolean deFlow){
     float am = amount.floatValue();
 
     LiquidPacket packet = get(ct.id);
@@ -117,6 +121,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
         packet.deRead(move);
         am -= move;
         entry.entity.handleLiquid(core, packet.get(), move);
+        if (deFlow) entry.entity.liquids.handleFlow(packet.get(), -move);
       }
     }
   }

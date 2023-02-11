@@ -4,7 +4,10 @@ import mindustry.content.Items;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
-import singularity.world.blocks.liquid.*;
+import singularity.world.blocks.liquid.ClusterConduit;
+import singularity.world.blocks.liquid.ClusterValve;
+import singularity.world.blocks.liquid.ConduitRiveting;
+import singularity.world.blocks.liquid.LiquidUnloader;
 import universecore.world.blocks.FakeBlock;
 
 public class LiquidBlocks implements ContentList {
@@ -14,8 +17,6 @@ public class LiquidBlocks implements ContentList {
   conduit_riveting,
   /**过滤阀*/
   filter_valve,
-  /**双向流体阀*/
-  bidirectional_valve,
   /**液体提取器*/
   liquid_unloader;
   
@@ -38,12 +39,6 @@ public class LiquidBlocks implements ContentList {
       requirements(Category.liquid, ItemStack.with(Items.titanium, 10, SglItems.aerogel, 15, Items.graphite, 12));
       liquidCapacity = 10;
       health = 300;
-    }}, (tile, team, rotation) -> tile.build instanceof ClusterConduit.ClusterConduitBuild b && b.rotation == rotation);
-
-    bidirectional_valve = new FakeBlock(new BidirectionalValve("bidirectional_valve"){{
-      requirements(Category.liquid, ItemStack.with(Items.titanium, 10, SglItems.aerogel, 6));
-      liquidCapacity = 10;
-      health = 350;
     }}, (tile, team, rotation) -> tile.build instanceof ClusterConduit.ClusterConduitBuild b && b.rotation == rotation);
     
     liquid_unloader = new LiquidUnloader("liquid_unloader"){{

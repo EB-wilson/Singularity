@@ -109,9 +109,14 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     bufferContAssign(network, ct, get(ct));
   }
 
-  @SuppressWarnings({"unchecked"})
   @Override
   public void bufferContAssign(DistributeNetwork network, Item ct, Number amount){
+    bufferContAssign(network, ct, amount, false);
+  }
+
+  @SuppressWarnings({"unchecked"})
+  @Override
+  public void bufferContAssign(DistributeNetwork network, Item ct, Number amount, boolean deFlow){
     cores.clear();
     int counter = amount.intValue();
 
@@ -132,6 +137,7 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
         packet.deRead(move);
         counter -= move;
         entry.entity.handleStack(packet.get(), move, core);
+        if (deFlow) entry.entity.items.handleFlow(packet.get(), -move);
       }
     }
 
