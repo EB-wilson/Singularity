@@ -7,7 +7,7 @@ public enum Contribute{
   artist,
   translate,
   sounds,
-  code;
+  program;
   
   public String localize(){
     return Core.bundle.get("contribute." + name());

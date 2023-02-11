@@ -1,9 +1,16 @@
-EB-wilson: {
-  contribute: author
-  name: EBwilson
-}
+{
+  "EB-wilson": {
+    contribute: "author",
+    name: "EBwilson"
+  },
 
-Carrot-09: {
-  contribute: artist
-  name: Carrot
+  "Carrot-09": {
+    contribute: "artist",
+    name: "Carrot"
+  },
+
+  "Ventivu": {
+    contribute: "program",
+    name: "Ventivu"
+  }
 }
