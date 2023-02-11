@@ -33,27 +33,13 @@ public class ContributorsDialog extends BaseDialog{
   
     table.table(table -> {
       table.defaults().pad(8);
-      table.table(Tex.pane, t -> {
-        t.defaults().center().top().padTop(6);
-        t.image(SglDrawConst.sglIcon).size(64);
-        t.row();
-        t.add(Contribute.author.localize()).color(Pal.accent);
-        t.row();
-        t.add(new ContributorTable(Sgl.contributors.get(Contribute.author).get(0)));
-      }).growX().fillY().padLeft(30).padRight(30).margin(10);
-      
-      table.row();
-      table.image().color(Pal.accent).growX().height(3).colspan(4).pad(0).padTop(4).padBottom(4);
-      table.row();
       
       table.table(cons -> {
         cons.defaults().pad(8).padLeft(8).padRight(8);
         for(Contribute contribute: Contribute.values()){
-          if(contribute == Contribute.author) continue;
-          
           cons.table(Tex.buttonTrans, t -> {
             t.defaults().center().top().pad(16).padTop(12);
-            t.image(Singularity.getModAtlas(contribute.name())).size(64);
+            t.image(contribute == Contribute.author? SglDrawConst.sglIcon: Singularity.getModAtlas(contribute.name())).size(64);
             t.row();
             t.add(contribute.localize()).padTop(6);
             t.row();
@@ -73,6 +59,11 @@ public class ContributorsDialog extends BaseDialog{
       image(contributor.avatar).size(180);
       row();
       add(contributor.displayName).color(Pal.accent).fill();
+
+      touchable = Touchable.enabled;
+      clicked(() -> {
+        Core.app.openURI("https://github.com/" + contributor.name);
+      });
     }
   }
 }
