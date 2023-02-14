@@ -16,7 +16,7 @@ ext{
   //the build number that this mod is made for
   mindustryVersion = "v141"
   arcVersion = "v141"
-  uncVersion = "1.6.3"
+  uncVersion = "1.6.4"
   //version of SDK you will be using
   minSdkAPI = 30
 
