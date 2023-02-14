@@ -30,6 +30,7 @@ import mindustry.gen.Building;
 import mindustry.gen.Tex;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
+import mindustry.io.TypeIO;
 import mindustry.type.Item;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
@@ -58,7 +59,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
   public int drillBufferCapacity = 20;
 
   public float armSpeed = 1.2f;
-  public float armSpeedDelta = 0.085f;
+  public float armSpeedDelta = 0.06f;
   public float armIdleWait = 120;
 
   public float bitPostTime = 45;
@@ -168,9 +169,11 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
         }
       }
       else{
-        rect = null;
-        armPos.set(x, y);
-        armTasks.clear();
+        if(!firstMark) {
+          rect = null;
+          armPos.set(x, y);
+          armTasks.clear();
+        }
       }
     }
 
@@ -215,8 +218,11 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
     }
 
     @Override
+    @Annotations.EntryBlocked
     public void updateTile(){
       super.updateTile();
+
+      EdgeLinkerBuildComp.super.updateLinking();
 
       for(IntMap.Entry<MatrixDrillBit> bit: mineBits){
         if (bit.value == null){
@@ -243,11 +249,13 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
           bitEntry.value.remove();
         }
       }
-      firstMark = false;
+      else{
+        if (firstMark) Core.app.post(() -> firstMark = false);
+      }
 
       if(updateValid()){
         for(ObjectMap.Entry<Item, float[]> entry: progressMap){
-          float delta = Time.delta*consEfficiency();
+          float delta = delta()*consEfficiency();
           float delay = drillTime + entry.key.hardness*hardMultiple;
 
           entry.value[0] += 1/delay*delta;
@@ -291,28 +299,31 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
           }
           else armVel.approachDelta(Vec2.ZERO, armSpeedDelta);
         }
+      }
+      else armVel.approachDelta(Vec2.ZERO, armSpeedDelta*0.65f);
 
+      if (rect != null) {
         armPos.add(armVel);
-        if (armPos.x < rect.x){
+        if (armPos.x < rect.x) {
           armPos.x = rect.x;
           armVel.x *= -0.2f;
         }
-        if (armPos.y < rect.y){
+        if (armPos.y < rect.y) {
           armPos.y = rect.y;
           armVel.y *= -0.2f;
         }
-        if (armPos.x > rect.x + rect.width){
+        if (armPos.x > rect.x + rect.width) {
           armPos.x = rect.x + rect.width;
           armVel.x *= -0.2f;
         }
-        if (armPos.y > rect.y + rect.height){
+        if (armPos.y > rect.y + rect.height) {
           armPos.y = rect.y + rect.height;
           armVel.y *= -0.2f;
         }
       }
     }
 
-    private void trnsArmSpeed(float x, float y) {
+    public void trnsArmSpeed(float x, float y) {
       Tmp.v1.set(x, y).sub(armPos).setLength(armSpeed);
       armVel.approachDelta(Tmp.v1, armSpeedDelta);
     }
@@ -321,7 +332,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
       float worldX = x*tilesize, worldY = y*tilesize;
 
       switch(cmdCode){
-        case 0:{
+        case 0 -> {
           if(Math.abs(armPos.x - worldX) <= 3f && Math.abs(armPos.y - worldY) <= 3f){
             mineBits.remove(Point2.pack(x, y));
             MatrixDrillBit bit = new MatrixDrillBit();
@@ -333,9 +344,8 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
             progressMap.put(bit.ore, new float[1]);
             return true;
           }
-          break;
         }
-        case 1:{
+        case 1 -> {
           MatrixDrillBit bit = mineBits.get(Point2.pack(x, y));
           if(bit != null){
             bit.remove();
@@ -343,7 +353,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
           }
           return true;
         }
-        case 2:{
+        case 2 -> {
           if(Math.abs(armPos.x - worldX) <= bitPostDistance && Math.abs(armPos.y - worldY) <= bitPostDistance){
             MatrixDrillBit bit = mineBits.get(Point2.pack(x, y));
             if(bit == null) return true;
@@ -352,9 +362,8 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
             itemBuffer.put(bit.ore, move);
             return true;
           }
-          break;
         }
-        default: return false;
+        default -> {return false;}
       }
       return false;
     }
@@ -614,6 +623,11 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
     }
 
     @Override
+    public byte version() {
+      return 1;
+    }
+
+    @Override
     public void read(Reads read, byte revision){
       super.read(read, revision);
       armPos.set(read.f(), read.f());
@@ -634,7 +648,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
       int mineCount = read.i();
       for(int i = 0; i < mineCount; i++){
         MatrixDrillBit bit = new MatrixDrillBit();
-        bit.read(read);
+        bit.read(read, revision);
         mineBits.put(Point2.pack(bit.x, bit.y), bit);
       }
     }
@@ -683,7 +697,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
         if(alpha < 0.075f && removing) mineBits.remove(Point2.pack(x, y));
 
         warmup = Mathf.lerpDelta(warmup, updateValid()? 1: 0, 0.02f);
-        totalProgress += warmup;
+        totalProgress += warmup*delta();
 
         ore = getMine(Point2.pack(x, y));
         if(ore == null){
@@ -712,12 +726,14 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
         Draw.color(drillColor);
         Draw.alpha(alpha);
 
+        Draw.scl(1 + (float)buffered/drillBufferCapacity);
         Draw.rect(drillTop, x, y);
+        Draw.scl(1);
 
         if(Time.time - timer <= bitPostTime){
           Lines.stroke(3.75f*Mathf.clamp(1 - (Time.time - timer)/bitPostTime), ore.color);
           float distance = Tmp.v1.set(x, y).sub(armPos).len();
-          Lines.curve(x, y, x + controlPoint.x, y + controlPoint.y, x + controlPoint.x, y + controlPoint.y, armPos.x, armPos.y, (int) (distance/2.75f));
+          Lines.curve(x, y, x + controlPoint.x, y + controlPoint.y, armPos.x - controlPoint.x, armPos.y - controlPoint.y, armPos.x, armPos.y, (int) (distance/2.75f));
         }
         else controlPoint.set(x, y);
 
@@ -729,7 +745,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
         buffered -= amount;
         postedTask = false;
         timer = Time.time;
-        controlPoint.set(Tmp.v1.set(x*tilesize, y*tilesize).sub(armPos).scl(-Mathf.random(0.5f, 0.8f)));
+        controlPoint.set(Tmp.v1.set(x*tilesize, y*tilesize).sub(armPos).scl(-Mathf.random(0.2f, 0.4f)));
       }
 
       public void remove(){
@@ -740,7 +756,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
         return !removing;
       }
 
-      public void read(Reads read){
+      public void read(Reads read, byte revision){
         int pos = read.i();
         x = Point2.x(pos);
         y = Point2.y(pos);
@@ -751,6 +767,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
         totalProgress = read.f();
         postedTask = read.bool();
         removing = read.bool();
+        if (revision != 0) ore = TypeIO.readItem(read);
       }
 
       public void write(Writes write){
@@ -762,6 +779,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
         write.f(totalProgress);
         write.bool(postedTask);
         write.bool(removing);
+        TypeIO.writeItem(write, ore);
       }
     }
   }

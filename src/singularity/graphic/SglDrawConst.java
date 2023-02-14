@@ -9,6 +9,7 @@ public class SglDrawConst{
 
   //Colors
   public static final Color transColor = new Color(0, 0, 0, 0);
+  public static final Color fexCrystal = Color.valueOf("FF9584");
   public static final Color matrixNet = Color.valueOf("D3FDFF");
   public static final Color matrixNetDark = Color.valueOf("9ECBCD");
   public static final Color ion = Color.valueOf("#D1D19F");

@@ -73,7 +73,7 @@ public class SglUnits implements ContentList{
 
     kaguya = new UnitType("kaguya"){
       {
-        speed = 0.8f;
+        speed = 1.1f;
         accel = 0.06f;
         drag = 0.04f;
         rotateSpeed = 1.5f;
@@ -974,6 +974,13 @@ public class SglUnits implements ContentList{
               }
             }
         );
+      }
+
+      @Override
+      public void init() {
+        super.init();
+
+        omniMovement = true;
       }
     };
 

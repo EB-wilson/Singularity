@@ -8,6 +8,7 @@ import mindustry.content.Blocks;
 import mindustry.entities.units.BuildPlan;
 import mindustry.input.InputHandler;
 import mindustry.world.Block;
+import mindustry.world.blocks.defense.OverdriveProjector;
 import mindustry.world.blocks.liquid.Conduit;
 import singularity.Sgl;
 import singularity.world.blocks.SglBlock;
@@ -34,10 +35,19 @@ public class Init{
   }
 
   public static void init(){
+    //取代输入处理器
     final InputHandler oldInput = Vars.control.input;
     Vars.control.input = Sgl.classes.getDynamicMaker().newInstance(oldInput.getClass(), InputHandlerAspect).castGet();
 
+    //设置方块及地板属性
     Blocks.stone.attributes.set(SglAttribute.bitumen, 0.5f);
+
+    //禁用所有超速器
+    for (Block block : Vars.content.blocks()) {
+      if (block instanceof OverdriveProjector over){
+        over.placeablePlayer = false;
+      }
+    }
   }
   
   /**内容重载器，用于对已加载的内容做出变更(或者覆盖)*/

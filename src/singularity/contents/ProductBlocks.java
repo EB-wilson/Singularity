@@ -1,7 +1,15 @@
 package singularity.contents;
 
+import arc.Core;
+import arc.graphics.Blending;
+import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.TextureRegion;
+import arc.math.Mathf;
+import arc.util.Time;
+import mindustry.content.Blocks;
+import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.gen.Building;
@@ -11,6 +19,7 @@ import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.draw.*;
+import mindustry.world.meta.Stat;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.world.SglFx;
@@ -18,17 +27,23 @@ import singularity.world.blocks.drills.ExtendMiner;
 import singularity.world.blocks.drills.ExtendableDrill;
 import singularity.world.blocks.drills.MatrixMiner;
 import singularity.world.blocks.drills.MatrixMinerEdge;
+import singularity.world.blocks.product.FloorCrafter;
 import singularity.world.blocks.product.SglAttributeCrafter;
+import singularity.world.consumers.SglConsumeFloor;
 import singularity.world.draw.DrawBottom;
 import singularity.world.draw.DrawDirSpliceBlock;
 import singularity.world.draw.DrawExpandPlasma;
 import singularity.world.meta.SglAttribute;
+import universecore.world.consumers.BaseConsumers;
+import universecore.world.consumers.ConsumeType;
 
 import static mindustry.type.ItemStack.with;
 
 public class ProductBlocks implements ContentList {
   /**岩层钻井机*/
   public static Block rock_drill,
+  /**岩石粉碎机*/
+  rock_crusher,
   /**潮汐钻头*/
   tidal_drill,
   /**力场延展仓*/
@@ -46,6 +61,12 @@ public class ProductBlocks implements ContentList {
       liquidCapacity = 24;
       oneOfOptionCons = true;
       health = 180;
+
+      updateEffect = Fx.pulverizeSmall;
+      craftEffect = Fx.mine;
+      craftEffectColor = Pal.lightishGray;
+
+      warmupSpeed = 0.005f;
 
       hasLiquids = true;
 
@@ -77,6 +98,91 @@ public class ProductBlocks implements ContentList {
             spinSprite = true;
           }},
           new DrawDefault(),
+          new DrawRegion("_top")
+      );
+    }};
+
+    rock_crusher = new FloorCrafter("rock_crusher"){{
+      requirements(Category.production, ItemStack.with(
+          SglItems.strengthening_alloy, 40,
+          SglItems.aerogel, 55,
+          Items.silicon, 60,
+          Items.titanium, 50,
+          Items.graphite, 60
+      ));
+      size = 3;
+
+      warmupSpeed = 0.004f;
+      updateEffect = Fx.pulverizeSmall;
+      craftEffect = Fx.mine;
+      craftEffectColor = Items.sand.color;
+
+      oneOfOptionCons = false;
+
+      itemCapacity = 25;
+      liquidCapacity = 30;
+
+      willDumpItems.add(SglItems.alkali_stone);
+
+      newConsume();
+      consume.time(30f);
+      consume.power(2.2f);
+      consume.add(new SglConsumeFloor<FloorCrafterBuild>(
+          Blocks.stone, 1.2f/9f,
+          Blocks.craters, 0.8f/9f,
+          Blocks.dacite, 0.8f/9f,
+          Blocks.shale, 1f/9f,
+          Blocks.salt, 1f/9f
+      ){{baseEfficiency = 0;}});
+      consume.addSelfAccess(ConsumeType.item, SglItems.alkali_stone);
+      newProduce();
+      produce.item(Items.sand, 1);
+
+      newOptionalConsume((FloorCrafterBuild e, BaseConsumers c) -> {}, (s, c) -> {
+        s.add(Stat.output, SglItems.alkali_stone);
+      });
+      consume.setConsTrigger((FloorCrafterBuild e) -> {
+        if (e.acceptItem(e, SglItems.alkali_stone)) e.handleItem(e, SglItems.alkali_stone);
+      });
+      consume.time(45f);
+      consume.add(new SglConsumeFloor<FloorCrafterBuild>(
+          Blocks.stone, 0.4f/9f,
+          Blocks.craters, 0.5f/9f,
+          Blocks.salt, 2f/9f
+      ){{baseEfficiency = 0;}});
+      consume.optionalAlwaysValid = false;
+
+      newBooster(1.8f);
+      consume.liquid(Liquids.water, 0.12f);
+
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawDefault(),
+          new DrawBlock() {
+            TextureRegion rim;
+            final Color heatColor = Color.valueOf("ff5512");
+
+            @Override
+            public void draw(Building build) {
+              NormalCrafterBuild e = (NormalCrafterBuild) build;
+
+              Draw.color(heatColor);
+              Draw.alpha(e.workEfficiency()*0.6f*(1f - 0.3f + Mathf.absin(Time.time, 3f, 0.3f)));
+              Draw.blend(Blending.additive);
+              Draw.rect(rim, e.x, e.y);
+              Draw.blend();
+              Draw.color();
+            }
+
+            @Override
+            public void load(Block block) {
+              rim = Core.atlas.find(block.name + "_rim");
+            }
+          },
+          new DrawRegion("_rotator"){{
+            rotateSpeed = 2.8f;
+            spinSprite = true;
+          }},
           new DrawRegion("_top")
       );
     }};

@@ -6,6 +6,7 @@ import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
+import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.util.Strings;
 import arc.util.Time;
@@ -25,6 +26,7 @@ import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.type.SglCategory;
 import singularity.ui.SglStyles;
+import singularity.util.MathTransform;
 import singularity.world.blocks.TestBlock;
 
 import java.lang.reflect.Field;
@@ -62,29 +64,41 @@ public class DebugBlocks implements ContentList{
 
       draw = new DrawBlock(){
         static final Distortion dist = new Distortion(Layer.min, Layer.flyingUnit - 0.5f);
+        static final int drawIDD = SglDraw.nextTaskID();
+
+        static final float[] param = new float[9];
+
+        static {
+          for (int d = 0; d < 3; d++) {
+            param[d * 3] = Mathf.random(0.5f, 3f) / (d + 1) * (Mathf.randomBoolean() ? 1 : -1);
+            param[d * 3 + 1] = Mathf.random(0f, 360f);
+            param[d * 3 + 2] = Mathf.random(24f, 64f) / ((d + 1) * (d + 1));
+          }
+        }
 
         @Override
         public void draw(Building e) {
           dist.setStrength(-64*Vars.renderer.getScale());
 
-          Draw.z(Layer.flyingUnit);
-          SglDraw.drawDistortion("testDis", dist, d -> {
-            Distortion.drawVoidDistortion(e.x, e.y, 16, 30);
-          });
+          Tmp.v1.set(MathTransform.fourierTransform(Time.time, param));
+          float dx = Tmp.v1.x;
+          float dy = Tmp.v1.y;
 
-          Tmp.v1.set(5, 0).setAngle(Time.time);
+          Draw.z(Layer.flyingUnit);
+          SglDraw.drawDistortion(drawIDD, e, dist, d -> {
+            Distortion.drawVoidDistortion(d.x + dx, d.y + dy, 16, 64);
+          });
 
           Draw.z(Layer.flyingUnit + 0.5f);
           Draw.color(Color.black);
-          Fill.circle(e.x, e.y, 14);
+          Fill.circle( e.x + dx, e.y + dy, 14);
 
-          SglDraw.startBloom(Layer.flyingUnit + 1);
-          Lines.stroke(4, Color.orange);
-          Lines.circle(e.x, e.y, 16);
+          SglDraw.drawBloomUponFlyUnit(e, b -> {
+            Lines.stroke(4, Color.orange);
+            Lines.circle(b.x + dx, b.y + dy, 16);
 
-          SglDraw.drawDiamond(e.x, e.y, 180, 5, 0);
-
-          SglDraw.endBloom();
+            SglDraw.drawDiamond(b.x + dx, b.y + dy, 180, 5, 0);
+          });
         }
       };
     }};

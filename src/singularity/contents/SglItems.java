@@ -30,10 +30,18 @@ public class SglItems implements ContentList{
   uranium_235,
   /**钚239*/
   plutonium_239,
+  /**相位封装氢单元*/
+  encapsulated_hydrogen_cell,
+  /**相位封装氦单元*/
+  encapsulated_helium_cell,
   /**浓缩铀235核燃料*/
   concentration_uranium_235,
   /**浓缩钚239核燃料*/
   concentration_plutonium_239,
+  /**氢聚变燃料*/
+  hydrogen_fusion_fuel,
+  /**氦聚变燃料*/
+  helium_fusion_fuel,
   /**反物质*/
   anti_metter,
   /**绿藻块*/
@@ -83,7 +91,7 @@ public class SglItems implements ContentList{
     crystal_FEX_power = new Item("crystal_FEX_power", Color.valueOf("#E34248")){
       {
         hardness = 3;
-        explosiveness = 1.6f;
+        explosiveness = 3.6f;
         flammability = 0f;
         radioactivity = 3f;
         cost = 1.35f;
@@ -166,6 +174,20 @@ public class SglItems implements ContentList{
       flammability = 0f;
       radioactivity = 1.6f;
     }};
+
+    encapsulated_hydrogen_cell = new Item("encapsulated_hydrogen_cell", Color.valueOf("#9EFFC6")){{
+      hardness = 2;
+      explosiveness = 2.4f;
+      flammability = 1.8f;
+      radioactivity = 0;
+    }};
+
+    encapsulated_helium_cell = new Item("encapsulated_helium_cell", Color.valueOf("#F9FFDE")){{
+      hardness = 2;
+      explosiveness = 0.3f;
+      flammability = 0;
+      radioactivity = 0;
+    }};
     
     concentration_uranium_235 = new Item("concentration_uranium_235", Color.valueOf("#95B564")){{
       hardness = 4;
@@ -179,6 +201,20 @@ public class SglItems implements ContentList{
       explosiveness = 12f;
       flammability = 0f;
       radioactivity = 2.4f;
+    }};
+
+    hydrogen_fusion_fuel = new Item("hydrogen_fusion_fuel", Color.valueOf("#83D6A0")){{
+      hardness = 2;
+      explosiveness = 2.4f;
+      flammability = 1.8f;
+      radioactivity = 0;
+    }};
+
+    helium_fusion_fuel = new Item("helium_fusion_fuel", Color.valueOf("#D0D6B7")){{
+      hardness = 2;
+      explosiveness = 0.3f;
+      flammability = 0;
+      radioactivity = 0;
     }};
 
     anti_metter = new Item("anti_metter", Color.valueOf("734CD2")){{

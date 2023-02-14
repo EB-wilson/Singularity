@@ -220,9 +220,12 @@ public class NuclearBlocks implements ContentList{
         for(Particle particle : Particle.get(p -> p.x < e.x + 20 && p.x > e.x - 20 && p.y < e.y + 20 && p.y > e.y - 20)){
           particle.remove();
         }
+
         Effect.shake(4f, 18f, e.x, e.y);
-        Angles.randLenVectors(System.nanoTime(), Mathf.random(8, 12), 4.75f, 6.25f,
-            (x, y) -> model.create(e.x, e.y, x, y, Mathf.random(5f, 7f)));
+        Angles.randLenVectors(System.nanoTime(), Mathf.random(5, 9), 4.75f, 6.25f, (x, y) -> {
+          Tmp.v1.set(x, y).setLength(4);
+          model.create(e.x + Tmp.v1.x, e.y + Tmp.v1.y, x, y, Mathf.random(5f, 7f));
+        });
       };
       crafting = e -> {
         if(Mathf.chanceDelta(0.02f)) Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f,
@@ -284,6 +287,14 @@ public class NuclearBlocks implements ContentList{
       consume.time(180);
       consume.item(SglItems.uranium_238, 1);
 
+      addTransfer(new ItemStack(SglItems.hydrogen_fusion_fuel, 1));
+      consume.time(210);
+      consume.item(SglItems.encapsulated_hydrogen_cell, 1);
+
+      addTransfer(new ItemStack(SglItems.helium_fusion_fuel, 1));
+      consume.time(240);
+      consume.item(SglItems.encapsulated_helium_cell, 1);
+
       draw = new DrawMulti(
           new DrawDefault(),
           new DrawLiquidRegion(Liquids.cryofluid){{suffix = "_top";}},
@@ -323,6 +334,14 @@ public class NuclearBlocks implements ContentList{
       consume.time(420);
       consume.item(SglItems.uranium_238, 1);
 
+      addTransfer(new ItemStack(SglItems.hydrogen_fusion_fuel, 1));
+      consume.time(480);
+      consume.item(SglItems.encapsulated_hydrogen_cell, 1);
+
+      addTransfer(new ItemStack(SglItems.helium_fusion_fuel, 1));
+      consume.time(540);
+      consume.item(SglItems.encapsulated_helium_cell, 1);
+
       draw = new DrawMulti(
           new DrawDefault(),
           new DrawLiquidRegion(Liquids.cryofluid){{suffix = "_top";}},
@@ -361,6 +380,14 @@ public class NuclearBlocks implements ContentList{
       
       newReact(SglItems.concentration_uranium_235, 240, 22, false);
       newReact(SglItems.concentration_plutonium_239, 210, 25, false);
+
+      addTransfer(new ItemStack(SglItems.hydrogen_fusion_fuel, 1));
+      consume.time(120);
+      consume.item(SglItems.encapsulated_hydrogen_cell, 1);
+
+      addTransfer(new ItemStack(SglItems.helium_fusion_fuel, 1));
+      consume.time(120);
+      consume.item(SglItems.encapsulated_helium_cell, 1);
       
       addCoolant(0.4f);
       consume.liquid(SglLiquids.phase_FEX_liquid, 0.4f);
@@ -388,9 +415,10 @@ public class NuclearBlocks implements ContentList{
 
             @Override
             public void draw(Building build){
-              SglDraw.startBloom(31);
-              super.draw(build);
-              SglDraw.endBloom();
+              SglDraw.drawBloomUnderBlock(build, e -> {
+                super.draw(build);
+              });
+              Draw.z(35);
             }
           },
           new DrawRegion("_rotator_0"){{

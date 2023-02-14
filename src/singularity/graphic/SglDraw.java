@@ -1,12 +1,8 @@
 package singularity.graphic;
 
 import arc.Core;
-import arc.Events;
 import arc.graphics.Color;
-import arc.graphics.g2d.Draw;
-import arc.graphics.g2d.Fill;
-import arc.graphics.g2d.Lines;
-import arc.graphics.g2d.TextureRegion;
+import arc.graphics.g2d.*;
 import arc.graphics.gl.FrameBuffer;
 import arc.graphics.gl.Shader;
 import arc.math.Angles;
@@ -14,11 +10,9 @@ import arc.math.Mathf;
 import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
 import arc.math.geom.Vec3;
-import arc.struct.ObjectMap;
+import arc.struct.IntMap;
 import arc.util.Nullable;
 import arc.util.Tmp;
-import mindustry.Vars;
-import mindustry.game.EventType;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import singularity.util.func.Floatc3;
@@ -26,8 +20,9 @@ import singularity.util.func.Floatc3;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static arc.Core.settings;
+
 public class SglDraw{
-  private static int blooming = -1;
   private static final Rect rect = new Rect();
 
   static final Vec2 v1 = new Vec2(), v2 = new Vec2(), v3 = new Vec2(), v4 = new Vec2(), v5 = new Vec2(),
@@ -38,46 +33,39 @@ public class SglDraw{
   static final Color c1 = new Color(), c2 = new Color(), c3 = new Color(), c4 = new Color(), c5 = new Color(),
       c6 = new Color(), c7 = new Color(), c8 = new Color(), c9 = new Color(), c10 = new Color();
 
-  private static final ObjectMap<String, DrawTask> drawTasks = new ObjectMap<>();
-  private static final ObjectMap<String, FrameBuffer> taskBuffer = new ObjectMap<>();
+  private static final IntMap<DrawTask> drawTasks = new IntMap<>();
+  private static final IntMap<FrameBuffer> taskBuffer = new IntMap<>();
 
-  static {
-    Events.run(EventType.Trigger.drawOver, () -> {
-      if(Vars.renderer.bloom != null){
-        Draw.draw(Layer.block + 0.02f, () -> {
-          Vars.renderer.bloom.capture();
-          Vars.renderer.bloom.capturePause();
-        });
-        Draw.draw(Layer.blockOver - 0.02f, () -> Vars.renderer.bloom.render());
+  private static final IntMap<Bloom> blooms = new IntMap<>();
 
-        Draw.draw(Layer.flyingUnit + 0.02f, () -> {
-          Vars.renderer.bloom.capture();
-          Vars.renderer.bloom.capturePause();
-        });
-        Draw.draw(Layer.overlayUI - 0.02f, () -> Vars.renderer.bloom.render());
-      }
-    });
+  private static int idCount = 0;
+
+  public static int nextTaskID(){
+    return idCount++;
   }
 
-  public static void removeTaskCache(String name){
-    drawTasks.remove(name);
-    taskBuffer.remove(name);
+  public static final int sharedUnderBlockBloomID = nextTaskID();
+  public static final int sharedUponFlyUnitBloomID = nextTaskID();
+
+  public static void removeTaskCache(int id){
+    drawTasks.remove(id);
+    taskBuffer.remove(id);
   }
 
   /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
    *
-   * @param taskName 任务的标识名称，用于区分任务缓存
+   * @param taskId 任务的标识ID，用于区分任务缓存
    * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
    *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
    * @param drawFirst <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在执行前要进行的操作
    * @param drawLast <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在完成主绘制后要执行的操作
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
-  public static <T> void drawTask(String taskName, T target, DrawAcceptor<T> drawFirst, DrawAcceptor<T> drawLast, DrawAcceptor<T> draw){
-    DrawTask task = drawTasks.get(taskName, DrawTask::new);
+  public static <T, D> void drawTask(int taskId, T target, D defTarget, DrawAcceptor<D> drawFirst, DrawAcceptor<D> drawLast, DrawAcceptor<T> draw){
+    DrawTask task = drawTasks.get(taskId, DrawTask::new);
     if (!task.init){
       task.defaultFirstTask = drawFirst;
       task.defaultLastTask = drawLast;
-      task.defaultTarget = target;
+      task.defaultTarget = defTarget;
       Draw.draw(Draw.z(), task::flush);
       task.init = true;
     }
@@ -86,41 +74,53 @@ public class SglDraw{
 
   /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
    *
-   * @param taskName 任务的标识名称，用于区分任务缓存
+   * @param taskId 任务的标识ID，用于区分任务缓存
+   * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
+   *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
+   * @param drawFirst <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在执行前要进行的操作
+   * @param drawLast <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在完成主绘制后要执行的操作
+   * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
+  public static <T> void drawTask(int taskId, T target, DrawAcceptor<T> drawFirst, DrawAcceptor<T> drawLast, DrawAcceptor<T> draw){
+    drawTask(taskId, target, target, drawFirst, drawLast, draw);
+  }
+
+  /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
+   *
+   * @param taskID 任务的标识id，用于区分任务缓存
    * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
    *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
    * @param shader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，在这组任务绘制时使用的着色器
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
-  public static <T> void drawTask(String taskName, T target, Shader shader, DrawAcceptor<T> draw){
-    drawTask(taskName, target, e -> {
-      FrameBuffer buffer = taskBuffer.get(taskName, FrameBuffer::new);
+  public static <T> void drawTask(int taskID, T target, Shader shader, DrawAcceptor<T> draw){
+    drawTask(taskID, target, shader, e -> {
+      FrameBuffer buffer = taskBuffer.get(taskID, FrameBuffer::new);
       buffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
       buffer.begin(Color.clear);
     }, e -> {
-      FrameBuffer buffer = taskBuffer.get(taskName);
+      FrameBuffer buffer = taskBuffer.get(taskID);
       buffer.end();
-      buffer.blit(shader);
+      buffer.blit(e);
     }, draw);
   }
 
   /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
-   * <p><strong>如果这个方法的调用频率非常高，同时描述绘制行为的lambda表达式需要访问局部变量，那么为了优化堆占用，请使用{@link SglDraw#drawTask(String, Object, Shader, DrawAcceptor)}</strong>
+   * <p><strong>如果这个方法的调用频率非常高，同时描述绘制行为的lambda表达式需要访问局部变量，那么为了优化堆占用，请使用{@link SglDraw#drawTask(int, Object, Shader, DrawAcceptor)}</strong>
    *
-   * @param taskName 任务的标识名称，用于区分任务缓存
+   * @param taskID 任务的标识名称，用于区分任务缓存
    * @param shader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，在这组任务绘制时使用的着色器
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
-  public static void drawTask(String taskName, Shader shader, Runnable draw){
-    drawTask(taskName, null, shader, e -> draw.run());
+  public static void drawTask(int taskID, Shader shader, Runnable draw){
+    drawTask(taskID, null, shader, e -> draw.run());
   }
 
   /**发布缓存的任务并在首次发布时的z轴时进行绘制
    *
-   * @param taskName 任务的标识名称，用于区分任务缓存
+   * @param taskID 任务的标识名称，用于区分任务缓存
    * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
    *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
-  public static <T> void drawTask(String taskName, T target, DrawAcceptor<T> draw){
-    DrawTask task = drawTasks.get(taskName, DrawTask::new);
+  public static <T> void drawTask(int taskID, T target, DrawAcceptor<T> draw){
+    DrawTask task = drawTasks.get(taskID, DrawTask::new);
     if (!task.init){
       Draw.draw(Draw.z(), task::flush);
       task.init = true;
@@ -129,12 +129,12 @@ public class SglDraw{
   }
 
   /**发布缓存的任务并在首次发布时的z轴时进行绘制
-   * <p><strong>如果这个方法的调用频率非常高，同时描述绘制行为的lambda表达式需要访问局部变量，那么为了优化堆占用，请使用{@link SglDraw#drawTask(String, Object, DrawAcceptor)}</strong>
+   * <p><strong>如果这个方法的调用频率非常高，同时描述绘制行为的lambda表达式需要访问局部变量，那么为了优化堆占用，请使用{@link SglDraw#drawTask(int, Object, DrawAcceptor)}</strong>
    *
-   * @param taskName 任务的标识名称，用于区分任务缓存
+   * @param taskID 任务的标识名称，用于区分任务缓存
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
-  public static void drawTask(String taskName, Runnable draw){
-    DrawTask task = drawTasks.get(taskName, DrawTask::new);
+  public static void drawTask(int taskID, Runnable draw){
+    DrawTask task = drawTasks.get(taskID, DrawTask::new);
     if (!task.init){
       Draw.draw(Draw.z(), task::flush);
       task.init = true;
@@ -142,11 +142,55 @@ public class SglDraw{
     task.addTask(null, e -> draw.run());
   }
 
-  public static void drawDistortion(String taskName, Distortion distortion, DrawAcceptor<Distortion> draw){
-    drawTask(taskName, distortion, e -> {
+  public static <T> void drawDistortion(int taskID, T target, Distortion distortion, DrawAcceptor<T> draw){
+    drawTask(taskID, target, distortion, e -> {
       e.resize();
       e.capture();
     }, Distortion::render, draw);
+  }
+
+  public static <T> void drawBloom(int taskID, T obj, DrawAcceptor<T> draw){
+    if (!settings.getBool("bloom", false)){
+      draw.draw(obj);
+      return;
+    }
+
+    Bloom bloom = blooms.get(taskID, () -> new Bloom(true));
+    drawTask(taskID, obj, bloom, e -> {
+      e.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+      e.setBloomIntesity(settings.getInt("bloomintensity", 6) / 4f + 1f);
+      e.blurPasses = settings.getInt("bloomblur", 1);
+      e.capture();
+    }, Bloom::render, draw);
+  }
+
+  public static void drawBloom(int taskID, DrawAcceptor<Bloom> draw){
+    Bloom bloom = blooms.get(taskID, () -> new Bloom(true));
+    if (!settings.getBool("bloom", false)){
+      draw.draw(bloom);
+      return;
+    }
+
+    drawTask(taskID, bloom, e -> {
+      e.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+      e.setBloomIntesity(settings.getInt("bloomintensity", 6) / 4f + 1f);
+      e.blurPasses = settings.getInt("bloomblur", 1);
+      e.capture();
+    }, Bloom::render, draw);
+  }
+
+  public static <T> void drawBloomUnderBlock(T target, DrawAcceptor<T> draw){
+    float z = Draw.z();
+    Draw.z(Layer.block + 1);
+    drawBloom(sharedUnderBlockBloomID, target, draw);
+    Draw.z(z);
+  }
+
+  public static <T> void drawBloomUponFlyUnit(T target, DrawAcceptor<T> draw){
+    float z = Draw.z();
+    Draw.z(Layer.flyingUnit + 1);
+    drawBloom(sharedUnderBlockBloomID, target, draw);
+    Draw.z(z);
   }
 
   public static void drawTransform(float originX, float originY, Vec2 vec, float rotate, Floatc3 draw){
@@ -426,23 +470,6 @@ public class SglDraw{
       lastGY = v2.y;
       v1.rotate(step);
     }
-  }
-
-  public static void startBloom(float z){
-    if(!(z > Layer.block + 0.02f && z < Layer.blockOver - 0.02f) && !(z > Layer.flyingUnit + 0.02f && z < Layer.overlayUI - 0.02f))
-      throw new IllegalArgumentException("bloom z should be 30 < z < 35 or 115 < z < 120, given " + "z: " + z);
-
-    if(blooming >= 0) throw new IllegalStateException("current is blooming, please endBloom");
-    blooming = z < Layer.blockOver - 0.02f? 0: 1;
-    Draw.z(z);
-    if(Vars.renderer.bloom != null) Draw.draw(z, () -> Vars.renderer.bloom.captureContinue());
-  }
-
-  public static void endBloom(){
-    if(blooming == -1) throw new IllegalStateException("current is not blooming, please statBloom");
-    if(Vars.renderer.bloom != null) Draw.draw(Draw.z(), () -> Vars.renderer.bloom.capturePause());
-    Draw.z(blooming == 0? Layer.blockOver: Layer.overlayUI);
-    blooming = -1;
   }
 
   public static void dashCircle(float x, float y, float radius){

@@ -1,8 +1,9 @@
 package singularity.util;
 
 import arc.func.Floatc2;
+import arc.math.Angles;
+import arc.math.Mathf;
 import arc.math.geom.Vec2;
-import arc.util.Tmp;
 
 public class MathTransform{
   private static final Vec2 tmp = new Vec2();
@@ -19,7 +20,10 @@ public class MathTransform{
       float f = params[i + 1];
       float l = params[i + 2];
 
-      tmp.add(Tmp.v1.set(l, 0).setAngle(f + time*w));
+      tmp.add(
+          Angles.trnsx(f + time*w, l),
+          Angles.trnsy(f + time*w, l)
+      );
     }
 
     return tmp;
@@ -33,5 +37,29 @@ public class MathTransform{
   public static void fourierTransform(Floatc2 transRecall, float time, float... params){
     Vec2 v = fourierTransform(time, params);
     transRecall.get(v.x, v.y);
+  }
+
+  public static float gradientRotate(float rad, float fine){
+    return gradientRotate(rad, fine, 0.25f, 4);
+  }
+
+  public static float gradientRotate(float rad, float fine, int sides){
+    return gradientRotate(rad, fine, 1f/sides, 4);
+  }
+
+  public static float gradientRotate(float rad, float fine, float off, int sides){
+    return rad - off*Mathf.sin(rad*sides + fine) + fine/sides;
+  }
+
+  public static float gradientRotateDeg(float deg, float fine){
+    return gradientRotate(deg*Mathf.degRad, fine*Mathf.degRad, 0.25f, 4)*Mathf.radDeg;
+  }
+
+  public static float gradientRotateDeg(float deg, float fine, int sides){
+    return gradientRotate(deg*Mathf.degRad, fine*Mathf.degRad, 1f/sides, 4)*Mathf.radDeg;
+  }
+
+  public static float gradientRotateDeg(float deg, float fine, float off, int sides){
+    return gradientRotate(deg*Mathf.degRad, fine*Mathf.degRad, off, sides)*Mathf.radDeg;
   }
 }

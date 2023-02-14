@@ -12,6 +12,7 @@ import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.modules.DistributeModule;
 import universecore.util.Empties;
+import universecore.util.handler.ContentHandler;
 
 public class DistPowerEntry extends DistEnergyEntry{
   public DistPowerEntry(String name){
@@ -79,6 +80,8 @@ public class DistPowerEntry extends DistEnergyEntry{
       consumesPower = true;
 
       consumePowerDynamic((PowerMarkerBuild e) -> e.energyProd*EnergyScaleOfPower);
+
+      ContentHandler.removeContent(this);
     }};
     DistributeModule distributor;
     float energyProd;

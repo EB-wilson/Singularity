@@ -4,6 +4,7 @@ import arc.Core;
 import arc.func.Cons2;
 import arc.func.Floatf;
 import arc.math.Mathf;
+import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Image;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
@@ -157,7 +158,7 @@ public class SglAttributeCrafter extends NormalCrafter{
     
     stats.add(Stat.affinities, table -> {
       table.row();
-      table.table(Tex.pane, t -> t.add(boost).grow());
+      table.table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray), t -> t.add(boost).grow());
     });
   }
 
@@ -177,8 +178,7 @@ public class SglAttributeCrafter extends NormalCrafter{
   
   @Override
   public void drawPlace(int x, int y, int rotation, boolean valid){
-    drawPlaceText(Core.bundle.format("bar.efficiency",
-    (int)(efficiencyIncrease(x, y) * 100f)), x, y, valid);
+    drawPlaceText(Core.bundle.format("bar.efficiency", (int)(efficiencyIncrease(x, y) * 100f)), x, y, valid);
   }
 
   public class SglAttributeCrafterBuild extends NormalCrafterBuild{

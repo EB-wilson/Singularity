@@ -30,6 +30,8 @@ public class SglTechThree implements ContentList{
 
       node(laserDrill, rock_drill, rockD -> {
         rockD.node(ore_washer, oreWa -> {});
+
+        rockD.node(rock_crusher, rockCru -> {});
       });
 
       node(liquidContainer, liquid_unloader, liquidUnl -> {});
@@ -76,7 +78,9 @@ public class SglTechThree implements ContentList{
         cry.node(FEX_crystal_charger, charger -> {
           charger.node(lattice_constructor, latCons -> {});
 
-          charger.node(matrix_cutter, matCut -> {});
+          charger.node(matrix_cutter, matCut -> {
+            matCut.node(neutron_lens, neuLen -> {});
+          });
         });
       });
 
@@ -88,11 +92,11 @@ public class SglTechThree implements ContentList{
 
       node(coreShard, decay_bin, decBin -> {
         decBin.node(nuclear_pipe_node, nucNode -> {
-          nucNode.node(phase_pipe_node, phaseNode -> {
+          nucNode.node(phase_pipe_node, phaseNode -> {});
 
+          nucNode.node(fuel_packager, fuelPack -> {
+            fuelPack.node(gas_phase_packer, phaPac -> {});
           });
-
-          nucNode.node(fuel_packager, fuelPack -> {});
 
           nucNode.node(nuclear_reactor, nucReact -> {
             nucReact.node(lattice_reactor, latReact -> {

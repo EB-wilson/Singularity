@@ -12,4 +12,5 @@ public class SglConsumeType<T extends BaseConsume<?>> extends ConsumeType<T>{
   
   public static final ConsumeType<SglConsumeEnergy<?>> energy = (ConsumeType<SglConsumeEnergy<?>>) add(SglConsumeEnergy.class, null);
   public static final ConsumeType<SglConsumeMedium<?>> medium = (ConsumeType<SglConsumeMedium<?>>) add(SglConsumeMedium.class, null);
+  public static final ConsumeType<SglConsumeFloor<?>> floor = (ConsumeType<SglConsumeFloor<?>>) add(SglConsumeFloor.class, null);
 }

@@ -2,6 +2,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.regex.Pattern;
+import java.text.DateFormat;
+import java.util.Date;
+import java.nio.charset.StandardCharsets;
 
 public class SyncBundles{
   private static final Pattern matcher = Pattern.compile("\\\\\\n");
@@ -25,6 +28,9 @@ public class SyncBundles{
     Properties sourceBundle = new Properties();
     sourceBundle.read(source);
 
+    handleSource(sourceBundle, args);
+
+    sourceBundle.write(source);
     for(int i = 0; i < locales.length; i += 2){
       String locale = locales[i], mark = locales[i + 1];
       File file = new File(bundlesDir, "bundle" + (locale.isBlank() ? "": "_" + locale) + ".properties");
@@ -32,6 +38,12 @@ public class SyncBundles{
       if(file.exists()) bundle.read(file);
       bundle.write(file);
     }
+  }
+
+  public static void handleSource(Properties source, String... args){
+    source.put("mod.updateDate", DateFormat.getDateInstance().format(new Date()), 0);
+
+    source.put("mod.version", args[0], 0);
   }
 
   public static class Properties{
@@ -57,6 +69,23 @@ public class SyncBundles{
         else l = new Line(line.string);
         lines.add(l);
       }
+    }
+
+    public void put(String lineStr, int line){
+      lines.add(line, new Line(lineStr));
+    }
+
+    public void put(String key, String value, int line){
+      key = string2Unicode(key);
+      String v = string2Unicode(value);
+
+      Pair pair = map.computeIfAbsent(key, k -> {
+        Pair r = new Pair(k + " = " + v, k, v);
+        lines.add(line, r);
+
+        return r;
+      });
+      pair.value = v;
     }
 
     public String get(String key){
@@ -137,15 +166,15 @@ public class SyncBundles{
       }
     }
 
-    public void write(File file){
-      try{
-        BufferedWriter writer = new BufferedWriter(new FileWriter(file, false));
-        for(Line line: lines){
+    public void write(File file) {
+      try {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(file, StandardCharsets.ISO_8859_1, false));
+        for (Line line: lines) {
           writer.write(line.toString());
           writer.newLine();
           writer.flush();
         }
-      }catch(IOException e){
+      } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
@@ -178,5 +207,29 @@ public class SyncBundles{
     public String toString(){
       return key + " = " + value;
     }
+  }
+
+  private static String string2Unicode(String string) {
+    StringBuilder unicode = new StringBuilder();
+    for (int i = 0; i < string.length(); i++) {
+      // 取出每一个字符
+      char c = string.charAt(i);
+      if (c<0x20 || c>0x7E) {
+        // 转换为unicode
+        String tmp = Integer.toHexString(c).toUpperCase();
+        if (tmp.length() == 4) {
+          unicode.append("\\u").append(tmp);
+        } else if (tmp.length() == 3){
+          unicode.append("\\u0").append(tmp);
+        } else if (tmp.length() == 2){
+          unicode.append("\\u00").append(tmp);
+        } else {
+          unicode.append("\\u000").append(tmp);
+        }
+      } else {
+        unicode.append(c);
+      }
+    }
+    return unicode.toString();
   }
 }

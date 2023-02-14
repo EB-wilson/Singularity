@@ -5,17 +5,18 @@ plugins {
   id 'java'
 }
 
-version 'alpha-0.7.14'
+version 'alpha-0.7.15'
 
 sourceSets.main.java.srcDirs = ["src"]
+sourceSets.test.java.srcDirs = ["test"]
 
-"java SyncBundles.java".execute().waitForProcessOutput(System.out, System.err)
+"java SyncBundles.java ${version}".execute().waitForProcessOutput(System.out, System.err)
 
 ext{
   //the build number that this mod is made for
   mindustryVersion = "v141"
   arcVersion = "v141"
-  uncVersion = "1.6.2"
+  uncVersion = "1.6.3"
   //version of SDK you will be using
   minSdkAPI = 30
 

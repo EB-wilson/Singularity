@@ -1357,14 +1357,14 @@ public class SglTurrets implements ContentList{
               super.draw(b);
               Draw.color(SglDrawConst.winter);
 
-              SglDraw.startBloom(Layer.flyingUnit + 1);
-              float rot = b.fin(Interp.pow2Out)*3600;
-              SglDraw.drawCrystal(b.x, b.y, 30, 14, 8, 0, 0, 0.8f,
-                  Layer.effect, Layer.bullet, rot, b.rotation(), SglDrawConst.frost, SglDrawConst.winter);
+              SglDraw.drawBloomUponFlyUnit(b, e -> {
+                float rot = e.fin(Interp.pow2Out)*3600;
+                SglDraw.drawCrystal(e.x, e.y, 30, 14, 8, 0, 0, 0.8f,
+                    Layer.effect, Layer.bullet, rot, e.rotation(), SglDrawConst.frost, SglDrawConst.winter);
 
-              Draw.alpha(1);
-              Fill.circle(b.x, b.y, 18*b.fin(Interp.pow3In));
-              SglDraw.endBloom();
+                Draw.alpha(1);
+                Fill.circle(e.x, e.y, 18*e.fin(Interp.pow3In));
+              });
             }
 
             @Override

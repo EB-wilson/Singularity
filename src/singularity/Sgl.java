@@ -16,6 +16,9 @@ import universecore.util.handler.ClassHandler;
 import universecore.util.mods.ModGetter;
 import universecore.util.mods.ModInfo;
 
+import java.text.DateFormat;
+import java.util.Date;
+
 import static arc.Core.settings;
 
 public class Sgl{
@@ -90,6 +93,8 @@ public class Sgl{
     SglDrawConst.load();
     //载入风格
     SglStyles.load();
+
+    DateFormat.getDateInstance().format(new Date());
 
     ui = new SglUI();
     contributors = new Contributors();

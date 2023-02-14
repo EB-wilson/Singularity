@@ -138,6 +138,12 @@ public interface EdgeLinkerBuildComp extends BuildCompBase{
     if (nextEdge() != null) delink(nextEdge());
   }
 
+  @Annotations.MethodEntry(entryMethod = "onRemoved")
+  default void edgeRemove(){
+    if (perEdge() != null) perEdge().delink(this);
+    if (nextEdge() != null) delink(nextEdge());
+  }
+
   @Annotations.MethodEntry(entryMethod = "drawConfigure")
   default void drawLinkConfig(){
     getEdgeBlock().drawConfiguring(this);

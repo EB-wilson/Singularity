@@ -55,7 +55,7 @@ import universecore.world.producers.ProduceLiquids;
 /**常规的工厂类方块，具有强大的consume-produce制造系统的近乎全能的制造类方块*/
 @Annotations.ImplEntries
 public class NormalCrafter extends SglBlock implements FactoryBlockComp{
-  public float updateEffectChance = 0.05f;
+  public float updateEffectChance = 0.04f;
   public Effect updateEffect = Fx.none;
   public Color updateEffectColor = Color.white;
   public Effect craftEffect = Fx.none;
@@ -179,7 +179,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       producer = new SglProductModule(this);
       return this;
     }
-  
+
     @Override
     public void reset(){
       super.reset();

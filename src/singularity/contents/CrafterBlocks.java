@@ -40,6 +40,7 @@ import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.graphic.SglShaders;
 import singularity.type.SglLiquidStack;
+import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.blocks.function.Destructor;
 import singularity.world.blocks.product.*;
@@ -100,6 +101,8 @@ public class CrafterBlocks implements ContentList{
   FEX_phase_mixer,
   /**燃料封装机*/
   fuel_packager,
+  /**气体相位封装机*/
+  gas_phase_packer,
   /**热能离心机*/
   thermal_centrifuge,
   /**晶格构建器*/
@@ -108,6 +111,8 @@ public class CrafterBlocks implements ContentList{
   FEX_crystal_charger,
   /**矩阵切割机*/
   matrix_cutter,
+  /**中子透镜*/
+  neutron_lens,
   /**聚合引力发生器*/
   polymer_gravitational_generator,
   /**质量生成器*/
@@ -154,6 +159,7 @@ public class CrafterBlocks implements ContentList{
         consume.item(item, 1);
         consume.time(180);
         consume.power(0.4f);
+        consume.optionalAlwaysValid = true;
       };
       recipe.get(SglItems.uranium_235);
       recipe.get(SglItems.plutonium_239);
@@ -175,13 +181,22 @@ public class CrafterBlocks implements ContentList{
 
       draw = new DrawMulti(
           new DrawBottom(),
-          new DrawWeave(){
+          new DrawWeave() {
             @Override
-            public void load(Block block){
+            public void load(Block block) {
               weave = Core.atlas.find(block.name + "_top");
             }
           },
-          new DrawDefault()
+          new DrawDefault(),
+          new DrawBlock() {
+            @Override
+            public void draw(Building build) {
+              NormalCrafterBuild e = (NormalCrafterBuild) build;
+              Draw.color(SglDrawConst.winter, e.workEfficiency()*(0.4f + Mathf.absin(6, 0.15f)));
+              SglDraw.gradientCircle(e.x, e.y, 8, 10, 0);
+              SglDraw.gradientCircle(e.x, e.y, 8, -4, 0);
+            }
+          }
       );
     }};
   
@@ -238,13 +253,15 @@ public class CrafterBlocks implements ContentList{
               }
             },
             new DrawBlock(){
+              static final int drawID = SglDraw.nextTaskID();
+
               @Override
               public void draw(Building build){
                 Draw.z(Draw.z() + 0.001f);
                 float capacity = build.block.liquidCapacity;
 
                 if (Core.settings.getBool("animatedwater")) {
-                  SglDraw.drawTask("drawCultBarn", build, SglShaders.boundWater, e -> {
+                  SglDraw.drawTask(drawID, build, SglShaders.boundWater, e -> {
                     Draw.alpha(0.75f * (e.liquids.get(Liquids.water) / e.block.liquidCapacity));
                     Draw.rect(Blocks.water.region, e.x, e.y);
                   });
@@ -920,9 +937,8 @@ public class CrafterBlocks implements ContentList{
 
             @Override
             public void draw(Building build){
-              SglDraw.startBloom(31);
-              super.draw(build);
-              SglDraw.endBloom();
+              SglDraw.drawBloomUnderBlock(build, super::draw);
+              Draw.z(Layer.block + 5);
             }
           },
           new DrawRegion("_rotator"){{
@@ -1187,6 +1203,72 @@ public class CrafterBlocks implements ContentList{
           }}
       );
     }};
+
+    gas_phase_packer = new NormalCrafter("gas_phase_packer"){{
+      requirements(Category.crafting, ItemStack.with(
+          SglItems.strengthening_alloy, 80,
+          SglItems.aerogel, 80,
+          Items.phaseFabric, 60,
+          Items.silicon, 60,
+          Items.graphite, 45
+      ));
+      size = 3;
+
+      hasLiquids = true;
+      liquidCapacity = 32;
+      itemCapacity = 24;
+
+      warmupSpeed = 0.01f;
+
+      newConsume();
+      consume.time(240);
+      consume.power(1.4f);
+      consume.items(ItemStack.with(
+          Items.phaseFabric, 2,
+          SglItems.aerogel, 2
+      ));
+      consume.liquid(Liquids.hydrogen, 0.4f);
+      newProduce();
+      produce.item(SglItems.encapsulated_hydrogen_cell, 1);
+
+      newConsume();
+      consume.time(240);
+      consume.power(1.4f);
+      consume.items(ItemStack.with(
+          Items.phaseFabric, 2,
+          SglItems.aerogel, 2
+      ));
+      consume.liquid(SglLiquids.helium, 0.4f);
+      newProduce();
+      produce.item(SglItems.encapsulated_helium_cell, 1);
+
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawLiquidTile(),
+          new DrawLiquidRegion() {{
+            suffix = "_liquid";
+          }},
+          new DrawBlock() {
+            TextureRegion piston;
+
+            @Override
+            public void draw(Building build){
+              for(int i = 0; i < 4; i++){
+                float len = Mathf.absin(build.totalProgress() + 90*i, 4, 4);
+                float angle = i*360f/4;
+
+                Draw.rect(piston, build.x + Angles.trnsx(angle + 225, len), build.y + Angles.trnsy(angle + 225, len), angle);
+              }
+            }
+
+            @Override
+            public void load(Block block) {
+              piston = Core.atlas.find(block.name + "_piston");
+            }
+          },
+          new DrawDefault()
+      );
+    }};
     
     thermal_centrifuge = new NormalCrafter("thermal_centrifuge"){{
       requirements(Category.crafting, ItemStack.with(
@@ -1210,14 +1292,14 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.time(180);
-      consume.item(SglItems.iridium_mixed_rawmaterial, 4);
+      consume.item(SglItems.iridium_mixed_rawmaterial, 2);
       consume.power(3);
       newProduce().color = SglItems.iridium_chloride.color;
       produce.item(SglItems.iridium, 1);
 
       newConsume();
       consume.time(120);
-      consume.item(SglItems.black_crystone, 6);
+      consume.item(SglItems.black_crystone, 5);
       consume.power(2.8f);
       setByProduct(0.3f, Items.thorium);
       newProduce().color = SglItems.black_crystone.color;
@@ -1364,7 +1446,7 @@ public class CrafterBlocks implements ContentList{
 
               Draw.z(Layer.effect);
               for(int dist=2; dist>=0; dist--){
-                Draw.color(Color.valueOf("FF756F"));
+                Draw.color(SglDrawConst.fexCrystal);
                 Draw.alpha((alphas[dist] <= 1? alphas[dist]: alphas[dist] <= 1.5? 1: 0)*e.workEfficiency());
                 if(e.workEfficiency() > 0){
                   if(alphas[dist] < 0.4) alphas[dist] += 0.6;
@@ -1403,11 +1485,21 @@ public class CrafterBlocks implements ContentList{
       consume.energy(2f);
       newProduce();
       produce.item(SglItems.crystal_FEX_power, 1);
-      
+
+      updateEffect = SglFx.neutronWeaveMicro;
+      updateEffectChance = 0.04f;
+      updateEffectColor = SglDrawConst.fexCrystal;
       craftEffect = SglFx.crystalConstructed;
+      craftEffectColor = SglDrawConst.fexCrystal;
 
       loopSound = Sounds.flux;
       loopSoundVolume = 0.1f;
+
+      crafting = e -> {
+        if (Mathf.chanceDelta(0.03f*e.workEfficiency())){
+          SglFx.shrinkParticleSmall.at(e.x, e.y, SglDrawConst.fexCrystal);
+        }
+      };
 
       draw = new DrawMulti(
           new DrawDefault(),
@@ -1465,27 +1557,139 @@ public class CrafterBlocks implements ContentList{
 
       draw = new DrawMulti(
           new DrawBottom(),
-          new DrawRegionDynamic<NormalCrafterBuild>("_alloy"){{
-            alpha = e -> e.items.get(SglItems.strengthening_alloy) >= 2? 1: 0;
+          new DrawRegionDynamic<NormalCrafterBuild>("_alloy") {{
+            alpha = e -> e.items.get(SglItems.strengthening_alloy) >= 2 ? 1 : 0;
           }},
-          new DrawBlock(){
+          new DrawBlock() {
             @Override
-            public void draw(Building build){
+            public void draw(Building build) {
               NormalCrafterBuild e = (NormalCrafterBuild) build;
-              float dx = 5*Mathf.sinDeg(build.totalProgress()*1.35f);
-              float dy = 5*Mathf.cosDeg(build.totalProgress()*1.35f);
+              float dx = 5 * Mathf.sinDeg(build.totalProgress() * 1.35f);
+              float dy = 5 * Mathf.cosDeg(build.totalProgress() * 1.35f);
 
-              Draw.color(Color.valueOf("FF756F"));
+              Draw.color(SglDrawConst.fexCrystal);
               Draw.alpha(e.workEfficiency());
               Lines.stroke(0.8f);
-              SglDraw.startBloom(31);
-              Lines.line(e.x + dx, e.y + 6, e.x + dx, e.y - 6);
-              Lines.line(e.x + 6, e.y + dy, e.x - 6, e.y + dy);
-              SglDraw.endBloom();
+
+              SglDraw.drawBloomUnderBlock(e, b -> {
+                Lines.line(b.x + dx, b.y + 6, b.x + dx, b.y - 6);
+                Lines.line(b.x + 6, b.y + dy, b.x - 6, b.y + dy);
+              });
+              Draw.z(35);
               Draw.reset();
             }
           },
-          new DrawDefault()
+          new DrawDefault(),
+          new DrawBlock() {
+            @Override
+            public void draw(Building build) {
+              Draw.z(Layer.effect);
+
+              NormalCrafterBuild e = (NormalCrafterBuild) build;
+              float angle = e.totalProgress();
+              float realRotA = MathTransform.gradientRotateDeg(angle, 0, 4);
+              float realRotB = MathTransform.gradientRotateDeg(angle, 180, 4);
+
+              Lines.stroke(1.4f*e.workEfficiency(), SglDrawConst.fexCrystal);
+              Lines.square(e.x, e.y, 16, 45 + realRotA);
+
+              Lines.stroke(1.6f*e.workEfficiency());
+              Lines.square(e.x, e.y, 24, 45 - realRotB);
+            }
+          }
+      );
+    }};
+
+    neutron_lens = new NormalCrafter("neutron_lens"){{
+      requirements(Category.crafting, ItemStack.with(
+          SglItems.strengthening_alloy, 120,
+          SglItems.crystal_FEX, 80,
+          SglItems.crystal_FEX_power, 100,
+          SglItems.iridium, 60,
+          SglItems.aerogel, 120,
+          Items.phaseFabric, 90
+      ));
+      size = 4;
+      itemCapacity = 20;
+
+      warmupSpeed = 0.005f;
+
+      newConsume();
+      consume.time(60);
+      consume.item(SglItems.uranium_238, 1);
+      consume.energy(1.2f);
+      newProduce();
+      produce.item(SglItems.plutonium_239, 1);
+
+      newConsume();
+      consume.time(60);
+      consume.item(SglItems.encapsulated_hydrogen_cell, 1);
+      consume.energy(1.5f);
+      newProduce();
+      produce.item(SglItems.hydrogen_fusion_fuel, 1);
+
+      newConsume();
+      consume.time(60);
+      consume.item(SglItems.encapsulated_helium_cell, 1);
+      consume.energy(1.6f);
+      newProduce();
+      produce.item(SglItems.helium_fusion_fuel, 1);
+
+      newConsume();
+      consume.time(90);
+      consume.item(SglItems.nuclear_waste, 2);
+      consume.liquid(SglLiquids.phase_FEX_liquid, 0.2f);
+      consume.energy(2.2f);
+      newProduce();
+      produce.items(ItemStack.with(
+          SglItems.iridium_mixed_rawmaterial, 1,
+          SglItems.strengthening_alloy, 1,
+          Items.thorium, 1
+      ));
+
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawBlock() {
+            @Override
+            public void draw(Building build) {
+              LiquidBlock.drawTiledFrames(
+                  build.block.size,
+                  build.x, build.y,
+                  4,
+                  SglLiquids.spore_cloud,
+                  ((NormalCrafterBuild) build).consEfficiency()
+              );
+            }
+          },
+          new DrawRegionDynamic<NormalCrafterBuild>("_light") {{
+            alpha = FactoryBuildComp::workEfficiency;
+            color = e -> Tmp.c1.set(Pal.slagOrange).lerp(Pal.accent, Mathf.absin(5, 1));
+          }},
+          new DrawBlock() {
+            @Override
+            public void draw(Building build) {
+              NormalCrafterBuild e = (NormalCrafterBuild) build;
+
+              float angle1 = MathTransform.gradientRotateDeg(build.totalProgress()*0.8f, 180, 0.5f, 4);
+              float angle2 = MathTransform.gradientRotateDeg(build.totalProgress()*0.8f, 0, 0.25f, 4);
+
+              Draw.color(Color.black);
+              Fill.square(build.x, build.y, 3*e.consEfficiency(), angle2 + 45);
+
+              SglDraw.drawBloomUnderBlock(e, b -> {
+                Lines.stroke(0.75f*b.consEfficiency(), SglDrawConst.fexCrystal);
+                Lines.square(b.x, b.y, 4*b.consEfficiency(), angle2 + 45);
+
+                Lines.stroke(0.8f*b.consEfficiency());
+                Lines.square(b.x, b.y, 6*b.consEfficiency(), -angle1 + 45);
+                Draw.reset();
+              });
+              Draw.z(35);
+              Draw.reset();
+            }
+          },
+          new DrawDefault(),
+          new DrawRegion("_top")
       );
     }};
   
@@ -1656,16 +1860,19 @@ public class CrafterBlocks implements ContentList{
       draw = new DrawMulti(
           new DrawBottom(),
           new DrawBlock(){
+
             @Override
             public void draw(Building build){
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               Draw.color(Pal.reactorPurple);
               Draw.alpha(e.workEfficiency());
-              SglDraw.startBloom(31);
-              LightningContainer c = e.getVar("lightningDrawer");
-              if(!Vars.state.isPaused()) c.update();
-              c.draw(e.x, e.y);
-              SglDraw.endBloom();
+
+              SglDraw.drawBloomUnderBlock(e, b -> {
+                LightningContainer c = b.getVar("lightningDrawer");
+                if(!Vars.state.isPaused()) c.update();
+                c.draw(b.x, b.y);
+              });
+              Draw.z(35);
               Draw.color();
             }
           },

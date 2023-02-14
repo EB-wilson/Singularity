@@ -28,7 +28,7 @@ public class BoosterCrafter extends NormalCrafter{
       e.boostEff = Mathf.lerpDelta(e.boostEff, Math.max(boost*mul, 1), 0.35f);
       e.boostTime = 1;
     }, (s, c) -> {
-      s.add(Stat.boostEffect, Core.bundle.get("misc.efficiency") + "+" + boost*100 + "%");
+      s.add(Stat.boostEffect, Core.bundle.get("misc.efficiency") + boost*100 + "%");
     });
   }
 
@@ -72,7 +72,7 @@ public class BoosterCrafter extends NormalCrafter{
         boostTime--;
         return;
       }
-      boostEff = Mathf.lerpDelta(boostEff, 1, 0.03f);
+      boostEff = Mathf.approachDelta(boostEff, 1, 0.04f);
     }
   }
 }
