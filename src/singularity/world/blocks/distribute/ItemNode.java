@@ -6,12 +6,15 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Angles;
+import arc.math.Interp;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
+import arc.scene.actions.Actions;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
 import arc.struct.Seq;
+import arc.util.Align;
 import arc.util.Eachable;
 import arc.util.Time;
 import arc.util.Tmp;
@@ -72,6 +75,7 @@ public class ItemNode extends SglBlock {
     solid = true;
     underBullets = true;
     hasPower = true;
+    conductivePower = false;
     itemCapacity = 10;
     outputItems = true;
     configurable = true;
@@ -258,6 +262,8 @@ public class ItemNode extends SglBlock {
     public float transportCounter;
 
     int itemTakeCursor;
+    Runnable show = () -> {}, close = () -> {};
+    boolean showing;
 
     @Override
     public void pickedUp(){
@@ -339,6 +345,18 @@ public class ItemNode extends SglBlock {
 
     @Override
     public boolean onConfigureBuildTapped(Building other){
+      if (other == this){
+        if (!showing){
+          show.run();
+          showing = true;
+        }
+        else {
+          close.run();
+          showing = false;
+        }
+        return false;
+      }
+
       //reverse connection
       if(other instanceof ItemNodeBuild b && b.link == pos()){
         configure(other.pos());
@@ -511,20 +529,37 @@ public class ItemNode extends SglBlock {
 
     @Override
     public void buildConfiguration(Table table) {
-      table.add(new DistTargetConfigTable(
-          0,
-          config,
-          siphon?
-              new GridChildType[]{GridChildType.output, GridChildType.acceptor, GridChildType.input}:
-              new GridChildType[]{GridChildType.output, GridChildType.acceptor},
-          new ContentType[]{ContentType.item},
-          true,
-          c -> {
-            c.offsetPos = 0;
-            configure(c.pack());
-          },
-          () -> Vars.control.input.config.hideConfig()
-      ));
+      showing = false;
+      table.table(t -> {
+        t.visible = false;
+        t.setOrigin(Align.center);
+        t.center().add(new DistTargetConfigTable(
+            0,
+            config,
+            siphon ?
+                new GridChildType[]{GridChildType.output, GridChildType.acceptor, GridChildType.input} :
+                new GridChildType[]{GridChildType.output, GridChildType.acceptor},
+            new ContentType[]{ContentType.item},
+            true,
+            c -> {
+              c.offsetPos = 0;
+              configure(c.pack());
+            },
+            () -> Vars.control.input.config.hideConfig()
+        )).fill().center();
+
+        show = () -> {
+          t.visible = true;
+          t.pack();
+          t.setTransform(true);
+          t.actions(Actions.scaleTo(0f, 1f), Actions.visible(true),
+              Actions.scaleTo(1f, 1f, 0.07f, Interp.pow3Out));
+        };
+
+        close = () -> {
+          t.actions(Actions.scaleTo(1f, 1f), Actions.scaleTo(0f, 1f, 0.07f, Interp.pow3Out), Actions.visible(false));
+        };
+      }).fillY();
     }
 
     @Override

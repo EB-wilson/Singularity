@@ -5,7 +5,7 @@ plugins {
   id 'java'
 }
 
-version 'alpha-0.7.16'
+version 'alpha-0.7.17'
 
 sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]

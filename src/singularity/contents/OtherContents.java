@@ -9,11 +9,14 @@ import arc.math.Mathf;
 import arc.struct.ObjectMap;
 import arc.util.Time;
 import arc.util.Tmp;
+import arc.util.pooling.Pool;
+import arc.util.pooling.Pools;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.StatusEffects;
 import mindustry.entities.Damage;
 import mindustry.entities.Effect;
+import mindustry.entities.abilities.Ability;
 import mindustry.game.EventType;
 import mindustry.gen.Bullet;
 import mindustry.gen.Unit;
@@ -23,6 +26,7 @@ import mindustry.graphics.Pal;
 import mindustry.type.StatusEffect;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
+import singularity.Sgl;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.type.AtomSchematic;
@@ -41,7 +45,9 @@ public class OtherContents implements ContentList{
   uranium_schematic,
   iridium_schematic;
 
-  public static StatusEffect electric_disturb,
+  public static StatusEffect
+  emp_damaged,
+  electric_disturb,
   locking,
   spring_coming,
   wild_growth,
@@ -68,6 +74,66 @@ public class OtherContents implements ContentList{
       request.item(Items.sand, 1);
       request.time(45);
     }};
+
+    emp_damaged = new StatusEffect("emp_damaged"){
+      {
+        color = Pal.accent;
+
+        speedMultiplier = 0.5f;
+        buildSpeedMultiplier = 0.1f;
+        reloadMultiplier = 0.6f;
+      }
+
+      @Override
+      public void update(Unit unit, float time) {
+        super.update(unit, time);
+
+        if (Sgl.empHealth.empDamaged(unit)){
+          if (unit.getDuration(this) <= 60){
+            unit.apply(this, 60);
+          }
+          else{
+            unit.speedMultiplier = 0.01f;
+            unit.reloadMultiplier = 0;
+            unit.buildSpeedMultiplier = 0;
+          }
+
+          unit.damagePierce(1, true);
+          unit.health -= (1 - Sgl.empHealth.healthPresent(unit))*Sgl.empHealth.get(unit).model.empContinuousDamage;
+
+          for (int i = 0; i < unit.abilities.length; i++) {
+            if (!(unit.abilities[i] instanceof BanedAbility)){
+              BanedAbility baned = Pools.obtain(BanedAbility.class, BanedAbility::new);
+              baned.index = i;
+              baned.masked = unit.abilities[i];
+              unit.abilities[i] = baned;
+            }
+          }
+        }
+        else{
+          unit.unapply(this);
+        }
+      }
+
+      class BanedAbility extends Ability implements Pool.Poolable {
+        Ability masked;
+        int index;
+
+        @Override
+        public void update(Unit unit) {
+          if (!unit.hasEffect(emp_damaged)) {
+            unit.abilities[index] = masked;
+            Pools.free(this);
+          }
+        }
+
+        @Override
+        public void reset() {
+          masked = null;
+          index = -1;
+        }
+      }
+    };
 
     electric_disturb = new StatusEffect("electric_disturb"){
       {
@@ -251,9 +317,22 @@ public class OtherContents implements ContentList{
   static {
     UncCore.aspects.addAspect(new EntityAspect<Bullet>(EntityAspect.Group.bullet, r -> true)
         .setEntryTrigger(bullet -> {
-          if(bullet.owner instanceof Unit u && u.hasEffect(electric_disturb)){
-            float deflect = 16.4f*Mathf.clamp(u.getDuration(electric_disturb)/120);
-            bullet.vel.rotate(Mathf.random(-deflect, deflect));
+          if(bullet.owner instanceof Unit u){
+            if(u.hasEffect(electric_disturb)){
+              float deflect = 16.4f*Mathf.clamp(u.getDuration(electric_disturb)/120);
+              float rot = Mathf.random(-deflect, deflect);
+              bullet.rotation(bullet.rotation() + rot);
+              Tmp.v1.set(bullet.aimX - bullet.x, bullet.aimY - bullet.y).rotate(rot);
+              bullet.aimX = Tmp.v1.x;
+              bullet.aimY = Tmp.v1.y;
+            }
+            if (u.hasEffect(emp_damaged)){
+              float rot = Mathf.random(-45, 45);
+              bullet.rotation(bullet.rotation() + rot);
+              Tmp.v1.set(bullet.aimX - bullet.x, bullet.aimY - bullet.y).rotate(rot);
+              bullet.aimX = Tmp.v1.x;
+              bullet.aimY = Tmp.v1.y;
+            }
           }
         }).setExitTrigger(e -> {}));
 

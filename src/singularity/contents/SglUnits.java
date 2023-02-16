@@ -306,14 +306,14 @@ public class SglUnits implements ContentList{
               mirror = true;
 
               recoil = 0;
-              reload = 6;
+              reload = 12;
               targetInterval = 0;
               targetSwitchInterval = 0;
 
               layerOffset = 0.2f;
 
               bullet = new BulletType(){{
-                damage = 100;
+                damage = 62;
                 rangeOverride = 420;
               }};
             }},

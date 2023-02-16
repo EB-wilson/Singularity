@@ -4,7 +4,7 @@
 //This is the configuration file of the singularity mod. You can see most of the configuration items in the configuration UI page.
 //Configurations that are not usually used, such as debugging options, need to be adjusted in this file.
 {
-  "configVersion": 2,
+  "configVersion": 3,
 
   //=====Basic/基础设置=====//
   //--main menu/主菜单设置--
@@ -27,6 +27,30 @@
   ],
   //主菜单背景的视角能移动，启用背景且非静态背景时有效
   "movementCamera": true,
+
+  //--target info/局内目标信息设置--
+  //局内显示目标信息
+  "showTargetInfo": true,
+  //目标显示刷新间隔（单位：刻）
+  "flushInterval": 1,
+  //最大同时显示的目标数量
+  "maxDisplay": 16,
+  //范围显示模式下，选择目标半径（屏幕坐标系下的半径）
+  "holdDisplayRange": 320,
+  //--生命显示器
+  //生命指示器生命条宽度
+  "healthBarWidth": 280,
+  //生命指示器生命条高度
+  "healthBarHeight": 22,
+  //生命指示器系统负荷条宽度
+  "empBarWidth": 168,
+  //生命指示器系统负荷条高度
+  "empBarHeight": 12,
+  //--状态指示器
+  //状态图标尺寸
+  "statusSize": 20,
+  //显示时长
+  "showStatusTime": true,
 
   //===Adavanced/高级设置===//
   //是否要可以覆盖游戏本身的内容

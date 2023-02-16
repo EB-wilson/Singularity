@@ -12,12 +12,10 @@ import singularity.graphic.SglShaders;
 import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
 import singularity.world.distribution.DistSupportContainerTable;
+import singularity.world.unit.EMPHealthManager;
 import universecore.util.handler.ClassHandler;
 import universecore.util.mods.ModGetter;
 import universecore.util.mods.ModInfo;
-
-import java.text.DateFormat;
-import java.util.Date;
 
 import static arc.Core.settings;
 
@@ -83,6 +81,8 @@ public class Sgl{
   public static UpdateTiles updateTiles;
 
   public static DistSupportContainerTable matrixContainers;
+
+  public static EMPHealthManager empHealth;
   
   public static void init(){
     //载入着色器
@@ -94,8 +94,6 @@ public class Sgl{
     //载入风格
     SglStyles.load();
 
-    DateFormat.getDateInstance().format(new Date());
-
     ui = new SglUI();
     contributors = new Contributors();
     
@@ -103,7 +101,11 @@ public class Sgl{
 
     matrixContainers = new DistSupportContainerTable();
 
+    empHealth = new EMPHealthManager();
+
     matrixContainers.setDefaultSupports();
+
+    empHealth.init();
     ui.init();
   }
   

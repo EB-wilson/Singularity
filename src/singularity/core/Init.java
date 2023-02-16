@@ -46,6 +46,8 @@ public class Init{
     for (Block block : Vars.content.blocks()) {
       if (block instanceof OverdriveProjector over){
         over.placeablePlayer = false;
+        over.update = false;
+        over.breakable = true;
       }
     }
   }

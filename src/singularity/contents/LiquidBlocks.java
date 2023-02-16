@@ -1,14 +1,16 @@
 package singularity.contents;
 
+import arc.func.Boolf3;
 import mindustry.content.Items;
+import mindustry.game.Team;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
+import mindustry.world.Tile;
 import singularity.world.blocks.liquid.ClusterConduit;
 import singularity.world.blocks.liquid.ClusterValve;
 import singularity.world.blocks.liquid.ConduitRiveting;
 import singularity.world.blocks.liquid.LiquidUnloader;
-import universecore.world.blocks.FakeBlock;
 
 public class LiquidBlocks implements ContentList {
   /**集束管道*/
@@ -45,5 +47,12 @@ public class LiquidBlocks implements ContentList {
       requirements(Category.liquid, ItemStack.with(Items.silicon, 20, SglItems.aluminium, 25, Items.graphite, 15));
       size = 1;
     }};
+  }
+
+  static class FakeBlock extends universecore.world.blocks.FakeBlock{
+    public FakeBlock(Block maskedBlock, Boolf3<Tile, Team, Integer> placeValid) {
+      super(maskedBlock, placeValid);
+      maskedBlock.alwaysUnlocked = true;
+    }
   }
 }

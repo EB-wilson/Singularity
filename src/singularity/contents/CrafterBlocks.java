@@ -1564,14 +1564,13 @@ public class CrafterBlocks implements ContentList{
             @Override
             public void draw(Building build) {
               NormalCrafterBuild e = (NormalCrafterBuild) build;
-              float dx = 5 * Mathf.sinDeg(build.totalProgress() * 1.35f);
-              float dy = 5 * Mathf.cosDeg(build.totalProgress() * 1.35f);
-
-              Draw.color(SglDrawConst.fexCrystal);
-              Draw.alpha(e.workEfficiency());
-              Lines.stroke(0.8f);
-
               SglDraw.drawBloomUnderBlock(e, b -> {
+                float dx = 5 * Mathf.sinDeg(build.totalProgress() * 1.35f);
+                float dy = 5 * Mathf.cosDeg(build.totalProgress() * 1.35f);
+
+                Draw.color(SglDrawConst.fexCrystal);
+                Lines.stroke(0.8f*e.workEfficiency());
+
                 Lines.line(b.x + dx, b.y + 6, b.x + dx, b.y - 6);
                 Lines.line(b.x + 6, b.y + dy, b.x - 6, b.y + dy);
               });

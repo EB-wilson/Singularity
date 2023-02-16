@@ -357,7 +357,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
     @Override
     public BlockStatus status(){
-      return consumer.status();
+      return !enabled? BlockStatus.logicDisable: consumer.status();
     }
 
     @Override

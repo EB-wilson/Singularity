@@ -4,6 +4,7 @@ import arc.Core;
 import arc.scene.ui.Button;
 import arc.scene.ui.Slider;
 import mindustry.gen.Tex;
+import singularity.ui.fragments.HealthBarStyle;
 
 import static mindustry.gen.Tex.*;
 
@@ -12,6 +13,10 @@ public class SglStyles{
   public static Button.ButtonStyle underline;
   
   public static void load(){
+    for (HealthBarStyle style : HealthBarStyle.values()) {
+      style.load();
+    }
+
     sliderLine = new Slider.SliderStyle(){{
       background = Core.atlas.drawable("singularity-slider_line_back");
       knob = sliderKnob;

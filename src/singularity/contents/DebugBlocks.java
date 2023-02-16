@@ -13,6 +13,7 @@ import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.gen.Building;
+import mindustry.gen.Groups;
 import mindustry.gen.Sounds;
 import mindustry.gen.Tex;
 import mindustry.graphics.Layer;
@@ -21,6 +22,7 @@ import mindustry.type.ItemStack;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
+import singularity.Sgl;
 import singularity.graphic.Distortion;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
@@ -33,7 +35,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 public class DebugBlocks implements ContentList{
-  public static Block drawTest, voidDrawTest, volTest;
+  public static Block drawTest, voidDrawTest, volTest, empDamageTester;
 
   @Override
   public void load(){
@@ -164,6 +166,45 @@ public class DebugBlocks implements ContentList{
             t.slider(0f, 2, 0.05f, pitch, f -> pitch = f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
             t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(pitch, 2)));
           });
+        }
+      };
+    }};
+
+    empDamageTester = new TestBlock("empDamageTester"){{
+      requirements(SglCategory.debugging, ItemStack.with());
+      configurable = true;
+
+      buildType = () -> new TestBlockBuild(){
+        float damage, damageRange;
+
+        @Override
+        public void buildConfiguration(Table table){
+          table.table(t -> {
+            t.slider(0, 10, 0.1f, damage, f -> damage = f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+            t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(damage, 1)));
+          });
+          table.row();
+          table.table(t -> {
+            t.slider(0, 400, 1f, damageRange, f -> damageRange = f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+            t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(damageRange, 1)));
+          });
+        }
+
+        @Override
+        public void update() {
+          super.update();
+          Groups.unit.intersect(x - damageRange, y - damageRange, damageRange*2, damageRange*2, u -> {
+            if (u.dst(x, y) < damageRange){
+              Sgl.empHealth.empDamage(u, damage*Time.delta, false);
+            }
+          });
+        }
+
+        @Override
+        public void draw() {
+          super.draw();
+          Lines.stroke(2, Pal.lightishGray);
+          Lines.dashCircle(x, y, damageRange);
         }
       };
     }};

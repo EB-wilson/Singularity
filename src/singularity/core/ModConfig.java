@@ -11,16 +11,30 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 
 public class ModConfig{
-  private static final int configVersion = 2;
+  private static final int configVersion = 3;
   private static final Field[] configs = ModConfig.class.getFields();
 
   //basic/基础设置
+  //主菜单界面设置
   public boolean disableModMainMenu;
   public boolean showModMenuWenLaunch;
   public boolean mainMenuUniverseBackground;
   public boolean staticMainMenuBackground;
   public float[] defaultCameraPos;
   public boolean movementCamera;
+  //游戏目标内信息显示
+  public boolean showTargetInfo;
+  public float flushInterval;
+  public int maxDisplay;
+  public float holdDisplayRange;
+
+  public float healthBarWidth;
+  public float healthBarHeight;
+  public float empBarWidth;
+  public float empBarHeight;
+
+  public float statusSize;
+  public boolean showStatusTime;
 
   //Advanced/高级设置
   public boolean modReciprocal;
@@ -44,7 +58,9 @@ public class ModConfig{
         Sgl.internalConfigDir.child("mod_config.hjson").copyTo(Sgl.configFile);
         Log.info("default configuration file version updated, eld config should be override(backup file for old file was created)");
         load(Sgl.configFile);
+        String pp = lastContext;
         load(backup, true);
+        lastContext = pp;
 
         try{
           save();
@@ -118,6 +134,7 @@ public class ModConfig{
     Jval tree = Jval.newObject();
 
     Jval.JsonMap map = tree.asObject();
+    map.put("configVersion", Jval.valueOf(configVersion));
 
     Field[] configs = ModConfig.class.getFields();
     try{
