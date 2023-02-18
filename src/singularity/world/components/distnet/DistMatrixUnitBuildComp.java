@@ -73,7 +73,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   }
   
   default boolean configValid(Building entity){
-    if(entity instanceof IOPointComp) return true;
+    if(entity instanceof IOPointComp io && (io.gridConfig() == null || io.parent() == this)) return true;
     return Sgl.matrixContainers.getContainer(entity.block) != null;
   }
 
@@ -111,6 +111,11 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   boolean tileValid(Tile tile);
   
   void drawValidRange();
+
+  default void addIO(IOPointComp io){
+    ioPoints().add(io);
+    matrixGrid().addConfig(io.gridConfig());
+  }
   
   default void removeIO(IOPointComp io){
     ioPoints().remove(io);

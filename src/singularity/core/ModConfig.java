@@ -4,6 +4,7 @@ import arc.files.Fi;
 import arc.util.Log;
 import arc.util.serialization.Jval;
 import singularity.Sgl;
+import singularity.ui.fragments.HealthBarStyle;
 import universecore.util.handler.MethodHandler;
 
 import java.io.*;
@@ -28,10 +29,7 @@ public class ModConfig{
   public int maxDisplay;
   public float holdDisplayRange;
 
-  public float healthBarWidth;
-  public float healthBarHeight;
-  public float empBarWidth;
-  public float empBarHeight;
+  public HealthBarStyle healthBarStyle;
 
   public float statusSize;
   public boolean showStatusTime;

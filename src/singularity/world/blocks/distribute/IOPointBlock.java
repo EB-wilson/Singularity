@@ -1,10 +1,12 @@
 package singularity.world.blocks.distribute;
 
+import arc.math.geom.Point2;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
+import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.type.Item;
@@ -25,12 +27,14 @@ import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.buffers.LiquidsBuffer;
 import singularity.world.meta.SglStat;
 import universecore.annotations.Annotations;
+import universecore.util.DataPackable;
 
 import static mindustry.Vars.*;
 
 /**非content类，方块标记，不进入contents，用于创建矩阵网络IO接口点的标记类型*/
 @Annotations.ImplEntries
 public class IOPointBlock extends SglBlock implements IOPointBlockComp{
+  public static final byte[] NULL = new byte[0];
   public GridChildType[] configTypes = {GridChildType.output, GridChildType.input, GridChildType.acceptor};
   public ContentType[] supportContentType = {ContentType.item, ContentType.liquid};
 
@@ -49,6 +53,8 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     liquidCapacity = 16;
 
     buildCostMultiplier = 0;
+
+    schematicPriority = -10;
 
     //items
     setFactory(GridChildType.output, ContentType.item, new RequestHandlers.ReadItemRequestHandler());
@@ -71,6 +77,46 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     });
   }
 
+  @Override
+  public void parseConfigObjects(SglBuilding e, Object obj) {
+    if (obj instanceof TargetConfigure cfg && e instanceof IOPoint io){
+      Building tile = e.nearby(-Point2.x(cfg.offsetPos), -Point2.y(cfg.offsetPos));
+      if (!(tile instanceof DistMatrixUnitBuildComp mat)){
+        io.parent = null;
+        io.config = null;
+      }
+      else{
+        //校准坐标...
+        int offX = e.tileX() - tile.tileX();
+        int offY = e.tileY() - tile.tileY();
+
+        cfg.offsetPos = Point2.pack(offX, offY);
+
+        io.parent = mat;
+        io.config = cfg;
+        io.parent.addIO(io);
+      }
+    }
+  }
+
+  @Override
+  public void onPlanRotate(BuildPlan plan, int direction) {
+    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof TargetConfigure nodeConfig){
+      nodeConfig.rotateDir(this, direction);
+
+      plan.config = nodeConfig.pack();
+    }
+  }
+
+  @Override
+  public void onPlanFilp(BuildPlan plan, boolean x) {
+    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof TargetConfigure nodeConfig){
+      nodeConfig.flip(this, x);
+
+      plan.config = nodeConfig.pack();
+    }
+  }
+
   @Annotations.ImplEntries
   public class IOPoint extends SglBuilding implements IOPointComp{
     public DistMatrixUnitBuildComp parent;
@@ -87,6 +133,22 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       outItems = new ItemModule();
       outLiquid = new LiquidModule();
       return this;
+    }
+
+    @Override
+    public void onProximityAdded() {
+      super.onProximityAdded();
+      if (config != null){
+        Building tile = nearby(-Point2.x(config.offsetPos), -Point2.y(config.offsetPos));
+        if (!(tile instanceof DistMatrixUnitBuildComp mat)){
+          parent = null;
+          config = null;
+        }
+        else{
+          parent = mat;
+          parent.addIO(this);
+        }
+      }
     }
 
     @Override
@@ -328,10 +390,23 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     }
 
     @Override
+    public byte[] config() {
+      return config == null? NULL : config.pack();
+    }
+
+    @Override
     public void write(Writes write){
       super.write(write);
       outItems.write(write);
       outLiquid.write(write);
+
+      if (config == null){
+        write.i(-1);
+      }
+      else {
+        write.i(1);
+        config.write(write);
+      }
     }
 
     @Override
@@ -339,6 +414,11 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       super.read(read, revision);
       outItems.read(read);
       outLiquid.read(read);
+
+      if (read.i() > 0){
+        config = new TargetConfigure();
+        config.read(read);
+      }
     }
   }
 }

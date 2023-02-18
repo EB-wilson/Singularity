@@ -8,4 +8,9 @@ public class SglEventTypes {
     public Seq<BuildPlan> plans;
     public int direction;
   }
+
+  public static class BuildFlipRotateEvent{
+    public Seq<BuildPlan> plans;
+    public boolean x;
+  }
 }

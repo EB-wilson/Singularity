@@ -12,9 +12,9 @@ public abstract class EntityInfoDisplay<T extends Entityc>{
     posCons.get(Tmp.v1.x, Tmp.v1.y);
   }
 
-  public abstract float draw(EntityInfoFrag.EntityEntry<T> entry, Team team, float maxWight, float dy, float alpha);
+  public abstract float draw(EntityInfoFrag.EntityEntry<T> entry, Team team, float maxWight, float dy, float alpha, float scl);
 
   public abstract void updateVar(EntityInfoFrag.EntityEntry<T> entry, float delta);
 
-  public abstract float wight();
+  public abstract float wight(float scl);
 }

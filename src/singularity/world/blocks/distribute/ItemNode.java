@@ -87,21 +87,32 @@ public class ItemNode extends SglBlock {
     copyConfig = false;
     priority = TargetPriority.transport;
 
-    config(byte[].class, (ItemNodeBuild e, byte[] b) -> {
-      Object conf = DataPackable.readObject(b);
-      if (conf instanceof TargetConfigure c){
-        e.config = c.isClear()? null: c;
-        e.link = c.offsetPos > 0? Point2.unpack(c.offsetPos).add(e.tileX(), e.tileY()).pack(): e.link;
-      }
-    });
-
     config(Integer.class, (ItemNodeBuild tile, Integer i) -> tile.link = i);
+  }
+
+  @Override
+  public void parseConfigObjects(SglBuilding b, Object obj) {
+    super.parseConfigObjects(b, obj);
+    ItemNodeBuild e = (ItemNodeBuild) b;
+    if (obj instanceof TargetConfigure c){
+      e.config = c.isClear()? null: c;
+      e.link = c.offsetPos != 0? Point2.unpack(c.offsetPos).add(e.tileX(), e.tileY()).pack(): e.link;
+    }
   }
 
   @Override
   public void onPlanRotate(BuildPlan plan, int direction) {
     if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof TargetConfigure nodeConfig){
       nodeConfig.rotateDir(this, direction);
+
+      plan.config = nodeConfig.pack();
+    }
+  }
+
+  @Override
+  public void onPlanFilp(BuildPlan plan, boolean x) {
+    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof TargetConfigure nodeConfig){
+      nodeConfig.flip(this, x);
 
       plan.config = nodeConfig.pack();
     }

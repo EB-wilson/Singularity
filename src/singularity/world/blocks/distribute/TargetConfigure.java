@@ -17,10 +17,8 @@ import universecore.util.Empties;
 
 public class TargetConfigure implements DataPackable {
   public static final long typeID = 6253491887543618527L;
-
-  static {
-    DataPackable.assignType(typeID, p -> new TargetConfigure());
-  }
+  public static final int FLIP_X = 0b0101;
+  public static final int FLIP_Y = 0b1010;
 
   public int offsetPos;
   public int priority;
@@ -215,6 +213,38 @@ public class TargetConfigure implements DataPackable {
           bits = bits >> 1;
           if (b) bits = bits | 1 << 3;
         }
+        arr[0] = (byte) bits;
+      }
+    }
+  }
+
+  public void flip(Block block, boolean x) {
+    int off = block.offset > 0? 1: 0;
+
+    Point2 p = Point2.unpack(offsetPos);
+    if (x){
+      p.x = -p.x + off;
+    }
+    else{
+      p.y = -p.y + off;
+    }
+    offsetPos = p.pack();
+
+    for (ObjectMap<UnlockableContent, byte[]> bitMap : directBits.values()) {
+      for (byte[] arr : bitMap.values()) {
+        int bits = arr[0];
+
+        if (x){
+          if ((bits & FLIP_X) != 0 && (bits & FLIP_X) != FLIP_X){
+            bits ^= FLIP_X;
+          }
+        }
+        else{
+          if ((bits & FLIP_Y) != 0 && (bits & FLIP_Y) != FLIP_Y){
+            bits ^= FLIP_Y;
+          }
+        }
+
         arr[0] = (byte) bits;
       }
     }

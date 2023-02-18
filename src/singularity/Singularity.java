@@ -17,6 +17,7 @@ import singularity.contents.override.OverrideTechThree;
 import singularity.core.Init;
 import singularity.type.SglCategory;
 import singularity.type.SglContentType;
+import singularity.world.blocks.BytePackAssign;
 import singularity.world.meta.SglAttribute;
 import universecore.UncCore;
 import universecore.annotations.Annotations;
@@ -57,6 +58,9 @@ public class Singularity extends Mod{
     //加载模组配置数据
     Sgl.config.load();
     Sgl.classes = UncCore.classes.newInstance(Singularity.class);
+
+    //注册所有打包数据类型id
+    BytePackAssign.assignAll();
 
     Log.info(
        """

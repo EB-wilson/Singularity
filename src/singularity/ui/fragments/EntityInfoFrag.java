@@ -7,6 +7,7 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
+import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.WidgetGroup;
 import arc.struct.ObjectSet;
 import arc.struct.OrderedMap;
@@ -57,32 +58,37 @@ public class EntityInfoFrag{
 
       update();
 
-      for (EntityEntry<?> entry : alphaQueue) {
+      for (int i = alphaQueue.size - 1; i >= 0; i--) {
+        EntityEntry<?> entry = alphaQueue.orderedItems().get(i);
         if(entry.alpha <= 0.001f) continue;
 
         float size = entry.entity instanceof Hitboxc hit ? hit.hitSize()/2 : entry.entity instanceof Buildingc b ? b.block().size / 2f : 10;
-        float heightOff = size + 8;;
+
+        Vec2 v = Core.input.mouse();
+        Core.camera.unproject(Tmp.v1.set(v));
+        Tmp.v1.y += size;
+        float heightOff = Core.camera.project(Tmp.v1).y - v.y + 8;
         float maxWight = 0;
 
         for (EntityInfoDisplay<?> display : entry.display) {
-          maxWight = Math.max(maxWight, display.wight());
+          maxWight = Math.max(maxWight, display.wight(Scl.scl()));
         }
 
         for (EntityInfoDisplay<?> display : entry.display) {
-          heightOff += ((EntityInfoDisplay)display).draw(entry, Vars.player.team(), maxWight, heightOff, entry.alpha);
+          heightOff += ((EntityInfoDisplay)display).draw(entry, Vars.player.team(), maxWight, heightOff, entry.alpha, Scl.scl());
         }
       }
 
       if (modeTipAlpha > 0.001) {
         float alpha = 1 - Mathf.mod(1 - modeTipAlpha, 4);
-        Fonts.def.draw(showModeTip, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.3f - 1f, Tmp.c1.set(Color.gray).a(alpha), 1.2f, true, Align.center);
-        Fonts.def.draw(showModeTip, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.3f, Tmp.c1.set(Color.white).a(alpha), 1.2f, true, Align.center);
+        Fonts.def.draw(showModeTip, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.3f - 1f, Tmp.c1.set(Color.gray).a(alpha), Scl.scl(1.2f), true, Align.center);
+        Fonts.def.draw(showModeTip, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.3f, Tmp.c1.set(Color.white).a(alpha), Scl.scl(1.2f), true, Align.center);
       }
 
       if (showRange){
         Vec2 v = Core.input.mouse();
 
-        Lines.stroke(5, Color.lightGray);
+        Lines.stroke(4, Color.lightGray);
         Draw.alpha(0.3f + Mathf.absin(Time.globalTime, 5, 0.3f));
         Lines.dashCircle(v.x, v.y, Sgl.config.holdDisplayRange);
       }
@@ -122,6 +128,12 @@ public class EntityInfoFrag{
       mark = false;
     }
 
+    boolean touched = Core.input.keyDown(Binding.select) && Core.input.alt();
+    if (touched){
+      hold = null;
+      mark = false;
+    }
+
     delta += Time.delta;
     if (Time.globalTime - timer < Sgl.config.flushInterval) return;
     timer = Time.globalTime;
@@ -130,9 +142,6 @@ public class EntityInfoFrag{
 
     hovering.clear();
     float dist = 0;
-
-    boolean touched = Core.input.keyDown(Binding.select) && Core.input.alt();
-    if (touched) hold = null;
     for (Entityc e : Groups.all) {
       float size = showRange? 0: e instanceof Hitboxc h ? h.hitSize() / 2 : e instanceof Buildingc b ? b.block().size / 2f : 10;
 

@@ -20,6 +20,7 @@ public class Init{
 
   static {
     final SglEventTypes.BuildPlanRotateEvent rotateEvent = new SglEventTypes.BuildPlanRotateEvent();
+    final SglEventTypes.BuildFlipRotateEvent flipEvent = new SglEventTypes.BuildFlipRotateEvent();
 
     InputHandlerAspect.setFunction("rotatePlans", (s, su, a) -> {
       rotateEvent.plans = a.get(0);
@@ -32,6 +33,18 @@ public class Init{
       Events.fire(SglEventTypes.BuildPlanRotateEvent.class, rotateEvent);
       su.invokeFunc("rotatePlans", a);
     }, Seq.class, int.class);
+
+    InputHandlerAspect.setFunction("flipPlans", (s, su, a) -> {
+      flipEvent.plans = a.get(0);
+      flipEvent.x = a.get(1);
+      for (BuildPlan plan : flipEvent.plans) {
+        if (plan.block instanceof SglBlock sglBlock){
+          sglBlock.onPlanFilp(plan, flipEvent.x);
+        }
+      }
+      Events.fire(SglEventTypes.BuildPlanRotateEvent.class, flipEvent);
+      su.invokeFunc("flipPlans", a);
+    }, Seq.class, boolean.class);
   }
 
   public static void init(){

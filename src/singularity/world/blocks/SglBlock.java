@@ -107,6 +107,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     consumesPower = false;
     appliedConfig();
     config(byte[].class, (SglBuilding e, byte[] code) -> {
+      if (code.length == 0) return;
       parseConfigObjects(e, DataPackable.readObject(code, e));
     });
   }
@@ -135,6 +136,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public BaseConsumers newConsume(){
     consume = new SglConsumers(false);
     this.consumers().add(consume);
+
     return consume;
   }
   
@@ -243,6 +245,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   }
 
   public void onPlanRotate(BuildPlan plan, int direction) {}
+
+  public void onPlanFilp(BuildPlan plan, boolean x) {}
 
   @Annotations.ImplEntries
   public class SglBuilding extends Building implements ConsumerBuildComp, NuclearEnergyBuildComp, ExtraVariableComp{

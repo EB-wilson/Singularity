@@ -744,7 +744,7 @@ public class CrafterBlocks implements ContentList{
       consume.liquid(SglLiquids.silicon_chloride_sol, 0.2f);
       consume.power(2.6f);
       newProduce();
-      produce.item(SglItems.strengthening_alloy, 3);
+      produce.item(SglItems.strengthening_alloy, 4);
 
       newConsume();
       consume.time(120f);

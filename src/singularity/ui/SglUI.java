@@ -1,10 +1,12 @@
 package singularity.ui;
 
 import mindustry.Vars;
+import mindustry.gen.Icon;
 import mindustry.gen.Unit;
 import singularity.Sgl;
 import singularity.ui.dialogs.*;
 import singularity.ui.fragments.EntityInfoFrag;
+import singularity.ui.fragments.ToolBarFrag;
 import singularity.ui.fragments.UnitHealthDisplay;
 import singularity.ui.fragments.UnitStatusDisplay;
 import singularity.ui.fragments.override.SglMenuFrag;
@@ -21,6 +23,8 @@ public class SglUI{
 
   public DistNetMonitorDialog bufferStat;
 
+  public ToolBarFrag toolBar;
+
   public void init(){
     entityInfoFrag = new EntityInfoFrag();
     entityInfoFrag.displayMatcher.put(new UnitHealthDisplay<>(), e -> e instanceof Unit);
@@ -32,10 +36,16 @@ public class SglUI{
     contributors = new ContributorsDialog();
     bufferStat = new DistNetMonitorDialog();
 
+    toolBar = new ToolBarFrag();
+
     entityInfoFrag.build(Vars.ui.hudGroup);
+
     mainMenu.build();
     aboutDialog.build();
     contributors.build();
+
+    toolBar.init();
+    toolBar.addTool("showInfos", Icon.info, () -> Sgl.config.showTargetInfo = !Sgl.config.showTargetInfo, () -> Sgl.config.showTargetInfo);
 
     if(!Sgl.config.disableModMainMenu){
       Vars.ui.menufrag = new SglMenuFrag();

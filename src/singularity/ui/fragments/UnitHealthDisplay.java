@@ -7,25 +7,22 @@ import mindustry.gen.Unit;
 import singularity.Sgl;
 
 public class UnitHealthDisplay<T extends Unit> extends EntityInfoDisplay<T>{
-  public HealthBarStyle style = HealthBarStyle.defaultt;
-
   float tmp;
 
   @Override
-  public float draw(EntityInfoFrag.EntityEntry<T> entry, Team team, float maxWight, float dy, float alpha) {
+  public float draw(EntityInfoFrag.EntityEntry<T> entry, Team team, float maxWight, float dy, float alpha, float scl) {
     T entity = entry.entity;
 
     Draw.alpha(alpha);
 
-    trnsPos(entity.x, entity.y + dy, (x, y) -> {
-      tmp = style.draw(
-          x, y,
+    trnsPos(entity.x, entity.y, (x, y) -> {
+      tmp = Sgl.config.healthBarStyle.draw(
+          x, y + dy,
           entry,
           team,
-          Sgl.config.healthBarWidth, Sgl.config.healthBarHeight,
-          Sgl.config.empBarWidth, Sgl.config.empBarHeight,
           dy,
-          alpha
+          alpha,
+          1
       );
 
       Draw.reset();
@@ -40,7 +37,7 @@ public class UnitHealthDisplay<T extends Unit> extends EntityInfoDisplay<T>{
   }
 
   @Override
-  public float wight() {
-    return Math.max(Sgl.config.healthBarWidth, Sgl.config.empBarWidth);
+  public float wight(float scl) {
+    return Sgl.config.healthBarStyle.getWidth(1);
   }
 }

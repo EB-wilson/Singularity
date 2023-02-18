@@ -1,6 +1,7 @@
 package singularity.world.blocks.distribute.matrixGrid;
 
 import arc.Core;
+import arc.func.Cons;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
@@ -16,7 +17,6 @@ import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
-import arc.util.pooling.Pools;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.entities.units.BuildPlan;
@@ -24,7 +24,6 @@ import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
-import mindustry.world.Block;
 import mindustry.world.Tile;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
@@ -41,14 +40,9 @@ import universecore.util.DataPackable;
 
 import static mindustry.Vars.tilesize;
 import static mindustry.Vars.world;
-import static singularity.world.blocks.distribute.matrixGrid.MatrixGridCore.MatrixGridCoreBuild.LinkPair.typeID;
 
 @Annotations.ImplEntries
 public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
-  static {
-    DataPackable.assignType(typeID, param -> Pools.obtain(MatrixGridCoreBuild.LinkPair.class, MatrixGridCoreBuild.LinkPair::new));
-  }
-  
   public int linkLength = 16;
   public int maxEdges = 8;
   
@@ -90,6 +84,15 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     childLinkRegion = Core.atlas.find(name + "_child_linker", Singularity.getModAtlas("matrix_grid_child_linker"));
   }
 
+  @Override
+  public Object pointConfig(Object config, Cons<Point2> transformer) {
+    if (config instanceof byte[] b && DataPackable.readObject(b) instanceof MatrixGridCoreBuild.LinkPair p) {
+      transformer.get(p.linking);
+      return p.pack();
+    }
+    return null;
+  }
+
   static MatrixGridCoreBuild.LinkPair pair = new MatrixGridCoreBuild.LinkPair();
   @Override
   public void drawPlanConfigTop(BuildPlan req, Eachable<BuildPlan> list){
@@ -97,17 +100,9 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     if(bytes == null) return;
 
     pair.read(bytes);
-    for(TargetConfigure config: pair.configs.values()){
-      Tile tile = world.tile(req.x + Point2.x(config.offsetPos), req.y + Point2.x(config.offsetPos));
-      if(tile != null){
-        BuildPlan plan = new BuildPlan(tile.x, tile.y, 0, pair.ioPoints.get(config.offsetPos).getBlock());
-        plan.block.drawPlan(plan, list, plan.build() == null);
-        plan.block.drawPlanConfigTop(plan, list);
-      }
-    }
-    
+
+    Point2 p = pair.linking;
     list.each(plan -> {
-      Point2 p = pair.linking;
       if(Point2.pack(req.x + p.x, req.y + p.y) == Point2.pack(plan.x, plan.y)){
         if(plan.block instanceof EdgeLinkerComp b){
           SglDraw.drawLink(
@@ -119,7 +114,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       }
     });
 
-    Pools.free(pair);
+    pair.reset();
   }
 
   @Override
@@ -340,20 +335,19 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     @Override
     public byte[] config(){
       LinkPair pair = new LinkPair();
-      pair.configs = configMap;
+      pair.configs.clear();
+      for (IntMap.Entry<TargetConfigure> entry : configMap) {
+        Building build = nearby(Point2.x(entry.key), Point2.y(entry.key));
+        if (build != null && !(build instanceof IOPointComp io && !ioPoints.contains(io))){
+          pair.configs.put(entry.key, entry.value);
+        }
+      }
       pair.linking = new Point2(Point2.x(nextPos) - tileX(), Point2.y(nextPos) - tileY());
 
-      pair.ioPoints = new IntMap<>();
-      for (IOPointComp point : ioPoints) {
-        pair.ioPoints.put(
-            Point2.pack(point.getTile().x - tileX(), point.getTile().y - tileY()),
-            point.getIOBlock()
-        );
-      }
       return pair.pack();
     }
 
-    protected static class LinkPair extends MatrixGridBuild.PosCfgPair{
+    public static class LinkPair extends MatrixGridBuild.PosCfgPair{
       public static final long typeID = 5463757638164667648L;
   
       @Override
@@ -379,23 +373,6 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       public void reset(){
         super.reset();
         linking = null;
-      }
-
-      @Override
-      public void rotate(Block block, int direction) {
-        super.rotate(block, direction);
-
-        int cx = linking.x, cy = linking.y;
-        int lx = cx;
-
-        if(direction >= 0){
-          cx = -cy;
-          cy = lx;
-        }else{
-          cx = cy;
-          cy = -lx;
-        }
-        linking.set(cx, cy);
       }
     }
   }
