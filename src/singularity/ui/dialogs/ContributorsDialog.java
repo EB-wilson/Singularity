@@ -39,7 +39,7 @@ public class ContributorsDialog extends BaseDialog{
         for(Contribute contribute: Contribute.values()){
           cons.table(Tex.buttonTrans, t -> {
             t.defaults().center().top().pad(16).padTop(12);
-            t.image(contribute == Contribute.author? SglDrawConst.sglIcon: Singularity.getModAtlas(contribute.name())).size(64);
+            t.image(contribute == Contribute.author? SglDrawConst.sglIcon: Singularity.getModDrawable(contribute.name())).size(64);
             t.row();
             t.add(contribute.localize()).padTop(6);
             t.row();

@@ -12,7 +12,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 
 public class ModConfig{
-  private static final int configVersion = 3;
+  private static final int configVersion = 4;
   private static final Field[] configs = ModConfig.class.getFields();
 
   //basic/基础设置
@@ -24,9 +24,9 @@ public class ModConfig{
   public float[] defaultCameraPos;
   public boolean movementCamera;
   //游戏目标内信息显示
-  public boolean showTargetInfo;
   public float flushInterval;
   public int maxDisplay;
+  public float showInfoScl;
   public float holdDisplayRange;
 
   public HealthBarStyle healthBarStyle;
@@ -56,9 +56,9 @@ public class ModConfig{
         Sgl.internalConfigDir.child("mod_config.hjson").copyTo(Sgl.configFile);
         Log.info("default configuration file version updated, eld config should be override(backup file for old file was created)");
         load(Sgl.configFile);
-        String pp = lastContext;
+        String tmp = lastContext;
         load(backup, true);
-        lastContext = pp;
+        lastContext = tmp;
 
         try{
           save();

@@ -575,7 +575,7 @@ public class SglUnits implements ContentList{
                     hitSize = 8;
                     speed = 12;
                     lifetime = 40;
-                    damage = 520;
+                    damage = 620;
                     range = 480;
 
                     homingRange = 30;
@@ -624,11 +624,11 @@ public class SglUnits implements ContentList{
               recoil = 4;
               recoilTime = 20;
               cooldownTime = 60;
-              reload = 30;
+              reload = 20;
               shadow = 25;
 
               bullet = new LaserBulletType(){{
-                damage = 385f;
+                damage = 425f;
                 lifetime = 24;
                 sideAngle = 90f;
                 sideWidth = 1.45f;
@@ -668,7 +668,7 @@ public class SglUnits implements ContentList{
                     }
                   }
                 };
-                alternativeShoot.shots = 14;
+                alternativeShoot.shots = 12;
                 alternativeShoot.shotDelay = 3;
                 alternativeShoot.firstShotDelay = 0;
                 useAlternative = Flyingc::isFlying;
@@ -847,7 +847,7 @@ public class SglUnits implements ContentList{
                 alternativeBullet = new BulletType(){
                   {
                     pierceArmor = true;
-                    damage = 360;
+                    damage = 320;
                     splashDamageRadius = 60;
                     splashDamage = 180;
                     speed = 10;
@@ -866,7 +866,7 @@ public class SglUnits implements ContentList{
                     fragBullet = new BulletType(){
                       {
                         pierceCap = 3;
-                        damage = 120;
+                        damage = 100;
                         speed = 18;
                         lifetime = 10;
                         hitEffect = Fx.colorSpark;

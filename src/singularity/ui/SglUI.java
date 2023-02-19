@@ -1,7 +1,6 @@
 package singularity.ui;
 
 import mindustry.Vars;
-import mindustry.gen.Icon;
 import mindustry.gen.Unit;
 import singularity.Sgl;
 import singularity.ui.dialogs.*;
@@ -45,7 +44,6 @@ public class SglUI{
     contributors.build();
 
     toolBar.init();
-    toolBar.addTool("showInfos", Icon.info, () -> Sgl.config.showTargetInfo = !Sgl.config.showTargetInfo, () -> Sgl.config.showTargetInfo);
 
     if(!Sgl.config.disableModMainMenu){
       Vars.ui.menufrag = new SglMenuFrag();

@@ -642,7 +642,7 @@ public class CrafterBlocks implements ContentList{
       consume.liquid(Liquids.hydrogen, 0.8f);
       newProduce();
       produce.liquid(SglLiquids.purified_water, 0.4f);
-      produce.power(5.2f);
+      produce.power(5f);
 
       newConsume();
       consume.time(120);

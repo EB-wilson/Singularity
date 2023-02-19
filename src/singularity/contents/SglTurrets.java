@@ -3,8 +3,12 @@ package singularity.contents;
 import arc.Core;
 import arc.func.Func;
 import arc.graphics.Color;
+import arc.graphics.Pixmaps;
+import arc.graphics.Texture;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.PixmapRegion;
+import arc.graphics.g2d.TextureRegion;
 import arc.math.Angles;
 import arc.math.Interp;
 import arc.math.Mathf;
@@ -38,14 +42,13 @@ import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.draw.DrawMulti;
+import singularity.Sgl;
+import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.SglFx;
 import singularity.world.SglUnitSorts;
-import singularity.world.blocks.turrets.LaserTurret;
-import singularity.world.blocks.turrets.ProjectileTurret;
-import singularity.world.blocks.turrets.SglTurret;
-import singularity.world.blocks.turrets.WarpedBulletType;
+import singularity.world.blocks.turrets.*;
 import singularity.world.draw.DrawSglTurret;
 import singularity.world.draw.part.CustomPart;
 import singularity.world.meta.SglStat;
@@ -63,17 +66,17 @@ import static mindustry.entities.Damage.collideLine;
 import static mindustry.entities.Damage.findPierceLength;
 
 public class SglTurrets implements ContentList{
-  /**石墨粉云团*/
-  public static BulletType graphiteCloud,
-  /**闪电（SGL）*/
-  lightning,
   /**碎冰*/
-  crushedIce,
+  public static BulletType crushedIce,
   /**极寒领域*/
   freezingField;
 
   /**遮幕*/
   public static Block curtain,
+  /**迷雾*/
+  mist,
+  /**阴霾*/
+  haze,
   /**惊蛰*/
   thunder,
   /**白露*/
@@ -89,54 +92,6 @@ public class SglTurrets implements ContentList{
 
   @Override
   public void load(){
-    graphiteCloud = new BulletType(0, 0){
-      {
-        lifetime = 360f;
-        collides = false;
-        pierce = true;
-        hittable = false;
-        absorbable = false;
-        hitEffect = Fx.none;
-        shootEffect = Fx.none;
-        despawnEffect = Fx.none;
-        smokeEffect = Fx.none;
-        drawSize = 45;
-      }
-
-      @Override
-      public void update(Bullet b){
-        super.update(b);
-        if(b.timer(0, 4)){
-          Units.nearby(b.x - 38, b.y - 38, 76, 76, unit -> {
-            if(unit.team != b.team && Tmp.cr1.set(b.x, b.y, 38).contains(Tmp.v1.set(unit.x, unit.y))){
-              unit.apply(OtherContents.electric_disturb, Math.min(360 - b.time, 120));
-            }
-          });
-        }
-      }
-
-      @Override
-      public void draw(Bullet e){
-        Draw.z(Layer.bullet - 5);
-        Draw.color(Pal.stoneGray);
-        Draw.alpha(0.6f);
-        randLenVectors(e.id, 18, 45, (x, y) -> {
-          float size = Mathf.randomSeed((int) (e.id+x), 14, 18);
-          float i = e.fin(Interp.pow3Out);
-          Fill.circle(e.x + x*i, e.y + y*i, size*e.fout(Interp.pow5Out));
-        });
-        Draw.z(Layer.effect);
-        Draw.color(Items.graphite.color);
-        randLenVectors(e.id + 1, 12, 43, (x, y) -> {
-          float size = Mathf.randomSeed((int) (e.id + x), 7, 10);
-          size *= e.fout(Interp.pow4In);
-          size += Mathf.absin(Time.time + Mathf.randomSeed((int) (e.id + x), 2*Mathf.pi), 3.5f, 2f);
-          float i = e.fin(Interp.pow3Out);
-          SglDraw.drawLightEdge(e.x + x*i, e.y + y*i, size, size*0.15f, size, size*0.15f);
-        });
-      }
-    };
-
     crushedIce = new BulletType(){
       {
         lifetime = 45;
@@ -253,7 +208,7 @@ public class SglTurrets implements ContentList{
           fragBullets = 1;
           fragVelocityMin = 0;
           fragVelocityMax = 0;
-          fragBullet = graphiteCloud;
+          fragBullet = graphiteCloud(360, 36, true, false, 0.2f);
         }
       }, true, (bt, ammo) -> {
         bt.add(Core.bundle.format("bullet.damage", ammo.damage));
@@ -266,6 +221,304 @@ public class SglTurrets implements ContentList{
       });
       consume.item(Items.graphite, 1);
       consume.time(90);
+    }};
+
+    mist = new SglTurret("mist"){{
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 100,
+          SglItems.aerogel, 120,
+          Items.titanium, 100,
+          Items.graphite, 80,
+          Items.lead, 85
+      ));
+      size = 3;
+
+      itemCapacity = 36;
+      range = 300;
+      minRange = 40f;
+      inaccuracy = 8f;
+      targetAir = false;
+      velocityRnd = 0.2f;
+      shake = 2.5f;
+      recoil = 6f;
+      recoilTime = 120;
+      cooldownTime = 120f;
+
+      scaledHealth = 180;
+
+      shootSound = Sounds.artillery;
+
+      shoot.shots = 4;
+      newAmmo(new EmpArtilleryBulletType(3f, 20){
+        {
+          empDamage = 40;
+          empRange = 20;
+
+          knockback = 1f;
+          lifetime = 80f;
+          width = height = 12f;
+          collidesTiles = false;
+          splashDamageRadius = 20f;
+          splashDamage = 35f;
+
+          damage = 0;
+
+          frontColor = Items.graphite.color.cpy().lerp(Color.white, 0.7f);
+          backColor = Items.graphite.color;
+
+          fragOnHit = true;
+          fragBullets = 1;
+          fragVelocityMin = 0;
+          fragVelocityMax = 0;
+          fragBullet = graphiteCloud(360, 40, true, true, 0.35f);
+        }
+      });
+      consume.item(Items.graphite, 6);
+      consume.time(120);
+    }};
+
+    haze = new SglTurret("haze"){{
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 180,
+          SglItems.aerogel, 180,
+          SglItems.matrix_alloy, 120,
+          SglItems.uranium_238 , 100,
+          Items.surgeAlloy, 140,
+          Items.graphite, 200
+      ));
+      size = 5;
+
+      accurateDelay = false;
+      accurateSpeed = false;
+      itemCapacity = 36;
+      range = 580;
+      minRange = 100f;
+      shake = 7.5f;
+      recoil = 6f;
+      recoilTime = 150;
+      cooldownTime = 150f;
+
+      rotateSpeed = 1.25f;
+
+      shootY = 4;
+
+      warmupSpeed = 0.015f;
+      fireWarmupThreshold = 0.94f;
+      linearWarmup = false;
+
+      scaledHealth = 200;
+
+      newAmmo(new EmpBulletType(){
+        {
+          lifetime = 180;
+          splashDamage = 480;
+          splashDamageRadius = 120;
+
+          damage = 0;
+          empDamage = 500;
+          empRange = 120;
+
+          hitSize = 5;
+
+          hitShake = 16;
+          despawnHit = true;
+
+          hitEffect = new MultiEffect(
+              Fx.shockwave,
+              Fx.bigShockwave,
+              SglFx.explodeImpWaveLarge,
+              SglFx.spreadLightning
+          );
+
+          homingPower = 0.02f;
+          homingRange = 240;
+
+          shootEffect = Fx.shootBig;
+          smokeEffect = Fx.shootSmokeMissile;
+          trailColor = Pal.redLight;
+          trailEffect = SglFx.shootSmokeMissileSmall;
+          trailInterval = 1;
+          trailRotation = true;
+          hitColor = Items.graphite.color;
+
+          trailWidth = 3;
+          trailLength = 18;
+
+          loopSound = Sounds.missileTrail;
+          loopSoundVolume = 0.6f;
+          hitSound = Sounds.largeExplosion;
+          hitSoundVolume = 1.2f;
+
+          speed = 0.1f;
+
+          fragOnHit = true;
+          fragBullets = 1;
+          fragVelocityMin = 0;
+          fragVelocityMax = 0;
+          fragBullet = new BulletType(0, 0){
+            {
+              lifetime = 450;
+              collides = false;
+              pierce = true;
+              hittable = false;
+              absorbable = false;
+              hitEffect = Fx.none;
+              shootEffect = Fx.none;
+              despawnEffect = Fx.none;
+              smokeEffect = Fx.none;
+              drawSize = 160;
+            }
+
+            final RandomGenerator branch = new RandomGenerator();
+            final RandomGenerator generator = new RandomGenerator(){
+              {
+                maxLength = 100;
+                maxDeflect = 55;
+
+                branchChance = 0.2f;
+                minBranchStrength = 0.8f;
+                maxBranchStrength = 1;
+                branchMaker = (vert, strength) -> {
+                  branch.maxLength = 60*strength;
+                  branch.originAngle = vert.angle + Mathf.random(-90, 90);
+
+                  return branch;
+                };
+              }
+            };
+
+            @Override
+            public void init(Bullet b) {
+              super.init(b);
+              LightningContainer c;
+              b.data = c = Pools.obtain(LightningContainer.PoolLightningContainer.class, LightningContainer.PoolLightningContainer::new);
+              c.maxWidth = 6;
+              c.minWidth = 4;
+              c.lifeTime = 60;
+              c.time = 30;
+            }
+
+            @Override
+            public void update(Bullet b){
+              super.update(b);
+              Units.nearbyEnemies(b.team, b.x, b.y, 120, u -> Sgl.empHealth.empDamage(u, 0.5f, false));
+              if(b.timer(0, 6)){
+                Damage.status(b.team, b.x, b.y, 120, OtherContents.electric_disturb, Math.min(450 - b.time, 120), true, true);
+              }
+
+              if (b.data instanceof LightningContainer c){
+                if (b.timer(2, 15/Mathf.clamp((b.fout() - 0.15f)*4))){
+                  c.generator = generator;
+                  c.generator.setOffset(Mathf.random(-45f, 45f), Mathf.random(-45f, 45f));
+                  generator.originAngle = Mathf.random(0, 360f);
+                  c.create();
+                }
+                c.update();
+              }
+            }
+
+            @Override
+            public void draw(Bullet e){
+              Draw.z(Layer.bullet - 5);
+              Draw.color(Pal.stoneGray);
+              Draw.alpha(0.6f);
+              randLenVectors(e.id, 8 + 70, 120*1.2f, (x, y) -> {
+                float size = Mathf.randomSeed((int) (e.id+x), 14, 20);
+                float i = e.fin(Interp.pow3Out);
+                Fill.circle(e.x + x*i, e.y + y*i, size*e.fout(Interp.pow5Out));
+              });
+
+              Draw.color(Items.graphite.color);
+              Draw.z(Layer.effect);
+
+              if (e.data instanceof LightningContainer c){
+                c.draw(e.x, e.y);
+              }
+            }
+
+            @Override
+            public void removed(Bullet b) {
+              if (b.data instanceof LightningContainer c){
+                Pools.free(c);
+              }
+              super.removed(b);
+            }
+          };
+        }
+
+        TextureRegion regionOutline;
+
+        @Override
+        public void update(Bullet b) {
+          super.update(b);
+          Tmp.v1.set(b.vel).setLength(28);
+          b.vel.approachDelta(Tmp.v1, 0.06f*Mathf.clamp((b.fin() - 0.10f)*5f));
+
+          Effect.shake(0.5f, 0.5f, b.x, b.y);
+        }
+
+        @Override
+        public void draw(Bullet b) {
+          drawTrail(b);
+          Draw.z(Layer.effect + 1);
+          Draw.rect(regionOutline, b.x, b.y, b.rotation() - 90);
+
+          SglDraw.drawTransform(b.x, b.y, 0, 4*b.fin(), b.rotation() - 90, (x, y, r) -> {
+            Draw.rect(regionOutline, x, y, 4, 10.5f, r);
+          });
+          SglDraw.drawTransform(b.x, b.y, 0, -4, b.rotation() - 90, (x, y, r) -> {
+            Draw.color(hitColor, 0.75f);
+            Fill.circle(x, y, 2.5f);
+            Draw.color(Color.white);
+            Fill.circle(x, y, 1.5f);
+          });
+        }
+
+        @Override
+        public void load() {
+          super.load();
+          TextureRegion r = Singularity.getModAtlas( "haze_missile");
+          PixmapRegion p = Core.atlas.getPixmap(r);
+          regionOutline = new TextureRegion(new Texture(Pixmaps.outline(p, Pal.darkOutline, 3)));
+        }
+      });
+
+      consume.items(ItemStack.with(
+          Items.graphite, 12,
+          SglItems.concentration_uranium_235, 1
+      ));
+      consume.time(480);
+
+      draw = new DrawSglTurret(
+          new RegionPart("_missile"){{
+            progress = PartProgress.warmup.mul(PartProgress.reload.inv());
+            x = 0;
+            y = -4;
+            moveY = 8;
+          }},
+          new RegionPart("_side"){{
+            progress = PartProgress.warmup;
+            mirror = true;
+            moveX = 4;
+            moveY = 2;
+            moveRot = -35;
+
+            moves.add(new PartMove(PartProgress.recoil, 0, -2, -10));
+          }},
+          new RegionPart("_blade"){{
+            progress = PartProgress.warmup;
+            mirror = true;
+            moveX = 2.5f;
+
+            heatProgress = PartProgress.warmup;
+            heatColor = Items.graphite.color;
+
+            moves.add(new PartMove(PartProgress.recoil, 0, -2, 0));
+          }},
+          new RegionPart("_body"){{
+            mirror = false;
+          }}
+      );
     }};
 
     thunder = new SglTurret("thunder"){{
@@ -1554,6 +1807,7 @@ public class SglTurrets implements ContentList{
       ));
       size = 6;
       accurateDelay = false;
+      accurateSpeed = false;
       scaledHealth = 410;
       recoil = 2f;
       recoilTime = 120;
@@ -1795,6 +2049,44 @@ public class SglTurrets implements ContentList{
           }}
       );
     }};
+  }
+
+  public BulletType graphiteCloud(float lifeTime, float size, boolean air, boolean ground, float empDamage){
+    return new BulletType(0, 0){
+      {
+        lifetime = lifeTime;
+        collides = false;
+        pierce = true;
+        hittable = false;
+        absorbable = false;
+        hitEffect = Fx.none;
+        shootEffect = Fx.none;
+        despawnEffect = Fx.none;
+        smokeEffect = Fx.none;
+        drawSize = size;
+      }
+
+      @Override
+      public void update(Bullet b){
+        super.update(b);
+        if (empDamage > 0) Units.nearbyEnemies(b.team, b.x, b.y, size, u -> Sgl.empHealth.empDamage(u, empDamage, false));
+        if(b.timer(0, 6)){
+          Damage.status(b.team, b.x, b.y, size, OtherContents.electric_disturb, Math.min(lifeTime - b.time, 120), air, ground);
+        }
+      }
+
+      @Override
+      public void draw(Bullet e){
+        Draw.z(Layer.bullet - 5);
+        Draw.color(Pal.stoneGray);
+        Draw.alpha(0.6f);
+        randLenVectors(e.id, 8 + (int) size/2, size*1.2f, (x, y) -> {
+          float size = Mathf.randomSeed((int) (e.id+x), 14, 20);
+          float i = e.fin(Interp.pow3Out);
+          Fill.circle(e.x + x*i, e.y + y*i, size*e.fout(Interp.pow5Out));
+        });
+      }
+    };
   }
 
   public BulletType lightning(float lifeTime, float damage, float size, Color color, Func<Bullet, LightningGenerator> generator){

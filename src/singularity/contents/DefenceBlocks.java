@@ -7,6 +7,7 @@ import arc.graphics.g2d.Lines;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
+import arc.scene.style.TextureRegionDrawable;
 import arc.struct.ObjectSet;
 import arc.util.Time;
 import arc.util.Tmp;
@@ -154,7 +155,7 @@ public class DefenceBlocks implements ContentList{
 
                 for(Point2 p: Geometry.d4){
                   Tmp.v1.set(p.x, p.y).scl(50 + Mathf.absin(6f, 4)).rotate(Time.time*0.6f);
-                  Draw.rect(SglDrawConst.matrixArrow, e.x + Tmp.v1.x, e.y + Tmp.v1.y, 16*e.warmup, 16*e.warmup, Tmp.v1.angle() + 90);
+                  Draw.rect(((TextureRegionDrawable) SglDrawConst.matrixArrow).getRegion(), e.x + Tmp.v1.x, e.y + Tmp.v1.y, 16*e.warmup, 16*e.warmup, Tmp.v1.angle() + 90);
                 }
               }
             }

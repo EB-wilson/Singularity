@@ -37,11 +37,8 @@ public class UnitStatusDisplay<T extends Unit> extends EntityInfoDisplay<T>{
             int min = sec / 60;
             int rem = sec - 60 * min;
 
-            String str;
-            if (min > 60) {
-              str = "";
-            } else {
-              str = Integer.toString(min);
+            if (min <= 60){
+              String str = Integer.toString(min);
               if (str.length() == 1) {
                 str = "0" + str;
               }
@@ -51,10 +48,14 @@ public class UnitStatusDisplay<T extends Unit> extends EntityInfoDisplay<T>{
                 s = "0" + s;
               }
               str += s;
-            }
-            GlyphLayout layout = Fonts.outline.draw(str, originX + offsetX, originY + offsetY + size, Tmp.c1.set(Pal.accent).a(alpha), 0.7f, false, Align.topLeft);
 
-            offsetX += Math.max(layout.width, size) + 1;
+              Fonts.outline.draw(str, originX + offsetX, originY + offsetY + size, Tmp.c1.set(Pal.accent).a(alpha), 0.7f, false, Align.topLeft);
+
+              GlyphLayout layout = GlyphLayout.obtain();
+              layout.setText(Fonts.def, "00:00");
+              offsetX += Math.max(layout.width*0.7f, size) + 1;
+            }
+            else offsetX += size + 1;
           }
           else offsetX += size + 1;
 

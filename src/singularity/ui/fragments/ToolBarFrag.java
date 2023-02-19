@@ -3,9 +3,12 @@ package singularity.ui.fragments;
 import arc.Core;
 import arc.Events;
 import arc.func.Boolp;
+import arc.func.Prov;
 import arc.graphics.Color;
 import arc.scene.style.Drawable;
 import arc.scene.style.TextureRegionDrawable;
+import arc.scene.ui.ImageButton;
+import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
 import arc.struct.OrderedMap;
 import arc.util.Tmp;
@@ -37,18 +40,34 @@ public class ToolBarFrag {
     tools.top().defaults().top().size(50).pad(0);
 
     for (ToolEntry entry : this.tools.values()) {
-      tools.button(entry.icon, Styles.clearNoneTogglei, entry.listener).update(b -> b.setChecked(entry.checked.get()));
+      ImageButton button = tools.button(Tex.clear, Styles.clearNoneTogglei, entry.listener).update(b -> {
+        b.getStyle().imageUp = entry.icon.get();
+        b.resizeImage(36);
+        b.setChecked(entry.checked.get());
+      }).get();
+      if (entry.hoverTip != null){
+        button.addListener(new Tooltip(t -> t.background(Tex.button).add(entry.hoverTip.get()).update(l -> {
+          l.setText(entry.hoverTip.get());
+          l.pack();
+        })));
+      }
       tools.row();
     }
   }
 
-  public void addTool(String name, Drawable icon, Runnable listener, Boolp checked){
+  public void addTool(String name, Prov<Drawable> icon, Runnable listener, Boolp checked){
     tools.put(name, new ToolEntry(icon, listener, checked));
+    if (toolsTable != null) buildTools(toolsTable);
+  }
+
+  public void addTool(String name, Prov<String> tip, Prov<Drawable> icon, Runnable listener, Boolp checked){
+    tools.put(name, new ToolEntry(icon, listener, checked, tip));
     if (toolsTable != null) buildTools(toolsTable);
   }
 
   public void removeTool(String name){
     tools.remove(name);
+    if (toolsTable != null) buildTools(toolsTable);
   }
 
   public void clearTools(){
@@ -56,14 +75,23 @@ public class ToolBarFrag {
   }
 
   public static class ToolEntry{
-    Drawable icon;
+    Prov<Drawable> icon;
     Runnable listener;
     Boolp checked;
 
-    public ToolEntry(Drawable icon, Runnable listener, Boolp checked){
+    Prov<String> hoverTip;
+
+    public ToolEntry(Prov<Drawable> icon, Runnable listener, Boolp checked){
       this.icon = icon;
       this.listener = listener;
       this.checked = checked;
+    }
+
+    public ToolEntry(Prov<Drawable> icon, Runnable listener, Boolp checked, Prov<String> hoverTip){
+      this.icon = icon;
+      this.listener = listener;
+      this.checked = checked;
+      this.hoverTip = hoverTip;
     }
   }
 }

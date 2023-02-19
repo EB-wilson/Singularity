@@ -1,11 +1,14 @@
 package singularity.world.unit;
 
+import arc.files.Fi;
 import arc.math.Mathf;
 import arc.struct.ObjectMap;
+import arc.util.Log;
 import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import arc.util.pooling.Pools;
+import arc.util.serialization.Jval;
 import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.game.EventType;
@@ -13,8 +16,11 @@ import mindustry.gen.Groups;
 import mindustry.gen.Unit;
 import mindustry.io.SaveFileReader;
 import mindustry.io.SaveVersion;
+import mindustry.mod.Mods;
 import mindustry.type.UnitType;
+import mindustry.world.meta.StatUnit;
 import singularity.contents.OtherContents;
+import singularity.world.meta.SglStat;
 import universecore.UncCore;
 import universecore.util.aspect.EntityAspect;
 import universecore.util.aspect.triggers.TriggerEntry;
@@ -43,7 +49,11 @@ public class EMPHealthManager {
               if (h == null) return;
               Pools.free(h);
             })
-            .setTrigger(new TriggerEntry<>(EventType.Trigger.update, this::update))
+            .setTrigger(new TriggerEntry<>(EventType.Trigger.update, u -> {
+              if (Vars.state.isGame()){
+                update(u);
+              }
+            }))
     );
 
     SaveVersion.addCustomChunk("empHealth", new SaveFileReader.CustomChunk() {
@@ -59,8 +69,6 @@ public class EMPHealthManager {
             write.i(entry.key.type.id);
 
             write.f(entry.value.empHealth);
-
-            EMPHealthManager.this.write(entry.value, write);
           }
         }
       }
@@ -79,20 +87,16 @@ public class EMPHealthManager {
             float health = read.f();
 
             Unit unit = null;
-            float dist = 0;
-            for (Unit u: Groups.unit.intersect(x - 4, y - 4, 8, 8)) {
+            for (Unit u: Groups.unit) {
+              if (!Mathf.equal(u.x, x) || !Mathf.equal(u.y, y)) continue;
               if (u.type.id != id) continue;
 
-              float d = u.dst(x, y);
-
-              if (unit == null || d < dist){
-                unit = u;
-                dist = d;
-              }
+              unit = u;
+              break;
             }
 
             if (unit == null){
-              EMPHealthManager.this.read(new EMPModel.EMPHealth(), read, revision);
+              Log.err("emp index unit not found in (" + x + ", " + y + ")");
               continue;
             }
 
@@ -100,11 +104,42 @@ public class EMPHealthManager {
             heal.empHealth = health;
             healthMap.put(heal.unit, heal);
 
-            EMPHealthManager.this.read(heal, read, revision);
+            unit.update();
           }
         }
       }
     });
+
+    for (Mods.LoadedMod mod : Vars.mods.list()) {
+      Fi assignFile = mod.root.child("sgl_assign_list.hjson");
+      if (!assignFile.exists()) assignFile = mod.root.child("sgl_assign_list.json");
+      if (!assignFile.exists()) continue;
+
+      Jval list = Jval.read(assignFile.reader());
+      for (ObjectMap.Entry<String, Jval> entry : list.get("empHealthModels").asObject()) {
+        UnitType type = Vars.content.unit(entry.key);
+        if (type == null) {
+          Log.warn("unknow type with name \"" + entry.key + "\"");
+          continue;
+        }
+
+        EMPModel model = new EMPModel();
+        model.maxEmpHealth = entry.value.getFloat("maxEmpHealth", type.health/Mathf.pow(type.hitSize - type.armor, 2)*200);
+        model.empArmor = entry.value.getFloat("empArmor", Mathf.clamp(type.armor/100));
+        model.empRepair = entry.value.getFloat("empRepair", type.hitSize/60);
+        model.empContinuousDamage = entry.value.getFloat("empContinuousDamage", type.hitSize/30);
+
+        type.stats.add(SglStat.empHealth, model.maxEmpHealth);
+        type.stats.add(SglStat.empArmor, model.empArmor*100, StatUnit.percent);
+        type.stats.add(SglStat.empRepair, model.empRepair*60, StatUnit.perSecond);
+
+        unitDefaultHealthMap.put(type, model);
+      }
+    }
+
+    for (UnitType unit : Vars.content.units()) {
+      getModel(unit);
+    }
   }
 
   public byte version(){
@@ -116,8 +151,12 @@ public class EMPHealthManager {
       EMPModel res = new EMPModel();
       res.maxEmpHealth = type.health/Mathf.pow(type.hitSize - type.armor, 2)*200;
       res.empArmor = Mathf.clamp(type.armor/100);
-      res.empRepair = type.hitSize/30;
+      res.empRepair = type.hitSize/60;
       res.empContinuousDamage = res.empRepair*2;
+
+      type.stats.add(SglStat.empHealth, res.maxEmpHealth);
+      type.stats.add(SglStat.empArmor, res.empArmor*100, StatUnit.percent);
+      type.stats.add(SglStat.empRepair, res.empRepair*60, StatUnit.perSecond);
       return res;
     });
   }
@@ -130,13 +169,8 @@ public class EMPHealthManager {
     ZERO.model = getModel(unit.type);
     ZERO.unit = unit;
     ZERO.empHealth = 0;
+    
     return ZERO;
-  }
-
-  public void read(EMPModel.EMPHealth health, Reads read, int revision){
-  }
-
-  public void write(EMPModel.EMPHealth health, Writes write){
   }
 
   public void update(Unit unit){
@@ -153,7 +187,6 @@ public class EMPHealthManager {
       if (h.empHealth <= 0){
         unit.shield = 0;
         Fx.unitShieldBreak.at(unit.x, unit.y, 0.0F, unit.team.color, unit);
-        unit.damagePierce(unit.maxHealth*0.3f, true);
 
         unit.apply(OtherContents.emp_damaged, 660);
       }

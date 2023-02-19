@@ -9,6 +9,7 @@ import mindustry.content.StatusEffects;
 import mindustry.entities.bullet.BulletType;
 import mindustry.graphics.Pal;
 import mindustry.world.meta.*;
+import singularity.world.blocks.turrets.EmpBulletType;
 
 import static mindustry.Vars.tilesize;
 
@@ -47,6 +48,10 @@ public class StatUtils{
       }else{
         table.add(Core.bundle.format("bullet.damage", bullet.damage));
       }
+    }
+
+    if (bullet instanceof EmpBulletType emp){
+      sep(table, Core.bundle.format("bullet.empDamage", emp.empDamage, emp.empRange > 0? "[lightgray]~ [accent]" + emp.empRange/tilesize + "[lightgray]" + StatUnit.blocks.localized() : ""));
     }
 
     if(bullet.buildingDamageMultiplier != 1){

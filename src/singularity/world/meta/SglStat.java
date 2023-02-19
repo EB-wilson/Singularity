@@ -34,6 +34,10 @@ public class SglStat{
       consume = create("consume", SglStatCat.reaction),
       product = create("product", SglStatCat.reaction),
 
+      empHealth = create("empHealth", StatCat.general),
+      empArmor = create("empArmor", StatCat.general),
+      empRepair = create("empRepair", StatCat.general),
+
       bulletCoating = create("bulletCoating", StatCat.function),
       coatingTime = create("coatingTime", StatCat.function),
       exShieldDamage = create("exShieldDamage", StatCat.function),

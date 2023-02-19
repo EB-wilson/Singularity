@@ -2,6 +2,7 @@ package singularity.graphic;
 
 import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
+import arc.scene.style.Drawable;
 import singularity.Singularity;
 
 public class SglDrawConst{
@@ -21,33 +22,39 @@ public class SglDrawConst{
   public static final String COLOR_ACCENT = "[accent]";
 
   //Texture regions
-  public static TextureRegion transparent, sglLaunchLogo, squareMarker, matrixArrow, sglIcon, artistIcon, codeIcon, translateIcon,
+  public static Drawable transparent, sglLaunchLogo, squareMarker, matrixArrow, sglIcon, artistIcon, codeIcon, translateIcon,
       soundsIcon,
 
-  startIcon, databaseIcon, publicInfoIcon, aboutIcon, configureIcon, contributeIcon, debuggingIcon, nuclearIcon, matrixIcon,
+      startIcon, databaseIcon, publicInfoIcon, aboutIcon, configureIcon, contributeIcon, debuggingIcon, nuclearIcon, matrixIcon,
 
-  qqIcon, telegramIcon;
+      qqIcon, telegramIcon,
+      showInfos, unShowInfos, showRange, hold, defaultShow;
 
   public static void load(){
-    transparent = Singularity.getModAtlas("transparent");
-    sglLaunchLogo = Singularity.getModAtlas("launch_logo");
-    squareMarker = Singularity.getModAtlas("square_marker");
-    matrixArrow = Singularity.getModAtlas("matrix_arrow");
-    sglIcon = Singularity.getModAtlas("sgl_icon");
-    artistIcon = Singularity.getModAtlas("artist");
-    codeIcon = Singularity.getModAtlas("code");
-    translateIcon = Singularity.getModAtlas("translate");
-    soundsIcon = Singularity.getModAtlas("sound");
-    startIcon = Singularity.getModAtlas("icon_start");
-    databaseIcon = Singularity.getModAtlas("icon_database");
-    publicInfoIcon = Singularity.getModAtlas("icon_publicInfo");
-    aboutIcon = Singularity.getModAtlas("icon_about");
-    configureIcon = Singularity.getModAtlas("icon_configure");
-    contributeIcon = Singularity.getModAtlas("icon_contribute");
-    debuggingIcon = Singularity.getModAtlas("debugging");
-    nuclearIcon = Singularity.getModAtlas("nuclear");
-    matrixIcon = Singularity.getModAtlas("matrix");
-    qqIcon = Singularity.getModAtlas("qq");
-    telegramIcon = Singularity.getModAtlas("telegram");
+    transparent = Singularity.getModDrawable("transparent");
+    sglLaunchLogo = Singularity.getModDrawable("launch_logo");
+    squareMarker = Singularity.getModDrawable("square_marker");
+    matrixArrow = Singularity.getModDrawable("matrix_arrow");
+    sglIcon = Singularity.getModDrawable("sgl_icon");
+    artistIcon = Singularity.getModDrawable("artist");
+    codeIcon = Singularity.getModDrawable("code");
+    translateIcon = Singularity.getModDrawable("translate");
+    soundsIcon = Singularity.getModDrawable("sound");
+    startIcon = Singularity.getModDrawable("icon_start");
+    databaseIcon = Singularity.getModDrawable("icon_database");
+    publicInfoIcon = Singularity.getModDrawable("icon_publicInfo");
+    aboutIcon = Singularity.getModDrawable("icon_about");
+    configureIcon = Singularity.getModDrawable("icon_configure");
+    contributeIcon = Singularity.getModDrawable("icon_contribute");
+    debuggingIcon = Singularity.getModDrawable("debugging");
+    nuclearIcon = Singularity.getModDrawable("nuclear");
+    matrixIcon = Singularity.getModDrawable("matrix");
+    qqIcon = Singularity.getModDrawable("qq");
+    telegramIcon = Singularity.getModDrawable("telegram");
+    showInfos = Singularity.getModDrawable("show_infos");
+    unShowInfos = Singularity.getModDrawable("unshow_infos");
+    showRange = Singularity.getModDrawable("show_range");
+    hold = Singularity.getModDrawable("hold");
+    defaultShow = Singularity.getModDrawable("default_show");
   }
 }

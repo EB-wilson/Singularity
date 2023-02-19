@@ -5,8 +5,8 @@ import arc.func.Prov;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
-import arc.graphics.g2d.TextureRegion;
 import arc.scene.Element;
+import arc.scene.style.Drawable;
 import arc.scene.ui.Label;
 import arc.util.Tmp;
 import mindustry.Vars;
@@ -93,20 +93,20 @@ public class MainMenu extends BaseDialog {
   }
   
   private static class ButtonEntry{
-    TextureRegion region;
+    Drawable region;
     Prov<String> text;
     Prov<Color> color;
     
     Runnable clicked;
     
-    public ButtonEntry(TextureRegion region, Prov<String> text, Prov<Color> color, Runnable clicked){
+    public ButtonEntry(Drawable region, Prov<String> text, Prov<Color> color, Runnable clicked){
       this.region = region;
       this.text = text;
       this.color = color;
       this.clicked = clicked;
     }
     
-    public ButtonEntry(TextureRegion region, String text, Color color, Runnable clicked){
+    public ButtonEntry(Drawable region, String text, Color color, Runnable clicked){
       this(region, () -> text, () -> color, clicked);
     }
   }

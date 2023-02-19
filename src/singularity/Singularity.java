@@ -4,6 +4,7 @@ import arc.Core;
 import arc.Events;
 import arc.files.Fi;
 import arc.graphics.g2d.TextureRegion;
+import arc.scene.style.Drawable;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.ctype.Content;
@@ -140,6 +141,10 @@ public class Singularity extends Mod{
   
   public static TextureRegion getModAtlas(String name){
     return Core.atlas.find(Sgl.modName + "-" + name);
+  }
+
+  public static <T extends Drawable> T getModDrawable(String name){
+    return Core.atlas.getDrawable(Sgl.modName + "-" + name);
   }
 
   public static Fi getInternalFile(String path){

@@ -146,7 +146,11 @@ public class SglTechThree implements ContentList{
         });
       });
 
-      node(scatter, curtain, curr -> {});
+      node(scatter, curtain, curr -> {
+        curr.node(mist, mist -> {
+          mist.node(haze, haze -> {});
+        });
+      });
 
       node(spectre, dew, dew -> {});
 

@@ -8,6 +8,7 @@ import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.scene.Element;
+import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Scl;
 import arc.struct.ObjectMap;
 import arc.util.Eachable;
@@ -116,7 +117,7 @@ public class NetPluginComp extends DistNetBlock{
             if((connectReq & 0b0001 << i) == 0) continue;
 
             Tmp.v1.setAngle(i*90);
-            Draw.rect(SglDrawConst.matrixArrow, rx + Tmp.v1.x, ry + Tmp.v1.y, Scl.scl(40), Scl.scl(40), (i - 1)*90);
+            Draw.rect(((TextureRegionDrawable) SglDrawConst.matrixArrow).getRegion(), rx + Tmp.v1.x, ry + Tmp.v1.y, Scl.scl(40), Scl.scl(40), (i - 1)*90);
           }
         }
       }).size(90);
@@ -146,11 +147,11 @@ public class NetPluginComp extends DistNetBlock{
       Tmp.v2.set(Tmp.v1).rotate90(1).setLength(10 + Mathf.absin(size > 3? Vars.tilesize: size == 3? Vars.tilesize*0.75f: Vars.tilesize/2f, 0.35f));
 
       float dx = x + Tmp.v1.x, dy = y + Tmp.v1.y;
-      Draw.rect(SglDrawConst.squareMarker, dx, dy);
+      Draw.rect(((TextureRegionDrawable) SglDrawConst.squareMarker).getRegion(), dx, dy);
 
       //贴图是朝上的，在地图绘制时需要向逆时针旋转90度
-      Draw.rect(SglDrawConst.matrixArrow, dx + Tmp.v2.x, dy + Tmp.v2.y, dir*90);
-      Draw.rect(SglDrawConst.matrixArrow, dx - Tmp.v2.x, dy - Tmp.v2.y, (dir - 2)*90);
+      Draw.rect(((TextureRegionDrawable) SglDrawConst.matrixArrow).getRegion(), dx + Tmp.v2.x, dy + Tmp.v2.y, dir*90);
+      Draw.rect(((TextureRegionDrawable) SglDrawConst.matrixArrow).getRegion(), dx - Tmp.v2.x, dy - Tmp.v2.y, (dir - 2)*90);
 
       if(size >= 6){
         Tmp.v3.set(Tmp.v2).setLength(1);

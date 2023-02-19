@@ -6,9 +6,8 @@ import arc.func.Prov;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
-import arc.graphics.g2d.TextureRegion;
 import arc.scene.Element;
-import arc.scene.style.TextureRegionDrawable;
+import arc.scene.style.Drawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import mindustry.gen.Icon;
@@ -143,7 +142,7 @@ public class AboutModDialog extends BaseDialog {
             img.image().height(4).width(40f).update(i -> i.setColor(item.color.get().cpy().mul(0.8f, 0.8f, 0.8f, 1f)));
           }).expandY();
   
-          table.table(Tex.buttonEdge3, i -> i.image(item.region).size(32)).size(64);
+          table.table(Tex.buttonEdge3, i -> i.image(item.drawable).size(32)).size(64);
           Table i = table.table().width(545).padLeft(10).get();
           i.defaults().growX().left();
           item.text.get(i);
@@ -166,7 +165,7 @@ public class AboutModDialog extends BaseDialog {
             img.image().height(4).width(40f).update(i -> i.setColor(item.color.get().cpy().mul(0.8f, 0.8f, 0.8f, 1f)));
           }).expandY();
     
-          table.table(Tex.buttonEdge3, i -> i.image(item.region).size(32)).size(64);
+          table.table(Tex.buttonEdge3, i -> i.image(item.drawable).size(32)).size(64);
           Table i = table.table().width(611).padLeft(10).padRight(12).get();
           i.defaults().growX().left();
           item.text.get(i);
@@ -196,29 +195,21 @@ public class AboutModDialog extends BaseDialog {
   }
   
   private static class ButtonEntry{
-    TextureRegionDrawable region;
+    Drawable drawable;
     Cons<Table> text;
     Prov<Color> color;
     
     Runnable clicked;
     
-    public ButtonEntry(TextureRegionDrawable region, Cons<Table> text, Prov<Color> color, Runnable clicked){
-      this.region = region;
+    public ButtonEntry(Drawable drawable, Cons<Table> text, Prov<Color> color, Runnable clicked){
+      this.drawable = drawable;
       this.text = text;
       this.color = color;
       this.clicked = clicked;
     }
     
-    public ButtonEntry(TextureRegion region, Cons<Table> text, Prov<Color> color, Runnable clicked){
-      this(new TextureRegionDrawable(region), text, color, clicked);
-    }
-    
-    public ButtonEntry(TextureRegionDrawable region, String text, Color color, Runnable clicked){
-      this(region, t -> t.add(text), () -> color, clicked);
-    }
-    
-    public ButtonEntry(TextureRegion region, String text, Color color, Runnable clicked){
-      this(new TextureRegionDrawable(region), t -> t.add(text), () -> color, clicked);
+    public ButtonEntry(Drawable drawable, String text, Color color, Runnable clicked){
+      this(drawable, t -> t.add(text), () -> color, clicked);
     }
   }
 }

@@ -98,8 +98,8 @@ public class OtherContents implements ContentList{
             unit.buildSpeedMultiplier = 0;
           }
 
-          unit.damagePierce(1, true);
-          unit.health -= (1 - Sgl.empHealth.healthPresent(unit))*Sgl.empHealth.get(unit).model.empContinuousDamage;
+          unit.shield = 0;
+          unit.damageContinuousPierce((1 - Sgl.empHealth.healthPresent(unit))*Sgl.empHealth.get(unit).model.empContinuousDamage);
 
           for (int i = 0; i < unit.abilities.length; i++) {
             if (!(unit.abilities[i] instanceof BanedAbility)){
@@ -158,7 +158,8 @@ public class OtherContents implements ContentList{
       public void update(Unit unit, float time){
         super.update(unit, time);
         float scl = Mathf.clamp(time/120);
-        unit.damageContinuousPierce(0.2f*Mathf.clamp(scl)*Time.delta);
+        unit.shield -= 0.4f*(time/120)*Time.delta;
+        unit.damageContinuousPierce(0.2f*(time/120));
         unit.speedMultiplier *= (0.6f + 0.4f*(1 - scl));
         unit.damageMultiplier *= (0.8f + 0.2f*(1 - scl));
         unit.reloadMultiplier *= (0.75f + 0.25f*(1 - scl));

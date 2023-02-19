@@ -22,7 +22,7 @@ public class UnitHealthDisplay<T extends Unit> extends EntityInfoDisplay<T>{
           team,
           dy,
           alpha,
-          1
+          scl
       );
 
       Draw.reset();
@@ -38,6 +38,6 @@ public class UnitHealthDisplay<T extends Unit> extends EntityInfoDisplay<T>{
 
   @Override
   public float wight(float scl) {
-    return Sgl.config.healthBarStyle.getWidth(1);
+    return Sgl.config.healthBarStyle.getWidth(scl);
   }
 }

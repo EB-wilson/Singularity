@@ -14,6 +14,7 @@ import arc.struct.OrderedMap;
 import arc.struct.OrderedSet;
 import arc.struct.Seq;
 import arc.util.Align;
+import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.pooling.Pool;
@@ -23,9 +24,11 @@ import mindustry.gen.*;
 import mindustry.input.Binding;
 import mindustry.ui.Fonts;
 import singularity.Sgl;
+import singularity.graphic.SglDrawConst;
 import singularity.world.components.ExtraVariableComp;
 import universecore.annotations.Annotations;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -36,6 +39,7 @@ public class EntityInfoFrag{
   public OrderedMap<EntityInfoDisplay<?>, Boolf<Entityc>> displayMatcher = new OrderedMap<>();
 
   public ObjectSet<Entityc> hovering = new ObjectSet<>();
+  public boolean showTargetInfo = true;
 
   Entityc hold;
   float timer, delta;
@@ -46,10 +50,13 @@ public class EntityInfoFrag{
   String showModeTip = "";
   float modeTipAlpha;
 
+  boolean resizing;
+  float sclAlpha;
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   public void build(WidgetGroup parent){
     parent.fill((x, y, w, h) -> {
-      if (!Sgl.config.showTargetInfo){
+      if (!showTargetInfo){
         hovering.clear();
         alphaQueue.clear();
 
@@ -71,18 +78,25 @@ public class EntityInfoFrag{
         float maxWight = 0;
 
         for (EntityInfoDisplay<?> display : entry.display) {
-          maxWight = Math.max(maxWight, display.wight(Scl.scl()));
+          maxWight = Math.max(maxWight, display.wight(Sgl.config.showInfoScl));
         }
 
         for (EntityInfoDisplay<?> display : entry.display) {
-          heightOff += ((EntityInfoDisplay)display).draw(entry, Vars.player.team(), maxWight, heightOff, entry.alpha, Scl.scl());
+          heightOff += ((EntityInfoDisplay)display).draw(entry, Vars.player.team(), maxWight, heightOff, entry.alpha, Sgl.config.showInfoScl);
         }
       }
 
       if (modeTipAlpha > 0.001) {
-        float alpha = 1 - Mathf.mod(1 - modeTipAlpha, 4);
-        Fonts.def.draw(showModeTip, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.3f - 1f, Tmp.c1.set(Color.gray).a(alpha), Scl.scl(1.2f), true, Align.center);
-        Fonts.def.draw(showModeTip, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.3f, Tmp.c1.set(Color.white).a(alpha), Scl.scl(1.2f), true, Align.center);
+        float alpha = 1 - Mathf.pow(1 - modeTipAlpha, 4);
+        Fonts.def.draw(showModeTip, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.3f - 1f, Tmp.c1.set(Color.gray).a(alpha), Scl.scl(1.4f), true, Align.center);
+        Fonts.def.draw(showModeTip, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.3f, Tmp.c1.set(Color.white).a(alpha), Scl.scl(1.4f), true, Align.center);
+      }
+
+      if (sclAlpha > 0.001) {
+        float alpha = 1 - Mathf.pow(1 - sclAlpha, 4);
+        String str = Strings.autoFixed(Sgl.config.showInfoScl, 2) + "x";
+        Fonts.def.draw(str, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.24f - 1f, Tmp.c1.set(Color.gray).a(alpha), Scl.scl(1.4f), true, Align.center);
+        Fonts.def.draw(str, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.24f, Tmp.c1.set(Color.white).a(alpha), Scl.scl(1.4f), true, Align.center);
       }
 
       if (showRange){
@@ -93,36 +107,66 @@ public class EntityInfoFrag{
         Lines.dashCircle(v.x, v.y, Sgl.config.holdDisplayRange);
       }
     });
+
+    Runnable add = () -> {
+      Sgl.ui.toolBar.addTool(
+          "changeMode",
+          () -> Core.bundle.get("infos.changeMode"),
+          () -> showRange? SglDrawConst.showRange: wasHold? SglDrawConst.hold: SglDrawConst.defaultShow,
+          this::changeMode,
+          () -> false
+      );
+      Sgl.ui.toolBar.addTool(
+          "infoScl",
+          () -> Core.bundle.get("infos.resizeInfoScl"),
+          () -> Icon.resize,
+          () -> {
+            resizing = !resizing;
+            if (!resizing) {
+              try {
+                Sgl.config.save();
+              } catch (IOException e) {
+                throw new RuntimeException(e);
+              }
+            }
+          },
+          () -> resizing
+      );
+    };
+    Sgl.ui.toolBar.addTool(
+        "showInfos",
+        () -> Core.bundle.get(showTargetInfo? "infos.showInfos": "infos.hideInfos"),
+        () -> showTargetInfo? SglDrawConst.showInfos: Icon.zoom,
+        () -> {
+          showTargetInfo = !showTargetInfo;
+          if (showTargetInfo){
+            add.run();
+          }
+          else {
+            Sgl.ui.toolBar.removeTool("changeMode");
+            Sgl.ui.toolBar.removeTool("infoScl");
+          }
+        },
+        () -> showTargetInfo
+    );
+    add.run();
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void update(){
+    if (resizing && Core.input.isTouched()){
+      sclAlpha = 1;
+      Sgl.config.showInfoScl += Core.input.deltaY()/320f;
+      Sgl.config.showInfoScl = Mathf.clamp(Sgl.config.showInfoScl, 0.5f, 4f);
+    }
+
     if (Core.input.alt()){
       if (!mark) holdTime = Time.globalTime;
       mark = true;
     }
     else{
       if (mark && Time.globalTime - holdTime < 30){
-        hold = null;
-
-        if (!wasHold){
-          wasHold = true;
-
-          showModeTip = Core.bundle.get("infos.holdShowed");
-        }
-        else{
-          if (showRange){
-            wasHold = showRange = false;
-
-            showModeTip = Core.bundle.get("infos.holdOff");
-          }
-          else{
-            showRange = true;
-
-            showModeTip = Core.bundle.get("infos.holdShowRang");
-          }
-        }
-        modeTipAlpha = 1;
+        changeMode();
       }
 
       mark = false;
@@ -218,7 +262,31 @@ public class EntityInfoFrag{
     }
 
     modeTipAlpha = Mathf.approach(modeTipAlpha, 0, 0.004f*delta);
+    sclAlpha = Mathf.approach(sclAlpha, 0, 0.004f*delta);
     delta = 0;
+  }
+
+  private void changeMode() {
+    hold = null;
+
+    if (!wasHold){
+      wasHold = true;
+
+      showModeTip = Core.bundle.get("infos.holdShowed");
+    }
+    else{
+      if (showRange){
+        wasHold = showRange = false;
+
+        showModeTip = Core.bundle.get("infos.holdOff");
+      }
+      else{
+        showRange = true;
+
+        showModeTip = Core.bundle.get("infos.holdShowRang");
+      }
+    }
+    modeTipAlpha = 1;
   }
 
   @Annotations.ImplEntries

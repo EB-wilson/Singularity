@@ -60,6 +60,8 @@ public class SglTurret extends SglBlock{
   public float range = 80f;
   /**是否根据敌人的移动提前修正弹道*/
   public boolean accurateDelay = true;
+  /**是否根据敌人的移动提前修正弹道*/
+  public boolean accurateSpeed = true;
 
   /**是否攻击空中目标*/
   public boolean targetAir = true;
@@ -299,7 +301,7 @@ public class SglTurret extends SglBlock{
           BulletType type = ammoEntry.bulletType;
 
           if(type.spawnUnit != null && type.spawnUnit.weapons.size > 0){
-            StatValues.ammo(ObjectMap.of(t, type.spawnUnit.weapons.first().bullet), false).display(t);
+            StatUtils.buildAmmo(t, type.spawnUnit.weapons.first().bullet);
             return;
           }
 
@@ -636,11 +638,14 @@ public class SglTurret extends SglBlock{
 
       Vec2 offset = Tmp.v1.setZero();
 
-      if(accurateDelay && pos instanceof Hitboxc h){
+      if (accurateDelay && pos instanceof Hitboxc h){
         offset.set(h.deltaX(), h.deltaY()).scl(shoot.firstShotDelay / Time.delta);
       }
 
-      targetPos.set(Predict.intercept(this, pos, offset.x, offset.y, currentAmmo.speed <= 0.01f ? 99999999f : currentAmmo.speed));
+      if (accurateSpeed){
+        targetPos.set(Predict.intercept(this, pos, offset.x, offset.y, currentAmmo.speed <= 0.01f ? 99999999f : currentAmmo.speed));
+      }
+      else targetPos.set(pos);
 
       if(targetPos.isZero()){
         targetPos.set(pos);
