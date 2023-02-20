@@ -9,7 +9,6 @@ import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.WidgetGroup;
-import arc.struct.ObjectSet;
 import arc.struct.OrderedMap;
 import arc.struct.OrderedSet;
 import arc.struct.Seq;
@@ -33,12 +32,11 @@ import java.util.Iterator;
 import java.util.Objects;
 
 public class EntityInfoFrag{
+  public OrderedMap<EntityInfoDisplay<?>, Boolf<Entityc>> displayMatcher = new OrderedMap<>();
+
   public OrderedSet<EntityEntry<?>> alphaQueue = new OrderedSet<>(){{
     orderedItems().ordered = false;
   }};
-  public OrderedMap<EntityInfoDisplay<?>, Boolf<Entityc>> displayMatcher = new OrderedMap<>();
-
-  public ObjectSet<Entityc> hovering = new ObjectSet<>();
   public boolean showTargetInfo = true;
 
   Entityc hold;
@@ -57,7 +55,6 @@ public class EntityInfoFrag{
   public void build(WidgetGroup parent){
     parent.fill((x, y, w, h) -> {
       if (!showTargetInfo){
-        hovering.clear();
         alphaQueue.clear();
 
         return;
@@ -193,7 +190,6 @@ public class EntityInfoFrag{
 
     Vec2 v = Core.input.mouseWorld();
 
-    hovering.clear();
     float dist = 0;
     for (Entityc e : Groups.all) {
       float size = showRange? 0: e instanceof Hitboxc h ? h.hitSize() / 2 : e instanceof Buildingc b ? b.block().size / 2f : 10;
@@ -207,7 +203,26 @@ public class EntityInfoFrag{
       if (e instanceof Posc ent
           && ((!showRange && Math.abs(ent.x() - v.x) < size && Math.abs(ent.y() - v.y) < size)
           || (showRange && ent.dst(v.x, v.y) < range))){
-        hovering.add(e);
+        EntityEntry entry = Pools.obtain(EntityEntry.class, EntityEntry::new);
+        entry.entity = e;
+        entry.hovering = true;
+        entry.alpha = 0;
+
+        EntityEntry existed;
+        if ((existed = alphaQueue.get(entry)) == null) {
+          displayMatcher.each((display, cons) -> {
+            if (cons.get(e)) entry.display.add(display);
+          });
+
+          if (!entry.display.isEmpty()) {
+            alphaQueue.add(entry);
+          }
+          else Pools.free(entry);
+        }
+        else{
+          existed.hovering = true;
+          Pools.free(entry);
+        }
 
         if (touched) {
           float dis = ent.dst(v);
@@ -217,23 +232,6 @@ public class EntityInfoFrag{
           }
         }
       }
-    }
-
-    for (Entityc hover: hovering){
-      EntityEntry entry = Pools.obtain(EntityEntry.class, EntityEntry::new);
-      entry.entity = hover;
-      entry.alpha = 0;
-
-      if (!alphaQueue.contains(entry)) {
-        displayMatcher.each((display, cons) -> {
-          if (cons.get(hover)) entry.display.add(display);
-        });
-
-        if (!entry.display.isEmpty()) {
-          alphaQueue.add(entry);
-        }
-      }
-      else Pools.free(entry);
     }
 
     alphaQueue.orderedItems().sort((a, b) -> {
@@ -250,12 +248,15 @@ public class EntityInfoFrag{
     while(itr.hasNext()){
       EntityEntry<?> entry = itr.next();
       if (count >= Sgl.config.maxDisplay){
+        entry.hovering = false;
         entry.alpha = Mathf.approach(entry.alpha, 0, 0.025f*delta);
         continue;
       }
 
-      boolean isHovered = entry.entity.isAdded() && ((wasHold && !showRange) || hovering.contains(entry.entity) || hold == entry.entity || Core.input.alt());
+      boolean isHovered = entry.entity.isAdded() && ((wasHold && !showRange) || entry.hovering || hold == entry.entity || Core.input.alt());
       entry.alpha = Mathf.approach(entry.alpha, isHovered ? 1: 0, (isHovered? 0.1f: 0.025f)*delta);
+
+      entry.hovering = false;
 
       if (!isHovered && entry.alpha < 0.001f){
         itr.remove();
@@ -302,12 +303,14 @@ public class EntityInfoFrag{
   public static class EntityEntry<T extends Entityc> implements Pool.Poolable, ExtraVariableComp {
     T entity;
     float alpha;
+    boolean hovering;
     Seq<EntityInfoDisplay<T>> display = new Seq<>();
 
     @Override
     public void reset() {
       entity = null;
       alpha = 0;
+      hovering = false;
       extra().clear();
       display.clear();
     }

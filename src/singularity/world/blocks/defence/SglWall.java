@@ -99,7 +99,7 @@ public class SglWall extends Wall{
 
       float rad = size*tilesize/1.44f;
       for(Bullet bullet: Groups.bullet.intersect(x - rad/2, y - rad/2, rad, rad)){
-        if(!bullet.type.collides && bullet.type.absorbable && bullet.damage <= damageFilter){
+        if(bullet.team != team && !bullet.type.collides && bullet.type.absorbable && bullet.damage <= damageFilter){
           absorbed(bullet);
         }
       }

@@ -11,6 +11,7 @@ import singularity.graphic.SglDrawConst;
 import singularity.graphic.SglShaders;
 import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
+import singularity.world.blocks.BytePackAssign;
 import singularity.world.distribution.DistSupportContainerTable;
 import singularity.world.unit.EMPHealthManager;
 import universecore.util.handler.ClassHandler;
@@ -85,6 +86,9 @@ public class Sgl{
   public static EMPHealthManager empHealth;
   
   public static void init(){
+    //注册所有打包数据类型id
+    BytePackAssign.assignAll();
+
     //载入着色器
     SglShaders.load();
     //载入数学着色器
