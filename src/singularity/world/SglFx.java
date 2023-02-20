@@ -735,8 +735,8 @@ public class SglFx{
 
       Draw.z(Layer.effect + 0.001f);
       Lines.stroke((size*0.065f* fout));
-      randLenVectors(e.id + 1, e.finpow() + 0.001f, (int)(size/2.25f), size*0.9f, (dx, dy, in, out) -> {
-        lineAngle(e.x + dx, e.y + dy, Mathf.angle(dx, dy), 5 + out*size*0.6f);
+      randLenVectors(e.id + 1, e.finpow() + 0.001f, (int)(size/2.25f), size*1.2f, (dx, dy, in, out) -> {
+        lineAngle(e.x + dx, e.y + dy, Mathf.angle(dx, dy), 3 + out*size*0.7f);
         Drawf.light(e.x + dx, e.y + dy, out*size/2, Draw.getColor(), 0.8f);
       });
     });

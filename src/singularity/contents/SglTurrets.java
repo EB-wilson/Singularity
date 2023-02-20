@@ -2,6 +2,7 @@ package singularity.contents;
 
 import arc.Core;
 import arc.func.Func;
+import arc.func.Func3;
 import arc.graphics.Color;
 import arc.graphics.Pixmaps;
 import arc.graphics.Texture;
@@ -16,6 +17,7 @@ import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.pooling.Pools;
+import mindustry.audio.SoundLoop;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
@@ -298,6 +300,8 @@ public class SglTurrets implements ContentList{
       recoilTime = 150;
       cooldownTime = 150f;
 
+      shootSound = Sounds.missileLaunch;
+
       rotateSpeed = 1.25f;
 
       shootY = 4;
@@ -308,15 +312,15 @@ public class SglTurrets implements ContentList{
 
       scaledHealth = 200;
 
-      newAmmo(new EmpBulletType(){
+      Func3<Float, Float, Float, EmpBulletType> type = (dam, empD, r) -> new EmpBulletType(){
         {
           lifetime = 180;
-          splashDamage = 480;
-          splashDamageRadius = 120;
+          splashDamage = dam;
+          splashDamageRadius = r;
 
           damage = 0;
-          empDamage = 500;
-          empRange = 120;
+          empDamage = empD;
+          empRange = r;
 
           hitSize = 5;
 
@@ -342,10 +346,8 @@ public class SglTurrets implements ContentList{
           hitColor = Items.graphite.color;
 
           trailWidth = 3;
-          trailLength = 18;
+          trailLength = 28;
 
-          loopSound = Sounds.missileTrail;
-          loopSoundVolume = 0.6f;
           hitSound = Sounds.largeExplosion;
           hitSoundVolume = 1.2f;
 
@@ -366,7 +368,7 @@ public class SglTurrets implements ContentList{
               shootEffect = Fx.none;
               despawnEffect = Fx.none;
               smokeEffect = Fx.none;
-              drawSize = 160;
+              drawSize = r*1.2f;
             }
 
             final RandomGenerator branch = new RandomGenerator();
@@ -401,9 +403,9 @@ public class SglTurrets implements ContentList{
             @Override
             public void update(Bullet b){
               super.update(b);
-              Units.nearbyEnemies(b.team, b.x, b.y, 120, u -> Sgl.empHealth.empDamage(u, 0.5f, false));
+              Units.nearbyEnemies(b.team, b.x, b.y, r, u -> Sgl.empHealth.empDamage(u, 0.5f, false));
               if(b.timer(0, 6)){
-                Damage.status(b.team, b.x, b.y, 120, OtherContents.electric_disturb, Math.min(450 - b.time, 120), true, true);
+                Damage.status(b.team, b.x, b.y, r, OtherContents.electric_disturb, Math.min(450 - b.time, 120), true, true);
               }
 
               if (b.data instanceof LightningContainer c){
@@ -422,7 +424,7 @@ public class SglTurrets implements ContentList{
               Draw.z(Layer.bullet - 5);
               Draw.color(Pal.stoneGray);
               Draw.alpha(0.6f);
-              randLenVectors(e.id, 8 + 70, 120*1.2f, (x, y) -> {
+              randLenVectors(e.id, 8 + 70, r*1.2f, (x, y) -> {
                 float size = Mathf.randomSeed((int) (e.id+x), 14, 20);
                 float i = e.fin(Interp.pow3Out);
                 Fill.circle(e.x + x*i, e.y + y*i, size*e.fout(Interp.pow5Out));
@@ -449,12 +451,28 @@ public class SglTurrets implements ContentList{
         TextureRegion regionOutline;
 
         @Override
+        public void init(Bullet b) {
+          super.init(b);
+          b.data = new SoundLoop(Sounds.missileTrail, 0.65f);
+        }
+
+        @Override
         public void update(Bullet b) {
           super.update(b);
           Tmp.v1.set(b.vel).setLength(28);
           b.vel.approachDelta(Tmp.v1, 0.06f*Mathf.clamp((b.fin() - 0.10f)*5f));
 
-          Effect.shake(0.5f, 0.5f, b.x, b.y);
+          if (b.data instanceof SoundLoop loop){
+            loop.update(b.x, b.y, true);
+          }
+        }
+
+        @Override
+        public void removed(Bullet b) {
+          super.removed(b);
+          if (b.data instanceof SoundLoop loop){
+            loop.stop();
+          }
         }
 
         @Override
@@ -481,13 +499,21 @@ public class SglTurrets implements ContentList{
           PixmapRegion p = Core.atlas.getPixmap(r);
           regionOutline = new TextureRegion(new Texture(Pixmaps.outline(p, Pal.darkOutline, 3)));
         }
-      });
+      };
 
+      newAmmo(type.get(480f, 500f, 120f));
       consume.items(ItemStack.with(
           Items.graphite, 12,
           SglItems.concentration_uranium_235, 1
       ));
       consume.time(480);
+
+      newAmmo(type.get(600f, 550f, 145f));
+      consume.items(ItemStack.with(
+          Items.graphite, 12,
+          SglItems.concentration_plutonium_239, 1
+      ));
+      consume.time(510);
 
       draw = new DrawSglTurret(
           new RegionPart("_missile"){{
@@ -503,7 +529,84 @@ public class SglTurrets implements ContentList{
             moveY = 2;
             moveRot = -35;
 
+            under = true;
+            layerOffset = -0.3f;
+            turretHeatLayer = Layer.turret - 0.2f;
+
             moves.add(new PartMove(PartProgress.recoil, 0, -2, -10));
+          }},
+          new RegionPart("_spine"){{
+            progress = PartProgress.warmup;
+            heatProgress = PartProgress.warmup;
+            mirror = true;
+            outline = false;
+
+            heatColor = Items.graphite.color;
+            heatLayerOffset = 0;
+
+            xScl = 1.5f;
+            yScl = 1.5f;
+
+            x = 3.3f;
+            y = 7.3f;
+            moveX = 5f;
+            moveRot = -30;
+
+            under = true;
+            layerOffset = -0.3f;
+            turretHeatLayer = Layer.turret - 0.2f;
+
+            moves.add(new PartMove(PartProgress.recoil.delay(0.8f), -1.33f, 0, 16));
+          }},
+
+          new RegionPart("_spine"){{
+            progress = PartProgress.warmup;
+            heatProgress = PartProgress.warmup;
+            mirror = true;
+            outline = false;
+
+            heatColor = Items.graphite.color;
+            heatLayerOffset = 0;
+
+            xScl = 1.5f;
+            yScl = 1.5f;
+
+            x = 3.3f;
+            y = 7.3f;
+            moveX = 7.3f;
+            moveY = -4.6f;
+            moveRot = -45;
+
+            under = true;
+            layerOffset = -0.3f;
+            turretHeatLayer = Layer.turret - 0.2f;
+
+            moves.add(new PartMove(PartProgress.recoil.delay(0.4f), -1.33f, 0, 24));
+          }},
+
+          new RegionPart("_spine"){{
+            progress = PartProgress.warmup;
+            heatProgress = PartProgress.warmup;
+            mirror = true;
+            outline = false;
+
+            heatColor = Items.graphite.color;
+            heatLayerOffset = 0;
+
+            xScl = 1.5f;
+            yScl = 1.5f;
+
+            x = 3.3f;
+            y = 7.3f;
+            moveX = 8f;
+            moveY = -9.2f;
+            moveRot = -60;
+
+            under = true;
+            layerOffset = -0.3f;
+            turretHeatLayer = Layer.turret - 0.2f;
+
+            moves.add(new PartMove(PartProgress.recoil, -1.33f, 0, 30));
           }},
           new RegionPart("_blade"){{
             progress = PartProgress.warmup;
@@ -517,6 +620,8 @@ public class SglTurrets implements ContentList{
           }},
           new RegionPart("_body"){{
             mirror = false;
+            heatProgress = PartProgress.warmup;
+            heatColor = Items.graphite.color;
           }}
       );
     }};

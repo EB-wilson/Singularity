@@ -51,7 +51,7 @@ public class EntityInfoFrag{
   float modeTipAlpha;
 
   boolean resizing;
-  float sclAlpha;
+  float sclAlpha, touchY = -1, lastScl = -1;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public void build(WidgetGroup parent){
@@ -112,7 +112,7 @@ public class EntityInfoFrag{
       Sgl.ui.toolBar.addTool(
           "changeMode",
           () -> Core.bundle.get("infos.changeMode"),
-          () -> showRange? SglDrawConst.showRange: wasHold? SglDrawConst.hold: SglDrawConst.defaultShow,
+          () -> showRange? SglDrawConst.showRange: wasHold? SglDrawConst.hold: Icon.zoom,
           this::changeMode,
           () -> false
       );
@@ -136,7 +136,7 @@ public class EntityInfoFrag{
     Sgl.ui.toolBar.addTool(
         "showInfos",
         () -> Core.bundle.get(showTargetInfo? "infos.showInfos": "infos.hideInfos"),
-        () -> showTargetInfo? SglDrawConst.showInfos: Icon.zoom,
+        () -> showTargetInfo? SglDrawConst.showInfos: SglDrawConst.unShowInfos,
         () -> {
           showTargetInfo = !showTargetInfo;
           if (showTargetInfo){
@@ -156,8 +156,17 @@ public class EntityInfoFrag{
   public void update(){
     if (resizing && Core.input.isTouched()){
       sclAlpha = 1;
-      Sgl.config.showInfoScl += Core.input.deltaY()/320f;
-      Sgl.config.showInfoScl = Mathf.clamp(Sgl.config.showInfoScl, 0.5f, 4f);
+      if (touchY >= 0){
+        Sgl.config.showInfoScl = Mathf.clamp(lastScl - (touchY - Core.input.mouseY())/Core.graphics.getHeight()*2, 0.5f, 4f);
+      }
+      else{
+        lastScl = Sgl.config.showInfoScl;
+        touchY = Core.input.mouseY();
+      }
+    }
+    else{
+      lastScl = -1;
+      touchY = -1;
     }
 
     if (Core.input.alt()){
