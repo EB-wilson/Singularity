@@ -29,6 +29,7 @@ import mindustry.entities.Units;
 import mindustry.entities.bullet.BasicBulletType;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.bullet.ContinuousLaserBulletType;
+import mindustry.entities.bullet.LightningBulletType;
 import mindustry.entities.effect.MultiEffect;
 import mindustry.entities.effect.WaveEffect;
 import mindustry.entities.part.HaloPart;
@@ -75,6 +76,8 @@ public class SglTurrets implements ContentList{
 
   /**遮幕*/
   public static Block curtain,
+  /**闪光*/
+  flash,
   /**迷雾*/
   mist,
   /**阴霾*/
@@ -225,6 +228,90 @@ public class SglTurrets implements ContentList{
       consume.time(90);
     }};
 
+    flash = new SglTurret("flash"){{
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 35,
+          Items.surgeAlloy, 40,
+          Items.plastanium, 45
+      ));
+      size = 2;
+
+      itemCapacity = 20;
+      range = 240;
+      targetGround = false;
+
+      shoot.shots = 3;
+      shoot.shotDelay = 30;
+
+      shootSound = Sounds.shootSmite;
+
+      //copy from smite
+      newAmmo(new BasicBulletType(6f, 72){{
+        sprite = "large-orb";
+        width = 17f;
+        height = 21f;
+        hitSize = 8f;
+
+        recoilTime = 120;
+
+        shootEffect = new MultiEffect(Fx.shootTitan, Fx.colorSparkBig, new WaveEffect(){{
+          colorFrom = colorTo = Pal.accent;
+          lifetime = 12f;
+          sizeTo = 20f;
+          strokeFrom = 3f;
+          strokeTo = 0.3f;
+        }});
+        smokeEffect = Fx.shootSmokeSmite;
+        ammoMultiplier = 1;
+        pierceCap = 3;
+        pierce = true;
+        pierceBuilding = true;
+        hitColor = backColor = trailColor = Pal.accent;
+        frontColor = Color.white;
+        trailWidth = 2.8f;
+        trailLength = 9;
+        hitEffect = Fx.hitBulletColor;
+        buildingDamageMultiplier = 0.3f;
+
+        despawnEffect = new MultiEffect(Fx.hitBulletColor, new WaveEffect(){{
+          sizeTo = 30f;
+          colorFrom = colorTo = Pal.accent;
+          lifetime = 12f;
+        }});
+
+        trailRotation = true;
+        trailEffect = Fx.disperseTrail;
+        trailInterval = 3f;
+
+        intervalBullet = new LightningBulletType(){{
+          damage = 18;
+          collidesAir = false;
+          ammoMultiplier = 1f;
+          lightningColor = Pal.accent;
+          lightningLength = 5;
+          lightningLengthRand = 10;
+          buildingDamageMultiplier = 0.25f;
+          lightningType = new BulletType(0.0001f, 0f){{
+            lifetime = Fx.lightning.lifetime;
+            hitEffect = Fx.hitLancer;
+            despawnEffect = Fx.none;
+            status = StatusEffects.shocked;
+            statusDuration = 10f;
+            hittable = false;
+            lightColor = Color.white;
+            buildingDamageMultiplier = 0.25f;
+          }};
+        }};
+
+        bulletInterval = 3f;
+      }});
+      consume.item(Items.surgeAlloy, 1);
+      consume.power(1.8f);
+      consume.time(120);
+
+      newCoolant(1f, 0.4f, l -> l.heatCapacity >= 0.4f && l.temperature <= 0.5f, 0.25f, 20);
+    }};
+
     mist = new SglTurret("mist"){{
       requirements(Category.turret, ItemStack.with(
           SglItems.strengthening_alloy, 100,
@@ -296,7 +383,7 @@ public class SglTurrets implements ContentList{
       range = 580;
       minRange = 100f;
       shake = 7.5f;
-      recoil = 6f;
+      recoil = 2f;
       recoilTime = 150;
       cooldownTime = 150f;
 

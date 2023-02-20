@@ -176,10 +176,10 @@ public class SglFx{
     color(e.color);
     alpha(0.5f);
     rand.setSeed(e.id);
-    for(int i = 0; i < 24; i++){
-      Tmp.v1.trns(e.rotation + 180f + rand.range(19f), rand.random(e.finpow() * 60f)).add(rand.range(3f), rand.range(3f));
+    for(int i = 0; i < 18; i++){
+      Tmp.v1.trns(e.rotation + 180f + rand.range(19f), rand.random(e.finpow() * 60f)).add(rand.range(2f), rand.range(2f));
       e.scaled(e.lifetime * rand.random(0.2f, 1f), b -> {
-        Fill.circle(e.x + Tmp.v1.x, e.y + Tmp.v1.y, b.fout() * 4f + 0.3f);
+        Fill.circle(e.x + Tmp.v1.x, e.y + Tmp.v1.y, b.fout() * 3.5f + 0.3f);
       });
     }
   }),

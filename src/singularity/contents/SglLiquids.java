@@ -72,10 +72,10 @@ public class SglLiquids implements ContentList{
     };
 
     FEX_liquid = new Liquid("FEX_liquid", Color.valueOf("#E34248")){{
-      heatCapacity = 0.3f;
+      heatCapacity = 1f;
       explosiveness = 0f;
       flammability = 0f;
-      temperature = 0.5f;
+      temperature = 0.35f;
       viscosity = 0f;
     }};
     
@@ -101,6 +101,8 @@ public class SglLiquids implements ContentList{
       temperature = 0.5f;
       viscosity = 0.5f;
 
+      coolant = false;
+
       boilPoint = 0.5f;
 
       spreadDamage = 0;
@@ -121,6 +123,8 @@ public class SglLiquids implements ContentList{
       explosiveness = 0;
       viscosity = 0.5f;
 
+      coolant = false;
+
       boilPoint = 0.55f;
 
       init = () -> {
@@ -134,6 +138,8 @@ public class SglLiquids implements ContentList{
       flammability = 0;
       explosiveness = 0;
       viscosity = 0.5f;
+
+      coolant = false;
 
       boilPoint = 0.55f;
 
@@ -149,6 +155,8 @@ public class SglLiquids implements ContentList{
       explosiveness = 0;
       viscosity = 0.85f;
 
+      coolant = false;
+
       boilPoint = 1.5f;
     }};
 
@@ -159,6 +167,8 @@ public class SglLiquids implements ContentList{
       explosiveness = 0;
       viscosity = 0.5f;
 
+      coolant = false;
+
       boilPoint = 1f;
     }};
 
@@ -168,6 +178,8 @@ public class SglLiquids implements ContentList{
       flammability = 0f;
       explosiveness = 0;
       viscosity = 0.5f;
+
+      coolant = false;
 
       boilPoint = 1f;
     }};

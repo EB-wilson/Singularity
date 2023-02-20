@@ -19,7 +19,6 @@ import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
-import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.content.UnitTypes;
 import mindustry.core.World;
@@ -224,9 +223,14 @@ public class SglTurret extends SglBlock{
   }
 
   /**使用默认的冷却模式，与原版的冷却稍有不同，液体的温度和热容共同确定冷却力，热容同时影响液体消耗倍率*/
-  public void newCoolant(float baseCoolantScl, float attributeMultipler, Boolf<Liquid> filter, float usageBase, float duration){
-    newCoolant(liquid -> baseCoolantScl + (liquid.heatCapacity*1.2f - (liquid.temperature - 0.35f)*0.6f)*attributeMultipler, filter, usageBase,
-        liquid -> usageBase/(liquid.heatCapacity*0.7f), duration);
+  public void newCoolant(float baseCoolantScl, float attributeMultiplier, Boolf<Liquid> filter, float usageBase, float duration){
+    newCoolant(
+        liquid -> baseCoolantScl + (liquid.heatCapacity*1.2f - (liquid.temperature - 0.35f)*0.6f)*attributeMultiplier,
+        liquid -> !liquid.gas && liquid.coolant && filter.get(liquid),
+        usageBase,
+        liquid -> usageBase/(liquid.heatCapacity*0.7f),
+        duration
+    );
     BaseConsumers c = consume;
     consume.optionalAlwaysValid = false;
     consume.consValidCondition((SglTurretBuild t) -> (t.currCoolant == null || t.currCoolant == c));
@@ -243,8 +247,10 @@ public class SglTurret extends SglBlock{
     }, (s, c) -> {
       s.add(Stat.booster, t -> {
         t.row();
-        for(Liquid liquid: Vars.content.liquids()){
-          if(filters.get(liquid)){
+        if (c.get(ConsumeType.liquid) instanceof ConsumeLiquidCond cons){
+          for (UncLiquidStack stack : cons.getCons()) {
+            Liquid liquid = stack.liquid;
+
             t.add(new LiquidDisplay(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(10).left().top();
             t.table(Tex.underline, bt -> {
               bt.left().defaults().padRight(3).left();
@@ -261,6 +267,8 @@ public class SglTurret extends SglBlock{
         filter = filters;
         usage = usageBase;
         usageMultiplier = usageMult;
+
+        maxFlammability = 0.1f;
       }
 
       @Override
