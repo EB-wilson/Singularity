@@ -237,6 +237,7 @@ public class SglTurrets implements ContentList{
       size = 2;
 
       itemCapacity = 20;
+      liquidCapacity = 30;
       range = 240;
       targetGround = false;
 
