@@ -239,7 +239,6 @@ public class SglTurrets implements ContentList{
       itemCapacity = 20;
       liquidCapacity = 30;
       range = 240;
-      targetGround = false;
 
       shoot.shots = 3;
       shoot.shotDelay = 30;
