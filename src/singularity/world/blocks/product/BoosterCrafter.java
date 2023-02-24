@@ -2,7 +2,6 @@ package singularity.world.blocks.product;
 
 import arc.Core;
 import arc.func.Floatf;
-import arc.math.Mathf;
 import arc.util.Strings;
 import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
@@ -25,8 +24,7 @@ public class BoosterCrafter extends NormalCrafter{
       for (BaseConsume cons : c.all()) {
         mul *= cons.efficiency(e);
       }
-      e.boostEff = Mathf.lerpDelta(e.boostEff, Math.max(boost*mul, 1), 0.35f);
-      e.boostTime = 1;
+      e.boostEff = boost*mul;
     }, (s, c) -> {
       s.add(Stat.boostEffect, Core.bundle.get("misc.efficiency") + boost*100 + "%");
     });
@@ -62,17 +60,12 @@ public class BoosterCrafter extends NormalCrafter{
   }
 
   public class BoosterCrafterBuild extends NormalCrafterBuild{
-    public float boostTime;
     public float boostEff = 1;
 
     @Override
     public void updateTile() {
       super.updateTile();
-      if (boostTime > 0){
-        boostTime--;
-        return;
-      }
-      boostEff = Mathf.approachDelta(boostEff, 1, 0.04f);
+      boostEff = 1;
     }
   }
 }
