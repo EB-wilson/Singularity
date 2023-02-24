@@ -394,10 +394,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     
         if(recipeCurrent != f && f >= 0){
           recipeCurrent = f;
-          onUpdateCurrent();
         }
       }
-      
+
       if(lastRecipe != recipeCurrent) updateRecipe = true;
       lastRecipe = recipeCurrent;
 
@@ -406,10 +405,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       super.update();
 
       if(updating != null) updating.get(this);
-    }
-
-    public void onUpdateCurrent(){
-      consumer.setCurrent();
     }
   
     public void updateDisplayLiquid(){
@@ -583,8 +578,14 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     }
 
     @Override
+    public byte version(){
+      return 2;
+    }
+
+    @Override
     public void write(Writes write) {
       super.write(write);
+      write.i(select);
       write.i(recipeCurrent);
       if(consumer != null) consumer.write(write);
       if(energy != null) energy.write(write);
@@ -593,6 +594,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public void read(Reads read, byte revision){
       super.read(read, revision);
+      if(revision >= 2) select = read.i();
       recipeCurrent = read.i();
       if(consumer != null) consumer.read(read);
       if(energy != null) energy.read(read);

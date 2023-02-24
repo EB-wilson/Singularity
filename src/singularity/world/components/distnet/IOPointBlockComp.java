@@ -1,6 +1,7 @@
 package singularity.world.components.distnet;
 
 import arc.struct.ObjectMap;
+import arc.struct.ObjectSet;
 import mindustry.ctype.ContentType;
 import mindustry.world.Block;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers;
@@ -14,9 +15,21 @@ public interface IOPointBlockComp{
     return null;
   }
 
+  @Annotations.BindField(value = "configTypes", initialize = "new arc.struct.ObjectSet<>()")
+  default ObjectSet<GridChildType> configTypes(){
+    return null;
+  }
+
+  @Annotations.BindField(value = "supportContentType", initialize = "new arc.struct.ObjectSet<>()")
+  default ObjectSet<ContentType> supportContentType(){
+    return null;
+  }
+
   @SuppressWarnings("rawtypes")
   default void setFactory(GridChildType type, ContentType contType, RequestHandlers.RequestHandler factory){
     requestFactories().get(type, ObjectMap::new).put(contType, factory);
+    configTypes().add(type);
+    supportContentType().add(contType);
   }
 
   default Block getBlock(){

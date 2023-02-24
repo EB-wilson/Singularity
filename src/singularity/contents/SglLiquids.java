@@ -1,6 +1,7 @@
 package singularity.contents;
 
 import arc.graphics.Color;
+import arc.math.Mathf;
 import mindustry.content.Fx;
 import mindustry.content.Liquids;
 import mindustry.gen.Puddle;
@@ -8,7 +9,10 @@ import mindustry.graphics.Pal;
 import mindustry.type.CellLiquid;
 import mindustry.type.Liquid;
 import mindustry.world.Tile;
+import singularity.graphic.SglDraw;
+import singularity.graphic.SglShaders;
 import singularity.type.ReactLiquid;
+import singularity.world.SglFx;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class SglLiquids implements ContentList{
@@ -71,13 +75,30 @@ public class SglLiquids implements ContentList{
       }
     };
 
-    FEX_liquid = new Liquid("FEX_liquid", Color.valueOf("#E34248")){{
-      heatCapacity = 1f;
-      explosiveness = 0f;
-      flammability = 0f;
-      temperature = 0.35f;
-      viscosity = 0f;
-    }};
+    FEX_liquid = new Liquid("FEX_liquid", Color.valueOf("#E34248")){
+      {
+        heatCapacity = 1f;
+        explosiveness = 0f;
+        flammability = 0f;
+        temperature = 0.35f;
+        viscosity = 0f;
+
+        effect = OtherContents.crystallize;
+      }
+
+      public static final int taskID = SglDraw.nextTaskID();
+
+      @Override
+      public void drawPuddle(Puddle puddle) {
+        SglDraw.drawTask(taskID, puddle, SglShaders.wave, s -> {
+          s.waveMix = Pal.lightishGray;
+          s.mixAlpha = 0.2f + Mathf.absin(5, 0.2f);
+          s.waveScl = 0.2f;
+          s.maxThreshold = 1f;
+          s.minThreshold = 0.4f;
+        }, super::drawPuddle);
+      }
+    };
     
     phase_FEX_liquid = new Liquid("phase_FEX_liquid", Color.valueOf("#E34248")){
       {
@@ -86,11 +107,22 @@ public class SglLiquids implements ContentList{
         flammability = 0f;
         temperature = 0f;
         viscosity = 0f;
+
+        particleEffect = SglFx.crystalFragFex;
+        particleSpacing = 48;
       }
+
+      public static final int taskID = SglDraw.nextTaskID();
 
       @Override
       public void drawPuddle(Puddle puddle) {
-        super.drawPuddle(puddle);
+        SglDraw.drawTask(taskID, puddle, SglShaders.wave, s -> {
+          s.waveMix = Color.white;
+          s.mixAlpha = 0.2f + Mathf.absin(3, 0.4f);
+          s.waveScl = 0.3f;
+          s.maxThreshold = 0.9f;
+          s.minThreshold = 0.5f;
+        }, super::drawPuddle);
       }
     };
   

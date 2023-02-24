@@ -1,6 +1,5 @@
 
 uniform sampler2D u_texture;
-uniform float strength;
 
 varying vec2 v_texCoords;
 

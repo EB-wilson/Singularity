@@ -8,12 +8,12 @@ import universecore.annotations.Annotations;
 import universecore.components.blockcomp.BuildCompBase;
 
 public interface IOPointComp extends BuildCompBase{
-  @Annotations.BindField("parent")
+  @Annotations.BindField("parentMat")
   default DistMatrixUnitBuildComp parent(){
     return null;
   }
 
-  @Annotations.BindField("parent")
+  @Annotations.BindField("parentMat")
   default void parent(DistMatrixUnitBuildComp valur){}
 
   @Annotations.BindField("config")
@@ -22,15 +22,19 @@ public interface IOPointComp extends BuildCompBase{
   }
 
   @Annotations.BindField("config")
-  default void gridConfig(TargetConfigure valur){}
+  default void gridConfig(TargetConfigure value){}
 
   default IOPointBlockComp getIOBlock(){
     return getBlock(IOPointBlockComp.class);
   }
 
-  GridChildType[] configTypes();
+  default GridChildType[] configTypes(){
+    return getIOBlock().configTypes().toSeq().toArray(GridChildType.class);
+  }
 
-  ContentType[] configContentTypes();
+  default ContentType[] configContentTypes(){
+    return getIOBlock().supportContentType().toSeq().toArray(ContentType.class);
+  }
 
   boolean valid(DistMatrixUnitBuildComp unit, GridChildType type, Content content);
 }

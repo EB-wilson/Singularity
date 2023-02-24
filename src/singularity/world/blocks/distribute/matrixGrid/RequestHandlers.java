@@ -8,7 +8,7 @@ import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.type.*;
-import singularity.world.blocks.distribute.IOPointBlock;
+import singularity.world.blocks.distribute.GenericIOPoint;
 import singularity.world.blocks.distribute.TargetConfigure;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.IOPointComp;
@@ -161,9 +161,9 @@ public class RequestHandlers{
 
       boolean taskStatus = task.get();
 
-      for(MatrixGrid.BuildingEntry<?> entry : sender.matrixGrid().get(GridChildType.output, (e, c) -> e instanceof IOPointBlock.IOPoint)){
+      for(MatrixGrid.BuildingEntry<?> entry : sender.matrixGrid().get(GridChildType.output, (e, c) -> e instanceof GenericIOPoint.GenericIOPPointBuild)){
         if(entry.config == null) continue;
-        IOPointBlock.IOPoint ioPoint = (IOPointBlock.IOPoint) entry.entity;
+        GenericIOPoint.GenericIOPPointBuild ioPoint = (GenericIOPoint.GenericIOPPointBuild) entry.entity;
         if(ioPoint.config == null) continue;
         for(UnlockableContent item : ioPoint.config.get(GridChildType.output, ContentType.item)){
           if(buffer.get((Item)item) > 0 && ioPoint.acceptItemOut(sender.getBuilding(), (Item) item)){
@@ -268,9 +268,9 @@ public class RequestHandlers{
 
       boolean taskStatus = task.get();
 
-      for(MatrixGrid.BuildingEntry<?> entry : sender.matrixGrid().get(GridChildType.output, (e, c) -> e instanceof IOPointBlock.IOPoint)){
+      for(MatrixGrid.BuildingEntry<?> entry : sender.matrixGrid().get(GridChildType.output, (e, c) -> e instanceof GenericIOPoint.GenericIOPPointBuild)){
         if(entry.config == null) continue;
-        IOPointBlock.IOPoint ioPoint = (IOPointBlock.IOPoint) entry.entity;
+        GenericIOPoint.GenericIOPPointBuild ioPoint = (GenericIOPoint.GenericIOPPointBuild) entry.entity;
         if(ioPoint.config == null) continue;
         for(UnlockableContent liquid : ioPoint.config.get(GridChildType.output, ContentType.liquid)){
           Liquid li = (Liquid) liquid;

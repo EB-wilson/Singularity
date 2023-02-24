@@ -300,12 +300,6 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
         dumpLiquid(liquid);
       }
     }
-  
-    @Override
-    public void onUpdateCurrent(){
-      super.onUpdateCurrent();
-      producer.setCurrent();
-    }
 
     @SuppressWarnings("unchecked")
     @Override

@@ -8,8 +8,11 @@ import singularity.ui.fragments.HealthBarStyle;
 import universecore.util.handler.MethodHandler;
 
 import java.io.*;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 
 public class ModConfig{
   private static final int configVersion = 4;
@@ -17,28 +20,44 @@ public class ModConfig{
 
   //basic/基础设置
   //主菜单界面设置
+  @Order(0)
   public boolean disableModMainMenu;
+  @Order(1)
   public boolean showModMenuWenLaunch;
+  @Order(2)
   public boolean mainMenuUniverseBackground;
+  @Order(3)
   public boolean staticMainMenuBackground;
+  @Order(4)
   public float[] defaultCameraPos;
+  @Order(5)
   public boolean movementCamera;
   //游戏目标内信息显示
+  @Order(6)
   public float flushInterval;
+  @Order(7)
   public int maxDisplay;
+  @Order(8)
   public float showInfoScl;
+  @Order(9)
   public float holdDisplayRange;
 
+  @Order(10)
   public HealthBarStyle healthBarStyle;
 
+  @Order(11)
   public float statusSize;
+  @Order(12)
   public boolean showStatusTime;
 
   //Advanced/高级设置
+  @Order(13)
   public boolean modReciprocal;
 
   //debug/调试设置
+  @Order(14)
   public boolean loadInfo;
+  @Order(15)
   public boolean debugMode;
 
   private String lastContext;
@@ -127,7 +146,7 @@ public class ModConfig{
     save(Sgl.configFile);
   }
 
-  @SuppressWarnings({"HardcodedFileSeparator"})
+  @SuppressWarnings({"HardcodedFileSeparator", "unchecked"})
   public void save(Fi file) throws IOException{
     Jval tree = Jval.newObject();
 
@@ -135,10 +154,23 @@ public class ModConfig{
     map.put("configVersion", Jval.valueOf(configVersion));
 
     Field[] configs = ModConfig.class.getFields();
+    Arrays.sort(configs, (f1, f2) -> f1.getAnnotation(Order.class).value() - f2.getAnnotation(Order.class).value());
     try{
       for(Field cfg: configs){
         String key = cfg.getName();
-        map.put(key, pack(cfg.get(this)));
+        Object obj = cfg.get(this);
+        if(obj == null){
+          if(CharSequence.class.isAssignableFrom(cfg.getType())){
+            map.put(key, Jval.valueOf(""));
+          }
+          else if(cfg.getType().isArray()){
+            map.put(key, Jval.newArray());
+          }
+          else if(cfg.getType().isEnum()){
+            map.put(key, Jval.valueOf(firstEnum((Class<? extends Enum<?>>) cfg.getType()).name()));
+          }
+        }
+        else map.put(key, pack(obj));
       }
     }catch(IllegalAccessException e){
       throw new RuntimeException(e);
@@ -208,7 +240,7 @@ public class ModConfig{
     return res;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private static <T> T warp(Class<T> type, String value){
     if(type == int.class) return (T)Integer.valueOf(value);
     else if(type == byte.class) return (T)Byte.valueOf(value);
@@ -220,7 +252,7 @@ public class ModConfig{
     else if(type == double.class) return (T)Double.valueOf(value);
     else if(CharSequence.class.isAssignableFrom(type)) return (T) value;
     else if(type.isArray()) return toArray(type, value);
-    else if(type.isEnum()) return findEnum(type, value);
+    else if(type.isEnum()) return (T) Enum.valueOf((Class) type, value);
     else throw new RuntimeException("invalid type: " + type);
   }
 
@@ -237,11 +269,13 @@ public class ModConfig{
     return (T) res;
   }
 
-  @SuppressWarnings("unchecked")
-  private static <T> T findEnum(Class<T> type, String value){
+  private static <T> T firstEnum(Class<T> type){
     if(!type.isEnum()) throw new RuntimeException("class " + type + " was not an enum");
-    Enum<?> e = MethodHandler.invokeDefault(type, "valueOf", value);
-    if(e != null) return (T) e;
-    throw new RuntimeException("no such element named \"" + value + "\" found in enum " + type);
+    return MethodHandler.invokeDefault(type, "values");
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  private @interface Order{
+    int value();
   }
 }

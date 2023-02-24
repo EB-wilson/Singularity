@@ -22,7 +22,7 @@ import mindustry.world.Tile;
 import singularity.Sgl;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.world.blocks.distribute.DistNetBlock;
-import singularity.world.blocks.distribute.IOPointBlock;
+import singularity.world.blocks.distribute.GenericIOPoint;
 import singularity.world.blocks.distribute.TargetConfigure;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers.RequestHandler;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
@@ -237,7 +237,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           config,
           target instanceof IOPointComp point? point.configContentTypes()
               : getAcceptType(target.block),
-          target instanceof IOPointBlock.IOPoint,
+          target instanceof GenericIOPoint.GenericIOPPointBuild,
           c -> configure(c.pack()),
           UncCore.secConfig::hideConfig
       ));

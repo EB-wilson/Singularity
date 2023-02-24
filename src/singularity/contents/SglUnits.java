@@ -42,6 +42,7 @@ import singularity.graphic.SglDrawConst;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.blocks.product.PayloadCrafter;
+import singularity.world.blocks.turrets.MultiTrailBulletType;
 import singularity.world.draw.part.CustomPart;
 import singularity.world.unit.*;
 import universecore.util.handler.ObjectHandler;
@@ -154,7 +155,7 @@ public class SglUnits implements ContentList{
                     new RegionPart("_body")
                 );
 
-                bullet = new BulletType(){
+                bullet = new MultiTrailBulletType(){
                   {
                     speed = 6;
                     lifetime = 75;
@@ -226,60 +227,10 @@ public class SglUnits implements ContentList{
                   }
 
                   @Override
-                  public void init(Bullet b){
-                    super.init(b);
-                    b.data = new Trail[]{
-                        new Trail(trailLength/2),
-                        new Trail(trailLength/2)
-                    };
-                  }
-
-                  @Override
-                  public void removed(Bullet b){
-                    super.removed(b);
-                    if(b.data instanceof Trail[] trails){
-                      for(Trail trail: trails){
-                        Fx.trailFade.at(b.x, b.y, 2, trailColor, trail.copy());
-                      }
-                    }
-                  }
-
-                  @Override
-                  public void update(Bullet b){
-                    super.update(b);
-                    if(b.data instanceof Trail[] trails){
-                      float step = 360f/trails.length;
-                      Tmp.v1.set(4 + 8*b.fslope(), 0).setAngle(b.rotation() + 90);
-                      for(int i = 0; i < trails.length; i++){
-                        float lerp = Mathf.sinDeg(Mathf.randomSeed(b.id, 0f, 360f) + Time.time*8f + step*i);
-                        trails[i].update(b.x + Tmp.v1.x*lerp, b.y + Tmp.v1.y*lerp);
-                      }
-                    }
-                  }
-
-                  @Override
                   public void draw(Bullet b){
                     super.draw(b);
                     Drawf.tri(b.x, b.y, 12, 30, b.rotation());
                     Drawf.tri(b.x, b.y, 12, 12, b.rotation() + 180);
-                  }
-
-                  @Override
-                  public void drawTrail(Bullet b){
-                    super.drawTrail(b);
-                    if(b.data instanceof Trail[] trails){
-                      float step = 360f/trails.length;
-                      Tmp.v1.set(4 + 8*b.fslope(), 0).setAngle(b.rotation() + 90);
-                      for(int i = 0; i < trails.length; i++){
-                        float lerp = Mathf.sinDeg(Mathf.randomSeed(b.id, 0f, 360f) + Time.time*8f + step*i);
-                        SglDraw.drawDiamond(
-                            b.x + Tmp.v1.x*lerp, b.y + Tmp.v1.y*lerp,
-                            8, 4,
-                            b.rotation() + Tmp.v2.set(b.vel.len(), -Mathf.sinDeg(Time.time*8f + step*i)*2*b.fslope()).angle()
-                        );
-                        trails[i].draw(trailColor, 2);
-                      }
-                    }
                   }
                 };
               }

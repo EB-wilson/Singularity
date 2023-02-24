@@ -34,7 +34,6 @@ import mindustry.logic.Ranged;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.ui.LiquidDisplay;
-import mindustry.world.Block;
 import mindustry.world.blocks.ControlBlock;
 import mindustry.world.meta.*;
 import singularity.ui.StatUtils;
@@ -287,7 +286,7 @@ public class SglTurret extends SglBlock{
 
         table.row();
         table.table(t -> {
-          t.defaults().left();
+          t.defaults().left().growX();
           t.table(st -> {
             for(OrderedMap<Stat, Seq<StatValue>> map: stat.toMap().values()){
               for(ObjectMap.Entry<Stat, Seq<StatValue>> statSeqEntry: map){
@@ -298,7 +297,7 @@ public class SglTurret extends SglBlock{
                     statValue.display(s);
                     s.add().size(10.0F);
                   }
-                }).left();
+                }).growX().left();
                 st.row();
               }
             }
@@ -323,7 +322,7 @@ public class SglTurret extends SglBlock{
               value.get(bt, type);
             }
           }).padTop(-9).padLeft(0).left().get().background(Tex.underline);
-        });
+        }).fill();
       }
     });
 
@@ -395,24 +394,6 @@ public class SglTurret extends SglBlock{
       return SglTurret.this;
     }
 
-    @Override
-    public Building create(Block block, Team team){
-      super.create(block, team);
-      if(!consumers().isEmpty()){
-        recipeCurrent = 0;
-        onUpdateCurrent();
-      }
-
-      return this;
-    }
-
-    @Override
-    public void onUpdateCurrent(){
-      super.onUpdateCurrent();
-      if(!ammoTypes.containsKey(consumer.current)) throw new RuntimeException("unknown ammo recipe");
-      currentAmmo = ammoTypes.get(consumer.current).bulletType;
-    }
-
     public boolean logicControlled(){
       return logicControlTime > 0;
     }
@@ -423,6 +404,11 @@ public class SglTurret extends SglBlock{
       wasShooting = false;
       if(consumer.current == null) return;
 
+      if(!ammoTypes.containsKey(consumer.current))
+        throw new RuntimeException("unknown ammo recipe");
+
+      currentAmmo = ammoTypes.get(consumer.current).bulletType;
+
       curRecoil = Mathf.approachDelta(curRecoil, 0, 1/(recoilTime > 0? recoilTime: consumer.current.craftTime));
       heat = Mathf.approachDelta(heat, 0, 1/cooldownTime*coolantScl);
       charge = charging() ? Mathf.approachDelta(charge, 1, 1/shoot.firstShotDelay) : 0;
@@ -432,7 +418,7 @@ public class SglTurret extends SglBlock{
       unit.team(team);
       recoilOffset.trns(rotation, -Mathf.pow(curRecoil, recoilPow)*recoil);
 
-      updateTraget();
+      updateTarget();
 
       if(!isControlled()){
         unit.aimX(targetPos.x);
@@ -626,7 +612,7 @@ public class SglTurret extends SglBlock{
       return isControlled()? unit.isShooting(): logicControlled()? logicShooting: target != null;
     }
 
-    public void updateTraget(){
+    public void updateTarget(){
       if(timer(timerTarget, targetInterval)){
         findTarget();
       }
@@ -642,7 +628,7 @@ public class SglTurret extends SglBlock{
     }
 
     public void targetPosition(Posc pos){
-      if(!consumeValid() || pos == null) return;
+      if(!consumeValid() || pos == null || currentAmmo == null) return;
 
       Vec2 offset = Tmp.v1.setZero();
 

@@ -1,47 +1,32 @@
 package singularity.world.blocks.distribute;
 
-import arc.math.geom.Point2;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
-import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
-import mindustry.world.Edges;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
-import singularity.contents.DistributeBlocks;
-import singularity.world.blocks.SglBlock;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
-import singularity.world.components.distnet.IOPointBlockComp;
-import singularity.world.components.distnet.IOPointComp;
 import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.buffers.LiquidsBuffer;
-import singularity.world.meta.SglStat;
-import universecore.annotations.Annotations;
-import universecore.util.DataPackable;
 
 import static mindustry.Vars.*;
 
 /**非content类，方块标记，不进入contents，用于创建矩阵网络IO接口点的标记类型*/
-@Annotations.ImplEntries
-public class IOPointBlock extends SglBlock implements IOPointBlockComp{
-  public static final byte[] NULL = new byte[0];
-  public GridChildType[] configTypes = {GridChildType.output, GridChildType.input, GridChildType.acceptor};
-  public ContentType[] supportContentType = {ContentType.item, ContentType.liquid};
+public class GenericIOPoint extends IOPoint{
 
-  public IOPointBlock(String name){
+  public GenericIOPoint(String name){
     super(name);
     size = 1;
-    update = true;
     hasItems = hasLiquids = true;
     displayFlow = false;
     
@@ -51,11 +36,10 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     
     itemCapacity = 16;
     liquidCapacity = 16;
+  }
 
-    buildCostMultiplier = 0;
-
-    schematicPriority = -10;
-
+  @Override
+  public void setupRequestFact(){
     //items
     setFactory(GridChildType.output, ContentType.item, new RequestHandlers.ReadItemRequestHandler());
     setFactory(GridChildType.input, ContentType.item, new RequestHandlers.PutItemRequestHandler());
@@ -67,61 +51,7 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
     setFactory(GridChildType.acceptor, ContentType.liquid, new RequestHandlers.AcceptLiquidRequestHandler());
   }
 
-  @Override
-  public void setStats() {
-    super.setStats();
-    stats.add(SglStat.componentBelongs, t -> {
-      t.defaults().left();
-      t.image(DistributeBlocks.matrix_controller.fullIcon).size(35).padRight(8);
-      t.add(DistributeBlocks.matrix_controller.localizedName);
-    });
-  }
-
-  @Override
-  public void parseConfigObjects(SglBuilding e, Object obj) {
-    if (obj instanceof TargetConfigure cfg && e instanceof IOPoint io){
-      Building tile = e.nearby(-Point2.x(cfg.offsetPos), -Point2.y(cfg.offsetPos));
-      if (!(tile instanceof DistMatrixUnitBuildComp mat)){
-        io.parent = null;
-        io.config = null;
-      }
-      else{
-        //校准坐标...
-        int offX = e.tileX() - tile.tileX();
-        int offY = e.tileY() - tile.tileY();
-
-        cfg.offsetPos = Point2.pack(offX, offY);
-
-        io.parent = mat;
-        io.config = cfg;
-        io.parent.addIO(io);
-      }
-    }
-  }
-
-  @Override
-  public void onPlanRotate(BuildPlan plan, int direction) {
-    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof TargetConfigure nodeConfig){
-      nodeConfig.rotateDir(this, direction);
-
-      plan.config = nodeConfig.pack();
-    }
-  }
-
-  @Override
-  public void onPlanFilp(BuildPlan plan, boolean x) {
-    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof TargetConfigure nodeConfig){
-      nodeConfig.flip(this, x);
-
-      plan.config = nodeConfig.pack();
-    }
-  }
-
-  @Annotations.ImplEntries
-  public class IOPoint extends SglBuilding implements IOPointComp{
-    public DistMatrixUnitBuildComp parent;
-    public TargetConfigure config;
-
+  public class GenericIOPPointBuild extends IOPointBuild{
     public ItemModule outItems;
     public LiquidModule outLiquid;
 
@@ -135,40 +65,6 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       return this;
     }
 
-    @Override
-    public void onProximityAdded() {
-      super.onProximityAdded();
-      if (config != null){
-        Building tile = nearby(-Point2.x(config.offsetPos), -Point2.y(config.offsetPos));
-        if (!(tile instanceof DistMatrixUnitBuildComp mat)){
-          parent = null;
-          config = null;
-        }
-        else{
-          parent = mat;
-          parent.addIO(this);
-        }
-      }
-    }
-
-    @Override
-    public void onRemoved(){
-      if(parent != null) parent.removeIO(this);
-      super.onRemoved();
-    }
-  
-    @Override
-    public void updateTile(){
-      if(parent == null || !parent.getBuilding().isAdded()){
-        return;
-      }
-      if(parent.gridValid() && config != null){
-        resourcesDump();
-        resourcesSiphon();
-        transBack();
-      }
-    }
-
     public int output(Item item, int amount){
       int add = Math.min(amount, itemCapacity - outItems.get(item));
       outItems.add(item, add);
@@ -179,11 +75,6 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       float add = Math.min(amount, liquidCapacity - outLiquid.get(liquid));
       outLiquid.add(liquid, add);
       return add;
-    }
-    
-    public byte getDirectBit(Building e){
-      byte dir = relativeTo(Edges.getFacingEdge(e, this));
-      return (byte) (dir == 0? 1: dir == 1? 2: dir == 2? 4: dir == 3? 8: 0);
     }
 
     @Override
@@ -200,6 +91,7 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       return false;
     }
 
+    @Override
     public void resourcesDump(){
       if(config == null) return;
       for(UnlockableContent item : config.get(GridChildType.output, ContentType.item)){
@@ -283,7 +175,8 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
 
       return flow;
     }
-  
+
+    @Override
     public void resourcesSiphon(){
       siphoning = true;
       if(config == null) return;
@@ -295,13 +188,14 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       }
       siphoning = false;
     }
-    
+
+    @Override
     public void transBack(){
       if(config == null) return;
 
-      Building parentBuild = parent.getBuilding();
-      ItemsBuffer itsB = parent.getBuffer(DistBufferType.itemBuffer);
-      LiquidsBuffer lisB = parent.getBuffer(DistBufferType.liquidBuffer);
+      Building parentBuild = parentMat.getBuilding();
+      ItemsBuffer itsB = parentMat.getBuffer(DistBufferType.itemBuffer);
+      LiquidsBuffer lisB = parentMat.getBuffer(DistBufferType.liquidBuffer);
 
       items.each((item, amount) -> {
         int move = parentBuild.acceptItem(this, item)? Math.min(parentBuild.getMaximumAccepted(item) - parentBuild.items.get(item), amount): 0;
@@ -381,32 +275,11 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       return interactable(source.team) && outLiquid.get(liquid) < liquidCapacity;
     }
 
-    public GridChildType[] configTypes(){
-      return configTypes;
-    }
-
-    public ContentType[] configContentTypes(){
-      return supportContentType;
-    }
-
-    @Override
-    public byte[] config() {
-      return config == null? NULL : config.pack();
-    }
-
     @Override
     public void write(Writes write){
       super.write(write);
       outItems.write(write);
       outLiquid.write(write);
-
-      if (config == null){
-        write.i(-1);
-      }
-      else {
-        write.i(1);
-        config.write(write);
-      }
     }
 
     @Override
@@ -415,9 +288,11 @@ public class IOPointBlock extends SglBlock implements IOPointBlockComp{
       outItems.read(read);
       outLiquid.read(read);
 
-      if (read.i() > 0){
-        config = new TargetConfigure();
-        config.read(read);
+      if(revision < 3){
+        if(read.i() > 0){
+          config = new TargetConfigure();
+          config.read(read);
+        }
       }
     }
   }

@@ -91,7 +91,7 @@ public class SglDraw{
    *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
    * @param shader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，在这组任务绘制时使用的着色器
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
-  public static <T> void drawTask(int taskID, T target, Shader shader, DrawAcceptor<T> draw){
+  public static <T, S extends Shader> void drawTask(int taskID, T target, S shader, DrawAcceptor<T> draw){
     drawTask(taskID, target, shader, e -> {
       FrameBuffer buffer = taskBuffer.get(taskID, FrameBuffer::new);
       buffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
@@ -99,6 +99,27 @@ public class SglDraw{
     }, e -> {
       FrameBuffer buffer = taskBuffer.get(taskID);
       buffer.end();
+      buffer.blit(e);
+    }, draw);
+  }
+
+  /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
+   *
+   * @param taskID 任务的标识id，用于区分任务缓存
+   * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
+   *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
+   * @param shader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，在这组任务绘制时使用的着色器
+   * @param applyShader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，绘制前对着色器进行的操作
+   * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
+  public static <T, S extends Shader> void drawTask(int taskID, T target, S shader, DrawAcceptor<S> applyShader, DrawAcceptor<T> draw){
+    drawTask(taskID, target, shader, e -> {
+      FrameBuffer buffer = taskBuffer.get(taskID, FrameBuffer::new);
+      buffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+      buffer.begin(Color.clear);
+    }, e -> {
+      FrameBuffer buffer = taskBuffer.get(taskID);
+      buffer.end();
+      applyShader.draw(e);
       buffer.blit(e);
     }, draw);
   }
@@ -477,15 +498,15 @@ public class SglDraw{
   }
 
   public static void dashCircle(float x, float y, float radius, float rotate){
-    dashCircle(x, y, radius, 1.5f, 8, 180, rotate);
+    dashCircle(x, y, radius, 1.8f, 8, 180, rotate);
   }
 
   public static void dashCircle(float x, float y, float radius, int dashes, float totalDashDeg, float rotate){
-    dashCircle(x, y, radius, 1.5f, dashes, totalDashDeg, rotate);
+    dashCircle(x, y, radius, 1.8f, dashes, totalDashDeg, rotate);
   }
 
   public static void dashCircle(float x, float y, float radius, float scaleFactor, int dashes, float totalDashDeg, float rotate){
-    int sides = 24 + (int)(radius * scaleFactor);
+    int sides = 40 + (int)(radius * scaleFactor);
     if(sides % 2 == 1) sides++;
 
     v1.set(0, 0);

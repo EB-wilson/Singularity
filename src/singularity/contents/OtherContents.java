@@ -16,14 +16,18 @@ import mindustry.content.Items;
 import mindustry.content.StatusEffects;
 import mindustry.entities.Damage;
 import mindustry.entities.Effect;
+import mindustry.entities.Puddles;
 import mindustry.entities.abilities.Ability;
 import mindustry.game.EventType;
+import mindustry.game.Team;
 import mindustry.gen.Bullet;
+import mindustry.gen.Puddle;
 import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import mindustry.type.StatusEffect;
+import mindustry.world.Tile;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 import singularity.Sgl;
@@ -35,6 +39,8 @@ import singularity.world.meta.SglStat;
 import universecore.UncCore;
 import universecore.util.aspect.EntityAspect;
 import universecore.util.aspect.triggers.TriggerEntry;
+
+import static singularity.contents.SglTurrets.crushCrystal;
 
 public class OtherContents implements ContentList{
   public static AtomSchematic copper_schematic,
@@ -53,7 +59,8 @@ public class OtherContents implements ContentList{
   wild_growth,
   frost,
   frost_freeze,
-  meltdown;
+  meltdown,
+  crystallize;
 
   static final ObjectMap<Unit, float[]> lastHealth = new ObjectMap<>();
 
@@ -237,7 +244,7 @@ public class OtherContents implements ContentList{
       {
         speedMultiplier = 0.05f;
         reloadMultiplier = 0.05f;
-        effect = SglFx.iceParticleSpread;
+        effect = SglFx.particleSpread;
 
         init(() -> {
           handleOpposite(StatusEffects.burning);
@@ -313,6 +320,39 @@ public class OtherContents implements ContentList{
         }
       }
     };
+
+    crystallize = new StatusEffect("crystallize"){
+      {
+        speedMultiplier = 0.34f;
+        reloadMultiplier = 0.8f;
+
+        effect = SglFx.crystalFragFex;
+        effectChance = 0.1f;
+      }
+
+      @Override
+      public void update(Unit unit, float time){
+        super.update(unit, time);
+
+        Tile t = unit.tileOn();
+        Puddle p;
+        if(t != null && (p = Puddles.get(t)) != null && p.liquid == SglLiquids.phase_FEX_liquid && Mathf.chanceDelta(0.02f)){
+          for(int i = 0; i < 3; i++){
+            float len = Mathf.random(1f, 7f);
+            float a = Mathf.range(360f);
+            crushCrystal.create(
+                null,
+                Team.derelict,
+                unit.x + Angles.trnsx(a, len),
+                unit.y + Angles.trnsy(a, len),
+                a,
+                Mathf.random(0.2f, 1),
+                Mathf.random(0.6f, 1)
+            );
+          }
+        }
+      }
+    };
   }
 
   static {
@@ -327,6 +367,7 @@ public class OtherContents implements ContentList{
               bullet.aimX = Tmp.v1.x;
               bullet.aimY = Tmp.v1.y;
             }
+
             if (u.hasEffect(emp_damaged)){
               float rot = Mathf.random(-45, 45);
               bullet.rotation(bullet.rotation() + rot);
@@ -346,9 +387,15 @@ public class OtherContents implements ContentList{
             if(health[0] != unit.health){
               if(health[0] - 6 > unit.health){
                 float damageBase = health[0] - unit.health;
+
+                //locking
                 if(Mathf.chance(0.1f + str/100)){
                   unit.damage(damageBase*12*str/100f, false);
                 }
+
+                //crystallize
+                unit.damage(damageBase*0.35f);
+
               }
               health[0] = unit.health;
             }

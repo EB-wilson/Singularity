@@ -51,7 +51,7 @@ public class SglFx{
     });
   }),
 
-  shootRecoilWave = new Effect(30, e -> {
+  shootRecoilWave = new Effect(40, e -> {
     Draw.color(e.color);
     for(int i : signs){
       Drawf.tri(e.x, e.y, 15f * e.fout(), 50f, e.rotation + 40f*i);
@@ -359,6 +359,13 @@ public class SglFx{
     Drawf.tri(e.x + dx, e.y + dy, 8f*fout, 8f*fout, rot + 180);
   }),
 
+  trailLine = new Effect(24, e -> {
+    color(e.color);
+
+    Drawf.tri(e.x, e.y, 2f*e.fout(), 2 + 6*e.fout(), e.rotation);
+    Drawf.tri(e.x, e.y, 2f*e.fout(), 8 + 10*e.fout(), e.rotation + 180);
+  }),
+
   spreadSparkLarge = new Effect(28, e -> {
     color(Color.white, e.color, e.fin());
     stroke(e.fout()*1.2f + 0.5f);
@@ -450,12 +457,32 @@ public class SglFx{
     });
   }),
 
-  iceParticleSpread = new Effect(125, e -> {
+  particleSpread = new Effect(125, e -> {
     Draw.color(e.color);
 
     randLenVectors(e.id, 3, 32, (x, y) -> {
       Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), 0.9f*e.fout(Interp.pow2Out));
     });
+  }),
+
+  movingCrystalFrag = new Effect(45, e -> {
+    float size = randomSeed(e.id, 4, 6)*e.fout();
+    Draw.color(e.color);
+    randLenVectors(e.id, 1, 3, 6, e.rotation, 20, (x, y) -> {
+      SglDraw.drawDiamond(e.x + x*e.fin(Interp.pow2Out), e.y + y*e.fin(Interp.pow2Out), size*2.5f, size, Angles.angle(x, y));
+    });
+  }),
+
+  crystalFrag = new Effect(26, e -> {
+    float size = randomSeed(e.id, 2, 4)*e.fout();
+    Draw.color(e.color);
+    SglDraw.drawDiamond(e.x, e.y, size*2.5f, size, Mathf.randomSeed(e.id, 0f, 360f));
+  }),
+
+  crystalFragFex = new Effect(26, e -> {
+    float size = randomSeed(e.id, 2, 4)*e.fout();
+    Draw.color(SglDrawConst.fexCrystal, 0.7f);
+    SglDraw.drawDiamond(e.x, e.y, size*2.5f, size, Mathf.randomSeed(e.id, 0f, 360f));
   }),
 
   iceCrystal = new Effect(120, e -> {
@@ -468,6 +495,19 @@ public class SglFx{
       SglDraw.drawDiamond(ec.x + blingX, ec.y + blingY, 85*ec.fslope(), 1.2f*ec.fslope(),
           randomSeed(ec.id + 2, 360) + randomSeed(ec.id + 3, -15, 15)*ec.fin());
     });
+  }),
+
+  shootRail = new Effect(60, e -> {
+    e.scaled(12f, b -> {
+      Lines.stroke(b.fout()*4f + 0.2f, e.color);
+      Lines.circle(b.x, b.y, b.fin()*70f);
+      Lines.stroke(b.fout()*2.3f + 0.15f);
+      Lines.circle(b.x, b.y, b.fin()*62f);
+    });
+
+    float lerp = e.fout(Interp.pow2Out);
+    Draw.color(e.color);
+    SglDraw.drawLightEdge(e.x, e.y, 64 + 64*lerp, 10*lerp, 60 + 80*lerp, 6*lerp, e.rotation + 90);
   }),
 
   winterShooting = new Effect(60, e -> {
@@ -694,6 +734,15 @@ public class SglFx{
       Lines.stroke(b.cellSize/2*e.fout());
 
       Lines.square(e.x, e.y, b.gridSize*2*e.fin(Interp.pow2Out), e.rotation);
+    }
+  }),
+
+  lightningCont = new Effect(200, e -> {
+    if(e.data instanceof LightningContainer cont){
+      cont.update();
+
+      Draw.color(e.color);
+      cont.draw(e.x, e.y);
     }
   });
 

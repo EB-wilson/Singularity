@@ -205,7 +205,7 @@ public class DistributeBlocks implements ContentList{
       size = 2;
     }};
 
-    io_point = new IOPointBlock("io_point"){{
+    io_point = new GenericIOPoint("io_point"){{
       requirements(SglCategory.matrix, ItemStack.with(
           SglItems.matrix_alloy, 6,
           SglItems.strengthening_alloy, 10,

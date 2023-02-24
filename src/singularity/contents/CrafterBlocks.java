@@ -334,6 +334,16 @@ public class CrafterBlocks implements ContentList{
       ));
       newProduce();
       produce.item(Items.sporePod, 3);
+
+      newConsume();
+      consume.time(45);
+      consume.power(2.2f);
+      consume.liquids(UncLiquidStack.with(
+          SglLiquids.purified_water, 0.3f,
+          SglLiquids.spore_cloud, 0.08f
+      ));
+      newProduce();
+      produce.item(Items.sporePod, 3);
       
       setAttrBooster(Attribute.spores, 0.86f);
       setAttrBooster(Attribute.heat, 1.8f, 3f);
