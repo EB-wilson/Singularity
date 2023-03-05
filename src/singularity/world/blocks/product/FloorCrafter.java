@@ -53,12 +53,6 @@ public class FloorCrafter extends BoosterCrafter{
     return c > 0 && eff > 0;
   }
 
-  @Override
-  public void setBars() {
-    super.setBars();
-    removeBar("efficiency");
-  }
-
   @Annotations.ImplEntries
   public class FloorCrafterBuild extends BoosterCrafterBuild implements FloorCrafterBuildComp {
     @Override

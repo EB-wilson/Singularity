@@ -4,7 +4,7 @@
 //This is the configuration file of the singularity mod. You can see most of the configuration items in the configuration UI page.
 //Configurations that are not usually used, such as debugging options, need to be adjusted in this file.
 {
-  "configVersion": 4,
+  "configVersion": 5,
 
   //=====Basic/基础设置=====//
   //--main menu/主菜单设置--
@@ -29,6 +29,8 @@
   "movementCamera": true,
 
   //--target info/局内目标信息设置--
+  //信息显示器开关
+  "showInfos": true,
   //目标显示刷新间隔（单位：刻）
   "flushInterval": 1,
   //最大同时显示的目标数量
@@ -46,9 +48,24 @@
   //显示时长
   "showStatusTime": true,
 
+  //===Graphic/图形设置===//
+  "animateLevel": 3,
+  //启用模组着色器
+  "enableShaders": true,
+  //启用扭曲着色器
+  "enableDistortion": true,
+  //启用粒子效果，禁用此项后将不会产生仅作用于画面效果的粒子
+  "enableParticle": true,
+  //最多同时存在的粒子数目
+  "maxParticleCount": 1024,
+  //启用特效闪电，禁用此项后将不会产生没有实际功能的闪电
+  "enableLightning": true,
+
   //===Adavanced/高级设置===//
-  //是否要可以覆盖游戏本身的内容
+  //是否覆盖游戏本身的程序性机制
   "modReciprocal": true,//警告：若禁用此选项会造成各种问题，您将不能获得完整的游戏流程
+  //是否使用mod覆盖原版的部分特定内容，如方块/单位数据，功能，以及方块造价等
+  "modReciprocalContent": true,//警告：若禁用此选项会造成各种问题，您将不能获得完整的游戏流程
 
   //=====Debug/调试设置=====//
   //加载信息打印到日志

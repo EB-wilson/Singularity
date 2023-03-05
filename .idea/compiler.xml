@@ -5,7 +5,7 @@
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/UniverseCore/annotations/1.6.5/annotations-1.6.5.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/UniverseCore/annotations/1.7.0/annotations-1.7.0.jar" />
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.Anuken/jabel/0.7.0/e35e17810a0cd3a29df3bdc5d8fd531dc4832d2e/jabel-0.7.0.jar" />
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy/1.12.7/e2a08a3fae74979ee76a8dd67cfd37958874e0fb/byte-buddy-1.12.7.jar" />
           <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy-agent/1.12.7/8b23f1a6afed2b787102a3625c1cfddc56b17a73/byte-buddy-agent-1.12.7.jar" />

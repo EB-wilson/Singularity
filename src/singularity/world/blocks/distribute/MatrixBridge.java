@@ -34,6 +34,7 @@ import mindustry.type.Liquid;
 import mindustry.world.Tile;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
+import singularity.Sgl;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
@@ -368,6 +369,8 @@ public class MatrixBridge extends DistNetBlock{
 
       float scl = (Vars.renderer.getScale() - Vars.renderer.minZoom)/(Vars.renderer.maxZoom - Vars.renderer.minZoom);
 
+      if(Sgl.config.animateLevel < 3) return;
+
       if(linkNext != null){
         if(rand.nextFloat() <= 0.05f*linkNextLerp*netEfficiency*Time.delta*scl){
           makeEff(x, y, linkNext.x, linkNext.y);
@@ -577,6 +580,8 @@ public class MatrixBridge extends DistNetBlock{
     }
 
     public void drawEffect(){
+      if(Sgl.config.animateLevel < 3) return;
+
       Draw.z(Layer.effect);
       for(EffTask eff: drawEffs){
         eff.draw();

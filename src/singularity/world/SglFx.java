@@ -22,9 +22,11 @@ import mindustry.entities.effect.MultiEffect;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
+import singularity.Sgl;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.blocks.defence.GameOfLife;
+import singularity.world.blocks.product.NormalCrafter;
 import universecore.math.Functions;
 import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.RandomGenerator;
@@ -37,8 +39,6 @@ import static arc.math.Angles.*;
 import static arc.math.Mathf.*;
 
 public class SglFx{
-  private final static int bloomID1 = SglDraw.nextTaskID(), bloomID2 = SglDraw.nextTaskID(), bloomID3 = SglDraw.nextTaskID();
-
   public final static Effect gasLeak = new Effect(90, e -> {
     if(!(e.data() instanceof Number)) return;
     float param = ((Number) e.data()).floatValue();
@@ -203,6 +203,19 @@ public class SglFx{
     Draw.color(e.color);
     for(int i: signs){
       SglDraw.drawDiamond(e.x, e.y, 32 + 128*e.fin(Interp.pow3Out), 12*e.fout(Interp.pow3Out), e.rotation + 45 + i*45);
+    }
+  }),
+
+  ploymerGravityField = new Effect(32, e -> {
+    Draw.color(e.color);
+    if(e.data instanceof NormalCrafter.NormalCrafterBuild b){
+      float fout = e.fout();
+      float x = e.x, y = e.y, r = e.rotation;
+
+      SglDraw.drawBloomUponFlyUnit(b, bu -> {
+        Lines.stroke(2.6f*bu.workEfficiency()*fout);
+        Lines.circle(x, y, r*fout);
+      });
     }
   }),
 
@@ -439,7 +452,7 @@ public class SglFx{
     float lerp = e.fin(Interp.pow3Out);
     int id = e.id;
 
-    SglDraw.drawBloom(bloomID1, b -> {
+    SglDraw.drawBloomUponFlyUnit(null, n -> {
       Draw.color(SglDrawConst.winter);
       SglDraw.drawLightEdge(x, y, l, w, l, w);
       Lines.stroke(5f* fout);
@@ -558,6 +571,8 @@ public class SglFx{
 
     @Override
     public LightningContainer createLightning(float x, float y){
+      if(!Sgl.config.enableLightning) return null;
+
       if(!(data instanceof Float)) data = 90f;
       LightningContainer.PoolLightningContainer lightning = LightningContainer.PoolLightningContainer.create(generator, lifetime, 1.4f, 2.5f);
 
@@ -605,6 +620,8 @@ public class SglFx{
     }
 
     public LightningContainer createLightning(float x, float y){
+      if(!Sgl.config.enableLightning) return null;
+
       LightningContainer.PoolLightningContainer lightning = LightningContainer.PoolLightningContainer.create(generator, lifetime, 1.5f,2.6f);
 
       lightning.lerp = f -> 1 - f*f;
@@ -762,7 +779,7 @@ public class SglFx{
 
       float x = e.x, y = e.y;
       int id = e.id;
-      SglDraw.DrawAcceptor<Bloom> draw = b -> {
+      SglDraw.DrawAcceptor<Bloom> draw = n -> {
         Draw.color(e.color);
         SglDraw.drawLightEdge(x, y, l, w, l, w);
         Lines.stroke(size*0.08f* fout);
@@ -778,7 +795,7 @@ public class SglFx{
 
       if(heightBloom){
         Draw.z(Layer.flyingUnit + 1);
-        SglDraw.drawBloom(bloomID1, draw);
+        SglDraw.drawBloomUponFlyUnit(null, draw);
       }
       else draw.draw(null);
 

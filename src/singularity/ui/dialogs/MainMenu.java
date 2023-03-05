@@ -8,6 +8,7 @@ import arc.graphics.g2d.Fill;
 import arc.scene.Element;
 import arc.scene.style.Drawable;
 import arc.scene.ui.Label;
+import arc.scene.ui.layout.Scl;
 import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.content.Liquids;
@@ -22,18 +23,23 @@ import singularity.ui.SglStyles;
 public class MainMenu extends BaseDialog {
   protected boolean launch = true;
   private static final Runnable lookForward = () -> Vars.ui.showInfo(Core.bundle.get("mod.lookForward"));
-  
+
+  //Sgl.ui.publicInfo.show();
   ButtonEntry[] buttonEntries = new ButtonEntry[]{
       new ButtonEntry(SglDrawConst.startIcon,
           () -> Core.bundle.get(launch? "misc.startGame": "misc.backToGame"),
           () -> Color.white, () -> {hide(); launch = false;
       }),
       new ButtonEntry(SglDrawConst.databaseIcon, Core.bundle.get("misc.modDatabase"), Pal.accent, lookForward),
-      new ButtonEntry(SglDrawConst.configureIcon, Core.bundle.get("misc.modConfigure"), Color.lightGray, lookForward),
+      new ButtonEntry(SglDrawConst.configureIcon, Core.bundle.get("misc.modConfigure"), Color.lightGray, () -> {
+        Sgl.ui.config.show();
+      }),
       new ButtonEntry(SglDrawConst.publicInfoIcon, () -> Core.bundle.get("misc.publicInfo"), () -> Liquids.cryofluid.color, () -> {
         Sgl.ui.publicInfo.show();
       }),
-      new ButtonEntry(SglDrawConst.aboutIcon, Core.bundle.get("misc.aboutMod"), Color.violet, () -> Sgl.ui.aboutDialog.show()),
+      new ButtonEntry(SglDrawConst.aboutIcon, Core.bundle.get("misc.aboutMod"), Color.violet, () -> {
+        Sgl.ui.aboutDialog.show();
+      }),
       new ButtonEntry(SglDrawConst.contributeIcon, Core.bundle.get("misc.contribute"), Color.yellow, lookForward),
   };
   
@@ -68,7 +74,7 @@ public class MainMenu extends BaseDialog {
               public void draw(){
                 Draw.color(Tmp.c1.set(entry.color.get()).lerp(Color.black, 0.3f));
                 Draw.alpha(parentAlpha);
-                Fill.square(x + width/2, y + height/2 - 6, width/8, 45);
+                Fill.square(x + width/2, y + height/2 - Scl.scl(6), width/8, 45);
                 Draw.color(entry.color.get());
                 Draw.alpha(parentAlpha);
                 Fill.square(x + width/2, y + height/2, width/8, 45);

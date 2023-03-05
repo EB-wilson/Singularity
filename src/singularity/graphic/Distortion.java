@@ -2,15 +2,23 @@ package singularity.graphic;
 
 import arc.Core;
 import arc.Events;
+import arc.func.Cons;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.gl.FrameBuffer;
 import arc.graphics.gl.Shader;
+import arc.struct.ObjectMap;
+import arc.struct.Seq;
 import arc.util.Disposable;
 import mindustry.game.EventType;
 import singularity.Singularity;
+import universecore.util.Empties;
+import universecore.util.handler.FieldHandler;
+
+import java.lang.reflect.Field;
+import java.util.Iterator;
 
 import static singularity.graphic.SglDraw.*;
 
@@ -23,12 +31,14 @@ public class Distortion implements Disposable {
 
   final float sampleEndLayer;
 
+  final Runnable r;
+
   public Distortion(float sampleMin, float sampleMax){
     init();
 
     sampleEndLayer = sampleMax;
 
-    Events.run(EventType.Trigger.draw, () -> {
+    Events.run(EventType.Trigger.draw, r = () -> {
       Draw.draw(sampleMin, this::startSampling);
       Draw.draw(sampleMax, this::endSampling);
     });
@@ -116,8 +126,20 @@ public class Distortion implements Disposable {
     buffer.dispose();
     samplerBuffer.dispose();
     distortion.dispose();
-
     disposed = true;
+
+    ObjectMap<Object, Seq<Cons<?>>> map = FieldHandler.getValueDefault(Events.class, "events");
+    Iterator<Cons<?>> itr = map.get(EventType.Trigger.draw, Empties.nilSeq()).iterator();
+    if(!itr.hasNext()) return;
+    a: for(Cons<?> c = itr.next(); itr.hasNext(); c = itr.next()){
+      for(Field field: c.getClass().getDeclaredFields()){
+        if(FieldHandler.getValueDefault(c, field.getName()) == r){
+          itr.remove();
+          break a;
+        }
+      }
+    }
+
   }
 
   @Override
@@ -126,16 +148,20 @@ public class Distortion implements Disposable {
   }
 
   public static void drawVoidDistortion(float x, float y, float radius, float len){
-    drawVoidDistortion(x, y, radius, len, Lines.circleVertices(radius));
+    drawVoidDistortion(x, y, radius, len, true, Lines.circleVertices(radius));
   }
 
-  public static void drawVoidDistortion(float x, float y, float radius, float len, int sides){
+  public static void drawVoidDistortion(float x, float y, float radius, float len, boolean inside){
+    drawVoidDistortion(x, y, radius, len, inside, Lines.circleVertices(radius));
+  }
+
+  public static void drawVoidDistortion(float x, float y, float radius, float len, boolean inside, int sides){
     v1.set(radius, 0);
     v2.set(radius, 0);
     v3.set(radius + len, 0);
     v4.set(radius + len, 0);
-    v5.set(-1, 0);
-    v6.set(-1, 0);
+    v5.set(inside? -1: 1, 0);
+    v6.set(inside? -1: 1, 0);
 
     float step = 360f/sides;
     for (int i = 0; i < sides; i++){
@@ -146,10 +172,10 @@ public class Distortion implements Disposable {
       v5.setAngle(step*i);
       v6.setAngle(step*(i+1));
 
-      float cf1 = c1.set((v5.x + 1)/2, (v5.y + 1)/2, 1, 1).toFloatBits();
-      float cf2 = c1.set((v6.x + 1)/2, (v6.y + 1)/2, 1, 1).toFloatBits();
-      float cf3 = c1.set((v5.x + 1)/2, (v5.y + 1)/2, 0, 0).toFloatBits();
-      float cf4 = c1.set((v6.x + 1)/2, (v6.y + 1)/2, 0, 0).toFloatBits();
+      float cf1 = c1.set((v5.x + 1)/2, (v5.y + 1)/2, inside? 1: 0, inside? 1: 0).toFloatBits();
+      float cf2 = c1.set((v6.x + 1)/2, (v6.y + 1)/2, inside? 1: 0, inside? 1: 0).toFloatBits();
+      float cf3 = c1.set((v5.x + 1)/2, (v5.y + 1)/2, inside? 0: 1, inside? 0: 1).toFloatBits();
+      float cf4 = c1.set((v6.x + 1)/2, (v6.y + 1)/2, inside? 0: 1, inside? 0: 1).toFloatBits();
 
       Fill.quad(
           x + v1.x, y + v1.y, cf1,

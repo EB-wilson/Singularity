@@ -7,6 +7,7 @@ import mindustry.content.Fx;
 import mindustry.entities.bullet.BulletType;
 import mindustry.gen.Bullet;
 import mindustry.graphics.Trail;
+import singularity.Sgl;
 import singularity.graphic.SglDraw;
 
 public class MultiTrailBulletType extends BulletType{
@@ -19,6 +20,9 @@ public class MultiTrailBulletType extends BulletType{
   @Override
   public void init(Bullet b){
     super.init(b);
+
+    if(Sgl.config.animateLevel < 3) return;
+
     Trail[] sub = new Trail[subTrails];
     b.data = sub;
 

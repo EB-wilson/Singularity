@@ -1,6 +1,7 @@
 package singularity.world.blocks.distribute.matrixGrid;
 
 import arc.Core;
+import arc.func.Cons;
 import arc.math.geom.Point2;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntMap;
@@ -12,7 +13,6 @@ import arc.util.io.Writes;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.ctype.ContentType;
-import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.type.Item;
@@ -136,21 +136,12 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   }
 
   @Override
-  public void onPlanRotate(BuildPlan plan, int direction) {
-    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof MatrixGridBuild.PosCfgPair posPair){
-      posPair.rotate(this, direction);
-
-      plan.config = posPair.pack();
+  public Object pointConfig(Object config, Cons<Point2> transformer){
+    if(config instanceof byte[] b && DataPackable.readObject(b) instanceof MatrixGridBuild.PosCfgPair cfg){
+      cfg.handleConfig(transformer);
+      return cfg.pack();
     }
-  }
-
-  @Override
-  public void onPlanFilp(BuildPlan plan, boolean x) {
-    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof MatrixGridBuild.PosCfgPair posPair){
-      posPair.flip(this, x);
-
-      plan.config = posPair.pack();
-    }
+    return config;
   }
 
   @SuppressWarnings("rawtypes")
@@ -464,16 +455,14 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
         configs.clear();
       }
 
-      public void rotate(Block block, int direction) {
-        for (TargetConfigure cfg : configs.values()) {
-          cfg.rotateDir(block, direction);
+      public void handleConfig(Cons<Point2> handler){
+        IntMap<TargetConfigure> c = new IntMap<>();
+        for(IntMap.Entry<TargetConfigure> entry: configs){
+          entry.value.configHandle(handler);
+          c.put(entry.value.offsetPos, entry.value);
         }
-      }
 
-      public void flip(Block block, boolean x) {
-        for (TargetConfigure cfg : configs.values()) {
-          cfg.flip(block, x);
-        }
+        configs = c;
       }
     }
   }

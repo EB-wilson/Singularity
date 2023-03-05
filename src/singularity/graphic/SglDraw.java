@@ -1,6 +1,7 @@
 package singularity.graphic;
 
 import arc.Core;
+import arc.Events;
 import arc.graphics.Color;
 import arc.graphics.g2d.*;
 import arc.graphics.gl.FrameBuffer;
@@ -13,15 +14,19 @@ import arc.math.geom.Vec3;
 import arc.struct.IntMap;
 import arc.util.Nullable;
 import arc.util.Tmp;
+import mindustry.game.EventType;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
+import singularity.Sgl;
 import singularity.util.func.Floatc3;
+import universecore.world.particles.Particle;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static arc.Core.settings;
 
+@SuppressWarnings("unchecked")
 public class SglDraw{
   private static final Rect rect = new Rect();
 
@@ -47,6 +52,12 @@ public class SglDraw{
   public static final int sharedUnderBlockBloomID = nextTaskID();
   public static final int sharedUponFlyUnitBloomID = nextTaskID();
 
+  static {
+    Events.run(EventType.Trigger.draw, () -> {
+      Particle.maxAmount = Sgl.config.enableParticle? Sgl.config.maxParticleCount: 0;
+    });
+  }
+
   public static void removeTaskCache(int id){
     drawTasks.remove(id);
     taskBuffer.remove(id);
@@ -55,8 +66,7 @@ public class SglDraw{
   /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
    *
    * @param taskId 任务的标识ID，用于区分任务缓存
-   * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
-   *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
+   * @param target 传递给绘制任务的数据目标，这是为了优化lambda的内存而添加的，避免产生大量闭包的lambda实例造成不必要的内存占用
    * @param drawFirst <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在执行前要进行的操作
    * @param drawLast <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在完成主绘制后要执行的操作
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
@@ -75,8 +85,7 @@ public class SglDraw{
   /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
    *
    * @param taskId 任务的标识ID，用于区分任务缓存
-   * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
-   *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
+   * @param target 递给绘制任务的数据目标，这是为了优化lambda的内存而添加的，避免产生大量闭包的lambda实例造成不必要的内存占用
    * @param drawFirst <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在执行前要进行的操作
    * @param drawLast <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在完成主绘制后要执行的操作
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
@@ -87,11 +96,15 @@ public class SglDraw{
   /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
    *
    * @param taskID 任务的标识id，用于区分任务缓存
-   * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
-   *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
+   * @param target 递给绘制任务的数据目标，这是为了优化lambda的内存而添加的，避免产生大量闭包的lambda实例造成不必要的内存占用
    * @param shader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，在这组任务绘制时使用的着色器
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
   public static <T, S extends Shader> void drawTask(int taskID, T target, S shader, DrawAcceptor<T> draw){
+    if(!Sgl.config.enableShaders){
+      draw.draw(target);
+      return;
+    }
+
     drawTask(taskID, target, shader, e -> {
       FrameBuffer buffer = taskBuffer.get(taskID, FrameBuffer::new);
       buffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
@@ -106,12 +119,16 @@ public class SglDraw{
   /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
    *
    * @param taskID 任务的标识id，用于区分任务缓存
-   * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
-   *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
+   * @param target 递给绘制任务的数据目标，这是为了优化lambda的内存而添加的，避免产生大量闭包的lambda实例造成不必要的内存占用
    * @param shader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，在这组任务绘制时使用的着色器
    * @param applyShader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，绘制前对着色器进行的操作
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
   public static <T, S extends Shader> void drawTask(int taskID, T target, S shader, DrawAcceptor<S> applyShader, DrawAcceptor<T> draw){
+    if(!Sgl.config.enableShaders){
+      draw.draw(target);
+      return;
+    }
+
     drawTask(taskID, target, shader, e -> {
       FrameBuffer buffer = taskBuffer.get(taskID, FrameBuffer::new);
       buffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
@@ -127,18 +144,17 @@ public class SglDraw{
   /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
    * <p><strong>如果这个方法的调用频率非常高，同时描述绘制行为的lambda表达式需要访问局部变量，那么为了优化堆占用，请使用{@link SglDraw#drawTask(int, Object, Shader, DrawAcceptor)}</strong>
    *
-   * @param taskID 任务的标识名称，用于区分任务缓存
+   * @param taskID 任务的标识ID，用于区分任务缓存
    * @param shader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，在这组任务绘制时使用的着色器
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
-  public static void drawTask(int taskID, Shader shader, Runnable draw){
-    drawTask(taskID, null, shader, e -> draw.run());
+  public static void drawTask(int taskID, Shader shader, DrawDef draw){
+    drawTask(taskID, null, shader, draw);
   }
 
   /**发布缓存的任务并在首次发布时的z轴时进行绘制
    *
-   * @param taskID 任务的标识名称，用于区分任务缓存
-   * @param target 传递给绘制任务的数据目标，这是为了优化lambda，传递给lambda的数据对象请使用复用对象
-   *               <p>避免从描述绘制任务的lambda表达式访问表达式之外的局部变量，这会产生大量的一次性对象，产生不必要的堆占用引起频繁GC影响性能
+   * @param taskID 任务的标识ID，用于区分任务缓存
+   * @param target 递给绘制任务的数据目标，这是为了优化lambda的内存而添加的，避免产生大量闭包的lambda实例造成不必要的内存占用
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
   public static <T> void drawTask(int taskID, T target, DrawAcceptor<T> draw){
     DrawTask task = drawTasks.get(taskID, DrawTask::new);
@@ -152,24 +168,22 @@ public class SglDraw{
   /**发布缓存的任务并在首次发布时的z轴时进行绘制
    * <p><strong>如果这个方法的调用频率非常高，同时描述绘制行为的lambda表达式需要访问局部变量，那么为了优化堆占用，请使用{@link SglDraw#drawTask(int, Object, DrawAcceptor)}</strong>
    *
-   * @param taskID 任务的标识名称，用于区分任务缓存
+   * @param taskID 任务的标识ID，用于区分任务缓存
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
-  public static void drawTask(int taskID, Runnable draw){
+  public static void drawTask(int taskID, DrawDef draw){
     DrawTask task = drawTasks.get(taskID, DrawTask::new);
     if (!task.init){
       Draw.draw(Draw.z(), task::flush);
       task.init = true;
     }
-    task.addTask(null, e -> draw.run());
+    task.addTask(null, draw);
   }
 
-  public static <T> void drawDistortion(int taskID, T target, Distortion distortion, DrawAcceptor<T> draw){
-    drawTask(taskID, target, distortion, e -> {
-      e.resize();
-      e.capture();
-    }, Distortion::render, draw);
-  }
-
+  /**发布一个泛光绘制任务，基于{@link SglDraw#drawTask(int, Object, DrawAcceptor, DrawAcceptor, DrawAcceptor)}实现
+   * 
+   * @param taskID 任务的标识ID，用于区分任务缓存
+   * @param obj 传递给绘制任务的数据对象
+   * @param draw 绘制任务*/
   public static <T> void drawBloom(int taskID, T obj, DrawAcceptor<T> draw){
     if (!settings.getBool("bloom", false)){
       draw.draw(obj);
@@ -185,6 +199,12 @@ public class SglDraw{
     }, Bloom::render, draw);
   }
 
+  /**@see SglDraw#drawBloom(int, Object, DrawAcceptor) */
+  public static void drawBloom(int taskID, DrawDef draw){
+    drawBloom(taskID, (DrawAcceptor<Bloom>) draw);
+  }
+
+  /**@see SglDraw#drawBloom(int, Object, DrawAcceptor) */
   public static void drawBloom(int taskID, DrawAcceptor<Bloom> draw){
     Bloom bloom = blooms.get(taskID, () -> new Bloom(true));
     if (!settings.getBool("bloom", false)){
@@ -200,6 +220,16 @@ public class SglDraw{
     }, Bloom::render, draw);
   }
 
+  /**@see SglDraw#drawBloomUnderBlock(Object, DrawAcceptor)*/
+  public static void drawBloomUnderBlock(DrawDef draw){
+    drawBloomUnderBlock(null, (DrawAcceptor<? extends Object>) draw);
+  }
+
+  /**在共享的泛光绘制组中发布一个泛光绘制任务，绘制的层位于方块下方（{@link Layer#block}-1, 29）
+   * <p>关于泛光绘制任务，请参阅{@link SglDraw#drawBloom(int, Object, DrawAcceptor)}
+   *
+   * @param target 传递给绘制任务的数据对象
+   * @param draw 绘制任务*/
   public static <T> void drawBloomUnderBlock(T target, DrawAcceptor<T> draw){
     float z = Draw.z();
     Draw.z(Layer.block + 1);
@@ -207,11 +237,38 @@ public class SglDraw{
     Draw.z(z);
   }
 
+  /**@see SglDraw#drawBloomUponFlyUnit(Object, DrawAcceptor)*/
+  public static void drawBloomUponFlyUnit(DrawDef draw){
+    drawBloomUponFlyUnit(null, draw);
+  }
+
+  /**在共享的泛光绘制组中发布一个泛光绘制任务，绘制的层位于方块下方（{@link Layer#flyingUnit}+1, 116）
+   * <p>关于泛光绘制任务，请参阅{@link SglDraw#drawBloom(int, Object, DrawAcceptor)}
+   *
+   * @param target 传递给绘制任务的数据对象
+   * @param draw 绘制任务*/
   public static <T> void drawBloomUponFlyUnit(T target, DrawAcceptor<T> draw){
     float z = Draw.z();
     Draw.z(Layer.flyingUnit + 1);
-    drawBloom(sharedUnderBlockBloomID, target, draw);
+    drawBloom(sharedUponFlyUnitBloomID, target, draw);
     Draw.z(z);
+  }
+
+  /**发布一个扭曲绘制任务，基于{@link SglDraw#drawTask(int, Object, DrawAcceptor, DrawAcceptor, DrawAcceptor)}实现
+   *
+   * @param taskID 任务的标识ID，用于区分任务缓存
+   * @param target 传递给绘制任务的数据对象
+   * @param distortion 扭曲绘制工具
+   * @param draw 绘制任务*/
+  public static <T> void drawDistortion(int taskID, T target, Distortion distortion, DrawAcceptor<T> draw){
+    if(!Sgl.config.enableDistortion){
+      return;
+    }
+
+    drawTask(taskID, target, distortion, e -> {
+      e.resize();
+      e.capture();
+    }, Distortion::render, draw);
   }
 
   public static void drawTransform(float originX, float originY, Vec2 vec, float rotate, Floatc3 draw){
@@ -753,10 +810,21 @@ public class SglDraw{
       taskCounter = 0;
       init = false;
       if (defaultLastTask != null) ((DrawAcceptor)defaultLastTask).draw(defaultTarget);
+
     }
   }
 
   public interface DrawAcceptor<T>{
     void draw(T accept);
+  }
+
+  @SuppressWarnings("rawtypes")
+  public interface DrawDef extends DrawAcceptor{
+    @Override
+    default void draw(Object accept){
+      draw();
+    }
+
+    void draw();
   }
 }

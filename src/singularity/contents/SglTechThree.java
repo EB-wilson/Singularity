@@ -160,6 +160,10 @@ public class SglTechThree implements ContentList{
 
       node(duo, spring, spring -> {});
 
+      node(salvo, flash, flash -> {});
+
+      node(cyclone, mirage, mirage -> {});
+
       node(meltdown, summer, summer -> {});
 
       node(foreshadow, thunder, thunder -> {});

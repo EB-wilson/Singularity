@@ -967,6 +967,8 @@ public class SglTurrets implements ContentList{
 
       int timeId = timers++;
       updating = e -> {
+        if(!Sgl.config.enableLightning || Sgl.config.animateLevel < 3) return;
+
         e.<LightningContainer>getVar("lightningContainer").update();
         SglTurretBuild turret = (SglTurretBuild) e;
         if(turret.warmup > 0 && e.timer(timeId, 25/turret.warmup)){
@@ -1078,6 +1080,8 @@ public class SglTurrets implements ContentList{
           new DrawBlock(){
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 3) return;
+
               SglTurretBuild turret = (SglTurretBuild) build;
               Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);
@@ -1487,7 +1491,7 @@ public class SglTurrets implements ContentList{
       }, (s, b) -> {
         s.add(Core.bundle.get("misc.toTeam") + " " + OtherContents.spring_coming.emoji()
             + "[stat]" + OtherContents.spring_coming.localizedName + "[lightgray] ~ [stat]0.5[lightgray] " + Core.bundle.get("unit.seconds") + "[]"
-            + "\n" + Core.bundle.get("misc.toEnemy") + " " + OtherContents.wild_growth.emoji()
+            + Sgl.NL + Core.bundle.get("misc.toEnemy") + " " + OtherContents.wild_growth.emoji()
             + "[stat]" + OtherContents.wild_growth.localizedName + "[lightgray] ~ [stat]0.2[lightgray] " + Core.bundle.get("unit.seconds") + "[]"
         );
       });
@@ -1534,6 +1538,8 @@ public class SglTurrets implements ContentList{
             progress = PartProgress.warmup;
             layer = Layer.effect;
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 2) return;
+
               Draw.color(Pal.heal);
               Drawf.tri(x, y, 4*p, 6 + 10*p, r);
               Drawf.tri(x, y, 4*p, 4*p, r + 180);
@@ -1555,6 +1561,8 @@ public class SglTurrets implements ContentList{
             progress = PartProgress.warmup;
             layer = Layer.effect;
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 2) return;
+
               Draw.color(Pal.heal);
               Drawf.tri(x, y, 6*p, 8 + 12*p, r);
               Drawf.tri(x, y, 6*p, 6*p, r + 180);
@@ -1576,6 +1584,8 @@ public class SglTurrets implements ContentList{
             progress = PartProgress.warmup;
             layer = Layer.effect;
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 2) return;
+
               Draw.color(Pal.heal);
               Drawf.tri(x, y, 8*p, 8 + 16*p, r);
               Drawf.tri(x, y, 8*p, 8*p, r + 180);
@@ -1700,6 +1710,8 @@ public class SglTurrets implements ContentList{
             y = 4;
             progress = PartProgress.warmup;
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 2) return;
+
               SglDraw.gradientTri(x, y, 40 + 260*p, 60*p, r, SglDrawConst.frost, 0);
               SglDraw.gradientTri(x, y, 40*p, 60*p, r + 180, SglDrawConst.frost, 0);
             };
@@ -1716,6 +1728,8 @@ public class SglTurrets implements ContentList{
 
             layer = Layer.effect;
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 3) return;
+
               SglDraw.gradientTri(x, y, 8 + 32*p, 6*p, r, SglDrawConst.frost, 0);
               SglDraw.drawDiamond(x, y, 8 + 16*p, 6*p, r, SglDrawConst.frost);
             };
@@ -1731,6 +1745,8 @@ public class SglTurrets implements ContentList{
 
             layer = Layer.effect;
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 3) return;
+
               SglDraw.gradientTri(x, y, 12 + 36*p, 6*p, r, SglDrawConst.frost, 0);
               SglDraw.drawDiamond(x, y, 12 + 18*p, 6*p, r, SglDrawConst.frost);
             };
@@ -1779,6 +1795,8 @@ public class SglTurrets implements ContentList{
             rotation = 90;
 
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 2) return;
+
               SglDraw.drawDiamond(x, y, 20 + 76*p, 32*p, r, SglDrawConst.frost, 0);
             };
           }}
@@ -1820,7 +1838,7 @@ public class SglTurrets implements ContentList{
 
       newAmmo(new MultiTrailBulletType(){
         {
-          damage = 680;
+          damage = 380;
           speed = 8;
           lifetime = 60;
 
@@ -1903,7 +1921,7 @@ public class SglTurrets implements ContentList{
 
       newAmmo(new MultiTrailBulletType(){
         {
-          damage = 420;
+          damage = 520;
           speed = 6;
           lifetime = 80;
 
@@ -2341,6 +2359,8 @@ public class SglTurrets implements ContentList{
           new CustomPart(){{
             progress = PartProgress.warmup;
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 2) return;
+
               Draw.color(SglDrawConst.winter);
               SglDraw.gradientTri(x, y, 70 + 120*p, 92*p, r, 0);
               SglDraw.gradientTri(x, y, 40 + 68*p, 92*p, r + 180, 0);
@@ -2392,6 +2412,8 @@ public class SglTurrets implements ContentList{
             layer = Layer.effect;
             progress = PartProgress.warmup;
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 3) return;
+
               SglDraw.drawCrystal(x, y, 8 + 8*p, 6*p, 4*p, 0, 0, 0.4f*p,
                   Layer.effect, Layer.bullet - 1, Time.time*1.24f, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
             };
@@ -2405,6 +2427,8 @@ public class SglTurrets implements ContentList{
             layer = Layer.effect;
             progress = PartProgress.warmup.delay(0.15f);
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 3) return;
+
               SglDraw.drawCrystal(x, y, 16 + 21*p, 12*p, 8*p, 0, 0, 0.7f*p,
                   Layer.effect, Layer.bullet - 1, Time.time*1.24f + 45, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
             };
@@ -2418,6 +2442,8 @@ public class SglTurrets implements ContentList{
             layer = Layer.effect;
             progress = PartProgress.warmup.delay(0.3f);
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 3) return;
+
               SglDraw.drawCrystal(x, y, 12 + 14*p, 10*p, 6*p, 0, 0, 0.6f*p,
                   Layer.effect, Layer.bullet - 1, Time.time*1.24f + 90, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
             };
@@ -2431,6 +2457,8 @@ public class SglTurrets implements ContentList{
             layer = Layer.effect;
             progress = PartProgress.warmup.delay(0.45f);
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 3) return;
+
               SglDraw.drawCrystal(x, y, 9 + 12*p, 8*p, 5*p, 0, 0, 0.65f*p,
                   Layer.effect, Layer.bullet - 1, Time.time*1.24f + 135, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
             };
@@ -2440,6 +2468,8 @@ public class SglTurrets implements ContentList{
             y = 4;
             layer = Layer.effect;
             draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 2) return;
+
               Draw.color(SglDrawConst.winter);
               Drawf.tri(x, y, 10*p, 12*p, r);
               Drawf.tri(x, y, 10*p, 8*p, r + 180);

@@ -1,5 +1,6 @@
 package singularity.world.blocks;
 
+import arc.util.Log;
 import arc.util.pooling.Pools;
 import singularity.world.blocks.distribute.TargetConfigure;
 import singularity.world.blocks.distribute.matrixGrid.MatrixGridBlock.MatrixGridBuild.PosCfgPair;
@@ -8,8 +9,13 @@ import universecore.util.DataPackable;
 
 public class BytePackAssign {
   public static void assignAll() {
-    DataPackable.assignType(TargetConfigure.typeID, p -> new TargetConfigure());
-    DataPackable.assignType(LinkPair.typeID, param -> Pools.obtain(LinkPair.class, LinkPair::new));
-    DataPackable.assignType(PosCfgPair.typeID, param -> Pools.obtain(PosCfgPair.class, PosCfgPair::new));
+    try{
+      DataPackable.assignType(TargetConfigure.typeID, param -> new TargetConfigure());
+      DataPackable.assignType(LinkPair.typeID, param -> Pools.obtain(LinkPair.class, LinkPair::new));
+      DataPackable.assignType(PosCfgPair.typeID, param -> Pools.obtain(PosCfgPair.class, PosCfgPair::new));
+    }catch(Throwable e){
+      Log.err("some error happened, may fatal, details: ");
+      Log.err(e);
+    }
   }
 }

@@ -12,10 +12,7 @@ import arc.scene.ui.layout.WidgetGroup;
 import arc.struct.OrderedMap;
 import arc.struct.OrderedSet;
 import arc.struct.Seq;
-import arc.util.Align;
-import arc.util.Strings;
-import arc.util.Time;
-import arc.util.Tmp;
+import arc.util.*;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
@@ -24,10 +21,9 @@ import mindustry.input.Binding;
 import mindustry.ui.Fonts;
 import singularity.Sgl;
 import singularity.graphic.SglDrawConst;
-import singularity.world.components.ExtraVariableComp;
 import universecore.annotations.Annotations;
+import universecore.components.ExtraVariableComp;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -37,7 +33,6 @@ public class EntityInfoFrag{
   public OrderedSet<EntityEntry<?>> alphaQueue = new OrderedSet<>(){{
     orderedItems().ordered = false;
   }};
-  public boolean showTargetInfo = true;
 
   Entityc hold;
   float timer, delta;
@@ -54,7 +49,7 @@ public class EntityInfoFrag{
   @SuppressWarnings({"unchecked", "rawtypes"})
   public void build(WidgetGroup parent){
     parent.fill((x, y, w, h) -> {
-      if (!showTargetInfo){
+      if (!Sgl.config.showInfos){
         alphaQueue.clear();
 
         return;
@@ -120,31 +115,32 @@ public class EntityInfoFrag{
           () -> {
             resizing = !resizing;
             if (!resizing) {
-              try {
-                Sgl.config.save();
-              } catch (IOException e) {
-                throw new RuntimeException(e);
-              }
+              Sgl.config.save();
             }
           },
           () -> resizing
       );
     };
+    Interval t = new Interval();
     Sgl.ui.toolBar.addTool(
         "showInfos",
-        () -> Core.bundle.get(showTargetInfo? "infos.showInfos": "infos.hideInfos"),
-        () -> showTargetInfo? SglDrawConst.showInfos: SglDrawConst.unShowInfos,
+        () -> Core.bundle.get(Sgl.config.showInfos? "infos.showInfos": "infos.hideInfos"),
+        () -> Sgl.config.showInfos? SglDrawConst.showInfos: SglDrawConst.unShowInfos,
         () -> {
-          showTargetInfo = !showTargetInfo;
-          if (showTargetInfo){
+          Sgl.config.showInfos = !Sgl.config.showInfos;
+          if (Sgl.config.showInfos){
             add.run();
           }
           else {
             Sgl.ui.toolBar.removeTool("changeMode");
             Sgl.ui.toolBar.removeTool("infoScl");
           }
+
+          if(t.get(60)){
+            Sgl.config.save();
+          }
         },
-        () -> showTargetInfo
+        () -> Sgl.config.showInfos
     );
     add.run();
   }
@@ -300,7 +296,7 @@ public class EntityInfoFrag{
   }
 
   @Annotations.ImplEntries
-  public static class EntityEntry<T extends Entityc> implements Pool.Poolable, ExtraVariableComp {
+  public static class EntityEntry<T extends Entityc> implements Pool.Poolable, ExtraVariableComp{
     T entity;
     float alpha;
     boolean hovering;

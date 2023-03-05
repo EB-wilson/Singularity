@@ -21,7 +21,6 @@ import arc.struct.IntSeq;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.util.Time;
-import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -54,13 +53,15 @@ import static mindustry.Vars.*;
 @Annotations.ImplEntries
 public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
   public static final ObjectSet<Item> TMP_ITEMS = new ObjectSet<>();
+  public static final Vec2 v1 = new Vec2();
+  public static final Vec2 v2 = new Vec2();
   public float drillTime = 60;
   public float rotatorSpeed = 1.5f;
   public int drillBufferCapacity = 20;
 
   public float armSpeed = 1.2f;
   public float armSpeedDelta = 0.06f;
-  public float armIdleWait = 120;
+  public float armIdleWait = 300;
 
   public float bitPostTime = 45;
   public float bitPostDistance = 16;
@@ -127,6 +128,8 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
 
   @Annotations.ImplEntries
   public class MatrixMinerBuild extends DistNetBuild implements EdgeLinkerBuildComp{
+    public static Element lastController;
+
     public IntMap<MatrixDrillBit> mineBits = new IntMap<>();
     public ObjectMap<Item, float[]> progressMap = new ObjectMap<>();
     public IntSeq armTasks = new IntSeq();
@@ -142,7 +145,6 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
     public Vec2 armPos = new Vec2();
     public Vec2 armVel = new Vec2();
 
-    public Element lastController;
     public PutItemsRequest putReq;
 
     boolean firstMark = true;
@@ -297,7 +299,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
           if(Time.time - armWaiting >= armIdleWait){
             trnsArmSpeed(x, y);
           }
-          else armVel.approachDelta(Vec2.ZERO, armSpeedDelta);
+          else armVel.approachDelta(Vec2.ZERO, armSpeedDelta*0.5f);
         }
       }
       else armVel.approachDelta(Vec2.ZERO, armSpeedDelta*0.65f);
@@ -324,8 +326,8 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
     }
 
     public void trnsArmSpeed(float x, float y) {
-      Tmp.v1.set(x, y).sub(armPos).setLength(armSpeed);
-      armVel.approachDelta(Tmp.v1, armSpeedDelta);
+      v1.set(x, y).sub(armPos).setLength(armSpeed);
+      armVel.approachDelta(v1, armSpeedDelta);
     }
 
     public boolean handleTask(int x, int y, int cmdCode){
@@ -429,9 +431,9 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
 
     public void switchController(){
       if(configuring && rect != null){
+        if(lastController != null) ui.hudGroup.removeChild(lastController);
+
         Vars.ui.hudGroup.addChild(lastController = new Element(){
-          final Vec2 originPos = Core.input.mouseScreen(rect.x, rect.y);
-          float originXWorld, originYWorld;
           float originX, originY;
           float currX, currY;
 
@@ -443,29 +445,27 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
             addListener(new InputListener(){
               @Override
               public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
-                originX = currX = originPos.x + x;
-                originY = currY = originPos.y + y;
-                Tmp.v1.set(Core.camera.unproject(originX, originY));
-                originXWorld = Tmp.v1.x;
-                originYWorld = Tmp.v1.y;
+                originX = currX = Core.input.mouseX();
+                originY = currY = Core.input.mouseY();
+                v1.set(Core.camera.unproject(originX, originY));
                 touched = true;
                 return super.touchDown(event, x, y, pointer, button);
               }
 
               @Override
               public void touchDragged(InputEvent event, float x, float y, int pointer){
-                Tmp.v1.set(Core.input.mouseScreen(rect.x, rect.y));
-                Tmp.v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
-                currX = Mathf.clamp(originPos.x + x, Tmp.v1.x, Tmp.v2.x);
-                currY = Mathf.clamp(originPos.y + y, Tmp.v1.y, Tmp.v2.y);
+                v1.set(Core.input.mouseScreen(rect.x, rect.y));
+                v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
+                currX = Mathf.clamp(Core.input.mouseX(), v1.x, v2.x);
+                currY = Mathf.clamp(Core.input.mouseY(), v1.y, v2.y);
                 super.touchDragged(event, x, y, pointer);
               }
 
               @Override
               public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
-                Tmp.v1.set(Core.camera.unproject(originX, originY));
-                Tmp.v2.set(Core.camera.unproject(currX, currY));
-                assignConfigTasks(Tmp.v1.x, Tmp.v1.y, Tmp.v2.x, Tmp.v2.y);
+                v1.set(Core.camera.unproject(originX, originY));
+                v2.set(Core.camera.unproject(currX, currY));
+                assignConfigTasks(v1.x, v1.y, v2.x, v2.y);
                 touched = false;
                 super.touchUp(event, x, y, pointer, button);
               }
@@ -474,29 +474,27 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
             addCaptureListener(new ElementGestureListener(){
               @Override
               public void touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
-                originX = currX = originPos.x + x;
-                originY = currY = originPos.y + y;
-                Tmp.v1.set(Core.camera.unproject(originX, originY));
-                originXWorld = Tmp.v1.x;
-                originYWorld = Tmp.v1.y;
+                originX = currX = Core.input.mouseX();
+                originY = currY = Core.input.mouseY();
+                v1.set(Core.camera.unproject(originX, originY));
                 touched = true;
                 super.touchDown(event, x, y, pointer, button);
               }
 
               @Override
               public void pan(InputEvent event, float x, float y, float deltaX, float deltaY){
-                Tmp.v1.set(Core.input.mouseScreen(rect.x, rect.y));
-                Tmp.v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
-                currX = Mathf.clamp(originPos.x + x, Tmp.v1.x, Tmp.v2.x);
-                currY = Mathf.clamp(originPos.y + y, Tmp.v1.y, Tmp.v2.y);
+                v1.set(Core.input.mouseScreen(rect.x, rect.y));
+                v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
+                currX = Mathf.clamp(Core.input.mouseX(), v1.x, v2.x);
+                currY = Mathf.clamp(Core.input.mouseY(), v1.y, v2.y);
                 super.pan(event, x, y, deltaX, deltaY);
               }
 
               @Override
               public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
-                Tmp.v1.set(Core.camera.unproject(originX, originY));
-                Tmp.v2.set(Core.camera.unproject(currX, currY));
-                assignConfigTasks(Tmp.v1.x, Tmp.v1.y, Tmp.v2.x, Tmp.v2.y);
+                v1.set(Core.camera.unproject(originX, originY));
+                v2.set(Core.camera.unproject(currX, currY));
+                assignConfigTasks(v1.x, v1.y, v2.x, v2.y);
                 touched = false;
                 super.touchUp(event, x, y, pointer, button);
               }
@@ -510,34 +508,35 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
             Lines.rect(x, y, width, height);
 
             if(!touched) return;
-            Tmp.v1.set(Core.camera.unproject(originX, originY));
-            Tmp.v2.set(Core.camera.unproject(currX, currY));
-            float x = (float) (Math.round(Math.min(Tmp.v1.x, Tmp.v2.x)/tilesize)*tilesize - 4), y = (float) (Math.round(Math.min(Tmp.v1.y, Tmp.v2.y)/tilesize)*tilesize - 4);
-            float dx = (float) (Math.round(Math.max(Tmp.v1.x, Tmp.v2.x)/tilesize)*tilesize + 4), dy = (float) (Math.round(Math.max(Tmp.v1.y, Tmp.v2.y)/tilesize)*tilesize + 4);
-            Tmp.v1.set(Core.camera.project(x, y));
-            Tmp.v2.set(Core.camera.project(dx, dy)).sub(Tmp.v1);
+            v1.set(Core.camera.unproject(originX, originY));
+            v2.set(Core.camera.unproject(currX, currY));
+            float x = (float) (Math.round(Math.min(v1.x, v2.x)/tilesize)*tilesize - 4), y = (float) (Math.round(Math.min(v1.y, v2.y)/tilesize)*tilesize - 4);
+            float dx = (float) (Math.round(Math.max(v1.x, v2.x)/tilesize)*tilesize + 4), dy = (float) (Math.round(Math.max(v1.y, v2.y)/tilesize)*tilesize + 4);
+            v1.set(Core.camera.project(x, y));
+            v2.set(Core.camera.project(dx, dy)).sub(v1);
 
             Draw.color(selectMode? Pal.accent: Pal.redderDust);
-            Lines.rect(Tmp.v1.x, Tmp.v1.y, Tmp.v2.x, Tmp.v2.y);
+            Lines.rect(v1.x, v1.y, v2.x, v2.y);
           }
 
           @Override
           public void act(float delta){
             super.act(delta);
             if(rect == null) return;
-            Vec2 v = Core.camera.project(originXWorld, originYWorld);
-            originX = v.x;
-            originY = v.y;
 
-            Tmp.v1.set(Core.input.mouseScreen(rect.x, rect.y));
-            Tmp.v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
-            setBounds(Tmp.v1.x, Tmp.v1.y, Tmp.v2.x - Tmp.v1.x, Tmp.v2.y - Tmp.v1.y);
+            v1.set(Core.input.mouseScreen(rect.x, rect.y));
+            v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
+            setBounds(v1.x, v1.y, v2.x - v1.x, v2.y - v1.y);
 
             if(!configuring
-                || !Vars.control.input.config.isShown()
-                || Vars.control.input.config.getSelected() != MatrixMinerBuild.this) Vars.ui.hudGroup.removeChild(this);
+            || !Vars.control.input.config.isShown()
+            || Vars.control.input.config.getSelected() != MatrixMinerBuild.this
+            ) Vars.ui.hudGroup.removeChild(this);
           }
         });
+        v1.set(Core.input.mouseScreen(rect.x, rect.y));
+        v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
+        lastController.setBounds(v1.x, v1.y, v2.x - v1.x, v2.y - v1.y);
       }
       else Vars.ui.hudGroup.removeChild(lastController);
     }
@@ -620,11 +619,6 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
       Draw.rect(armBitRegion, armPos.x, armPos.y);
       Draw.reset();
       Draw.z(Layer.block);
-    }
-
-    @Override
-    public byte version() {
-      return 1;
     }
 
     @Override
@@ -732,7 +726,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
 
         if(Time.time - timer <= bitPostTime){
           Lines.stroke(3.75f*Mathf.clamp(1 - (Time.time - timer)/bitPostTime), ore.color);
-          float distance = Tmp.v1.set(x, y).sub(armPos).len();
+          float distance = v1.set(x, y).sub(armPos).len();
           Lines.curve(x, y, x + controlPoint.x, y + controlPoint.y, armPos.x - controlPoint.x, armPos.y - controlPoint.y, armPos.x, armPos.y, (int) (distance/2.75f));
         }
         else controlPoint.set(x, y);
@@ -745,7 +739,7 @@ public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
         buffered -= amount;
         postedTask = false;
         timer = Time.time;
-        controlPoint.set(Tmp.v1.set(x*tilesize, y*tilesize).sub(armPos).scl(-Mathf.random(0.2f, 0.4f)));
+        controlPoint.set(v1.set(x*tilesize, y*tilesize).sub(armPos).scl(-Mathf.random(0.2f, 0.4f)));
       }
 
       public void remove(){

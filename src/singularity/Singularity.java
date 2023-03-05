@@ -25,7 +25,7 @@ import universecore.util.OverrideContentList;
 
 import static mindustry.game.EventType.*;
 
-@Annotations.ImportUNC(requireVersion = "1.6.4")
+@Annotations.ImportUNC(requireVersion = "1.7.0")
 public class Singularity extends Mod{
   private static final ContentList[] modContents = new ContentList[]{
       new OtherContents(),//其他内容
@@ -74,15 +74,11 @@ public class Singularity extends Mod{
       });
     }
 
-    if(Sgl.config.modReciprocal){
+    if(Sgl.config.modReciprocalContent){
       Events.on(ContentInitEvent.class, e -> {
         Init.reloadContent();
       });
     }
-
-    Events.on(ResetEvent.class, e -> {
-      Sgl.updateTiles.clear();
-    });
 
     if(Sgl.config.debugMode) Events.on(WorldLoadEvent.class, e -> Vars.state.rules.infiniteResources = true);
   }
@@ -93,7 +89,7 @@ public class Singularity extends Mod{
     Sgl.init();
 
     //游戏本体更改初始化
-    if(Sgl.config.modReciprocal) Init.init();
+    Init.init();
 
     initialized = true;
 
@@ -114,7 +110,7 @@ public class Singularity extends Mod{
       list.load();
     }
 
-    if(Sgl.config.modReciprocal){
+    if(Sgl.config.modReciprocalContent){
       for(OverrideContentList override: Singularity.overrideContents){
         override.load();
       }

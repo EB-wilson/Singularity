@@ -1,11 +1,11 @@
 package singularity.world.blocks.defence;
 
-import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.math.Mathf;
-import arc.struct.ObjectMap;
+import arc.math.geom.Vec2;
+import arc.struct.ObjectSet;
 import arc.struct.Seq;
 import arc.util.Interval;
 import arc.util.Time;
@@ -36,8 +36,8 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
   public int maxChainsWidth = 16;
   public int maxChainsHeight = 16;
 
-  public int range = 32;
-  public float scanTime = 30;
+  public int range = 48;
+  public float scanTime = 15;
 
   private final int timeId;
 
@@ -67,6 +67,8 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
   public class PhasedRadarBuild extends SglBuilding implements SpliceBuildComp {
     public ChainsModule chains;
     public int splice;
+    public Vec2 centerPos = new Vec2();
+    ObjectSet<Unit> locking = new ObjectSet<>();
 
     @Override
     public Building create(Block block, Team team){
@@ -90,33 +92,31 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
 
     @Override
     public void containerCreated(ChainsContainer old){
-      chains.container.putVar("locking", new ObjectMap<>());
       chains.container.putVar("build", this);
     }
 
     @Override
     public void updateTile(){
       if(consumeValid()){
-        ObjectMap<Unit, Building> locking = chains.container.getVar("locking");
+        if(chains.container.getVar("build") != this) return;
+
         if(timer(timeId, scanTime)){
           for(Unit unit: Groups.unit){
             boolean lenValid = false;
-            if(unit.team != team && unit.isFlying() && (lenValid = Mathf.len(unit.x - x, unit.y - y) < range*Vars.tilesize)
-                && !locking.containsKey(unit) && locking.size < Math.min(chains.container.all.size, 10)){
-              locking.put(unit, this);
+            if(unit.team != team && unit.isFlying()
+                && (lenValid = Mathf.len(unit.x - x + centerPos.x, unit.y - y + centerPos.y) < range*Vars.tilesize)
+                && !locking.contains(unit) && locking.size < Math.min(chains.container.all.size, 10)){
+              locking.add(unit);
             }
             else if(unit.isFlying() && !lenValid){
-              if(locking.remove(unit) != null){
+              if(locking.remove(unit)){
                 unit.unapply(OtherContents.locking);
               }
             }
           }
         }
 
-        if(chains.container.getVar("frameId", 0L) == Core.graphics.getFrameId()) return;
-        chains.container.putVar("frameId", Core.graphics.getFrameId());
-
-        for(Unit unit: locking.keys()){
+        for(Unit unit: locking){
           if(!unit.isAdded()){
             locking.remove(unit);
             continue;
@@ -136,7 +136,12 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
     public void chainsFlowed(ChainsContainer old){
       PhasedRadarBuild statDisplay;
       if((statDisplay = chains.container.getVar("build")) != this){
-        if(statDisplay.y >= y && statDisplay.x <= getBuilding().x) chains.container.putVar("build", this);
+        if(statDisplay.y >= y && statDisplay.x <= getBuilding().x){
+          chains.container.putVar("build", this);
+          centerPos.set(chains.container.minX(), chains.container.minY())
+              .scl(tilesize)
+              .add(chains.container.width()/2f*tilesize, chains.container.height()/2f*tilesize);
+        }
       }
     }
 
@@ -171,9 +176,13 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
       Lines.stroke(2.5f);
       Draw.color(Pal.placing);
       Draw.alpha(0.4f);
-      Fill.circle(x, y, range*tilesize);
+
+      PhasedRadarBuild b = chains.getVar("build");
+      float drawX = x + b.centerPos.x;
+      float drawY = y + b.centerPos.y;
+      Fill.circle(drawX, drawY, range*tilesize);
       Draw.alpha(1);
-      Drawf.circles(x, y, range*tilesize);
+      Drawf.circles(drawX, drawY, range*tilesize);
 
       if(!consumeValid()) return;
       Tmp.v1.set(range*tilesize - 2.5f, 0).rotate(-Time.time*1.5f);
@@ -182,11 +191,11 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
 
       Lines.stroke(6);
       Tmp.v2.set(1, 0).setAngle(Tmp.v1.angle() + 90);
-      SglDraw.gradientLine(x + Tmp.v2.x*1.75f, y + Tmp.v2.y*3,
-          x + Tmp.v2.x*4.25f + dx, y + Tmp.v2.y*4.25f + dy,
+      SglDraw.gradientLine(drawX + Tmp.v2.x*1.75f, drawY + Tmp.v2.y*3,
+          drawX + Tmp.v2.x*4.25f + dx, drawY + Tmp.v2.y*4.25f + dy,
           Pal.placing, Tmp.c1.set(Pal.placing).a(0), 1);
       Lines.stroke(2.5f, Pal.placing);
-      Lines.line(x, y, x + dx, y + dy);
+      Lines.line(drawX, drawY, drawX + dx, drawY + dy);
     }
   }
 }

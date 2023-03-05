@@ -3,8 +3,8 @@ package singularity.world.unit;
 import mindustry.entities.units.WeaponMount;
 import mindustry.gen.Unit;
 import mindustry.type.Weapon;
-import singularity.world.components.ExtraVariableComp;
 import universecore.annotations.Annotations;
+import universecore.components.ExtraVariableComp;
 
 /**具有独立变量空间的武器，该种武器会自动将单位的相应{@link WeaponMount}替换为实现了{@link ExtraVariableComp}接口的{@link DataWeaponMount}，并提供了一系列用于访问独立变量区的行为
  * <p>通常这对于自定义程度高的武器会非常有用*/

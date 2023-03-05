@@ -1,75 +1,51 @@
 package singularity.core;
 
-import arc.Events;
-import arc.struct.Seq;
-import dynamilize.DynamicClass;
+import arc.Core;
+import arc.scene.ui.layout.Table;
 import mindustry.Vars;
 import mindustry.content.Blocks;
-import mindustry.entities.units.BuildPlan;
-import mindustry.input.InputHandler;
+import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.blocks.defense.OverdriveProjector;
 import mindustry.world.blocks.liquid.Conduit;
 import singularity.Sgl;
-import singularity.world.blocks.SglBlock;
+import singularity.graphic.SglDrawConst;
 import singularity.world.meta.SglAttribute;
+import universecore.util.handler.FieldHandler;
 
 /**改动游戏原内容重初始化，用于对游戏已定义的实例进行操作*/
 public class Init{
-  public static final DynamicClass InputHandlerAspect = DynamicClass.get("InputHandlerAspect");
-
-  static {
-    final SglEventTypes.BuildPlanRotateEvent rotateEvent = new SglEventTypes.BuildPlanRotateEvent();
-    final SglEventTypes.BuildFlipRotateEvent flipEvent = new SglEventTypes.BuildFlipRotateEvent();
-
-    InputHandlerAspect.setFunction("rotatePlans", (s, su, a) -> {
-      rotateEvent.plans = a.get(0);
-      rotateEvent.direction = a.get(1);
-      for (BuildPlan plan : rotateEvent.plans) {
-        if (plan.block instanceof SglBlock sglBlock){
-          sglBlock.onPlanRotate(plan, rotateEvent.direction);
-        }
-      }
-      Events.fire(SglEventTypes.BuildPlanRotateEvent.class, rotateEvent);
-      su.invokeFunc("rotatePlans", a);
-    }, Seq.class, int.class);
-
-    InputHandlerAspect.setFunction("flipPlans", (s, su, a) -> {
-      flipEvent.plans = a.get(0);
-      flipEvent.x = a.get(1);
-      for (BuildPlan plan : flipEvent.plans) {
-        if (plan.block instanceof SglBlock sglBlock){
-          sglBlock.onPlanFilp(plan, flipEvent.x);
-        }
-      }
-      Events.fire(SglEventTypes.BuildPlanRotateEvent.class, flipEvent);
-      su.invokeFunc("flipPlans", a);
-    }, Seq.class, boolean.class);
-  }
-
   public static void init(){
-    //取代输入处理器
-    final InputHandler oldInput = Vars.control.input;
-    Vars.control.input = Sgl.classes.getDynamicMaker().newInstance(oldInput.getClass(), InputHandlerAspect).castGet();
-
+    if(Sgl.config.modReciprocal){
+      //添加设置项入口
+      Vars.ui.settings.shown(() -> {
+        Table table = FieldHandler.getValueDefault(Vars.ui.settings, "menu");
+        table.button(
+            Core.bundle.get("settings.singularity"),
+            SglDrawConst.sglIcon,
+            Styles.flatt,
+            32,
+            () -> Sgl.ui.config.show()
+        ).marginLeft(8).row();
+      });
+    }
+  }
+  
+  /**内容重载，对已加载的内容做出变更(或者覆盖)*/
+  public static void reloadContent(){
     //设置方块及地板属性
     Blocks.stone.attributes.set(SglAttribute.bitumen, 0.5f);
 
-    //禁用所有超速器
-    for (Block block : Vars.content.blocks()) {
-      if (block instanceof OverdriveProjector over){
+    for(Block target: Vars.content.blocks()){
+      //为液体装卸器保证不从(常规)导管中提取液体
+      if(target instanceof Conduit) target.unloadable = false;
+
+      //禁用所有超速器
+      if(target instanceof OverdriveProjector over){
         over.placeablePlayer = false;
         over.update = false;
         over.breakable = true;
       }
-    }
-  }
-  
-  /**内容重载器，用于对已加载的内容做出变更(或者覆盖)*/
-  public static void reloadContent(){
-    //为液体装卸器保证不从(常规)导管中提取液体
-    for(Block target: Vars.content.blocks()){
-      if(target instanceof Conduit) target.unloadable = false;
     }
   }
 }

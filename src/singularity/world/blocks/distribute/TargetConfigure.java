@@ -1,5 +1,6 @@
 package singularity.world.blocks.distribute;
 
+import arc.func.Cons;
 import arc.func.Cons2;
 import arc.func.Cons3;
 import arc.math.geom.Point2;
@@ -10,7 +11,6 @@ import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
-import mindustry.world.Block;
 import singularity.world.distribution.GridChildType;
 import universecore.util.DataPackable;
 import universecore.util.Empties;
@@ -184,22 +184,7 @@ public class TargetConfigure implements DataPackable {
     }
   }
 
-  public void rotateDir(Block block, int direction) {
-    int off = block.offset > 0? 1: 0;
-    int cx = Point2.x(offsetPos), cy = Point2.y(offsetPos);
-
-    int lx = cx;
-
-    if (direction >= 0) {
-      cx = -cy + off;
-      cy = lx;
-    } else {
-      cx = cy;
-      cy = -lx + off;
-    }
-
-    offsetPos = Point2.pack(cx, cy);
-
+  public void rotateDir(int direction) {
     for (ObjectMap<UnlockableContent, byte[]> bitMap : directBits.values()) {
       for (byte[] arr : bitMap.values()) {
         int bits = arr[0];
@@ -218,18 +203,7 @@ public class TargetConfigure implements DataPackable {
     }
   }
 
-  public void flip(Block block, boolean x) {
-    int off = block.offset > 0? 1: 0;
-
-    Point2 p = Point2.unpack(offsetPos);
-    if (x){
-      p.x = -p.x + off;
-    }
-    else{
-      p.y = -p.y + off;
-    }
-    offsetPos = p.pack();
-
+  public void flip(boolean x) {
     for (ObjectMap<UnlockableContent, byte[]> bitMap : directBits.values()) {
       for (byte[] arr : bitMap.values()) {
         int bits = arr[0];
@@ -280,5 +254,22 @@ public class TargetConfigure implements DataPackable {
     TargetConfigure conf = new TargetConfigure();
     conf.read(pack());
     return conf;
+  }
+
+  public void configHandle(Cons<Point2> transformer){
+    Point2 res = Point2.unpack(offsetPos);
+    transformer.get(res);
+    offsetPos = res.pack();
+
+    Point2 t1 = new Point2(4, 0);
+    transformer.get(t1);
+
+    if(t1.x == 0 && t1.y > 0){
+      rotateDir(1);
+    }
+    else if(t1.x == 0 && t1.y < 0){
+      rotateDir(-1);
+    }
+    else flip(t1.x < 0 && t1.y == 0);
   }
 }

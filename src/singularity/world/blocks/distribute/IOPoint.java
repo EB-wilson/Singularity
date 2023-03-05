@@ -1,9 +1,9 @@
 package singularity.world.blocks.distribute;
 
+import arc.func.Cons;
 import arc.math.geom.Point2;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
-import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.world.Edges;
 import singularity.contents.DistributeBlocks;
@@ -67,21 +67,12 @@ public abstract class IOPoint extends SglBlock implements IOPointBlockComp{
   }
 
   @Override
-  public void onPlanRotate(BuildPlan plan, int direction) {
-    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof TargetConfigure nodeConfig){
-      nodeConfig.rotateDir(this, direction);
-
-      plan.config = nodeConfig.pack();
+  public Object pointConfig(Object config, Cons<Point2> transformer){
+    if(config instanceof byte[] b && DataPackable.readObject(b) instanceof TargetConfigure cfg){
+      cfg.configHandle(transformer);
+      return cfg.pack();
     }
-  }
-
-  @Override
-  public void onPlanFilp(BuildPlan plan, boolean x) {
-    if (plan.config instanceof byte[] data && DataPackable.readObject(data) instanceof TargetConfigure nodeConfig){
-      nodeConfig.flip(this, x);
-
-      plan.config = nodeConfig.pack();
-    }
+    return config;
   }
 
   @Override

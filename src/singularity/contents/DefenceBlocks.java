@@ -14,6 +14,7 @@ import arc.util.Tmp;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.content.Fx;
+import mindustry.content.Liquids;
 import mindustry.content.StatusEffects;
 import mindustry.entities.UnitSorts;
 import mindustry.entities.Units;
@@ -33,6 +34,7 @@ import mindustry.world.draw.DrawBlock;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.draw.DrawMulti;
 import mindustry.world.draw.DrawRegion;
+import singularity.Sgl;
 import singularity.graphic.SglDrawConst;
 import singularity.world.SglFx;
 import singularity.world.blocks.defence.GameOfLife;
@@ -44,6 +46,8 @@ import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.VectorLightningGenerator;
 
 import java.util.Arrays;
+
+import static mindustry.Vars.tilesize;
 
 public class DefenceBlocks implements ContentList{
   /**相控雷达*/
@@ -136,6 +140,12 @@ public class DefenceBlocks implements ContentList{
             @Override
             public void draw(Building build){
               if(build instanceof GameOfLifeBuild e){
+                if(Sgl.config.animateLevel < 3){
+                  Draw.color(Liquids.slag.color, e.warmup());
+                  Fill.rect(e.x, e.y, e.block.size*tilesize - tilesize, e.block.size*tilesize - tilesize);
+                  return;
+                }
+
                 Draw.z(Layer.effect);
                 Draw.color(Color.white);
 

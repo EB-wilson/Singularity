@@ -2,10 +2,7 @@ package singularity;
 
 import arc.files.Fi;
 import arc.files.ZipFi;
-import mindustry.Vars;
 import singularity.core.ModConfig;
-import singularity.core.UpdatePool;
-import singularity.core.UpdateTiles;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDrawConst;
 import singularity.graphic.SglShaders;
@@ -21,10 +18,6 @@ import universecore.util.mods.ModInfo;
 import static arc.Core.settings;
 
 public class Sgl{
-  static{
-    UpdatePool.receive("sglUpdate", Sgl::update);
-  }
-
   public static final String NL = System.lineSeparator();
 
   /**此mod内部名称*/
@@ -78,8 +71,6 @@ public class Sgl{
   public static SglUI ui;
   /***/
   public static Contributors contributors;
-  
-  public static UpdateTiles updateTiles;
 
   public static DistSupportContainerTable matrixContainers;
 
@@ -100,8 +91,6 @@ public class Sgl{
 
     ui = new SglUI();
     contributors = new Contributors();
-    
-    updateTiles = new UpdateTiles();
 
     matrixContainers = new DistSupportContainerTable();
 
@@ -111,11 +100,5 @@ public class Sgl{
 
     empHealth.init();
     ui.init();
-  }
-  
-  public static void update(){
-    if(Vars.state.isPaused()) return;
-
-    if(Vars.state.isGame()) updateTiles.update();
   }
 }

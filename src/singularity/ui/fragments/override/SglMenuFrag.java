@@ -42,6 +42,7 @@ import static mindustry.Vars.*;
 import static mindustry.gen.Tex.discordBanner;
 import static mindustry.gen.Tex.infoBanner;
 
+@SuppressWarnings("DuplicatedCode")
 public class SglMenuFrag extends MenuFragment{
   private final PlanetParams params = new PlanetParams();
   private final Vec3 camRight = new Vec3(1, 0, 0);
@@ -70,19 +71,18 @@ public class SglMenuFrag extends MenuFragment{
     if(Sgl.config.mainMenuUniverseBackground){
       params.planet = Planets.sun;
       params.uiAlpha = 0;
-      float[] pos = Sgl.config.defaultCameraPos;
-      params.camPos.set(pos[0], pos[1], pos[2]);
-      Tmp.v31.set(0, 1, 0);
-      Tmp.v32.set(0, 0, 1).rotate(Tmp.v31, pos[3]);
-      params.camDir.set(1, 0, 0)
-          .rotate(Tmp.v31, pos[3])
-          .rotate(Tmp.v32, pos[4]);
-      params.camUp.set(0, 1, 0)
-          .rotate(Tmp.v31, pos[3])
-          .rotate(Tmp.v32, pos[4]);
-      camRight.set(0, 0, 1)
-          .rotate(Tmp.v31, pos[3])
-          .rotate(Tmp.v32, pos[4]);
+
+      float[] arr = Sgl.config.defaultCameraPos;
+      params.camPos.set(arr[0], arr[1], arr[2]);
+      params.camDir.set(1, 0, 0);
+      params.camUp.set(0, 1, 0);
+      camRight.set(0, 0, 1);
+
+      params.camDir.rotate(params.camUp, arr[3]);
+      camRight.rotate(params.camUp, arr[3]);
+
+      params.camDir.rotate(camRight, arr[4]);
+      params.camUp.rotate(camRight, arr[4]);
 
       if(Sgl.config.staticMainMenuBackground){
         Events.on(EventType.ResizeEvent.class, e -> region = null);

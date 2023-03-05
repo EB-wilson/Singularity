@@ -36,7 +36,6 @@ import mindustry.world.draw.DrawDefault;
 import mindustry.world.meta.*;
 import singularity.type.SglLiquidStack;
 import singularity.world.blocks.nuclear.NuclearPipeNode;
-import singularity.world.components.ExtraVariableComp;
 import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.consumers.SglConsumeType;
@@ -45,6 +44,7 @@ import singularity.world.modules.NuclearEnergyModule;
 import singularity.world.modules.SglConsumeModule;
 import singularity.world.modules.SglLiquidModule;
 import universecore.annotations.Annotations;
+import universecore.components.ExtraVariableComp;
 import universecore.components.blockcomp.ConsumerBlockComp;
 import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.util.DataPackable;
@@ -243,10 +243,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public TextureRegion[] icons(){
     return draw.finalIcons(this);
   }
-
-  public void onPlanRotate(BuildPlan plan, int direction) {}
-
-  public void onPlanFilp(BuildPlan plan, boolean x) {}
 
   @Annotations.ImplEntries
   public class SglBuilding extends Building implements ConsumerBuildComp, NuclearEnergyBuildComp, ExtraVariableComp{

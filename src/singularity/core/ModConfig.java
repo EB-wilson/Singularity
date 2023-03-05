@@ -15,49 +15,67 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 
 public class ModConfig{
-  private static final int configVersion = 4;
+  private static final int configVersion = 5;
   private static final Field[] configs = ModConfig.class.getFields();
 
   //basic/基础设置
   //主菜单界面设置
-  @Order(0)
+  @Order(0f)
   public boolean disableModMainMenu;
-  @Order(1)
+  @Order(1f)
   public boolean showModMenuWenLaunch;
-  @Order(2)
+  @Order(2f)
   public boolean mainMenuUniverseBackground;
-  @Order(3)
+  @Order(3f)
   public boolean staticMainMenuBackground;
   @Order(4)
   public float[] defaultCameraPos;
-  @Order(5)
+  @Order(5f)
   public boolean movementCamera;
+
   //游戏目标内信息显示
-  @Order(6)
+  @Order(5.1f)
+  public boolean showInfos;
+  @Order(6f)
   public float flushInterval;
-  @Order(7)
+  @Order(7f)
   public int maxDisplay;
-  @Order(8)
+  @Order(8f)
   public float showInfoScl;
-  @Order(9)
+  @Order(9f)
   public float holdDisplayRange;
 
-  @Order(10)
+  @Order(10f)
   public HealthBarStyle healthBarStyle;
 
-  @Order(11)
+  @Order(11f)
   public float statusSize;
-  @Order(12)
+  @Order(12f)
   public boolean showStatusTime;
 
+  @Order(12.05f)
+  public int animateLevel;
+  @Order(12.1f)
+  public boolean enableShaders;
+  @Order(12.2f)
+  public boolean enableDistortion;
+  @Order(12.3f)
+  public boolean enableParticle;
+  @Order(12.35f)
+  public int maxParticleCount;
+  @Order(12.4f)
+  public boolean enableLightning;
+
   //Advanced/高级设置
-  @Order(13)
+  @Order(13f)
   public boolean modReciprocal;
+  @Order(13.1f)
+  public boolean modReciprocalContent;
 
   //debug/调试设置
-  @Order(14)
+  @Order(14f)
   public boolean loadInfo;
-  @Order(15)
+  @Order(15f)
   public boolean debugMode;
 
   private String lastContext;
@@ -79,11 +97,7 @@ public class ModConfig{
         load(backup, true);
         lastContext = tmp;
 
-        try{
-          save();
-        }catch(IOException e){
-          throw new RuntimeException(e);
-        }
+        save();
       }
     }
 
@@ -142,8 +156,12 @@ public class ModConfig{
     return !old;
   }
 
-  public void save() throws IOException{
-    save(Sgl.configFile);
+  public void save(){
+    try{
+      save(Sgl.configFile);
+    }catch(IOException e){
+      Log.err(e);
+    }
   }
 
   @SuppressWarnings({"HardcodedFileSeparator", "unchecked"})
@@ -154,7 +172,11 @@ public class ModConfig{
     map.put("configVersion", Jval.valueOf(configVersion));
 
     Field[] configs = ModConfig.class.getFields();
-    Arrays.sort(configs, (f1, f2) -> f1.getAnnotation(Order.class).value() - f2.getAnnotation(Order.class).value());
+    Arrays.sort(configs, (f1, f2) -> {
+      float f = f1.getAnnotation(Order.class).value() - f2.getAnnotation(Order.class).value();
+      if(f == 0) return 0;
+      return f > 0? 1: -1;
+    });
     try{
       for(Field cfg: configs){
         String key = cfg.getName();
@@ -276,6 +298,6 @@ public class ModConfig{
 
   @Retention(RetentionPolicy.RUNTIME)
   private @interface Order{
-    int value();
+    float value();
   }
 }

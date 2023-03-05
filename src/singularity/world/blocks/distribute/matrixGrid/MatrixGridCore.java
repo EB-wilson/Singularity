@@ -85,12 +85,12 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   }
 
   @Override
-  public Object pointConfig(Object config, Cons<Point2> transformer) {
-    if (config instanceof byte[] b && DataPackable.readObject(b) instanceof MatrixGridCoreBuild.LinkPair p) {
-      transformer.get(p.linking);
-      return p.pack();
+  public Object pointConfig(Object config, Cons<Point2> transformer){
+    if(config instanceof byte[] b && DataPackable.readObject(b) instanceof MatrixGridCoreBuild.LinkPair cfg){
+      cfg.handleConfig(transformer);
+      return cfg.pack();
     }
-    return null;
+    return config;
   }
 
   static MatrixGridCoreBuild.LinkPair pair = new MatrixGridCoreBuild.LinkPair();
@@ -373,6 +373,12 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       public void reset(){
         super.reset();
         linking = null;
+      }
+
+      @Override
+      public void handleConfig(Cons<Point2> handler){
+        super.handleConfig(handler);
+        handler.get(linking);
       }
     }
   }

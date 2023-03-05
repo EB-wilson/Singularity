@@ -20,6 +20,7 @@ import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.draw.*;
 import mindustry.world.meta.Stat;
+import singularity.Sgl;
 import singularity.Singularity;
 import singularity.graphic.SglDraw;
 import singularity.world.SglFx;
@@ -223,6 +224,23 @@ public class ProductBlocks implements ContentList {
           new DrawBlock(){
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 3){
+                if(Sgl.config.animateLevel == 2){
+                  float z = Draw.z();
+                  Draw.z(Layer.bullet);
+                  Draw.color(Pal.reactorPurple);
+                  SglDraw.drawLightEdge(
+                      build.x, build.y,
+                      8 + 8*build.warmup(), 2.5f*build.warmup(),
+                      8 + 8*build.warmup(), 2.5f*build.warmup()
+                  );
+                  Draw.z(z);
+                  Draw.color();
+                }
+
+                return;
+              }
+
               ExtendableDrillBuild e = (ExtendableDrillBuild) build;
               float z = Draw.z();
               Draw.z(Layer.bullet);
@@ -272,6 +290,8 @@ public class ProductBlocks implements ContentList {
           new DrawBlock(){
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 2) return;
+
               ExtendMinerBuild e = (ExtendMinerBuild) build;
 
               Draw.z(Layer.effect);

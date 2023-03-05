@@ -6,6 +6,7 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.math.Angles;
 import arc.math.Mathf;
+import arc.math.geom.Vec2;
 import arc.util.Tmp;
 import mindustry.content.Fx;
 import mindustry.content.Items;
@@ -22,6 +23,7 @@ import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.draw.*;
 import mindustry.world.meta.BuildVisibility;
+import singularity.Sgl;
 import singularity.graphic.SglDraw;
 import singularity.type.SglCategory;
 import singularity.world.SglFx;
@@ -39,8 +41,13 @@ import singularity.world.particles.SglParticleModels;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.ConsumeItems;
 import universecore.world.consumers.ConsumeLiquids;
+import universecore.world.particles.MultiParticleModel;
 import universecore.world.particles.Particle;
 import universecore.world.particles.ParticleModel;
+import universecore.world.particles.models.RandDeflectParticle;
+import universecore.world.particles.models.ShapeParticle;
+import universecore.world.particles.models.TargetMoveParticle;
+import universecore.world.particles.models.TrailFadeParticle;
 
 public class NuclearBlocks implements ContentList{
   /**核能塔座*/
@@ -208,15 +215,29 @@ public class NuclearBlocks implements ContentList{
       craftedSound = Sounds.largeExplosion;
       craftedSoundVolume = 1f;
 
-      ParticleModel model = new ParticleModel().setDefault().resetCloudUpdate()
-          .setTailFade(f -> Mathf.lerpDelta(f, 0, 0.04f))
-          .tailGradient(Pal.lightishGray, 0.04f)
-          .setColor(Pal.reactorPurple);
+      ParticleModel model = new MultiParticleModel(
+          new TargetMoveParticle(){{
+            dest = p -> p.getVar("dest");
+            deflection = p -> p.getVar("eff");
+          }},
+          new RandDeflectParticle(){{
+            deflectAngle = 0;
+            strength = 0.125f;
+          }},
+          new TrailFadeParticle(){{
+            trailFade = 0.04f;
+            fadeColor = Pal.lightishGray;
+            colorLerpSpeed = 0.03f;
+          }},
+          new ShapeParticle()
+      ){
+        {
+          color = Pal.reactorPurple;
+          trailColor = Pal.reactorPurple;
+        }
+      };
   
       craftTrigger = e -> {
-        model.resetDeflect();
-        model.setDest(e.x, e.y, 0.15f*e.consEfficiency());
-        model.setDeflect(90, 0.125f);
         for(Particle particle : Particle.get(p -> p.x < e.x + 20 && p.x > e.x - 20 && p.y < e.y + 20 && p.y > e.y - 20)){
           particle.remove();
         }
@@ -224,7 +245,9 @@ public class NuclearBlocks implements ContentList{
         Effect.shake(4f, 18f, e.x, e.y);
         Angles.randLenVectors(System.nanoTime(), Mathf.random(5, 9), 4.75f, 6.25f, (x, y) -> {
           Tmp.v1.set(x, y).setLength(4);
-          model.create(e.x + Tmp.v1.x, e.y + Tmp.v1.y, x, y, Mathf.random(5f, 7f));
+          Particle p = model.create(e.x + Tmp.v1.x, e.y + Tmp.v1.y, x, y, Mathf.random(5f, 7f));
+          p.setVar("dest", new Vec2(e.x, e.y));
+          p.setVar("eff", e.workEfficiency()*0.15f);
         });
       };
       crafting = e -> {
@@ -432,6 +455,8 @@ public class NuclearBlocks implements ContentList{
           new DrawBlock(){
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 3) return;
+
               NuclearReactorBuild e = (NuclearReactorBuild) build;
               Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);

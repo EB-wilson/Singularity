@@ -12,6 +12,7 @@ import mindustry.gen.Building;
 import mindustry.graphics.Drawf;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
+import singularity.Sgl;
 import singularity.graphic.SglDrawConst;
 
 public class DrawDyColorCultivator<T extends Building> extends DrawBlock{
@@ -30,6 +31,8 @@ public class DrawDyColorCultivator<T extends Building> extends DrawBlock{
   @SuppressWarnings("unchecked")
   @Override
   public void draw(Building build){
+    if(Sgl.config.animateLevel < 2) return;
+
     T entity = (T) build;
     Drawf.liquid(middle, build.x, build.y, build.warmup(), plantColor.get(entity));
 

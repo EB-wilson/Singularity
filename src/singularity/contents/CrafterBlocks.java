@@ -11,9 +11,11 @@ import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.Rand;
 import arc.math.geom.Geometry;
-import arc.util.Interval;
+import arc.math.geom.Point2;
+import arc.scene.style.TextureRegionDrawable;
 import arc.util.Time;
 import arc.util.Tmp;
+import arc.util.noise.Noise;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Fx;
@@ -35,7 +37,9 @@ import mindustry.world.blocks.liquid.LiquidBlock;
 import mindustry.world.draw.*;
 import mindustry.world.meta.Attribute;
 import mindustry.world.meta.BlockStatus;
+import singularity.Sgl;
 import singularity.Singularity;
+import singularity.graphic.Distortion;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.graphic.SglShaders;
@@ -191,6 +195,8 @@ public class CrafterBlocks implements ContentList{
           new DrawBlock() {
             @Override
             public void draw(Building build) {
+              if(Sgl.config.animateLevel < 2) return;
+
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               Draw.color(SglDrawConst.winter, e.workEfficiency()*(0.4f + Mathf.absin(6, 0.15f)));
               SglDraw.gradientCircle(e.x, e.y, 8, 10, 0);
@@ -236,6 +242,8 @@ public class CrafterBlocks implements ContentList{
 
               @Override
               public void draw(Building build){
+                if(Sgl.config.animateLevel < 2) return;
+
                 float alp = Math.max(build.warmup(), 0.7f*build.liquids.get(SglLiquids.algae_mud)/liquidCapacity);
                 if (alp <= 0.01f) return;
 
@@ -589,6 +597,12 @@ public class CrafterBlocks implements ContentList{
               if(e.consumer.current == null || e.producer.current == null) return;
               Liquid l = e.consumer.current.get(SglConsumeType.liquid).consLiquids[0].liquid;
 
+              if(Sgl.config.animateLevel < 2){
+                Draw.color(l.color, Math.max(e.warmup(), e.liquids.get(l)/liquidCapacity));
+                Fill.rect(e.x, e.y, e.block.size*tilesize - tilesize, e.block.size*tilesize - tilesize);
+                return;
+              }
+
               TextureRegion region = renderer.fluidFrames[l.gas ? 1 : 0][l.getAnimationFrame()];
               TextureRegion toDraw = Tmp.tr1;
 
@@ -662,7 +676,7 @@ public class CrafterBlocks implements ContentList{
       produce.power(4.5f);
 
       newBooster(2.65f);
-      consume.liquid(Liquids.ozone, 0.3f);
+      consume.liquid(Liquids.ozone, 0.4f);
 
       draw = new DrawMulti(
           new DrawBottom(),
@@ -774,6 +788,8 @@ public class CrafterBlocks implements ContentList{
 
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 2) return;
+
               float base = (Time.time / 70);
               Draw.color(flameColor, 0.5f);
               rand.setSeed(build.id);
@@ -906,6 +922,12 @@ public class CrafterBlocks implements ContentList{
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               if(e.producer.current == null) return;
 
+              if(Sgl.config.animateLevel < 2){
+                Draw.color(e.producer.current.color, e.warmup());
+                Fill.rect(e.x, e.y, e.block.size*tilesize - tilesize, e.block.size*tilesize - tilesize);
+                return;
+              }
+
               TextureRegion region = renderer.fluidFrames[0][Liquids.water.getAnimationFrame()];
               TextureRegion toDraw = Tmp.tr1;
 
@@ -1017,7 +1039,16 @@ public class CrafterBlocks implements ContentList{
           new DrawBlock() {
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 2) return;
+
               NormalCrafterBuild e = (NormalCrafterBuild) build;
+
+              if(Sgl.config.animateLevel < 2){
+                Draw.color(SglLiquids.purified_water.color, e.warmup());
+                Fill.rect(e.x, e.y, e.block.size*tilesize - tilesize, e.block.size*tilesize - tilesize);
+                return;
+              }
+
               TextureRegion region = renderer.fluidFrames[0][Liquids.water.getAnimationFrame()];
               TextureRegion toDraw = Tmp.tr1;
 
@@ -1255,14 +1286,13 @@ public class CrafterBlocks implements ContentList{
       draw = new DrawMulti(
           new DrawBottom(),
           new DrawLiquidTile(),
-          new DrawLiquidRegion() {{
-            suffix = "_liquid";
-          }},
           new DrawBlock() {
             TextureRegion piston;
 
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 2) return;
+
               for(int i = 0; i < 4; i++){
                 float len = Mathf.absin(build.totalProgress() + 90*i, 4, 4);
                 float angle = i*360f/4;
@@ -1276,6 +1306,9 @@ public class CrafterBlocks implements ContentList{
               piston = Core.atlas.find(block.name + "_piston");
             }
           },
+          new DrawLiquidRegion() {{
+            suffix = "_liquid";
+          }},
           new DrawDefault()
       );
     }};
@@ -1328,6 +1361,12 @@ public class CrafterBlocks implements ContentList{
             public void draw(Building build){
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               if(e.producer.current == null) return;
+
+              if(Sgl.config.animateLevel < 2){
+                Draw.color(Liquids.slag.color, e.warmup());
+                Fill.rect(e.x, e.y, e.block.size*tilesize - tilesize, e.block.size*tilesize - tilesize);
+                return;
+              }
 
               TextureRegion region = renderer.fluidFrames[0][Liquids.slag.getAnimationFrame()];
               TextureRegion toDraw = Tmp.tr1;
@@ -1451,6 +1490,8 @@ public class CrafterBlocks implements ContentList{
 
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 3) return;
+
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               float[] alphas = e.getVar("drawAlphas");
 
@@ -1573,6 +1614,8 @@ public class CrafterBlocks implements ContentList{
           new DrawBlock() {
             @Override
             public void draw(Building build) {
+              if(Sgl.config.animateLevel < 2) return;
+
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               SglDraw.drawBloomUnderBlock(e, b -> {
                 float dx = 5 * Mathf.sinDeg(build.totalProgress() * 1.35f);
@@ -1592,6 +1635,8 @@ public class CrafterBlocks implements ContentList{
           new DrawBlock() {
             @Override
             public void draw(Building build) {
+              if(Sgl.config.animateLevel < 3) return;
+
               Draw.z(Layer.effect);
 
               NormalCrafterBuild e = (NormalCrafterBuild) build;
@@ -1600,10 +1645,10 @@ public class CrafterBlocks implements ContentList{
               float realRotB = MathTransform.gradientRotateDeg(angle, 180, 4);
 
               Lines.stroke(1.4f*e.workEfficiency(), SglDrawConst.fexCrystal);
-              Lines.square(e.x, e.y, 16, 45 + realRotA);
+              Lines.square(e.x, e.y, 20 + 4*Mathf.sinDeg(realRotB), 45 + realRotA);
 
               Lines.stroke(1.6f*e.workEfficiency());
-              Lines.square(e.x, e.y, 24, 45 - realRotB);
+              Lines.square(e.x, e.y, 20 + 4*Mathf.sinDeg(realRotA), 45 - realRotB);
             }
           }
       );
@@ -1677,6 +1722,8 @@ public class CrafterBlocks implements ContentList{
           new DrawBlock() {
             @Override
             public void draw(Building build) {
+              if(Sgl.config.animateLevel < 3) return;
+
               NormalCrafterBuild e = (NormalCrafterBuild) build;
 
               float angle1 = MathTransform.gradientRotateDeg(build.totalProgress()*0.8f, 180, 0.5f, 4);
@@ -1716,6 +1763,8 @@ public class CrafterBlocks implements ContentList{
       size = 5;
       itemCapacity = 20;
 
+      warmupSpeed = 0.0075f;
+
       loopSound = Sounds.spellLoop;
       loopSoundVolume = 0.4f;
       
@@ -1733,7 +1782,7 @@ public class CrafterBlocks implements ContentList{
       
       craftEffect = SglFx.polymerConstructed;
 
-      initialed = e -> e.setVar("timer", new Interval());
+      final int timeId = timers++;
 
       draw = new DrawMulti(
           new DrawBottom(),
@@ -1750,23 +1799,48 @@ public class CrafterBlocks implements ContentList{
           }},
           new DrawDefault(),
           new DrawBlock(){
+            static final Distortion dist = new Distortion(Layer.min, Layer.flyingUnit + 0.02f);
+            final int taskID = SglDraw.nextTaskID();
+
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 3) return;
+
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);
-              Draw.alpha(e.workEfficiency());
-              Lines.stroke(1.5f);
-              float rotation = e.totalProgress()*1.75f;
-              Lines.square(e.x, e.y, 35, 45 + rotation);
-              Lines.square(e.x, e.y, 35, -rotation);
-              Lines.stroke(0.4f);
+              Lines.stroke(0.4f*e.workEfficiency());
               Lines.square(e.x, e.y, 3 + Mathf.random(-0.15f, 0.15f));
               Lines.square(e.x, e.y, 4 + Mathf.random(-0.15f, 0.15f), 45);
 
-              if(e.workEfficiency() > 0.01 && e.<Interval>getVar("timer").get(30)){
-                SglFx.forceField.at(e.x, e.y, (45 + rotation)%360, Pal.reactorPurple, e.workEfficiency());
-                Time.run(15, () -> SglFx.forceField.at(e.x, e.y, Mathf.mod(-e.totalProgress()*1.75f, 360), Pal.reactorPurple, e.workEfficiency()));
+              Draw.z(Layer.flyingUnit + 0.5f);
+              dist.setStrength(-32*e.workEfficiency()*Vars.renderer.getScale());
+              SglDraw.drawDistortion(taskID, e, dist, b -> {
+                Distortion.drawVoidDistortion(b.x, b.y, 24 + Mathf.absin(6, 4), 32*b.workEfficiency());
+              });
+
+              SglDraw.drawBloomUponFlyUnit(e, b -> {
+                Draw.color(Pal.reactorPurple);
+                Lines.stroke(3*b.workEfficiency());
+                Lines.circle(b.x, b.y, 24 + Mathf.absin(6, 4));
+
+                for(Point2 p: Geometry.d4){
+                  Tmp.v1.set(p.x, p.y).scl(28 + Mathf.absin(6f, 4)).rotate(Time.time*0.6f);
+                  Draw.rect(
+                      ((TextureRegionDrawable) SglDrawConst.matrixArrow).getRegion(),
+                      b.x + Tmp.v1.x, b.y + Tmp.v1.y,
+                      8*b.workEfficiency(), 8*b.workEfficiency(),
+                      Tmp.v1.angle() + 90
+                  );
+
+                  Tmp.v2.set(p.x, p.y).scl(24 + Mathf.absin(6f, 4)).rotate(Time.time*0.6f + 45);
+                  Drawf.tri(b.x + Tmp.v2.x, b.y + Tmp.v2.y, 4*b.workEfficiency(), 4, Tmp.v2.angle());
+                  Drawf.tri(b.x + Tmp.v2.x, b.y + Tmp.v2.y, 3*b.workEfficiency(), 3, Tmp.v2.angle() + 180);
+                }
+              });
+
+              if(e.timer(timeId, 15/e.workEfficiency())){
+                SglFx.ploymerGravityField.at(e.x, e.y, 24 + Mathf.absin(6, 4), Pal.reactorPurple, e);
               }
             }
           }
@@ -1838,29 +1912,33 @@ public class CrafterBlocks implements ContentList{
       };
 
       crafting = (NormalCrafterBuild e) -> {
+        if(!Sgl.config.enableLightning || Sgl.config.animateLevel < 3) return;
+
         if(SglDraw.clipDrawable(e.x, e.y, clipSize) && Mathf.chanceDelta(e.workEfficiency()*0.1f)) e.<LightningContainer>getVar("lightningDrawer").create();
         if(Mathf.chanceDelta(e.workEfficiency()*0.04f)) SglFx.randomLightning.at(e.x, e.y, 0, Pal.reactorPurple);
       };
 
       craftTrigger = e -> {
-        if(!SglDraw.clipDrawable(e.x, e.y, clipSize)) return;
+        if(!SglDraw.clipDrawable(e.x, e.y, clipSize) || Sgl.config.animateLevel < 3) return;
         int a = Mathf.random(1, 3);
-        for(int i = 0; i < a; i++){
-          VectorLightningGenerator gen = e.getVar("lightningGenerator");
-          gen.vector.rnd(Mathf.random(65, 100));
 
-          int amount = Mathf.random(3, 5);
-          for(int i1 = 0; i1 < amount; i1++){
-            e.<LightningContainer>getVar("lightnings").create();
-          }
+        if(Sgl.config.enableLightning){
+          for(int i = 0; i < a; i++){
+            VectorLightningGenerator gen = e.getVar("lightningGenerator");
+            gen.vector.rnd(Mathf.random(65, 100));
 
-          if(Mathf.chance(0.25f)){
-            SglFx.explodeImpWave.at(e.x + gen.vector.x, e.y + gen.vector.y, Pal.reactorPurple);
-            Angles.randLenVectors(System.nanoTime(), Mathf.random(4, 7), 2, 3.5f,
-                (x, y) -> SglParticleModels.nuclearParticle.create(e.x + gen.vector.x, e.y + gen.vector.y, x, y, Mathf.random(3.25f, 4f)));
-          }
-          else{
-            SglFx.spreadLightning.at(e.x + gen.vector.x, e.y + gen.vector.y, Pal.reactorPurple);
+            int amount = Mathf.random(3, 5);
+            for(int i1 = 0; i1 < amount; i1++){
+              e.<LightningContainer>getVar("lightnings").create();
+            }
+
+            if(Mathf.chance(0.25f)){
+              SglFx.explodeImpWave.at(e.x + gen.vector.x, e.y + gen.vector.y, Pal.reactorPurple);
+              Angles.randLenVectors(System.nanoTime(), Mathf.random(4, 7), 2, 3.5f,
+                  (x, y) -> SglParticleModels.nuclearParticle.create(e.x + gen.vector.x, e.y + gen.vector.y, x, y, Mathf.random(3.25f, 4f)));
+            }else{
+              SglFx.spreadLightning.at(e.x + gen.vector.x, e.y + gen.vector.y, Pal.reactorPurple);
+            }
           }
         }
         Effect.shake(5.5f, 20f, e.x, e.y);
@@ -1872,13 +1950,16 @@ public class CrafterBlocks implements ContentList{
 
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 3) return;
+
               NormalCrafterBuild e = (NormalCrafterBuild) build;
-              Draw.color(Pal.reactorPurple);
-              Draw.alpha(e.workEfficiency());
 
               SglDraw.drawBloomUnderBlock(e, b -> {
                 LightningContainer c = b.getVar("lightningDrawer");
                 if(!Vars.state.isPaused()) c.update();
+
+                Draw.color(Pal.reactorPurple);
+                Draw.alpha(e.workEfficiency());
                 c.draw(b.x, b.y);
               });
               Draw.z(35);
@@ -1889,14 +1970,17 @@ public class CrafterBlocks implements ContentList{
           new DrawBlock(){
             @Override
             public void draw(Building build){
+              if(Sgl.config.animateLevel < 3) return;
+
               NormalCrafterBuild e = (NormalCrafterBuild) build;
               Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);
               LightningContainer c = e.getVar("lightnings");
               if(!Vars.state.isPaused()) c.update();
               c.draw(e.x, e.y);
-              float offsetH = Mathf.absin(0.6f, 4);
-              float offsetW = Mathf.absin(0.4f, 12);
+              float lerp = Noise.noise(Time.time, 0, 3.5f, 1);
+              float offsetH = 6*lerp;
+              float offsetW = 14*lerp;
 
               SglDraw.drawLightEdge(
                   e.x, e.y,
@@ -1905,12 +1989,12 @@ public class CrafterBlocks implements ContentList{
               );
 
               Draw.z(Layer.bullet - 10);
-              Draw.alpha(0.3f*e.workEfficiency());
-              SglDraw.gradientCircle(e.x, e.y, 72*e.workEfficiency(), 6 + 6*e.workEfficiency(), transColor);
-              Draw.alpha(0.35f*e.workEfficiency());
-              SglDraw.gradientCircle(e.x, e.y, 41*e.workEfficiency(), -7*e.workEfficiency(), transColor);
-              Draw.alpha(0.65f*e.workEfficiency());
-              SglDraw.gradientCircle(e.x, e.y, 18*e.workEfficiency(), -3*e.workEfficiency(), transColor);
+              Draw.alpha(0.2f*e.workEfficiency() + lerp*0.25f);
+              SglDraw.gradientCircle(e.x, e.y, 72*e.workEfficiency(), 6 + 5*e.workEfficiency() + 2.3f*lerp, transColor);
+              Draw.alpha(0.3f*e.workEfficiency() + lerp*0.25f);
+              SglDraw.gradientCircle(e.x, e.y, 41*e.workEfficiency(), -6*e.workEfficiency() - 2f*lerp, transColor);
+              Draw.alpha(0.55f*e.workEfficiency() + lerp*0.25f);
+              SglDraw.gradientCircle(e.x, e.y, 18*e.workEfficiency(), -3*e.workEfficiency() - lerp, transColor);
               Draw.alpha(1);
               SglDraw.drawLightEdge(
                   e.x, e.y,
