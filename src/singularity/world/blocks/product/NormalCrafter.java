@@ -51,6 +51,7 @@ import universecore.world.consumers.ConsumeType;
 import universecore.world.producers.BaseProduce;
 import universecore.world.producers.BaseProducers;
 import universecore.world.producers.ProduceLiquids;
+import universecore.world.producers.ProduceType;
 
 /**常规的工厂类方块，具有强大的consume-produce制造系统的近乎全能的制造类方块*/
 @Annotations.ImplEntries
@@ -144,6 +145,10 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       hasLiquids |= outputsLiquid |= prod.get(SglProduceType.liquid) != null;
       hasPower |= outputsPower |= prod.get(SglProduceType.power) != null && prod.get(SglProduceType.power).powerProduction != 0;
       hasEnergy |= outputEnergy |= prod.get(SglProduceType.energy) != null;
+    }
+
+    for (BaseProducers producer : producers()) {
+      outputsPayload |= producer.get(ProduceType.payload) != null;
     }
     
     super.init();

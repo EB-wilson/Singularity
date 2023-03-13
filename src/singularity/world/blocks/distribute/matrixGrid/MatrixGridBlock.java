@@ -53,6 +53,9 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
     configurable = true;
     independenceInventory = false;
     independenceLiquidTank = false;
+
+    unloadable = false;
+    displayLiquid = false;
   }
   
   @Override
@@ -146,7 +149,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
 
   @SuppressWarnings("rawtypes")
   @Annotations.ImplEntries
-  public class MatrixGridBuild extends DistNetBuild implements DistMatrixUnitBuildComp, SecondableConfigBuildComp {
+  public class MatrixGridBuild extends DistNetBuild implements DistMatrixUnitBuildComp, SecondableConfigBuildComp{
     public MatrixGrid grid = new MatrixGrid(this);
     
     protected TreeSeq<TargetConfigure> configs = new TreeSeq<>((a, b) -> b.priority - a.priority);
@@ -263,7 +266,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           DistRequestBase request = createRequest(entry.key, e.key);
           if(request == null) continue;
           requests.add(request);
-          distributor.assign(request);
+          distributor.assign(request, false);
 
           requestHandlerMap.put(request, e.value);
         }
@@ -311,10 +314,11 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
         for (GridChildType value : GridChildType.values()) {
           for (MatrixGrid.BuildingEntry<Building> entry : grid.<Building>get(value, (b, c) -> true)) {
             Building b = nearby(Point2.x(entry.config.offsetPos), Point2.y(entry.config.offsetPos));
-            if (b == null || !b.isAdded() || b != entry.entity) {
+            if (b == null || b != entry.entity) {
               if (b instanceof IOPointComp io) {
-                removeIO(io);
-              } else {
+                if(!b.isAdded()) removeIO(io);
+              }
+              else {
                 TargetConfigure c = configMap.remove(entry.config.offsetPos);
                 if (c != null) {
                   configs.remove(c);

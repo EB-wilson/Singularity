@@ -4,6 +4,7 @@ import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.Lines;
 import arc.math.Angles;
 import arc.math.Mathf;
 import arc.struct.ObjectMap;
@@ -14,7 +15,6 @@ import arc.util.pooling.Pools;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.StatusEffects;
-import mindustry.entities.Damage;
 import mindustry.entities.Effect;
 import mindustry.entities.Puddles;
 import mindustry.entities.abilities.Ability;
@@ -22,6 +22,7 @@ import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.Bullet;
 import mindustry.gen.Puddle;
+import mindustry.gen.Tex;
 import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
@@ -34,6 +35,7 @@ import singularity.Sgl;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.type.AtomSchematic;
+import singularity.ui.StatUtils;
 import singularity.world.SglFx;
 import singularity.world.meta.SglStat;
 import universecore.UncCore;
@@ -89,6 +91,19 @@ public class OtherContents implements ContentList{
         speedMultiplier = 0.5f;
         buildSpeedMultiplier = 0.1f;
         reloadMultiplier = 0.6f;
+        damageMultiplier = 0.7f;
+
+        init(() -> {
+          stats.add(SglStat.effect, t -> {
+            t.defaults().left().padLeft(5);
+            t.row();
+            t.add(Core.bundle.format("data.bulletDeflectAngle", 45 + StatUnit.degrees.localized())).color(Color.lightGray);
+            t.row();
+            t.add(Core.bundle.get("infos.banedAbilities")).color(Color.lightGray);
+            t.row();
+            t.add(Core.bundle.get("infos.empDamagedInfo"));
+          });
+        });
       }
 
       @Override
@@ -145,10 +160,7 @@ public class OtherContents implements ContentList{
     electric_disturb = new StatusEffect("electric_disturb"){
       {
         color = Pal.accent;
-      }
 
-      @Override
-      public void setStats(){
         stats.addPercent(Stat.damageMultiplier, 0.8f);
         stats.addPercent(Stat.speedMultiplier, 0.6f);
         stats.addPercent(Stat.reloadMultiplier, 0.75f);
@@ -176,6 +188,11 @@ public class OtherContents implements ContentList{
     locking = new StatusEffect("locking"){
       {
         color = Pal.remove;
+
+        init(() -> {
+          stats.add(SglStat.damagedMultiplier, Core.bundle.get("infos.lockingMult"));
+          stats.add(SglStat.damageProbably, Core.bundle.get("infos.lockingProb"));
+        });
       }
 
       @Override
@@ -205,13 +222,15 @@ public class OtherContents implements ContentList{
       color = Pal.heal;
       speedMultiplier = 1.23f;
       reloadMultiplier = 1.16f;
-      damage = -2;
+      damageMultiplier = 1.1f;
+      damage = -1;
     }};
 
     wild_growth = new StatusEffect("wild_growth"){{
       color = Tmp.c1.set(Pal.heal).lerp(Color.black, 0.25f).cpy();
-      speedMultiplier = 0.05f;
-      reloadMultiplier = 0.7f;
+      speedMultiplier = 0.3f;
+      reloadMultiplier = 1.2f;
+      damageMultiplier = 0.6f;
       damage = 1.5f;
     }};
 
@@ -223,65 +242,98 @@ public class OtherContents implements ContentList{
         effect = Fx.freezing;
 
         init(() -> {
-          handleOpposite(StatusEffects.burning);
-          handleOpposite(StatusEffects.melting);
+          opposite(StatusEffects.burning, StatusEffects.melting);
+
+          affinity(meltdown, (e, s, t) -> {
+            e.damage(s.time);
+            s.time -= t;
+          });
+
+          stats.add(SglStat.effect, t -> {
+            t.add(Core.bundle.get("infos.frostInfo"));
+            t.image(frost_freeze.uiIcon).size(25);
+            t.add(frost_freeze.localizedName).color(Pal.accent);
+          });
         });
       }
 
       @Override
       public void update(Unit unit, float time){
         super.update(unit, time);
-        if(time >= 30*unit.hitSize){
+        if(time >= 30*unit.hitSize + unit.maxHealth/unit.hitSize){
           if(unit.getDuration(frost_freeze) <= 0){
             unit.unapply(this);
             unit.apply(frost_freeze, Math.max(time/2, 180));
           }
         }
       }
+
+      @Override
+      public void draw(Unit unit, float time){
+        super.draw(unit);
+        if(unit.hasEffect(frost_freeze)) return;
+        float rate = time/(30*unit.hitSize + unit.maxHealth/unit.hitSize);
+
+        float ro = Mathf.randomSeed(unit.id, 360);
+        Draw.color(SglDrawConst.frost);
+        Draw.alpha(0.85f*rate);
+        Draw.z(Layer.flyingUnit);
+        SglDraw.drawDiamond(unit.x, unit.y, unit.hitSize*2.35f*rate, unit.hitSize*2*rate, ro, 0.2f*rate);
+      }
     };
 
     frost_freeze = new StatusEffect("frost_freeze"){
       {
-        speedMultiplier = 0.05f;
-        reloadMultiplier = 0.05f;
+        speedMultiplier = 0f;
+        reloadMultiplier = 0f;
+        dragMultiplier = 10;
+
         effect = SglFx.particleSpread;
 
         init(() -> {
-          handleOpposite(StatusEffects.burning);
-          handleOpposite(StatusEffects.melting);
+          opposite(StatusEffects.burning, StatusEffects.melting);
+
+          stats.add(SglStat.effect, t -> {
+            t.image(frost.uiIcon).size(25);
+            t.add(frost.localizedName).color(Pal.accent);
+            t.add(Core.bundle.get("infos.frostFreezeInfo"));
+          });
         });
       }
 
       @Override
       public void update(Unit unit, float time){
         super.update(unit, time);
-        if(unit.getDuration(frost) >= 30*unit.hitSize){
-          unit.apply(StatusEffects.freezing, 240);
-          unit.unapply(frost);
-          unit.unapply(frost_freeze);
-
-          unit.damage(time/3.4f);
-          Damage.damage(unit.x, unit.y, unit.hitSize, unit.getDuration(frost)/2.8f);
+        if(unit.getDuration(frost) >= 60*unit.hitSize + 3*unit.maxHealth/unit.hitSize){
           Fx.pointShockwave.at(unit.x, unit.y);
-          Effect.shake(0.75f, 0.75f, unit);
+          SglFx.freezingBreakDown.at(unit.x, unit.y, 0, unit);
+          unit.kill();
+          unit.unapply(frost_freeze);
+          Effect.shake(8f, 8, unit);
         }
       }
 
       @Override
-      public void draw(Unit unit, float time){
-        super.draw(unit, time);
+      public void draw(Unit unit){
+        super.draw(unit);
         float ro = Mathf.randomSeed(unit.id, 360);
-        Draw.color(SglDrawConst.frost);
+
+        float time = unit.getDuration(frost);
+        float rate = time/(60*unit.hitSize + 3*unit.maxHealth/unit.hitSize);
+        Draw.color(SglDrawConst.frost, SglDrawConst.winter, rate);
         Draw.alpha(0.85f);
         Draw.z(Layer.flyingUnit);
         SglDraw.drawDiamond(unit.x, unit.y, unit.hitSize*2.35f, unit.hitSize*2, ro, 0.3f);
 
         Draw.alpha(0.7f);
-        int n = Mathf.randomSeed(unit.id + 1, 4, 8);
+        int n = (int) (unit.hitSize/8 + Mathf.randomSeed(unit.id + 1, 2, 5));
         for(int i = 0; i < n; i++){
-          float off = Mathf.randomSeed(unit.id + 2 + i, unit.hitSize*0.8f, unit.hitSize);
-          float len = Mathf.randomSeed(unit.id + 3 + i, unit.hitSize);
-          float wid = Mathf.randomSeed(unit.id + 4 + i, unit.hitSize*0.4f, unit.hitSize*0.8f);
+          float v = Mathf.randomSeed(unit.id + 6 + i, 0.75f);
+          float re = 1 - Mathf.clamp((1 - rate - v)/(1 - v));
+
+          float off = Mathf.randomSeed(unit.id + 2 + i, unit.hitSize*0.5f, unit.hitSize);
+          float len = Mathf.randomSeed(unit.id + 3 + i, unit.hitSize)*re;
+          float wid = Mathf.randomSeed(unit.id + 4 + i, unit.hitSize*0.4f, unit.hitSize*0.8f)*re;
           float rot = Mathf.randomSeed(unit.id + 5 + i, 360);
 
           SglDraw.drawDiamond(unit.x + Angles.trnsx(rot, off), unit.y + Angles.trnsy(rot, off), len, wid, rot, 0.2f);
@@ -291,11 +343,11 @@ public class OtherContents implements ContentList{
 
     meltdown = new StatusEffect("meltdown"){
       {
-        damage = 1;
+        damage = 2.2f;
         effect = Fx.melting;
 
         init(() -> {
-          opposite(StatusEffects.freezing, StatusEffects.wet, frost);
+          opposite(StatusEffects.freezing, StatusEffects.wet);
 
           affinity(StatusEffects.tarred, (unit, result, time) -> {
             unit.damagePierce(8f);
@@ -303,11 +355,18 @@ public class OtherContents implements ContentList{
             result.set(meltdown, 180 + result.time);
           });
 
+          affinity(frost, (e, s, t) -> {
+            e.damage(t);
+            s.time -= t;
+          });
+
           trans(frost_freeze, (e, s, t) -> {
             s.time -= t;
             e.apply(StatusEffects.blasted);
-            e.damage(Math.max(e.getDuration(frost), t)/2f);
+            e.damage(Math.max(e.getDuration(frost_freeze), t)/2f);
           });
+
+          stats.add(SglStat.exShieldDamage, Core.bundle.get("infos.meltdownDamage"));
         });
       }
 
@@ -319,6 +378,25 @@ public class OtherContents implements ContentList{
           unit.shield -= Time.delta*time/6;
         }
       }
+
+      @Override
+      public void draw(Unit unit, float time){
+        super.draw(unit, time);
+
+        SglDraw.drawBloomUponFlyUnit(unit, u -> {
+          float rate = Mathf.clamp(90/(time/30));
+          Lines.stroke(2.2f*rate, Pal.lighterOrange);
+          Draw.color(rate*0.7f);
+          Lines.circle(u.x, u.y, u.hitSize/2 + rate*u.hitSize/2);
+
+          for(int i = 0; i < 8; i++){
+            SglDraw.drawTransform(u.x, u.y, u.hitSize/2 + rate*u.hitSize/2, 0, Time.time + Mathf.randomSeed(u.id, 360f), (x, y, r) -> {
+              float len = Mathf.randomSeed(u.id, u.hitSize/4, u.hitSize/1.5f);
+              SglDraw.drawDiamond(x, y, len, len*0.135f, r);
+            });
+          }
+        });
+      }
     };
 
     crystallize = new StatusEffect("crystallize"){
@@ -328,6 +406,25 @@ public class OtherContents implements ContentList{
 
         effect = SglFx.crystalFragFex;
         effectChance = 0.1f;
+
+        init(() -> {
+          stats.add(SglStat.damagedMultiplier, "115%");
+          stats.add(SglStat.effect, t -> {
+            t.defaults().left().padLeft(5);
+            t.row();
+            t.table(a -> {
+              a.add(Core.bundle.get("infos.attach"));
+              a.image(SglLiquids.phase_FEX_liquid.uiIcon).size(25);
+              a.add(SglLiquids.phase_FEX_liquid.localizedName).color(Pal.accent);
+            });
+            t.row();
+            t.add(Core.bundle.format("infos.shots", 3));
+            t.row();
+            t.table(Tex.underline, b -> {
+              StatUtils.buildAmmo(b, crushCrystal);
+            }).padLeft(10);
+          });
+        });
       }
 
       @Override
@@ -380,26 +477,41 @@ public class OtherContents implements ContentList{
 
     UncCore.aspects.addAspect(new EntityAspect<Unit>(EntityAspect.Group.unit, u -> true)
         .setTrigger(new TriggerEntry<>(EventType.Trigger.update, unit -> {
-          if(unit.hasEffect(locking)){
-            float str = unit.getDuration(locking);
+          if(unit.hasEffect(locking) || unit.hasEffect(crystallize)){
 
             float[] health = lastHealth.get(unit, () -> new float[]{unit.health});
             if(health[0] != unit.health){
-              if(health[0] - 6 > unit.health){
+              if(health[0] - 10 > unit.health){
                 float damageBase = health[0] - unit.health;
 
                 //locking
-                if(Mathf.chance(0.1f + str/100)){
-                  unit.damage(damageBase*12*str/100f, false);
+                if(unit.hasEffect(locking)){
+                  float str = unit.getDuration(locking);
+                  if(Mathf.chance(0.1f + str/100)){
+                    unit.damage(damageBase*12*str/100f, false);
+                  }
                 }
 
                 //crystallize
-                unit.damage(damageBase*0.35f);
-
+                if(unit.hasEffect(crystallize)) unit.damage(damageBase*0.15f);
               }
               health[0] = unit.health;
             }
           }
         })).setExitTrigger(e -> {}).setEntryTrigger(e -> {}));
+  }
+
+  static class IconcStatus extends StatusEffect{
+
+    public IconcStatus(String name){
+      super(name);
+    }
+
+    @Override
+    public void init(){
+      super.init();
+
+
+    }
   }
 }

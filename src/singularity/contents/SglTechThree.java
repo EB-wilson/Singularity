@@ -116,9 +116,14 @@ public class SglTechThree implements ContentList{
 
       node(blastDrill, matrix_miner, Seq.with(new Objectives.Research(matrix_core)), matDil -> {
         matDil.node(matrix_miner_node, matNod -> {});
+        matDil.node(matrix_miner_extend, matExt -> {});
+        matDil.node(matrix_miner_pierce, matPie -> {});
+        matDil.node(matrix_miner_overdrive, matOve -> {});
       });
 
       node(coreShard, matrix_bridge, matBri -> {
+        matBri.node(matrix_tower, matTow -> {});
+
         matBri.node(matrix_core, matCore -> {
           matCore.node(matrix_process_unit, matProc -> {});
 
@@ -141,6 +146,8 @@ public class SglTechThree implements ContentList{
           });
 
           matCore.node(matrix_controller, matCtrl -> {
+            matCtrl.node(io_point, iop -> {});
+
             matCtrl.node(matrix_grid_node, matGnd -> {});
           });
         });

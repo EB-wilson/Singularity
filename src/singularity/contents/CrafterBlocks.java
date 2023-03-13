@@ -240,42 +240,51 @@ public class CrafterBlocks implements ContentList{
             new DrawBlock(){
               final static Rand rand = new Rand();
 
-              @Override
-              public void draw(Building build){
-                if(Sgl.config.animateLevel < 2) return;
-
-                float alp = Math.max(build.warmup(), 0.7f*build.liquids.get(SglLiquids.algae_mud)/liquidCapacity);
-                if (alp <= 0.01f) return;
-
-                rand.setSeed(build.id);
-
-                int am = (int) (1 + rand.nextInt(3)*build.warmup());
-                float move = 0.2f*Mathf.sinDeg(Time.time + rand.nextInt(360))*build.warmup();
-                Draw.color(Tmp.c1.set(SglLiquids.algae_mud.color).a(alp));
-                Angles.randLenVectors(build.id, am, 3.5f, (dx, dy) -> {
-                  Fill.circle(build.x + dx + move, build.y + dy + move,
-                      (Mathf.randomSeed(build.id, 0.2f, 0.8f) + Mathf.absin(5, 0.1f))
-                          *Math.max(build.warmup(), build.liquids.get(SglLiquids.algae_mud)/liquidCapacity));
-                });
-                Draw.reset();
-              }
-            },
-            new DrawBlock(){
               static final int drawID = SglDraw.nextTaskID();
 
               @Override
               public void draw(Building build){
                 Draw.z(Draw.z() + 0.001f);
-                float capacity = build.block.liquidCapacity;
 
-                if (Core.settings.getBool("animatedwater")) {
-                  SglDraw.drawTask(drawID, build, SglShaders.boundWater, e -> {
-                    Draw.alpha(0.75f * (e.liquids.get(Liquids.water) / e.block.liquidCapacity));
-                    Draw.rect(Blocks.water.region, e.x, e.y);
+                Cons<Building> drawCell = b -> {
+                  if(Sgl.config.animateLevel < 2) return;
+
+                  float alp = Math.max(b.warmup(), 0.7f*b.liquids.get(SglLiquids.algae_mud)/liquidCapacity);
+                  if (alp <= 0.01f) return;
+
+                  rand.setSeed(b.id);
+
+                  int am = (int) (1 + rand.nextInt(3)*b.warmup());
+                  float move = 0.2f*Mathf.sinDeg(Time.time + rand.nextInt(360))*b.warmup();
+                  Draw.color(SglLiquids.algae_mud.color);
+                  Draw.alpha(alp);
+                  Angles.randLenVectors(b.id, am, 3.5f, (dx, dy) -> {
+                    Fill.circle(b.x + dx + move, b.y + dy + move,
+                        (Mathf.randomSeed(b.id, 0.2f, 0.8f) + Mathf.absin(5, 0.1f))
+                            *Math.max(b.warmup(), b.liquids.get(SglLiquids.algae_mud)/liquidCapacity));
                   });
+                  Draw.reset();
+                };
+
+                float cap = build.block.liquidCapacity;
+                if (Core.settings.getBool("animatedwater") && Sgl.config.animateLevel >= 2) {
+                  if(Sgl.config.enableShaders){
+                    SglDraw.drawTask(drawID, build, SglShaders.boundWater, e -> {
+                      drawCell.get(e);
+
+                      Draw.alpha(0.75f*(e.liquids.get(Liquids.water)/cap));
+                      Draw.rect(Blocks.water.region, e.x, e.y);
+                    });
+                  }
+                  else{
+                    drawCell.get(build);
+                    LiquidBlock.drawTiledFrames(size, build.x, build.y, 0, Liquids.water,
+                        0.75f*(build.liquids.get(Liquids.water)/cap));
+                  }
                 }
                 else{
-                  Draw.alpha(0.75f * (build.liquids.get(Liquids.water) / capacity));
+                  drawCell.get(build);
+                  Draw.alpha(0.75f*(build.liquids.get(Liquids.water)/cap));
                   Draw.rect(Blocks.water.region, build.x, build.y);
                 }
               }

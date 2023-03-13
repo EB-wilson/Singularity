@@ -1,10 +1,14 @@
 package singularity.world.blocks.distribute;
 
 import mindustry.ctype.Content;
+import singularity.world.components.PayloadBlockComp;
+import singularity.world.components.PayloadBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.distribution.GridChildType;
+import universecore.annotations.Annotations;
 
-public class PayloadIOPoint extends IOPoint{
+@Annotations.ImplEntries
+public class PayloadIOPoint extends IOPoint implements PayloadBlockComp{
   public PayloadIOPoint(String name){
     super(name);
 
@@ -16,7 +20,8 @@ public class PayloadIOPoint extends IOPoint{
 
   }
 
-  public class PayloadIOPointBuild extends IOPointBuild{
+  @Annotations.ImplEntries
+  public class PayloadIOPointBuild extends IOPointBuild implements PayloadBuildComp{
 
     @Override
     protected void transBack(){

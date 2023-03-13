@@ -20,15 +20,18 @@ public class BoosterCrafter extends NormalCrafter{
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public BaseConsumers newBooster(float boost){
-    return newOptionalConsume((BoosterCrafterBuild e, BaseConsumers c) -> {
+    BaseConsumers res = newOptionalConsume((BoosterCrafterBuild e, BaseConsumers c) -> {
       float mul = 1;
       for (BaseConsume cons : c.all()) {
         mul *= cons.efficiency(e);
       }
-      e.boostEff = Mathf.approachDelta(e.boostEff, boost*mul*e.consEfficiency(), 0.04f);
+      e.boostEff = Mathf.approachDelta(e.boostEff, boost*mul*Mathf.clamp(e.consEfficiency()), 0.04f);
+      e.boostMarker = true;
     }, (s, c) -> {
       s.add(Stat.boostEffect, Core.bundle.get("misc.efficiency") + boost*100 + "%");
     });
+    consume.optionalAlwaysValid = false;
+    return res;
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -62,11 +65,17 @@ public class BoosterCrafter extends NormalCrafter{
 
   public class BoosterCrafterBuild extends NormalCrafterBuild{
     public float boostEff = 1;
+    public boolean boostMarker;
 
     @Override
     public void updateTile() {
       super.updateTile();
-      boostEff = Mathf.approachDelta(boostEff, 1, 0.04f);
+      if(boostMarker){
+        boostMarker = false;
+      }
+      else boostEff = Mathf.approachDelta(boostEff, 1, 0.04f);
+
+      totalProgress(totalProgress() + Mathf.maxZero(boostEff - 1)*consumer.consDelta());
     }
   }
 }

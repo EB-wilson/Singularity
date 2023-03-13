@@ -37,7 +37,7 @@ public class DistCoreModule extends BlockModule{
   public DistCoreModule(DistElementBuildComp entity){
     core = (DistNetworkCoreComp) entity;
     for(DistBufferType<?> buffer: DistBufferType.all){
-      buffers.put(buffer, buffer.get(core.bufferSize().get(buffer)));
+      buffers.put(buffer, buffer.get(core.bufferSize().get(buffer, 0)));
     }
   }
   

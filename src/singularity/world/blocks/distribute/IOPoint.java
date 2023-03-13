@@ -75,21 +75,6 @@ public abstract class IOPoint extends SglBlock implements IOPointBlockComp{
     return config;
   }
 
-  @Override
-  public boolean unlocked(){
-    return DistributeBlocks.matrix_controller.unlocked();
-  }
-
-  @Override
-  public boolean unlockedNow(){
-    return DistributeBlocks.matrix_controller.unlockedNow();
-  }
-
-  @Override
-  public boolean unlockedNowHost(){
-    return DistributeBlocks.matrix_controller.unlockedNowHost();
-  }
-
   abstract public void setupRequestFact();
 
   @Annotations.ImplEntries

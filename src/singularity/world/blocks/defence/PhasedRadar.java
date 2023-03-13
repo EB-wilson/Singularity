@@ -1,5 +1,6 @@
 package singularity.world.blocks.defence;
 
+import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
@@ -19,9 +20,12 @@ import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.world.Block;
 import mindustry.world.Tile;
+import mindustry.world.meta.Stat;
+import mindustry.world.meta.StatUnit;
 import singularity.contents.OtherContents;
 import singularity.graphic.SglDraw;
 import singularity.world.blocks.SglBlock;
+import singularity.world.meta.SglStat;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ChainsBlockComp;
 import universecore.components.blockcomp.SpliceBlockComp;
@@ -61,6 +65,23 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
     Lines.stroke(1f);
     Draw.color(Pal.placing);
     Drawf.circles(x*tilesize + offset, y*tilesize + offset, range*tilesize);
+  }
+
+  @Override
+  public void setStats(){
+    super.setStats();
+    stats.add(Stat.range, range, StatUnit.blocks);
+    stats.add(SglStat.maxTarget, 10);
+    stats.add(SglStat.effect, t -> {
+      t.defaults().left().padLeft(5);
+      t.row();
+      t.table(a -> {
+        a.image(OtherContents.locking.uiIcon).size(25);
+        a.add(OtherContents.locking.localizedName).color(Pal.accent);
+      });
+      t.row();
+      t.add(Core.bundle.get("infos.phaseRadarEff"));
+    });
   }
 
   @Annotations.ImplEntries
@@ -104,7 +125,7 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
           for(Unit unit: Groups.unit){
             boolean lenValid = false;
             if(unit.team != team && unit.isFlying()
-                && (lenValid = Mathf.len(unit.x - x + centerPos.x, unit.y - y + centerPos.y) < range*Vars.tilesize)
+                && (lenValid = Mathf.len(unit.x - centerPos.x, unit.y - centerPos.y) < range*Vars.tilesize)
                 && !locking.contains(unit) && locking.size < Math.min(chains.container.all.size, 10)){
               locking.add(unit);
             }
@@ -178,8 +199,8 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
       Draw.alpha(0.4f);
 
       PhasedRadarBuild b = chains.getVar("build");
-      float drawX = x + b.centerPos.x;
-      float drawY = y + b.centerPos.y;
+      float drawX = b.centerPos.x;
+      float drawY = b.centerPos.y;
       Fill.circle(drawX, drawY, range*tilesize);
       Draw.alpha(1);
       Drawf.circles(drawX, drawY, range*tilesize);

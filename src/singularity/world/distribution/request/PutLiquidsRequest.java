@@ -1,6 +1,8 @@
 package singularity.world.distribution.request;
 
 import arc.struct.Seq;
+import mindustry.Vars;
+import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistBufferType;
@@ -14,6 +16,8 @@ public class PutLiquidsRequest extends DistRequestBase{
 
   protected final Seq<LiquidStack> reqLiquids;
   protected final boolean all;
+
+  protected float[] lastHandles = new float[Vars.content.liquids().size];
 
   public PutLiquidsRequest(DistElementBuildComp sender, LiquidsBuffer source){
     this(sender, source, null);
@@ -69,6 +73,17 @@ public class PutLiquidsRequest extends DistRequestBase{
 
   @Override
   protected boolean afterHandleTask(){
+    for(int id = 0; id < lastHandles.length; id++){
+      Liquid item = Vars.content.liquid(id);
+
+      float rem = Math.min(lastHandles[id], destination.get(item));
+      rem = Math.min(rem, source.remainingCapacity());
+      destination.remove(item, rem);
+      destination.deReadFlow(item, rem);
+      source.put(item, rem);
+      source.dePutFlow(item, rem);
+    }
+
     return true;
   }
 }

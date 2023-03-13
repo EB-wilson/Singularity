@@ -281,9 +281,6 @@ public class SglTurrets implements ContentList{
       liquidCapacity = 30;
       range = 240;
 
-      shoot.shots = 3;
-      shoot.shotDelay = 30;
-
       shootSound = Sounds.shootSmite;
 
       //copy from smite
@@ -348,7 +345,8 @@ public class SglTurrets implements ContentList{
       }});
       consume.item(Items.surgeAlloy, 1);
       consume.power(1.8f);
-      consume.time(120);
+      consume.time(45);
+      setReloadAmount(3);
 
       newCoolant(1f, 0.4f, l -> l.heatCapacity >= 0.4f && l.temperature <= 0.5f, 0.25f, 20);
     }};
@@ -1650,6 +1648,7 @@ public class SglTurrets implements ContentList{
           fragBullets = 2;
           fragSpread = 10;
           fragOnHit = true;
+          despawnHit = false;
           fragRandomSpread = 60;
           incendAmount = 0;
           incendChance = 0;
@@ -2555,7 +2554,7 @@ public class SglTurrets implements ContentList{
           hitSoundVolume = 1.6f;
 
           status = OtherContents.meltdown;
-          statusDuration = 18;
+          statusDuration = 12;
         }
 
         @Override
@@ -2579,7 +2578,7 @@ public class SglTurrets implements ContentList{
           }
 
           if(entity instanceof Unit unit){
-            unit.damagePierce(Math.min(unit.getDuration(status)/2, 90));
+            unit.damagePierce(Math.min(unit.getDuration(status)/30, 90));
             unit.apply(status, statusDuration + unit.getDuration(status));
           }
         }

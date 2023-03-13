@@ -19,6 +19,7 @@ import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.entities.Effect;
 import mindustry.entities.effect.MultiEffect;
+import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
@@ -199,6 +200,64 @@ public class SglFx{
     });
   }),
 
+  freezingBreakDown = new Effect(180, e -> {
+    if(!(e.data instanceof Unit u)) return;
+    float size = u.hitSize*1.2f;
+
+    float intensity = size/32 - 2.2f;
+    float baseLifetime = 25f + intensity*11f;
+
+    e.scaled(baseLifetime, b -> {
+      Draw.color();
+      b.scaled(5 + intensity*2f, i -> {
+        stroke((3.1f + intensity/5f)*i.fout());
+        Lines.circle(b.x, b.y, (3f + i.fin()*14f)*intensity);
+        Drawf.light(b.x, b.y, i.fin()*14f*2f*intensity, Color.white, 0.9f*b.fout());
+      });
+
+      color(SglDrawConst.winter, SglDrawConst.frost, b.fin());
+      stroke((2f*b.fout()));
+
+      Draw.z(Layer.effect + 0.001f);
+      randLenVectors(b.id + 1, b.finpow() + 0.001f, (int) (8*intensity), 28f*intensity, (x, y, in, out) -> {
+        lineAngle(b.x + x, b.y + y, Mathf.angle(x, y), 1f + out*4*(4f + intensity));
+        Drawf.light(b.x + x, b.y + y, (out*4*(3f + intensity))*3.5f, Draw.getColor(), 0.8f);
+      });
+    });
+
+    float rate = e.fout(Interp.pow2In);
+    float l = size*rate*1.2f;
+    float w = size*rate*0.2f;
+
+    float x = e.x;
+    float y = e.y;
+    float fout = e.fout();
+    float fin = e.fin();
+    Drawf.light(x, y, fout*size, SglDrawConst.winter, 0.7f);
+
+    float lerp = e.fin(Interp.pow3Out);
+    int id = e.id;
+
+    SglDraw.drawBloomUponFlyUnit(null, n -> {
+      Draw.color(SglDrawConst.winter);
+      SglDraw.drawLightEdge(x, y, l, w, l, w);
+      Lines.stroke(5f* fout);
+      Lines.circle(x, y, 55* fout);
+
+      SglDraw.gradientCircle(x, y, size*lerp, -size*lerp*fout, 1);
+    });
+
+    Draw.z(Layer.flyingUnit + 1);
+    randLenVectors(id, (int) randomSeed(id, size/6, size/3), size/2, size*2, (dx, dy) -> {
+      float s = randomSeed((int) (id + dx), size/4, size/2);
+
+      float le = 1 - pow(fin, 4);
+      SglDraw.drawCrystal(x + dx*lerp, y + dy*lerp, s, s*le*0.35f, s*le*0.24f, 0, 0, 0.8f*le,
+          Layer.effect, Layer.bullet - 1, Time.time*Mathf.randomSeed(id, -3.5f, 3.35f) + randomSeed((long) (id + dx), 360),
+          Mathf.angle(dx, dy), Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
+    });
+  }),
+
   crossLight = new Effect(30, e -> {
     Draw.color(e.color);
     for(int i: signs){
@@ -357,6 +416,14 @@ public class SglFx{
     });
   }),
 
+  matrixDrill = new Effect(45, e -> {
+    Draw.color(e.color);
+
+    Lines.stroke(1.8f*e.fout());
+    Lines.square(e.x, e.y, 3f + 12*e.fin(), 45);
+    Fill.square(e.x, e.y, 3*e.fout(), 45 + 360*e.fin(Interp.pow3Out));
+  }),
+
   lightConeTrail = new Effect(20, e -> {
     Draw.color(e.color);
 
@@ -445,7 +512,8 @@ public class SglFx{
     float x = e.x;
     float y = e.y;
     float fout = e.fout();
-    Drawf.light(x, y, fout *192, SglDrawConst.winter, 0.7f);
+    float fin = e.fin();
+    Drawf.light(x, y, fout*192, SglDrawConst.winter, 0.7f);
 
     Draw.z(Layer.flyingUnit + 1);
 
@@ -463,9 +531,7 @@ public class SglFx{
       randLenVectors(id, randomSeed(id, 16, 22), 128, (dx, dy) -> {
         float size = randomSeed((int) (id + dx), 14, 24);
 
-        SglDraw.drawCrystal(x + dx*lerp, y + dy*lerp, size, size* pow(fout, 3)*0.4f, size* pow(fout, 3)*0.32f, 0, 0, 0.4f*fout,
-            Layer.effect, Layer.bullet - 1, Time.time*2.35f + randomSeed((long) (id + dx), 360), Mathf.angle(dx, dy),
-            SglDrawConst.frost, Tmp.c1.set(SglDrawConst.winter).a(0.7f));
+        SglDraw.drawDiamond(x + dx*lerp, y + dy*lerp, size, size*(1 - pow(fin, 2))*0.35f, Mathf.angle(dx, dy));
       });
     });
   }),

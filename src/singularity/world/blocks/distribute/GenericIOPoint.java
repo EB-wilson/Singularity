@@ -1,5 +1,6 @@
 package singularity.world.blocks.distribute;
 
+import arc.math.Mathf;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.ctype.Content;
@@ -225,7 +226,26 @@ public class GenericIOPoint extends IOPoint{
         lisB.dePutFlow(liquid, outputLiquid(parentBuild, amount, liquid));
       });
     }
-  
+
+    @Override
+    public float moveLiquid(Building next, Liquid liquid){
+      if(next != null){
+        next = next.getLiquidDestination(this, liquid);
+        if(next.interactable(this.team) && next.block.hasLiquids && this.liquids.get(liquid) > 0){
+          float ofract = next.liquids.get(liquid)/next.block.liquidCapacity;
+          float fract = this.liquids.get(liquid)/this.block.liquidCapacity*this.block.liquidPressure;
+          float flow = Math.min(Mathf.clamp(fract - ofract)*this.block.liquidCapacity, this.liquids.get(liquid));
+          flow = Math.min(flow, next.block.liquidCapacity - next.liquids.get(liquid));
+          if(flow > 0.0F && ofract <= fract && next.acceptLiquid(this, liquid)){
+            next.handleLiquid(this, liquid, flow);
+            this.liquids.remove(liquid, flow);
+            return flow;
+          }
+        }
+      }
+      return 0;
+    }
+
     public void siphonItem(Item item){
       if(config == null) return;
       Building other;

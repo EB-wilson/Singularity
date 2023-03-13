@@ -83,6 +83,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public Cons<SglBuilding> initialed;
   public Cons<SglBuilding> updating;
 
+  /**是否显示液体槽*/
+  public boolean displayLiquid = true;
+
   /**核能阻值，在运送核能时运输速度会减去这个数值*/
   public float resident = 0.1f;
   /**方块是否输出核能量*/
@@ -169,6 +172,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       hasLiquids |= cons.get(SglConsumeType.liquid) != null;
       hasPower |= consumesPower |= cons.get(SglConsumeType.power) != null;
       hasEnergy |= consumeEnergy |= cons.get(SglConsumeType.energy) != null;
+    }
+
+    for (BaseConsumers consumer : consumers()) {
+      acceptsPayload |= consumer.get(ConsumeType.payload) != null;
     }
     
     super.init();
@@ -439,7 +446,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       super.displayBars(bars);
 
       //显示流体存储量
-      if(hasLiquids) updateDisplayLiquid();
+      if(hasLiquids && displayLiquid) updateDisplayLiquid();
       if (!displayLiquids.isEmpty()){
         bars.table(Tex.buttonTrans, t -> {
           t.defaults().growX().height(18f).pad(4);

@@ -26,6 +26,7 @@ import mindustry.core.Version;
 import mindustry.game.EventType;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
+import mindustry.graphics.MenuRenderer;
 import mindustry.graphics.Pal;
 import mindustry.graphics.Shaders;
 import mindustry.graphics.g3d.PlanetParams;
@@ -48,6 +49,7 @@ public class SglMenuFrag extends MenuFragment{
   private final Vec3 camRight = new Vec3(1, 0, 0);
   
   private final PlanetRenderer renderer = new SglPlanetRender();
+  private final MenuRenderer menuRenderer = new MenuRenderer();
   FrameBuffer buff = new FrameBuffer();
   private static TextureRegion region;
   
@@ -58,15 +60,13 @@ public class SglMenuFrag extends MenuFragment{
   @Override
   public void build(Group parent){
     parent.clear();
-    Core.scene.root.removeChild(parent);
     
     WidgetGroup group = new WidgetGroup();
     group.setFillParent(true);
     group.touchable = Touchable.childrenOnly;
-    group.visible(() -> state.isMenu());
+    group.visible(() -> !ui.editor.isShown());
     
-    ui.menuGroup = group;
-    Core.scene.add(group);
+    parent.addChild(group);
 
     if(Sgl.config.mainMenuUniverseBackground){
       params.planet = Planets.sun;
@@ -181,6 +181,9 @@ public class SglMenuFrag extends MenuFragment{
           });
         }
       }
+    }
+    else{
+      group.fill((x, y, w, h) -> menuRenderer.render());
     }
   
     //info icon

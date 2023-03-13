@@ -72,6 +72,11 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     dePutFlow(tmp);
   }
 
+  @Override
+  public Integer usedCapacity(){
+    return (Integer) super.usedCapacity();
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public void bufferContAssign(DistributeNetwork network){
@@ -301,7 +306,7 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
   
     @Override
     public int total(){
-      return ItemsBuffer.this.usedCapacity().intValue();
+      return ItemsBuffer.this.usedCapacity();
     }
     
     @Override

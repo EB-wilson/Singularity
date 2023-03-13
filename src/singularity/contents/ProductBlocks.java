@@ -5,9 +5,12 @@ import arc.graphics.Blending;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
+import arc.math.geom.Vec2;
 import arc.util.Time;
+import arc.util.Tmp;
 import mindustry.content.Blocks;
 import mindustry.content.Fx;
 import mindustry.content.Items;
@@ -15,19 +18,18 @@ import mindustry.content.Liquids;
 import mindustry.gen.Building;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
+import mindustry.graphics.Trail;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.draw.*;
 import mindustry.world.meta.Stat;
 import singularity.Sgl;
-import singularity.Singularity;
 import singularity.graphic.SglDraw;
+import singularity.graphic.SglDrawConst;
+import singularity.util.MathTransform;
 import singularity.world.SglFx;
-import singularity.world.blocks.drills.ExtendMiner;
-import singularity.world.blocks.drills.ExtendableDrill;
-import singularity.world.blocks.drills.MatrixMiner;
-import singularity.world.blocks.drills.MatrixMinerEdge;
+import singularity.world.blocks.drills.*;
 import singularity.world.blocks.product.FloorCrafter;
 import singularity.world.blocks.product.SglAttributeCrafter;
 import singularity.world.consumers.SglConsumeFloor;
@@ -38,6 +40,7 @@ import singularity.world.meta.SglAttribute;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeType;
 
+import static mindustry.Vars.tilesize;
 import static mindustry.type.ItemStack.with;
 
 public class ProductBlocks implements ContentList {
@@ -51,8 +54,14 @@ public class ProductBlocks implements ContentList {
   force_field_extender,
   /**矩阵矿床*/
   matrix_miner,
-  /**矿床框架*/
-  matrix_miner_node;
+  /**采掘扇区*/
+  matrix_miner_node,
+  /**矩阵增幅器*/
+  matrix_miner_overdrive,
+  /**量子隧穿仪*/
+  matrix_miner_pierce,
+  /**谐振增压组件*/
+  matrix_miner_extend;
 
   @Override
   public void load() {
@@ -314,27 +323,228 @@ public class ProductBlocks implements ContentList {
           SglItems.iridium, 45
       ));
       size = 5;
-      linkOffset = 10.75f;
+      matrixEnergyUse = 0.6f;
     }};
 
-    matrix_miner_node = new MatrixMinerEdge("matrix_miner_node"){
-      {
-        requirements(Category.production, ItemStack.with(
-            SglItems.matrix_alloy, 30,
-            SglItems.crystal_FEX_power, 25,
-            SglItems.strengthening_alloy, 16,
-            SglItems.aerogel, 20
-        ));
-        size = 3;
-        linkOffset = 5.5f;
-      }
+    matrix_miner_node = new MatrixMinerSector("matrix_miner_node"){{
+      requirements(Category.production, ItemStack.with(
+          SglItems.matrix_alloy, 30,
+          SglItems.crystal_FEX_power, 25,
+          SglItems.strengthening_alloy, 16,
+          SglItems.aerogel, 20
+      ));
+      size = 3;
+      maxRange = 32;
+      drillSize = 3;
 
-      @Override
-      public void load(){
-        super.load();
-        linkRegion = Singularity.getModAtlas("matrix_miner_linking");
-        linkCapRegion = Singularity.getModAtlas("matrix_miner_link_cap");
-      }
-    };
+      clipSize = 64*tilesize;
+
+      energyMulti = 2;
+    }};
+
+    matrix_miner_extend = new MatrixMinerComponent("matrix_miner_extend"){{
+      requirements(Category.production, ItemStack.with(
+          SglItems.matrix_alloy, 40,
+          SglItems.crystal_FEX_power, 40,
+          SglItems.strengthening_alloy, 60,
+          SglItems.iridium, 12,
+          SglItems.degenerate_neutron_polymer, 20
+      ));
+      size = 3;
+
+      drillSize = 5;
+      energyMulti = 4;
+
+      clipSize = 64*tilesize;
+
+      draw = new DrawMulti(
+          new DrawDefault(),
+          new DrawBlock(){
+            @Override
+            public void draw(Building build){
+              if(Sgl.config.animateLevel < 2) return;
+
+              if(build instanceof MatrixMinerComponentBuild b){
+                Draw.z(Layer.effect);
+                Draw.color(SglDrawConst.matrixNet);
+                Fill.circle(b.x, b.y, 2*b.warmup);
+
+                Draw.color(Pal.reactorPurple);
+                Lines.stroke(2f*b.warmup);
+                SglDraw.drawCornerTri(
+                    b.x, b.y,
+                    20*b.warmup,
+                    4*b.warmup,
+                    -Time.time*1.5f,
+                    true
+                );
+
+                if(b.owner != null){
+                  for(MatrixMinerPluginBuild plugin: b.owner.plugins){
+                    if(plugin instanceof MatrixMinerSector.MatrixMinerSectorBuild sec){
+                      Lines.stroke(2f*b.warmup*sec.warmup);
+                      SglDraw.drawCornerTri(
+                          sec.drillPos.x, sec.drillPos.y,
+                          36*b.warmup*sec.warmup,
+                          8*b.warmup*sec.warmup,
+                          -Time.time*1.5f,
+                          true
+                      );
+                    }
+                  }
+                }
+              }
+            }
+          }
+      );
+    }};
+
+    matrix_miner_pierce = new MatrixMinerComponent("matrix_miner_pierce"){{
+      requirements(Category.production, ItemStack.with(
+          SglItems.matrix_alloy, 40,
+          SglItems.crystal_FEX_power, 40,
+          SglItems.crystal_FEX, 50,
+          SglItems.strengthening_alloy, 30,
+          SglItems.iridium, 20,
+          Items.phaseFabric, 40
+      ));
+      size = 3;
+
+      pierceBuild = true;
+      energyMulti = 4;
+
+      clipSize = 64*tilesize;
+
+      draw = new DrawMulti(
+          new DrawDefault(),
+          new DrawBlock(){
+            final float[] param = new float[9];
+
+            final String[] index = {"t1", "t2", "t3", "t4"};
+            final String[] index2 = {"t11", "t12", "t13", "t14"};
+            final String[] indexSelf = {"ts1", "ts2", "ts3"};
+
+            @Override
+            public void draw(Building build){
+              if(Sgl.config.animateLevel < 2) return;
+
+              if(build instanceof MatrixMinerComponentBuild b){
+                Draw.z(Layer.effect);
+                Draw.color(SglDrawConst.matrixNet);
+                Fill.circle(b.x, b.y, 2*b.warmup);
+                Draw.color(Pal.reactorPurple);
+
+                for(int i = 0; i < 3; i++){
+                  for(int d = 0; d < 3; d++){
+                    param[d*3] = Mathf.randomSeed(b.id + d + i, 2f, 4f)/(d + 1)*(i%2 == 0? 1: -1);
+                    param[d*3 + 1] = Mathf.randomSeed(b.id + d + i + 1, 0f, 360f);
+                    param[d*3 + 2] = Mathf.randomSeed(b.id + d + i + 2, 8f, 20f)/((d + 1)*(d + 1));
+                  }
+
+                  Vec2 v = Tmp.v1.set(MathTransform.fourierTransform(Time.time, param)).scl(b.warmup);
+                  Draw.color(Pal.reactorPurple);
+                  Fill.circle(b.x + v.x, b.y + v.y, b.warmup);
+
+                  if(Sgl.config.animateLevel < 3) continue;
+                  Trail trail = b.getVar(indexSelf[i]);
+                  if(trail == null) b.setVar(indexSelf[i], trail = new Trail(60));
+
+                  trail.update(b.x + v.x, b.y + v.y);
+
+                  trail.draw(Pal.reactorPurple, b.warmup);
+                }
+
+                if(b.owner != null){
+                  int ind = 0;
+                  for(MatrixMinerPluginBuild plugin: b.owner.plugins){
+                    if(plugin instanceof MatrixMinerSector.MatrixMinerSectorBuild sec){
+                      boolean bool = Mathf.randomSeed(sec.id, 1) > 0.5f;
+                      for(int d = 0; d < 3; d++){
+                        param[d*3] = Mathf.randomSeed(sec.id + d, 0.5f, 3f)/(d + 1)*(bool != (d%2 == 0)? 1: -1);
+                        param[d*3 + 1] = Mathf.randomSeed(sec.id + d + 1, 0f, 360f);
+                        param[d*3 + 2] = Mathf.randomSeed(sec.id + d + 2, 16f, 40f)/((d + 1)*(d + 1));
+                      }
+                      Vec2 v = Tmp.v1.set(MathTransform.fourierTransform(Time.time, param));
+
+                      for(int d = 0; d < 3; d++){
+                        param[d*3] = Mathf.randomSeed(sec.id + d + 3, 0.5f, 3f)/(d + 1)*(bool != (d%2 == 0)? -1: 1);
+                        param[d*3 + 1] = Mathf.randomSeed(sec.id + d + 4, 0f, 360f);
+                        param[d*3 + 2] = Mathf.randomSeed(sec.id + d + 5, 12f, 30f)/((d + 1)*(d + 1));
+                      }
+                      Vec2 v2 = Tmp.v2.set(MathTransform.fourierTransform(Time.time, param));
+                      Draw.color(Pal.reactorPurple);
+                      Fill.circle(sec.drillPos.x + v.x, sec.drillPos.y + v.y, 1.5f*b.warmup*sec.warmup);
+                      Fill.circle(sec.drillPos.x + v2.x, sec.drillPos.y + v2.y, b.warmup*sec.warmup);
+
+                      if(Sgl.config.animateLevel < 3) continue;
+                      Trail trail = b.getVar(index[ind]);
+                      if(trail == null) b.setVar(index[ind], trail = new Trail(72));
+                      Trail trail2 = b.getVar(index2[ind]);
+                      if(trail2 == null) b.setVar(index2[ind], trail2 = new Trail(72));
+
+                      trail.draw(Pal.reactorPurple, 1.5f*b.warmup*sec.warmup);
+                      trail.update(sec.drillPos.x + v.x, sec.drillPos.y + v.y);
+
+                      trail2.draw(Pal.reactorPurple, b.warmup*sec.warmup);
+                      trail2.update(sec.drillPos.x + v2.x, sec.drillPos.y + v2.y);
+                    }
+
+                    ind++;
+                  }
+                }
+              }
+            }
+          }
+      );
+    }};
+
+    matrix_miner_overdrive = new MatrixMinerComponent("matrix_miner_overdrive"){{
+      requirements(Category.production, ItemStack.with(
+          SglItems.matrix_alloy, 40,
+          SglItems.crystal_FEX_power, 50,
+          SglItems.strengthening_alloy, 40,
+          SglItems.aerogel, 40,
+          SglItems.iridium, 15,
+          Items.phaseFabric, 60
+      ));
+      size = 3;
+      maxRange = 48;
+      drillMoveMulti = 2f;
+      energyMulti = 2;
+
+      clipSize = 10*tilesize;
+
+      liquidCapacity = 40;
+
+      newConsume();
+      consume.time(180);
+      consume.item(Items.phaseFabric, 1);
+
+      newBoost(1f, 0.6f, l -> l.heatCapacity >= 0.4f && l.temperature <= 0.5f, 0.3f);
+
+      draw = new DrawMulti(
+          new DrawDefault(),
+          new DrawBlock(){
+            @Override
+            public void draw(Building build){
+              if(Sgl.config.animateLevel < 2) return;
+
+              if(build instanceof MatrixMinerComponentBuild b){
+                Draw.z(Layer.effect);
+                Draw.color(SglDrawConst.matrixNet);
+                Fill.circle(b.x, b.y, 2*b.warmup);
+
+                Lines.stroke(1.4f*b.warmup, Pal.reactorPurple);
+                SglDraw.dashCircle(b.x, b.y, 10, 5, 180, Time.time);
+
+                if(b.owner != null){
+                  Lines.stroke(1.6f*b.warmup, Pal.reactorPurple);
+                  SglDraw.dashCircle(b.owner.x, b.owner.y, 18, 6, 180, -Time.time);
+                }
+              }
+            }
+          }
+      );
+    }};
   }
 }

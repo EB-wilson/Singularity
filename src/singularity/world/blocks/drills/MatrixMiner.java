@@ -1,25 +1,19 @@
 package singularity.world.blocks.drills;
 
 import arc.Core;
-import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
-import arc.graphics.g2d.TextureRegion;
-import arc.input.KeyCode;
+import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
-import arc.math.geom.Rect;
-import arc.math.geom.Vec2;
-import arc.scene.Element;
-import arc.scene.event.ElementGestureListener;
-import arc.scene.event.InputEvent;
-import arc.scene.event.InputListener;
-import arc.scene.event.Touchable;
+import arc.scene.style.TextureRegionDrawable;
+import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Table;
-import arc.struct.IntMap;
-import arc.struct.IntSeq;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
+import arc.struct.OrderedSet;
+import arc.struct.Sort;
+import arc.util.Strings;
 import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -27,753 +21,261 @@ import mindustry.Vars;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
+import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
-import mindustry.io.TypeIO;
 import mindustry.type.Item;
+import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.Tile;
-import mindustry.world.blocks.environment.Floor;
-import mindustry.world.meta.Stat;
-import mindustry.world.meta.StatUnit;
-import mindustry.world.meta.StatValues;
-import singularity.Singularity;
+import singularity.graphic.SglDraw;
+import singularity.graphic.SglDrawConst;
 import singularity.world.blocks.distribute.DistNetBlock;
-import singularity.world.components.EdgeLinkerBuildComp;
-import singularity.world.components.EdgeLinkerComp;
+import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.request.PutItemsRequest;
-import universecore.annotations.Annotations;
 
-import java.util.TreeSet;
-
-import static mindustry.Vars.*;
-
-@Annotations.ImplEntries
-public class MatrixMiner extends DistNetBlock implements EdgeLinkerComp{
-  public static final ObjectSet<Item> TMP_ITEMS = new ObjectSet<>();
-  public static final Vec2 v1 = new Vec2();
-  public static final Vec2 v2 = new Vec2();
-  public float drillTime = 60;
-  public float rotatorSpeed = 1.5f;
-  public int drillBufferCapacity = 20;
-
-  public float armSpeed = 1.2f;
-  public float armSpeedDelta = 0.06f;
-  public float armIdleWait = 300;
-
-  public float bitPostTime = 45;
-  public float bitPostDistance = 16;
-
-  public int linkLength = 25;
-  public float hardMultiple = 50;
-
-  public float linkOffset = 0;
-
-  public Color drillColor = Color.valueOf("C6EFEC");
-
-  public TextureRegion drillRegion, drillTop;
-  public TextureRegion armRegion, armBitRegion, armCapRegion;
-  public TextureRegion linkRegion, linkCapRegion;
+public class MatrixMiner extends DistNetBlock{
+  public static final Integer[] NIL = new Integer[0];
 
   public MatrixMiner(String name){
     super(name);
     configurable = true;
+    hasItems = true;
     itemCapacity = 64;
+    topologyUse = 2;
   }
 
   @Override
   public void appliedConfig(){
-    config(Integer.class, this::link);
-    config(Boolean.class, (MatrixMinerBuild e, Boolean b) -> e.selectMode = b);
-    config(IntSeq.class, (MatrixMinerBuild e, IntSeq seq) -> {
-      e.armTasks.add(seq.get(0));
-      e.armTasks.add(seq.get(1));
-      e.armTasks.add(seq.get(2));
-      e.armTasks.add(seq.get(3));
+    config(Integer.class, (MatrixMinerBuild b, Integer i) -> {
+      Item item = Vars.content.item(i);
+      if(!b.drillItem.remove(item)) b.drillItem.add(item);
     });
+
+    config(Float.class, (MatrixMinerBuild b, Float f) -> b.drillRange = f.intValue());
   }
 
   @Override
-  public boolean linkable(EdgeLinkerComp other){
-    return other instanceof MatrixMinerEdge;
+  public void setBars(){
+    super.setBars();
+    addBar("efficiency", (MatrixMinerBuild m) -> new Bar(
+        () -> Core.bundle.format("bar.efficiency", Mathf.round(m.consEfficiency()*100)),
+        () -> Pal.lighterOrange,
+        m::consEfficiency
+    ));
+    addBar("energyUse", (MatrixMinerBuild m) -> new Bar(
+        () -> Core.bundle.format("bar.energyCons",
+            Strings.autoFixed(m.matrixEnergyConsume()*60, 1),
+            Strings.autoFixed(m.energyConsMultiplier, 1)),
+        () -> SglDrawConst.matrixNet,
+        () -> m.matrixEnergyConsume() > 0.01f? 1: 0
+    ));
   }
 
-  @Override
-  public void init(){
-    super.init();
-    clipSize = Math.max(clipSize, linkLength * tilesize * 2);
-  }
+  public class MatrixMinerBuild extends DistNetBuild{
+    public OrderedSet<MatrixMinerPlugin.MatrixMinerPluginBuild> plugins = new OrderedSet<>();
 
-  @Override
-  public void setStats(){
-    super.setStats();
-    stats.add(Stat.drillTier, StatValues.blocks(b -> b instanceof Floor f
-        && !f.wallOre && f.itemDrop != null && (indexer.isBlockPresent(f) || state.isMenu())));
-    stats.add(Stat.drillSpeed, 60f / drillTime * size * size, StatUnit.itemsSecond);
-  }
+    public ObjectSet<Item> drillItem = new ObjectSet<>();
+    public OrderedSet<Item> allOre = new OrderedSet<>();
 
-  @Override
-  public void load(){
-    super.load();
-    drillRegion = Core.atlas.find(name + "_drill");
-    drillTop = Core.atlas.find(name + "_drill_top");
-    armRegion = Core.atlas.find(name + "_arm");
-    armBitRegion = Core.atlas.find(name + "_arm_bit");
-    armCapRegion = Core.atlas.find(name + "_arm_cap");
-    linkRegion = Core.atlas.find(name + "_linking");
-    linkCapRegion = Core.atlas.find(name + "_link_cap");
-  }
+    public float energyConsMultiplier = 1;
 
-  @Annotations.ImplEntries
-  public class MatrixMinerBuild extends DistNetBuild implements EdgeLinkerBuildComp{
-    public static Element lastController;
+    public int drillRange;
+    public int maxRange, lastRadius;
+    public float boost, drillMoveMulti;
 
-    public IntMap<MatrixDrillBit> mineBits = new IntMap<>();
-    public ObjectMap<Item, float[]> progressMap = new ObjectMap<>();
-    public IntSeq armTasks = new IntSeq();
-    public float armWaiting;
+    public int drillSize;
+    public ItemsBuffer itemBuffer = DistBufferType.itemBuffer.get(itemCapacity*DistBufferType.itemBuffer.unit());
 
-    public TreeSet<Integer> tempMine = new TreeSet<>();
+    public ObjectMap<Integer, Item> ores = new ObjectMap<>();
+    public Integer[] orePosArr = NIL;
 
-    public boolean configuring;
-    public boolean selectMode = true;
-
-    public ItemsBuffer itemBuffer = new ItemsBuffer();
-    public Rect rect;
-    public Vec2 armPos = new Vec2();
-    public Vec2 armVel = new Vec2();
-
+    public boolean pierce;
     public PutItemsRequest putReq;
-
-    boolean firstMark = true;
-
-    @Override
-    public void edgeUpdated(){
-      if(getEdges().isClosure()){
-        float[] vertices = getEdges().getPoly().getTransformedVertices();
-        float x = Float.MAX_VALUE, y = Float.MAX_VALUE, mx = 0, my = 0;
-        for(int i = 0; i < vertices.length; i += 2){
-          x = Math.min(x, vertices[i]);
-          y = Math.min(y, vertices[i+1]);
-          mx = Math.max(mx, vertices[i]);
-          my = Math.max(my, vertices[i+1]);
-        }
-        rect = new Rect(x, y, mx - x, my - y);
-        armPos.set(this.x, this.y);
-
-        if(!tempMine.isEmpty()){
-          for(Integer integer: tempMine){
-            assignTask(Point2.x(integer), Point2.y(integer), 0, false);
-          }
-          tempMine.clear();
-        }
-      }
-      else{
-        if(!firstMark) {
-          rect = null;
-          armPos.set(x, y);
-          armTasks.clear();
-        }
-      }
-    }
-
-    public void oreUpdated(){
-      TMP_ITEMS.clear();
-
-      for(MatrixDrillBit bit: mineBits.values()){
-        if(bit.ore == null) continue;
-        TMP_ITEMS.add(bit.ore);
-      }
-
-      for(Item key: progressMap.keys()){
-        if(!TMP_ITEMS.contains(key)) progressMap.remove(key);
-      }
-    }
-
-    public void assignTaskClient(int x, int y, int cmdCode, boolean concurrent){
-      armTasks.add(x);
-      armTasks.add(y);
-      armTasks.add(cmdCode);
-      armTasks.add(concurrent? 1: 0);
-    }
-
-    public void assignTask(int x, int y, int cmdCode, boolean concurrent){
-      configure(new IntSeq(new int[]{x, y, cmdCode, concurrent? 1: 0}));
-    }
 
     @Override
     public Building create(Block block, Team team){
       super.create(block, team);
-      itemBuffer.capacity = itemCapacity*itemBuffer.bufferType().unit();
       items = itemBuffer.generateBindModule();
       return this;
-    }
-
-    @Override
-    public void networkValided(){
-      super.networkValided();
-      if(putReq != null) putReq.kill();
-      distributor.assign(putReq = new PutItemsRequest(this, itemBuffer));
-      putReq.init(distributor.network);
-    }
-
-    @Override
-    @Annotations.EntryBlocked
-    public void updateTile(){
-      super.updateTile();
-
-      EdgeLinkerBuildComp.super.updateLinking();
-
-      for(IntMap.Entry<MatrixDrillBit> bit: mineBits){
-        if (bit.value == null){
-          mineBits.remove(bit.key);
-          continue;
-        }
-
-        bit.value.update();
-        if (bit.value.ore == null) continue;
-
-        float[] progRef = progressMap.get(bit.value.ore, () -> new float[1]);
-        if(progRef[0] >= 1 && bit.value.buffered < drillBufferCapacity){
-          bit.value.buffered++;
-        }
-      }
-
-      for(float[] ref: progressMap.values()){
-        if(ref[0] >= 1) ref[0] = 0;
-      }
-
-      if (!firstMark && !getEdges().isClosure()){
-        for(IntMap.Entry<MatrixDrillBit> bitEntry: mineBits){
-          tempMine.add(bitEntry.key);
-          bitEntry.value.remove();
-        }
-      }
-      else{
-        if (firstMark) Core.app.post(() -> firstMark = false);
-      }
-
-      if(updateValid()){
-        for(ObjectMap.Entry<Item, float[]> entry: progressMap){
-          float delta = delta()*consEfficiency();
-          float delay = drillTime + entry.key.hardness*hardMultiple;
-
-          entry.value[0] += 1/delay*delta;
-        }
-
-        if(putReq != null) putReq.update();
-        if(armTasks.size >= 4){
-          armWaiting = Time.time;
-
-          if(handleTask(
-              armTasks.items[0],
-              armTasks.items[1],
-              armTasks.items[2]
-          )){
-            for(int i = 0; i < 4; i++){
-              armTasks.removeIndex(0);
-            }
-          }
-          else{
-            trnsArmSpeed(armTasks.get(0)*tilesize, armTasks.get(1)*tilesize);
-          }
-
-          for(int i = 4; i < armTasks.size; i += 4){
-            if(armTasks.get(i + 3) > 0){
-              if(handleTask(
-                  armTasks.items[i],
-                  armTasks.items[i+1],
-                  armTasks.items[i+2]
-              )){
-                for(int l = 0; l < 4; l++){
-                  armTasks.removeIndex(i);
-                }
-                i -= 4;
-              }
-            }
-          }
-        }
-        else{
-          if(Time.time - armWaiting >= armIdleWait){
-            trnsArmSpeed(x, y);
-          }
-          else armVel.approachDelta(Vec2.ZERO, armSpeedDelta*0.5f);
-        }
-      }
-      else armVel.approachDelta(Vec2.ZERO, armSpeedDelta*0.65f);
-
-      if (rect != null) {
-        armPos.add(armVel);
-        if (armPos.x < rect.x) {
-          armPos.x = rect.x;
-          armVel.x *= -0.2f;
-        }
-        if (armPos.y < rect.y) {
-          armPos.y = rect.y;
-          armVel.y *= -0.2f;
-        }
-        if (armPos.x > rect.x + rect.width) {
-          armPos.x = rect.x + rect.width;
-          armVel.x *= -0.2f;
-        }
-        if (armPos.y > rect.y + rect.height) {
-          armPos.y = rect.y + rect.height;
-          armVel.y *= -0.2f;
-        }
-      }
-    }
-
-    public void trnsArmSpeed(float x, float y) {
-      v1.set(x, y).sub(armPos).setLength(armSpeed);
-      armVel.approachDelta(v1, armSpeedDelta);
-    }
-
-    public boolean handleTask(int x, int y, int cmdCode){
-      float worldX = x*tilesize, worldY = y*tilesize;
-
-      switch(cmdCode){
-        case 0 -> {
-          if(Math.abs(armPos.x - worldX) <= 3f && Math.abs(armPos.y - worldY) <= 3f){
-            mineBits.remove(Point2.pack(x, y));
-            MatrixDrillBit bit = new MatrixDrillBit();
-            bit.x = x;
-            bit.y = y;
-            int pos = Point2.pack(x, y);
-            bit.ore = getMine(pos);
-            mineBits.put(pos, bit);
-            progressMap.put(bit.ore, new float[1]);
-            return true;
-          }
-        }
-        case 1 -> {
-          MatrixDrillBit bit = mineBits.get(Point2.pack(x, y));
-          if(bit != null){
-            bit.remove();
-            oreUpdated();
-          }
-          return true;
-        }
-        case 2 -> {
-          if(Math.abs(armPos.x - worldX) <= bitPostDistance && Math.abs(armPos.y - worldY) <= bitPostDistance){
-            MatrixDrillBit bit = mineBits.get(Point2.pack(x, y));
-            if(bit == null) return true;
-            int move = Math.min(bit.buffered, itemBuffer.remainingCapacity());
-            bit.post(move);
-            itemBuffer.put(bit.ore, move);
-            return true;
-          }
-        }
-        default -> {return false;}
-      }
-      return false;
-    }
-
-    @Override
-    public boolean updateValid(){
-      return distributor.network.netValid() && rect != null;
-    }
-
-    @Override
-    public float consEfficiency() {
-      return distributor.network.netValid()? distributor.network.netEfficiency(): 0;
-    }
-
-    @Override
-    public boolean onConfigureBuildTapped(Building other){
-      if(other == this && updateValid()){
-        configuring = !configuring;
-        switchController();
-        return false;
-      }
-      else if(other instanceof EdgeLinkerBuildComp && canLink(this, (EdgeLinkerBuildComp) other)){
-        configure(other.pos());
-        return false;
-      }
-
-      configuring = false;
-      return true;
     }
 
     @Override
     public void buildConfiguration(Table table){
       super.buildConfiguration(table);
 
-      TextureRegion selectIcon = Singularity.getModAtlas("select"), deselectIcon = Singularity.getModAtlas("deselect");
+      table.table(Tex.pane, t -> {
+        t.defaults().left();
+        t.add(Core.bundle.get("fragment.buttons.selectMine"));
+        t.row();
+        t.table(items -> {
+          int counter = 0;
+          for(Item item: allOre){
+            if(item.unlockedNow()){
+              ImageButton button = items.button(Tex.whiteui, Styles.selecti, 30, () -> {
+                configure((int)item.id);
+              }).size(40).get();
+              button.getStyle().imageUp = new TextureRegionDrawable(item.uiIcon);
+              button.update(() -> button.setChecked(drillItem.contains(item)));
 
-      table.table(Styles.black6, t -> {
-        t.defaults().pad(0).margin(0);
-        t.table(Tex.buttonTrans, i -> i.image().size(40).update(image -> image.setDrawable(selectMode ? selectIcon : deselectIcon))).size(50);
-        t.table(b -> {
-          b.check("", selectMode, this::configure).left();
-          b.table(text -> {
-            text.defaults().grow().left();
-            text.add(Core.bundle.get("infos.selectMode")).color(Pal.accent);
-            text.row();
-            text.add("").update(l -> {
-              l.setText(selectMode ? Core.bundle.get("infos.selecting"): Core.bundle.get("infos.deselecting"));
-            });
-          }).grow().right().padLeft(8);
-        }).height(50).padLeft(8).growX();
-      }).height(50).growX();
-      table.row();
-    }
-
-    public Item getMine(int pos){
-      Tile tile = Vars.world.tile(pos);
-      Item drop;
-      if(tile != null && (drop = tile.drop()) != null && tile.build == null){
-        return drop;
-      }
-      return null;
-    }
-
-    public void switchController(){
-      if(configuring && rect != null){
-        if(lastController != null) ui.hudGroup.removeChild(lastController);
-
-        Vars.ui.hudGroup.addChild(lastController = new Element(){
-          float originX, originY;
-          float currX, currY;
-
-          boolean touched;
-
-          {
-            touchablility = () -> configuring? Touchable.enabled: Touchable.disabled;
-
-            addListener(new InputListener(){
-              @Override
-              public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
-                originX = currX = Core.input.mouseX();
-                originY = currY = Core.input.mouseY();
-                v1.set(Core.camera.unproject(originX, originY));
-                touched = true;
-                return super.touchDown(event, x, y, pointer, button);
-              }
-
-              @Override
-              public void touchDragged(InputEvent event, float x, float y, int pointer){
-                v1.set(Core.input.mouseScreen(rect.x, rect.y));
-                v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
-                currX = Mathf.clamp(Core.input.mouseX(), v1.x, v2.x);
-                currY = Mathf.clamp(Core.input.mouseY(), v1.y, v2.y);
-                super.touchDragged(event, x, y, pointer);
-              }
-
-              @Override
-              public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
-                v1.set(Core.camera.unproject(originX, originY));
-                v2.set(Core.camera.unproject(currX, currY));
-                assignConfigTasks(v1.x, v1.y, v2.x, v2.y);
-                touched = false;
-                super.touchUp(event, x, y, pointer, button);
-              }
-            });
-
-            addCaptureListener(new ElementGestureListener(){
-              @Override
-              public void touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
-                originX = currX = Core.input.mouseX();
-                originY = currY = Core.input.mouseY();
-                v1.set(Core.camera.unproject(originX, originY));
-                touched = true;
-                super.touchDown(event, x, y, pointer, button);
-              }
-
-              @Override
-              public void pan(InputEvent event, float x, float y, float deltaX, float deltaY){
-                v1.set(Core.input.mouseScreen(rect.x, rect.y));
-                v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
-                currX = Mathf.clamp(Core.input.mouseX(), v1.x, v2.x);
-                currY = Mathf.clamp(Core.input.mouseY(), v1.y, v2.y);
-                super.pan(event, x, y, deltaX, deltaY);
-              }
-
-              @Override
-              public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
-                v1.set(Core.camera.unproject(originX, originY));
-                v2.set(Core.camera.unproject(currX, currY));
-                assignConfigTasks(v1.x, v1.y, v2.x, v2.y);
-                touched = false;
-                super.touchUp(event, x, y, pointer, button);
-              }
-            });
-          }
-
-          @Override
-          public void draw(){
-            super.draw();
-            Lines.stroke(6.5f, Pal.accent);
-            Lines.rect(x, y, width, height);
-
-            if(!touched) return;
-            v1.set(Core.camera.unproject(originX, originY));
-            v2.set(Core.camera.unproject(currX, currY));
-            float x = (float) (Math.round(Math.min(v1.x, v2.x)/tilesize)*tilesize - 4), y = (float) (Math.round(Math.min(v1.y, v2.y)/tilesize)*tilesize - 4);
-            float dx = (float) (Math.round(Math.max(v1.x, v2.x)/tilesize)*tilesize + 4), dy = (float) (Math.round(Math.max(v1.y, v2.y)/tilesize)*tilesize + 4);
-            v1.set(Core.camera.project(x, y));
-            v2.set(Core.camera.project(dx, dy)).sub(v1);
-
-            Draw.color(selectMode? Pal.accent: Pal.redderDust);
-            Lines.rect(v1.x, v1.y, v2.x, v2.y);
-          }
-
-          @Override
-          public void act(float delta){
-            super.act(delta);
-            if(rect == null) return;
-
-            v1.set(Core.input.mouseScreen(rect.x, rect.y));
-            v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
-            setBounds(v1.x, v1.y, v2.x - v1.x, v2.y - v1.y);
-
-            if(!configuring
-            || !Vars.control.input.config.isShown()
-            || Vars.control.input.config.getSelected() != MatrixMinerBuild.this
-            ) Vars.ui.hudGroup.removeChild(this);
+              if(counter++ != 0 && counter%5 == 0) items.row();
+            }
           }
         });
-        v1.set(Core.input.mouseScreen(rect.x, rect.y));
-        v2.set(Core.camera.project(rect.x + rect.width, rect.y + rect.height));
-        lastController.setBounds(v1.x, v1.y, v2.x - v1.x, v2.y - v1.y);
-      }
-      else Vars.ui.hudGroup.removeChild(lastController);
-    }
-
-    public void assignConfigTasks(float x, float y, float ox, float oy){
-      if(!updateValid()) return;
-      int originX = Math.round(Math.min(x, ox)/tilesize);
-      int originY = Math.round(Math.min(y, oy)/tilesize);
-      int otherX = Math.round(Math.max(x, ox)/tilesize);
-      int otherY = Math.round(Math.max(y, oy)/tilesize);
-
-      MatrixDrillBit b;
-      int pos;
-      for(int posY = originY; posY <= otherY; posY++){
-        for(int posX = originX; posX <= otherX; posX++){
-          if(selectMode){
-            if(getMine(pos = Point2.pack(posX, posY)) != null && !mineBits.containsKey(pos)) assignTask(posX, posY, 0, false);
-          }
-          else{
-            if((b = mineBits.get(Point2.pack(posX, posY))) != null && b.working()) assignTask(posX, posY, 1, true);
-          }
-        }
-      }
+        t.row();
+        t.add("").update(l -> l.setText(Core.bundle.format("infos.drillRange", drillRange)));
+        t.row();
+        t.slider(0, maxRange, 1, drillRange, this::configure).growX().height(45);
+      });
     }
 
     @Override
     public void drawConfigure(){
       super.drawConfigure();
-      int x, y;
-      int cmdCode;
+      float l = drillRange*4;
+      Drawf.dashLine(Pal.accent, x - l, y - l, x - l, y + l);
+      Drawf.dashLine(Pal.accent, x - l, y - l, x + l, y - l);
+      Drawf.dashLine(Pal.accent, x + l, y + l, x - l, y + l);
+      Drawf.dashLine(Pal.accent, x + l, y + l, x + l, y - l);
 
-      for(int i = 0; i < armTasks.size; i+=4){
-        x = armTasks.items[i];
-        y = armTasks.items[i + 1];
-        cmdCode = armTasks.items[i + 2];
-
-
+      for(MatrixMinerPlugin.MatrixMinerPluginBuild plugin: plugins){
+        plugin.drawConfigure();
       }
+    }
+
+    @Override
+    public void updateTile(){
+      super.updateTile();
+
+      energyConsMultiplier = 1;
+      boost = 1;
+      drillMoveMulti = 1;
+      drillSize = 0;
+      maxRange = 0;
+      pierce = false;
+
+      for(MatrixMinerPlugin.MatrixMinerPluginBuild plugin: plugins){
+        energyConsMultiplier *= plugin.energyMultiplier();
+        boost *= plugin.boost();
+        drillMoveMulti *= plugin.drillMoveMulti();
+        drillSize = Math.max(drillSize, plugin.drillSize());
+        maxRange = Math.max(maxRange, plugin.maxRadius());
+        pierce |= plugin.pierceBuild();
+      }
+
+      if(lastRadius != maxRange){
+        drillRange = Math.min(drillRange, maxRange);
+
+        ores.clear();
+
+        int off = (maxRange + 1)%2;
+        int ox = tileX() - maxRange/2 + off;
+        int oy = tileY() - maxRange/2 + off;
+
+        for(int rx = 0; rx < maxRange; rx++){
+          for(int ry = 0; ry < maxRange; ry++){
+            Tile t = Vars.world.tile(ox + rx, oy + ry);
+            if(t == null) return;
+
+            if(t.drop() != null){
+              ores.put(t.pos(), t.drop());
+              allOre.add(t.drop());
+            }
+          }
+        }
+
+        orePosArr = ores.keys().toSeq().toArray(Integer.class);
+        Sort.instance().sort(orePosArr, (a, b) -> {
+          int x1 = Point2.x(a) - tileX();
+          int y1 = Point2.y(a) - tileY();
+          int x2 = Point2.x(b) - tileX();
+          int y2 = Point2.y(b) - tileY();
+
+          float r1 = Math.max(Math.abs(x1), Math.abs(y1)), rot1 = Angles.angle(x1, y1);
+          float r2 = Math.max(Math.abs(x2), Math.abs(y2)), rot2 = Angles.angle(x2, y2);
+
+          return Float.compare(r1*1000 + rot1, r2*1000 + rot2);
+        });
+      }
+
+      if(putReq != null && distributor.network.netValid()) putReq.update();
+    }
+
+    @Override
+    public void networkValided(){
+      super.networkValided();
+
+      if(putReq != null) putReq.kill();
+      putReq = new PutItemsRequest(this, itemBuffer);
+      distributor.assign(putReq);
+    }
+
+    @Override
+    public void onProximityUpdate(){
+      super.onProximityUpdate();
+      plugins.clear();
+
+      for(Building building: proximity){
+        if(building instanceof MatrixMinerPlugin.MatrixMinerPluginBuild b){
+          plugins.add(b);
+          b.setOwner(this);
+        }
+      }
+    }
+
+    @Override
+    public boolean updateValid(){
+      return itemBuffer.remainingCapacity() > 0;
+    }
+
+    public boolean angleValid(float angle){
+      for(MatrixMinerPlugin.MatrixMinerPluginBuild plugin: plugins){
+        if(plugin.angleValid(angle)) return true;
+      }
+      return false;
+    }
+
+    @Override
+    public float consEfficiency(){
+      return super.consEfficiency()*distributor.network.netEfficiency();
+    }
+
+    @Override
+    public float matrixEnergyConsume(){
+      return super.matrixEnergyConsume()*energyConsMultiplier;
+    }
+
+    public boolean isChild(MatrixMinerPlugin.MatrixMinerPluginBuild build){
+      return plugins.contains(build);
     }
 
     @Override
     public void draw(){
       super.draw();
-      drawArm();
-
-      for(MatrixDrillBit bit: mineBits.values()){
-        bit.draw();
-      }
-
-      Draw.z(Layer.block);
-    }
-
-    @Override
-    public void drawLink(){
-      EdgeLinkerBuildComp.super.drawLink();
-      Draw.reset();
-      Draw.z(Layer.block);
-    }
-
-    public void drawArm(){
-      if(rect == null) return;
-      Draw.z(Layer.flyingUnit - 0.02f);
-      Lines.stroke(4);
-      Lines.line(
-          armRegion,
-          armPos.x, rect.y,
-          armPos.x, rect.y + rect.height,
-          true
-      );
-      Draw.rect(armCapRegion, armPos.x, rect.y);
-      Draw.rect(armCapRegion, armPos.x, rect.y + rect.height);
-      Lines.line(
-          armRegion,
-          rect.x, armPos.y,
-          rect.x + rect.width, armPos.y,
-          true
-      );
-      Draw.rect(armCapRegion, rect.x, armPos.y);
-      Draw.rect(armCapRegion, rect.x + rect.width, armPos.y);
-      Draw.rect(armBitRegion, armPos.x, armPos.y);
-      Draw.reset();
-      Draw.z(Layer.block);
-    }
-
-    @Override
-    public void read(Reads read, byte revision){
-      super.read(read, revision);
-      armPos.set(read.f(), read.f());
-
-      armTasks.clear();
-      int taskCount = read.i();
-      for(int i = 0; i < taskCount; i++){
-        armTasks.add(read.i());
-      }
-
-      progressMap.clear();
-      int progCount = read.i();
-      for(int i = 0; i < progCount; i++){
-        progressMap.get(Vars.content.item(read.i()), () -> new float[1])[0] = read.f();
-      }
-
-      mineBits.clear();
-      int mineCount = read.i();
-      for(int i = 0; i < mineCount; i++){
-        MatrixDrillBit bit = new MatrixDrillBit();
-        bit.read(read, revision);
-        mineBits.put(Point2.pack(bit.x, bit.y), bit);
-      }
+      Draw.z(Layer.effect);
+      Lines.stroke(1.6f*consEfficiency()*boost, SglDrawConst.matrixNet);
+      SglDraw.dashCircle(x, y, 12, 6, 180, Time.time);
     }
 
     @Override
     public void write(Writes write){
       super.write(write);
-      write.f(armPos.x);
-      write.f(armPos.y);
-
-      write.i(armTasks.size);
-      for(int i = 0; i < armTasks.size; i++){
-        write.i(armTasks.get(i));
-      }
-
-      write.i(progressMap.size);
-      for(ObjectMap.Entry<Item, float[]> entry: progressMap){
-        write.i(entry.key.id);
-        write.f(entry.value[0]);
-      }
-
-      write.i(mineBits.size);
-      for(MatrixDrillBit entry: mineBits.values()){
-        entry.write(write);
+      write.i(drillRange);
+      write.i(drillItem.size);
+      for(Item item: drillItem){
+        write.i(item.id);
       }
     }
 
-    public class MatrixDrillBit{
-      public int x, y;
-      public float alpha;
-      public float warmup;
-      public float totalProgress;
-      public Item ore;
-      public Item lastOre;
-      public int buffered;
-
-      public boolean postedTask;
-      public float timer;
-
-      public Vec2 controlPoint = new Vec2();
-
-      public boolean removing;
-
-      public void update(){
-        alpha = Mathf.lerpDelta(alpha, removing? 0: 1, 0.02f);
-        if(alpha < 0.075f && removing) mineBits.remove(Point2.pack(x, y));
-
-        warmup = Mathf.lerpDelta(warmup, updateValid()? 1: 0, 0.02f);
-        totalProgress += warmup*delta();
-
-        ore = getMine(Point2.pack(x, y));
-        if(ore == null){
-          remove();
-          return;
-        }
-        if(lastOre != ore) oreUpdated();
-
-        if(buffered >= drillBufferCapacity*0.75f){
-          if(!postedTask){
-            assignTaskClient(x, y, 2, true);
-            postedTask = true;
-          }
-        }
-        else postedTask = false;
-      }
-
-      public void draw(){
-        if (ore == null) return;
-
-        float x = this.x*tilesize, y = this.y*tilesize;
-        if(warmup > 0.5f) Draw.z(Layer.bullet);
-        Draw.color(ore.color);
-        Draw.alpha(alpha);
-        Draw.rect(drillRegion, x, y, totalProgress*rotatorSpeed);
-        Draw.color(drillColor);
-        Draw.alpha(alpha);
-
-        Draw.scl(1 + (float)buffered/drillBufferCapacity);
-        Draw.rect(drillTop, x, y);
-        Draw.scl(1);
-
-        if(Time.time - timer <= bitPostTime){
-          Lines.stroke(3.75f*Mathf.clamp(1 - (Time.time - timer)/bitPostTime), ore.color);
-          float distance = v1.set(x, y).sub(armPos).len();
-          Lines.curve(x, y, x + controlPoint.x, y + controlPoint.y, armPos.x - controlPoint.x, armPos.y - controlPoint.y, armPos.x, armPos.y, (int) (distance/2.75f));
-        }
-        else controlPoint.set(x, y);
-
-        Draw.z(Layer.block);
-        Draw.reset();
-      }
-
-      public void post(int amount){
-        buffered -= amount;
-        postedTask = false;
-        timer = Time.time;
-        controlPoint.set(v1.set(x*tilesize, y*tilesize).sub(armPos).scl(-Mathf.random(0.2f, 0.4f)));
-      }
-
-      public void remove(){
-        removing = true;
-      }
-
-      public boolean working(){
-        return !removing;
-      }
-
-      public void read(Reads read, byte revision){
-        int pos = read.i();
-        x = Point2.x(pos);
-        y = Point2.y(pos);
-        alpha = read.f();
-        buffered = read.i();
-        timer = Time.time - read.f();
-        warmup = read.f();
-        totalProgress = read.f();
-        postedTask = read.bool();
-        removing = read.bool();
-        if (revision != 0) ore = TypeIO.readItem(read);
-      }
-
-      public void write(Writes write){
-        write.i(Point2.pack(x, y));
-        write.f(alpha);
-        write.i(buffered);
-        write.f(Time.time - timer);
-        write.f(warmup);
-        write.f(totalProgress);
-        write.bool(postedTask);
-        write.bool(removing);
-        TypeIO.writeItem(write, ore);
+    @Override
+    public void read(Reads read, byte revision){
+      super.read(read, revision);
+      drillRange = read.i();
+      int l = read.i();
+      for(int i = 0; i < l; i++){
+        drillItem.add(Vars.content.item(read.i()));
       }
     }
   }

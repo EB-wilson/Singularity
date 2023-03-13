@@ -1,7 +1,7 @@
 package singularity.world.components.distnet;
 
 import arc.struct.ObjectMap;
-import arc.struct.ObjectSet;
+import arc.struct.OrderedSet;
 import mindustry.ctype.ContentType;
 import mindustry.world.Block;
 import singularity.world.blocks.distribute.matrixGrid.RequestHandlers;
@@ -15,13 +15,13 @@ public interface IOPointBlockComp{
     return null;
   }
 
-  @Annotations.BindField(value = "configTypes", initialize = "new arc.struct.ObjectSet<>()")
-  default ObjectSet<GridChildType> configTypes(){
+  @Annotations.BindField(value = "configTypes", initialize = "new arc.struct.OrderedSet<>()")
+  default OrderedSet<GridChildType> configTypes(){
     return null;
   }
 
-  @Annotations.BindField(value = "supportContentType", initialize = "new arc.struct.ObjectSet<>()")
-  default ObjectSet<ContentType> supportContentType(){
+  @Annotations.BindField(value = "supportContentType", initialize = "new arc.struct.OrderedSet<>()")
+  default OrderedSet<ContentType> supportContentType(){
     return null;
   }
 

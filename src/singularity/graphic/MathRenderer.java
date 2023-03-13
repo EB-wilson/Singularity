@@ -4,6 +4,7 @@ import arc.graphics.Color;
 import arc.graphics.Pixmap;
 import arc.graphics.Texture;
 import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.graphics.gl.Shader;
@@ -12,6 +13,7 @@ import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.math.geom.Vec3;
 import arc.util.Log;
+import arc.util.Tmp;
 import singularity.Sgl;
 
 public class MathRenderer{
@@ -203,6 +205,27 @@ public class MathRenderer{
     Draw.shader(sinShader);
     Lines.stroke(max*4);
     Lines.line(getBlank(), x1, y1, x2, y2, false);
+    Draw.shader();
+  }
+
+  public static void drawSin(float x1, float y1, float stoke1, float x2, float y2, float stoke2, float scl, float fine){
+    sinShader.setScl(scl*Mathf.degRad, 1);
+    sinShader.setArg(0, 1f);
+    sinShader.setArg(1, fine*Mathf.degRad);
+
+    stoke1 *= 2;
+    stoke2 *= 2;
+
+    Draw.shader(sinShader);
+    Tmp.v1.set(x2 - x1, y2 - y1);
+    Tmp.v2.set(Tmp.v1).rotate90(1).setLength(stoke1);
+    Tmp.v3.set(Tmp.v1).rotate90(1).setLength(stoke2);
+    Fill.quad(getBlank(),
+        x1 + Tmp.v2.x, y1 + Tmp.v2.y,
+        x1 - Tmp.v2.x, y1 - Tmp.v2.y,
+        x1 + Tmp.v1.x - Tmp.v3.x, y1 + Tmp.v1.y - Tmp.v3.y,
+        x1 + Tmp.v1.x + Tmp.v3.x, y1 + Tmp.v1.y + Tmp.v3.y
+    );
     Draw.shader();
   }
 

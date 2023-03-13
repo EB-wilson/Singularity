@@ -416,9 +416,11 @@ public class SglDraw{
         x - mx, y - my
     );
 
-    Lines.stroke(edgeStoke, edgeColor);
-    crystalEdge(x, y, w1 >= widthReal, v32.z > v33.z, edgeLayer, botLayer, v32);
-    crystalEdge(x, y, w2 >= widthReal, v33.z > v32.z, edgeLayer, botLayer, v33);
+    if(edgeStoke > 0.01f && edgeColor.a > 0.01){
+      Lines.stroke(edgeStoke, edgeColor);
+      crystalEdge(x, y, w1 >= widthReal, v32.z > v33.z, edgeLayer, botLayer, v32);
+      crystalEdge(x, y, w2 >= widthReal, v33.z > v32.z, edgeLayer, botLayer, v33);
+    }
 
     Draw.z(z);
   }
@@ -442,6 +444,32 @@ public class SglDraw{
         x - v.x, y - v.y,
         x - v31.x, y - v31.y
     );
+  }
+
+  public static void drawCornerTri(float x, float y, float rad, float cornerLen, float rotate, boolean line){
+    drawCornerPoly(x, y, rad, cornerLen, 3, rotate, line);
+  }
+
+  public static void drawCornerPoly(float x, float y, float rad, float cornerLen, float sides, float rotate, boolean line){
+    float step = 360/sides;
+
+    if(line) Lines.beginLine();
+    for(int i = 0; i < sides; i++){
+      v1.set(rad, 0).setAngle(step*i + rotate);
+      v2.set(v1).rotate90(1).setLength(cornerLen);
+
+      if(line){
+        Lines.linePoint(x + v1.x - v2.x, y + v1.y - v2.y);
+        Lines.linePoint(x + v1.x + v2.x, y + v1.y + v2.y);
+      }
+      else{
+        Fill.tri(x, y,
+            x + v1.x - v2.x, y + v1.y - v2.y,
+            x + v1.x + v2.x, y + v1.y + v2.y
+        );
+      }
+    }
+    if(line) Lines.endLine(true);
   }
 
   public static void drawHaloPart(float x, float y, float width, float len, float rotate){
@@ -516,19 +544,48 @@ public class SglDraw{
     gradientPoly(x, y, 4, 1.41421f*(radius/2), Draw.getColor(), gradientCenterX, gradientCenterY, offset, gradientColor, rotation);
   }
 
-  public static void gradientPoly(float x, float y, int edges, float radius, Color color, float gradientCenterX, float gradientCenterY, float offset, Color gradientColor, float rotation){
+  public static void gradientPoly(float x, float y, int edges, float radius, Color color, float gradientCenterX, float gradientCenterY,
+                                  float offset, Color gradientColor, float rotation){
+    gradientFan(x, y, edges, radius, color, gradientCenterX, gradientCenterY, offset, gradientColor, 360, rotation);
+  }
+
+  public static  void drawFan(float x, float y, float radius, float fanAngle, float rotation){
+    gradientFan(x, y, radius, Draw.getColor().a, fanAngle, rotation);
+  }
+
+  public static void gradientFan(float x, float y, float radius, float gradientAlpha, float fanAngle, float rotation){
+    gradientFan(x, y, radius, -radius, gradientAlpha, fanAngle, rotation);
+  }
+
+  public static void gradientFan(float x, float y, float radius, float offset, float gradientAlpha, float fanAngle, float rotation){
+    gradientFan(x, y, radius, offset, c1.set(Draw.getColor()).a(gradientAlpha), fanAngle, rotation);
+  }
+
+  public static void gradientFan(float x, float y, float radius, float offset, Color gradientColor, float fanAngle, float rotation){
+    gradientFan(x, y, Lines.circleVertices(radius), radius, Draw.getColor(), x, y, offset, gradientColor, fanAngle, rotation);
+  }
+
+  public static void gradientFan(float x, float y, float radius, Color color, float gradientCenterX, float gradientCenterY, float offset,
+                                 Color gradientColor, float fanAngle, float rotation){
+    gradientFan(x, y, Lines.circleVertices(radius), radius, color, gradientCenterX, gradientCenterY, offset, gradientColor, fanAngle, rotation);
+  }
+
+  public static void gradientFan(float x, float y, int edges, float radius, Color color, float gradientCenterX, float gradientCenterY,
+                                 float offset, Color gradientColor, float fanAngle, float rotation){
+    fanAngle = Mathf.clamp(fanAngle, 0, 360);
+
     v1.set(gradientCenterX - x, gradientCenterY - y).rotate(rotation);
     gradientCenterX = x + v1.x;
     gradientCenterY = y + v1.y;
 
-    v1.set(1, 0).setLength(radius).rotate(rotation);
-    float step = 360f/edges;
+    v1.set(1, 0).setLength(radius).rotate(rotation - fanAngle%360/2);
+    float step = fanAngle/edges;
 
     float lastX = -1, lastY = -1;
     float lastGX = -1, lastGY = -1;
 
-    for(int i = 0; i <= edges; i++){
-      if(i == edges) v1.setAngle(rotation);
+    for(int i = 0; i < edges + (fanAngle == 360? 1: 0); i++){
+      if(i == edges) v1.setAngle(rotation - fanAngle%360/2);
       v2.set(v1).sub(gradientCenterX - x, gradientCenterY - y);
 
       if(lastX != -1){
@@ -555,7 +612,7 @@ public class SglDraw{
   }
 
   public static void dashCircle(float x, float y, float radius, float rotate){
-    dashCircle(x, y, radius, 1.8f, 8, 180, rotate);
+    dashCircle(x, y, radius, 1.8f, 6, 180, rotate);
   }
 
   public static void dashCircle(float x, float y, float radius, int dashes, float totalDashDeg, float rotate){

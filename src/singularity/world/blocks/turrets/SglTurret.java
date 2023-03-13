@@ -172,6 +172,10 @@ public class SglTurret extends SglBlock{
     super.init();
   }
 
+  public void setReloadAmount(int amount){
+    ammoTypes.get(consume, () -> {throw new IllegalStateException("must declare a ammo then set amount");}).reloadAmount = amount;
+  }
+
   public AmmoDataEntry newAmmo(BulletType ammoType){
     return newAmmo(ammoType, false, (t, p) -> {});
   }
@@ -235,7 +239,7 @@ public class SglTurret extends SglBlock{
     consume.consValidCondition((SglTurretBuild t) -> (t.currCoolant == null || t.currCoolant == c));
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public void newCoolant(Floatf<Liquid> coolEff, Boolf<Liquid> filters, float usageBase, Floatf<Liquid> usageMult, float duration){
     newOptionalConsume((SglTurretBuild e, BaseConsumers c) -> {
       ConsumeLiquidCond<SglTurretBuild> cl;
@@ -273,6 +277,9 @@ public class SglTurret extends SglBlock{
       @Override
       public void display(Stats stats){}
     });
+    BaseConsumers c = consume;
+    consume.consValidCondition((SglTurretBuild t) -> t.consumer.current != null && t.reloadCounter < t.consumer.current.craftTime
+        && (t.currCoolant == null || t.currCoolant == c));
   }
 
   @Override
@@ -370,13 +377,14 @@ public class SglTurret extends SglBlock{
     public float rotation = 90;
     public Vec2 targetPos = new Vec2();
     public BlockUnitc unit = (BlockUnitc) UnitTypes.block.create(team);
-    public BulletType currentAmmo;
+    public AmmoDataEntry currentAmmo;
     public float curRecoil;
     public float heat;
 
     public boolean wasShooting;
     public boolean logicShooting;
 
+    int shotStack;
     int totalShots;
     int queuedBullets;
     float logicControlTime;
@@ -407,7 +415,7 @@ public class SglTurret extends SglBlock{
       if(!ammoTypes.containsKey(consumer.current))
         throw new RuntimeException("unknown ammo recipe");
 
-      currentAmmo = ammoTypes.get(consumer.current).bulletType;
+      currentAmmo = ammoTypes.get(consumer.current);
 
       curRecoil = Mathf.approachDelta(curRecoil, 0, 1/(recoilTime > 0? recoilTime: consumer.current.craftTime));
       heat = Mathf.approachDelta(heat, 0, 1/cooldownTime*coolantScl);
@@ -432,11 +440,11 @@ public class SglTurret extends SglBlock{
       boolean tarValid = validateTarget();
       float targetRot = angleTo(targetPos);
 
-      if(tarValid && (consumeValid() || isControlled()) && (moveWhileCharging || !charging())){
+      if(tarValid && (shootValid() || isControlled()) && (moveWhileCharging || !charging())){
         turnToTarget(targetRot);
       }
 
-      if(wasShooting() && consumeValid()){
+      if(wasShooting() && shootValid()){
         if(canShoot() && tarValid){
           warmup = linearWarmup? Mathf.approachDelta(warmup, 1, warmupSpeed*consEfficiency()):
               Mathf.lerpDelta(warmup, 1, warmupSpeed*consEfficiency());
@@ -445,7 +453,7 @@ public class SglTurret extends SglBlock{
           if(!charging() && warmup >= fireWarmupThreshold){
             if(reloadCounter >= consumer.current.craftTime){
               if(Angles.angleDist(rotation, targetRot) < shootCone){
-                doShoot(currentAmmo);
+                doShoot(currentAmmo.bulletType);
               }
             }
           }
@@ -454,7 +462,7 @@ public class SglTurret extends SglBlock{
         warmup = linearWarmup? Mathf.approachDelta(warmup, 0, warmupSpeed): Mathf.lerpDelta(warmup, 0, warmupSpeed);
       }
 
-      if(canShoot() && consumeValid() && reloadCounter < consumer.current.craftTime){
+      if(canShoot() && shootValid() && reloadCounter < consumer.current.craftTime){
         reloadCounter += consEfficiency()*delta()*coolantScl;
         if(coolantSclTimer > 0){
           ConsumeLiquidBase<SglTurretBuild> c = (ConsumeLiquidBase<SglTurretBuild>) consumer.optionalCurr.get(ConsumeType.liquid);
@@ -479,6 +487,10 @@ public class SglTurret extends SglBlock{
         currCoolant = null;
         coolantScl = 1;
       }
+    }
+
+    public boolean shootValid(){
+      return consumeValid() || shotStack > 0;
     }
 
     public boolean canShoot(){
@@ -518,7 +530,14 @@ public class SglTurret extends SglBlock{
       });
 
       reloadCounter %= consumer.current.craftTime;
-      consumer.trigger();
+
+      if(shotStack <= 0){
+        consumer.trigger();
+        shotStack = currentAmmo.reloadAmount;
+      }
+      if(shotStack > 0){
+        shotStack--;
+      }
     }
 
     protected void bullet(BulletType type, float xOffset, float yOffset, float angleOffset, Mover mover){
@@ -628,7 +647,7 @@ public class SglTurret extends SglBlock{
     }
 
     public void targetPosition(Posc pos){
-      if(!consumeValid() || pos == null || currentAmmo == null) return;
+      if(!shootValid() || pos == null || currentAmmo == null) return;
 
       Vec2 offset = Tmp.v1.setZero();
 
@@ -637,7 +656,7 @@ public class SglTurret extends SglBlock{
       }
 
       if (accurateSpeed){
-        targetPos.set(Predict.intercept(this, pos, offset.x, offset.y, currentAmmo.speed <= 0.01f ? 99999999f : currentAmmo.speed));
+        targetPos.set(Predict.intercept(this, pos, offset.x, offset.y, currentAmmo.bulletType.speed <= 0.01f ? 99999999f : currentAmmo.bulletType.speed));
       }
       else targetPos.set(pos);
 
@@ -649,7 +668,7 @@ public class SglTurret extends SglBlock{
     @Override
     public float range(){
       if(currentAmmo != null){
-        return range + currentAmmo.rangeChange;
+        return range + currentAmmo.bulletType.rangeChange;
       }
       return range;
     }
@@ -669,7 +688,7 @@ public class SglTurret extends SglBlock{
     }
 
     protected boolean canHeal(){
-      return targetHealing && consumeValid() && currentAmmo.collidesTeam && currentAmmo.heals();
+      return targetHealing && shootValid() && currentAmmo.bulletType.collidesTeam && currentAmmo.bulletType.heals();
     }
 
     @Override
@@ -730,6 +749,7 @@ public class SglTurret extends SglBlock{
 
   static class AmmoDataEntry{
     final BulletType bulletType;
+    public int reloadAmount = 1;
     final boolean override;
 
     final Seq<Cons2<Table, BulletType>> statValues = new Seq<>();

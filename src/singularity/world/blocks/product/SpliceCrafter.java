@@ -150,7 +150,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
       }
   
       //显示流体存储量
-      if(hasLiquids) updateDisplayLiquid();
+      if(hasLiquids && displayLiquid) updateDisplayLiquid();
       if (!displayLiquids.isEmpty()){
         bars.table(Tex.buttonTrans, t -> {
           t.defaults().growX().height(18f).pad(4);

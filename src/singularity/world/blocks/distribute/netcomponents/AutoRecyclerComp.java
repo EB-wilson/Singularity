@@ -38,8 +38,7 @@ public class AutoRecyclerComp extends NetPluginComp{
     @Override
     public void onPluginValided(){
       if(currTask != null) currTask.kill();
-      distributor.network.getCore().distCore().receive(currTask = new ClearBuffRequest(this));
-      currTask.init(distributor.network);
+      distributor.assign(currTask = new ClearBuffRequest(this));
     }
 
     @Override
@@ -116,6 +115,11 @@ public class AutoRecyclerComp extends NetPluginComp{
       }
 
       @Override
+      public int priority(){
+        return 0;
+      }
+
+      @Override
       protected boolean preHandleTask(){
         return true;
       }
@@ -138,7 +142,7 @@ public class AutoRecyclerComp extends NetPluginComp{
           for(ObjectMap.Entry<DistBufferType<?>, BaseBuffer<?, ?, ?>> entry: target.getCore().distCore().buffers){
             ObjectSet<UnlockableContent> writeList = list.get(entry.key, Empties.nilSetO());
             for(BaseBuffer.Packet<?, ?> packet: entry.value){
-              if(!writeList.contains(packet.get())){
+              if(!writeList.contains(((UnlockableContent) packet.get()))){
                 entry.value.remove(packet.id());
               }
             }
@@ -147,11 +151,6 @@ public class AutoRecyclerComp extends NetPluginComp{
 
         return true;
       }
-    }
-
-    @Override
-    public byte version() {
-      return 1;
     }
 
     @Override
@@ -173,9 +172,7 @@ public class AutoRecyclerComp extends NetPluginComp{
     @Override
     public void read(Reads read, byte revision){
       super.read(read, revision);
-      if (revision == 1){
-        isBlackList = read.bool();
-      }
+      isBlackList = read.bool();
 
       list.clear();
       int size = read.i();

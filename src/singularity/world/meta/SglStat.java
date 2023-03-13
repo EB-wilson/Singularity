@@ -27,6 +27,11 @@ public class SglStat{
       bufferSize = create("bufferSize", SglStatCat.matrix),
       computingPower = create("computingPower", SglStatCat.matrix),
       topologyCapacity = create("topologyCapacity", SglStatCat.matrix),
+      drillSize = create("drillSize", SglStatCat.matrix),
+      drillAngle = create("drillAngle", SglStatCat.matrix),
+      pierceBuild = create("pierceBuild", SglStatCat.matrix),
+      matrixEnergyUseMulti = create("matrixEnergyUseMulti", SglStatCat.matrix),
+      drillMoveMulti = create("drillMoveMulti", SglStatCat.matrix),
 
       heatProduct = create("heatProduct", SglStatCat.heat),
       maxHeat = create("maxHeat", SglStatCat.heat),
@@ -42,6 +47,8 @@ public class SglStat{
       coatingTime = create("coatingTime", StatCat.function),
       exShieldDamage = create("exShieldDamage", StatCat.function),
       exDamageMultiplier = create("exDamageMultiplier", StatCat.function),
+      damagedMultiplier = create("damagedMultiplier", StatCat.function),
+      damageProbably = create("damageProbably", StatCat.function),
       exPierce = create("exPierce", StatCat.function),
       maxCoatingBuffer = create("maxcoatingbuffer", StatCat.function),
       flushTime = create("flushtime", StatCat.function),
@@ -49,6 +56,7 @@ public class SglStat{
       gridSize = create("gridsize", StatCat.function),
       launchTime = create("launchtime", StatCat.function),
       launchConsume = create("launchconsume", 53, StatCat.function),
+      maxTarget = create("maxTarget", StatCat.function),
 
       multiple = create("multiple", StatCat.crafting),
       autoSelect = create("autoSelect", 46, StatCat.crafting),

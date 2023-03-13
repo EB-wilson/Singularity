@@ -4,9 +4,11 @@ import arc.func.Prov;
 import arc.struct.Seq;
 import mindustry.ctype.ContentType;
 import mindustry.gen.Building;
+import singularity.world.components.PayloadBuildComp;
 import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.buffers.LiquidsBuffer;
+import singularity.world.distribution.buffers.UnitBuffer;
 import singularity.world.modules.SglLiquidModule;
 
 public abstract class DistBufferType<T extends BaseBuffer<?, ?, ?>>{
@@ -29,6 +31,20 @@ public abstract class DistBufferType<T extends BaseBuffer<?, ?, ?>>{
       float[] total = {0};
       build.liquids.each((l, a) -> total[0] += a);
       return total[0];
+    }
+  };
+  public static DistBufferType<UnitBuffer> unitBuffer = new DistBufferType<>(ContentType.unit, 64, UnitBuffer::new){
+    @Override
+    public Number containerUsed(Building build){
+      if(build instanceof PayloadBuildComp b){
+        return b.getPayloadBlock().payloadCapacity();
+      }
+      else{
+        if(build.block.acceptsPayload){
+          return build.getPayload() == null? 1: 0;
+        }
+        else return 0;
+      }
     }
   };
 
