@@ -68,10 +68,7 @@ public class RequestHandlers{
     }
 
     protected void addParseConfig(TargetConfigure cfg, GridChildType type){
-
-      ObjectSet<UnlockableContent> set = cfg.get(type, ContentType.liquid);
-
-      for(UnlockableContent liquid: set){
+      for(UnlockableContent liquid: cfg.get(type, ContentType.liquid)){
         LiquidStack stack = liquids.get(liquid.id);
         if(stack == null){
           liquids.put(liquid.id, new LiquidStack((Liquid) liquid, 1));
@@ -182,7 +179,7 @@ public class RequestHandlers{
         ItemsBuffer.ItemPacket packet = buffer.get(id);
         if(packet != null){
           if(!tmpItems.contains(packet.get())) continue;
-          int transBack = Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity());
+          int transBack = Math.min(packet.amount(), Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity()));
           if(transBack <= 0) continue;
 
           packet.remove(transBack);
@@ -211,6 +208,8 @@ public class RequestHandlers{
 
     @Override
     public PutLiquidsRequest makeRequest(DistMatrixUnitBuildComp sender){
+      LiquidsBuffer buff = sender.getBuffer(DistBufferType.liquidBuffer);
+      scaleTo((float)buff.capacity/buff.bufferType().unit());
       return liquids.isEmpty()? null: new PutLiquidsRequest(sender, sender.getBuffer(DistBufferType.liquidBuffer), new Seq<>(liquids.values().toArray()));
     }
   }
@@ -223,6 +222,8 @@ public class RequestHandlers{
 
     @Override
     public PutLiquidsRequest makeRequest(DistMatrixUnitBuildComp sender){
+      LiquidsBuffer buff = sender.getBuffer(DistBufferType.liquidBuffer);
+      scaleTo((float)buff.capacity/buff.bufferType().unit());
       return liquids.isEmpty()? null: new PutLiquidsRequest(sender, sender.getBuffer(DistBufferType.liquidBuffer), new Seq<>(liquids.values().toArray()));
     }
   }
@@ -278,6 +279,7 @@ public class RequestHandlers{
             int all = sender.matrixGrid().get(GridChildType.output, (e, c) -> c.get(GridChildType.output, liquid)).size;
 
             float amount = ioPoint.output(li, buffer.get(li)/all);
+            amount -= amount%LiquidsBuffer.LiquidIntegerStack.packMulti;
             if(amount <= 0) continue;
             buffer.remove(li, amount);
             buffer.deReadFlow(li, amount);
@@ -292,7 +294,8 @@ public class RequestHandlers{
         LiquidsBuffer.LiquidPacket packet = buffer.get(id);
         if(packet != null){
           if(!tmpLiquids.contains(packet.get())) continue;
-          float transBack = Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity());
+          float transBack = Math.min(packet.amount(), Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity()));
+          transBack -= transBack%LiquidsBuffer.LiquidIntegerStack.packMulti;
           if(transBack <= 0) continue;
 
           packet.remove(transBack);

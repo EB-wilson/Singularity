@@ -16,28 +16,28 @@ ext{
   //the build number that this mod is made for
   mindustryVersion = "v141"
   arcVersion = "v141"
-  uncVersion = "1.7.0"
+  uncVersion = "1.7.1"
   //version of SDK you will be using
   minSdkAPI = 30
 
   sdkRoot = System.getenv("ANDROID_HOME")
 }
 
-tasks.withType(JavaCompile){
+tasks.withType(JavaCompile).configureEach {
   options.encoding = "UTF-8"
   options.fork = true
   options.forkOptions.jvmArgs.addAll([
-      "--add-opens", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-      "--add-opens", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-      "--add-opens", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-      "--add-opens", "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
-      "--add-opens", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-      "--add-opens", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+          "--add-opens", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+          "--add-opens", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+          "--add-opens", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+          "--add-opens", "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+          "--add-opens", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+          "--add-opens", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
   ])
   options.compilerArgs.addAll(['--release', '8'])
 }
 
-configurations.all {
+configurations.configureEach {
   resolutionStrategy {
     force "com.github.Anuken.Arc:arc-core:$arcVersion"
     force "com.github.Anuken.Arc:flabel:$arcVersion"
@@ -72,10 +72,10 @@ dependencies{
   annotationProcessor "com.github.Anuken:jabel:0.7.0"
 }
 
-task jarAndroid{
+tasks.register('jarAndroid') {
   dependsOn "jar"
 
-  doLast{
+  doLast {
     try {
       File fi = new File("$sdkRoot/platforms/")
       if (!fi.exists()) throw new RuntimeException("android SDK platfroms was not found");
@@ -84,14 +84,14 @@ task jarAndroid{
       //collect dependencies needed for desugaring
       def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect { "--classpath $it.path" }.join(" ")
 
-      try{
+      try {
         System.out.println("build android dex...")
 
         //dex and desugar files - this requires d8 in your PATH
         "d8 $dependencies --min-api 14 --output ${rootProject.name}-android.jar ${project.archivesBaseName}-desktop.jar"
-            .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
+                .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
       }
-      catch(Throwable ignored) {
+      catch (Throwable ignored) {
         def d8 = new File("$sdkRoot/build-tools/").listFiles().find {
           it.listFiles().any {
             it.name.contains("d8")
@@ -99,24 +99,24 @@ task jarAndroid{
         }.listFiles().find { it.name.contains("d8") }
 
         "$d8 $dependencies --min-api 14 --output ${rootProject.name}-android.jar ${project.archivesBaseName}-desktop.jar"
-            .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
+                .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
       }
     }
     catch (Throwable ignored) {
       System.out.println("[WARNING] d8 tool or platform tools was not found, if you was installed android SDK, please check your environment variable")
 
       delete(
-          files("${rootProject.buildDir}/libs/${rootProject.name}-android.jar")
+              files("${rootProject.buildDir}/libs/${rootProject.name}-android.jar")
       )
 
       def out = new JarOutputStream(new FileOutputStream("${rootProject.buildDir}/libs/${rootProject.name}-android.jar"))
       out.putNextEntry(new JarEntry("non-androidMod.txt"))
       StringReader reader = new StringReader(
-          "this mod is don't have classes.dex for android, please consider recompile with a SDK or run this mod on desktop only"
+              "this mod is don't have classes.dex for android, please consider recompile with a SDK or run this mod on desktop only"
       )
 
       int r
-      while((r = reader.read()) != -1){
+      while ((r = reader.read()) != -1) {
         out.write(r)
         out.flush()
       }
@@ -139,20 +139,20 @@ jar{
   }
 }
 
-task deploy(type: Jar){
+tasks.register('deploy', Jar) {
   dependsOn jarAndroid
   dependsOn jar
   archiveFileName = "${project.archivesBaseName}.jar"
 
-  from{
+  from {
     [
-      zipTree("$buildDir/libs/${project.archivesBaseName}-desktop.jar"),
-      zipTree("$buildDir/libs/${project.archivesBaseName}-android.jar")
+            zipTree("$buildDir/libs/${project.archivesBaseName}-desktop.jar"),
+            zipTree("$buildDir/libs/${project.archivesBaseName}-android.jar")
     ]
   }
 
-  doLast{
-    if(project.properties.get("modOutputDir") != null && !project.properties.get("modOutputDir").isEmpty()){
+  doLast {
+    if (project.properties.get("modOutputDir") != null && !project.properties.get("modOutputDir").isEmpty()) {
       copy {
         into("$modOutputDir/")
         from("$buildDir/libs/${project.archivesBaseName}.jar")
@@ -161,16 +161,16 @@ task deploy(type: Jar){
   }
 }
 
-task deployDesktop(type: Jar){
+tasks.register('deployDesktop', Jar) {
   dependsOn jar
   archiveFileName = "${project.archivesBaseName}.jar"
 
-  from{
+  from {
     [zipTree("$buildDir/libs/${project.archivesBaseName}-desktop.jar")]
   }
 
-  doLast{
-    if(project.properties.get("modOutputDir") != null && !project.properties.get("modOutputDir").isEmpty()){
+  doLast {
+    if (project.properties.get("modOutputDir") != null && !project.properties.get("modOutputDir").isEmpty()) {
       copy {
         into("$modOutputDir/")
         from("$buildDir/libs/${project.archivesBaseName}.jar")
@@ -179,12 +179,13 @@ task deployDesktop(type: Jar){
   }
 }
 
-task debugMod(dependsOn: classes, type: JavaExec){
+tasks.register('debugMod', JavaExec) {
+  dependsOn classes
   dependsOn deployDesktop
 
   main = "-jar"
   args = [
-      project.properties.get("debugGamePath"),
-      "-debug"
+          project.properties.get("debugGamePath"),
+          "-debug"
   ]
 }

@@ -199,31 +199,41 @@ public class GenericIOPoint extends IOPoint{
       LiquidsBuffer lisB = parentMat.getBuffer(DistBufferType.liquidBuffer);
 
       items.each((item, amount) -> {
-        int move = parentBuild.acceptItem(this, item)? Math.min(parentBuild.getMaximumAccepted(item) - parentBuild.items.get(item), amount): 0;
+        int move = parentBuild.acceptItem(this, item)? Math.min(itsB.remainingCapacity(), amount): 0;
         if(move > 0){
-          removeStack(item, move);
-          parentBuild.handleStack(item, move, this);
+          items.remove(item, move);
+          itsB.put(item, move);
           itsB.dePutFlow(item, move);
         }
       });
       
       liquids.each((liquid, amount) -> {
-        lisB.dePutFlow(liquid, moveLiquid(parentBuild, liquid));
+        float move = parentBuild.acceptLiquid(this, liquid)? Math.min(lisB.remainingCapacity(), amount): 0;
+        if(move > 0){
+          liquids.remove(liquid, move);
+          lisB.put(liquid, move);
+          lisB.dePutFlow(liquid, move);
+        }
       });
 
       outItems.each((item, amount) -> {
         if(config.get(GridChildType.output, ContentType.item).contains(item)) return;
-        int accept = parentBuild.acceptItem(this, item)? Math.min(parentBuild.getMaximumAccepted(item) - parentBuild.items.get(item), amount): 0;
-        if(accept > 0){
-          outItems.remove(item, accept);
-          parentBuild.handleStack(item, accept, this);
-          itsB.dePutFlow(item, accept);
+        int move = parentBuild.acceptItem(this, item)? Math.min(itsB.remainingCapacity(), amount): 0;
+        if(move > 0){
+          outItems.remove(item, move);
+          itsB.put(item, move);
+          itsB.dePutFlow(item, move);
         }
       });
 
       outLiquid.each((liquid, amount) -> {
         if(config.get(GridChildType.output, ContentType.liquid).contains(liquid)) return;
-        lisB.dePutFlow(liquid, outputLiquid(parentBuild, amount, liquid));
+        float move = parentBuild.acceptLiquid(this, liquid)? Math.min(lisB.remainingCapacity(), amount): 0;
+        if(move > 0){
+          outLiquid.remove(liquid, move);
+          lisB.put(liquid, move);
+          lisB.dePutFlow(liquid, move);
+        }
       });
     }
 
@@ -238,7 +248,7 @@ public class GenericIOPoint extends IOPoint{
           flow = Math.min(flow, next.block.liquidCapacity - next.liquids.get(liquid));
           if(flow > 0.0F && ofract <= fract && next.acceptLiquid(this, liquid)){
             next.handleLiquid(this, liquid, flow);
-            this.liquids.remove(liquid, flow);
+            outLiquid.remove(liquid, flow);
             return flow;
           }
         }

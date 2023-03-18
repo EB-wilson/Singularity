@@ -156,12 +156,16 @@ public class MatrixMiner extends DistNetBlock{
       maxRange = 0;
       pierce = false;
 
+      itemBuffer.update();
+
       for(MatrixMinerPlugin.MatrixMinerPluginBuild plugin: plugins){
+        if (!plugin.enabled()) continue;
+
         energyConsMultiplier *= plugin.energyMultiplier();
         boost *= plugin.boost();
         drillMoveMulti *= plugin.drillMoveMulti();
         drillSize = Math.max(drillSize, plugin.drillSize());
-        maxRange = Math.max(maxRange, plugin.maxRadius());
+        maxRange = Math.max(maxRange, plugin.maxRange());
         pierce |= plugin.pierceBuild();
       }
 
@@ -177,7 +181,7 @@ public class MatrixMiner extends DistNetBlock{
         for(int rx = 0; rx < maxRange; rx++){
           for(int ry = 0; ry < maxRange; ry++){
             Tile t = Vars.world.tile(ox + rx, oy + ry);
-            if(t == null) return;
+            if(t == null) continue;
 
             if(t.drop() != null){
               ores.put(t.pos(), t.drop());
@@ -218,7 +222,8 @@ public class MatrixMiner extends DistNetBlock{
       plugins.clear();
 
       for(Building building: proximity){
-        if(building instanceof MatrixMinerPlugin.MatrixMinerPluginBuild b){
+        if(building instanceof MatrixMinerPlugin.MatrixMinerPluginBuild b && b.interactable(team)
+        && (b.tileX() == tileX() || b.tileY() == tileY())){
           plugins.add(b);
           b.setOwner(this);
         }
@@ -235,6 +240,11 @@ public class MatrixMiner extends DistNetBlock{
         if(plugin.angleValid(angle)) return true;
       }
       return false;
+    }
+
+    @Override
+    public Object config() {
+      return null;
     }
 
     @Override

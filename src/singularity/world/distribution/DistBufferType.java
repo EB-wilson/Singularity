@@ -21,7 +21,7 @@ public abstract class DistBufferType<T extends BaseBuffer<?, ?, ?>>{
       return build.items.total();
     }
   };
-  public static DistBufferType<LiquidsBuffer> liquidBuffer = new DistBufferType<>(ContentType.liquid, 4, LiquidsBuffer::new){
+  public static DistBufferType<LiquidsBuffer> liquidBuffer = new DistBufferType<>(ContentType.liquid, 1, LiquidsBuffer::new){
     @Override
     public Float containerUsed(Building build){
       if(build.liquids instanceof SglLiquidModule li){

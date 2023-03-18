@@ -91,6 +91,7 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
 
           if(packet.amount() <= 0) continue itemRead;
           int amount = Math.min(packet.amount(), entry.entity.acceptStack(packet.get(), packet.amount(), handler));
+          if (amount <= 0f) continue;
 
           packet.remove(amount);
           packet.deRead(amount);
@@ -134,9 +135,9 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
 
         if(entry.entity instanceof CoreBlock.CoreBuild) cores.add((MatrixGrid.BuildingEntry<CoreBlock.CoreBuild>) entry);
 
-        if(packet.amount() <= 0 || counter <= 0) return;
         int move = Math.min(packet.amount(), entry.entity.acceptStack(packet.get(), packet.amount(), core));
         move = Math.min(move, counter);
+        if (move <= 0) continue;
 
         packet.remove(move);
         packet.deRead(move);
@@ -152,6 +153,8 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
         if(counter <= 0) return;
         int rem = Math.min(packet.amount(), counter);
         rem = Math.min(entry.entity.acceptStack(packet.get(), packet.amount(), network.getCore().getBuilding()), rem);
+        if (rem <= 0) continue;
+
         entry.entity.handleStack(ct, rem, network.getCore().getBuilding());
         packet.remove(rem);
         packet.deRead(rem);

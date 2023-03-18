@@ -13,6 +13,7 @@ import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.graphics.Pal;
 import mindustry.world.Block;
+import mindustry.world.meta.BlockStatus;
 import mindustry.world.meta.StatUnit;
 import singularity.world.blocks.distribute.netcomponents.CoreNeighbourComponent;
 import singularity.world.components.distnet.DistNetworkCoreComp;
@@ -88,6 +89,11 @@ public class DistNetCore extends DistNetBlock{
       super.updateNetLinked();
 
       netLinked.addAll(proximityComps);
+    }
+
+    @Override
+    public BlockStatus status() {
+      return distCore.requestTasks.isEmpty()? BlockStatus.noInput: super.status();
     }
 
     @Override

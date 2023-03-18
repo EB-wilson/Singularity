@@ -6,6 +6,7 @@ import arc.math.Mathf;
 import arc.math.WindowedMean;
 import arc.struct.IntMap;
 import arc.util.Interval;
+import arc.util.Log;
 import mindustry.world.modules.BlockModule;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,7 +73,7 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
       putMean.clear();
       readMean.clear();
       for(IntMap.Entry<T> entry: memory){
-        if(entry.value.occupation() == 0) memory.remove(entry.key);
+        if(entry.value.occupation() <= 0) memory.remove(entry.key);
         entry.value.clearMean();
       }
     }
@@ -147,19 +148,15 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
   public void remove(T packet){
     T p = memory.get(packet.id());
     if(p != null){
-      if(p.occupation() > packet.occupation()){
-        used -= packet.occupation();
-        readBufferCaching += packet.occupation();
-        p.remove(packet);
-      }
-      else{
-        remove(packet.id());
-      }
+      float del = Math.min(p.occupation(), packet.occupation());
+      used -= del;
+      readBufferCaching += del;
+      p.remove(packet);
     }
   }
   
   public void remove(int id){
-    T packet = memory.get(id);
+    T packet = memory.remove(id);
     if(packet != null){
       used -= packet.occupation();
       readBufferCaching += packet.occupation();

@@ -74,7 +74,7 @@ public abstract class MatrixMinerPlugin extends SglBlock{
 
     @Override
     public boolean updateValid(){
-      return owner != null && owner.updateValid();
+      return owner != null && owner.updateValid() && enabled();
     }
 
     @Override
@@ -136,7 +136,7 @@ public abstract class MatrixMinerPlugin extends SglBlock{
       return false;
     }
 
-    public int maxRadius(){
+    public int maxRange(){
       return maxRange;
     }
 

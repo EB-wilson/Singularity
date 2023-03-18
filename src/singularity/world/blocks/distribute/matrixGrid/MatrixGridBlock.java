@@ -31,6 +31,7 @@ import singularity.world.components.distnet.IOPointComp;
 import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
+import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.request.DistRequestBase;
 import singularity.world.meta.SglStat;
 import universecore.UncCore;
@@ -260,7 +261,8 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           }
         });
       }
-  
+
+      requestHandlerMap.clear();
       for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, RequestHandler>> entry : tempFactories()){
         for(ObjectMap.Entry<ContentType, RequestHandler> e: entry.value){
           DistRequestBase request = createRequest(entry.key, e.key);
@@ -310,6 +312,10 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   
     @Override
     public void updateTile(){
+      for (BaseBuffer<?, ?, ?> buffer : buffers().values()) {
+        buffer.update();
+      }
+
       if(gridValid()){
         for (GridChildType value : GridChildType.values()) {
           for (MatrixGrid.BuildingEntry<Building> entry : grid.<Building>get(value, (b, c) -> true)) {

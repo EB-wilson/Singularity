@@ -246,10 +246,11 @@ public class CrafterBlocks implements ContentList{
               public void draw(Building build){
                 Draw.z(Draw.z() + 0.001f);
 
+                float cap = build.block.liquidCapacity;
                 Cons<Building> drawCell = b -> {
                   if(Sgl.config.animateLevel < 2) return;
 
-                  float alp = Math.max(b.warmup(), 0.7f*b.liquids.get(SglLiquids.algae_mud)/liquidCapacity);
+                  float alp = Math.max(b.warmup(), 0.7f*b.liquids.get(SglLiquids.algae_mud)/cap);
                   if (alp <= 0.01f) return;
 
                   rand.setSeed(b.id);
@@ -261,12 +262,11 @@ public class CrafterBlocks implements ContentList{
                   Angles.randLenVectors(b.id, am, 3.5f, (dx, dy) -> {
                     Fill.circle(b.x + dx + move, b.y + dy + move,
                         (Mathf.randomSeed(b.id, 0.2f, 0.8f) + Mathf.absin(5, 0.1f))
-                            *Math.max(b.warmup(), b.liquids.get(SglLiquids.algae_mud)/liquidCapacity));
+                            *Math.max(b.warmup(), b.liquids.get(SglLiquids.algae_mud)/cap));
                   });
                   Draw.reset();
                 };
 
-                float cap = build.block.liquidCapacity;
                 if (Core.settings.getBool("animatedwater") && Sgl.config.animateLevel >= 2) {
                   if(Sgl.config.enableShaders){
                     SglDraw.drawTask(drawID, build, SglShaders.boundWater, e -> {

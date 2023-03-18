@@ -92,6 +92,8 @@ public class PutItemsRequest extends DistRequestBase{
 
       int rem = Math.min(lastHandles[id], destination.get(item));
       rem = Math.min(rem, source.remainingCapacity());
+      if (rem <= 0) continue;
+
       destination.remove(item, rem);
       destination.deReadFlow(item, rem);
       source.put(item, rem);

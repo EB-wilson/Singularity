@@ -19,20 +19,22 @@ import singularity.world.modules.SglLiquidModule;
 
 import static mindustry.Vars.content;
 
-public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer.LiquidPacket>{
+public class LiquidsBuffer extends BaseBuffer<LiquidsBuffer.LiquidIntegerStack, Liquid, LiquidsBuffer.LiquidPacket>{
   private static final Seq<MatrixGrid.BuildingEntry<Building>> temp = new Seq<>();
   private final LiquidPacket tmp = new LiquidPacket(Liquids.water, 0);
 
-  public void put(Liquid liquid, float amount){
-    tmp.obj.liquid = liquid;
-    tmp.obj.amount = amount;
+  public float put(Liquid liquid, float amount){
+    float rem = tmp.obj.set(liquid, amount);
     put(tmp);
+
+    return rem;
   }
   
-  public void remove(Liquid liquid, float amount){
-    tmp.obj.liquid = liquid;
-    tmp.obj.amount = amount;
+  public float remove(Liquid liquid, float amount){
+    float rem = tmp.obj.set(liquid, amount);
     remove(tmp);
+
+    return rem;
   }
 
   @Override
@@ -51,20 +53,18 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
   
   public float get(Liquid liquid){
     LiquidPacket p = get(liquid.id);
-    return p != null? p.obj.amount: 0;
+    return p != null? p.obj.getAmount(): 0;
   }
 
   @Override
   public void deReadFlow(Liquid ct, Number amount){
-    tmp.obj.liquid = ct;
-    tmp.obj.amount = amount.floatValue();
+    tmp.obj.set(ct, amount.floatValue());
     deReadFlow(tmp);
   }
 
   @Override
   public void dePutFlow(Liquid ct, Number amount){
-    tmp.obj.liquid = ct;
-    tmp.obj.amount = amount.floatValue();
+    tmp.obj.set(ct, amount.floatValue());
     dePutFlow(tmp);
   }
 
@@ -79,6 +79,9 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
             temp)){
           if(packet.amount() <= 0.001f) continue liquidRead;
           float move = Math.min(packet.amount(), entry.entity.block.liquidCapacity - entry.entity.liquids.get(packet.get()));
+
+          move -= move%LiquidsBuffer.LiquidIntegerStack.packMulti;
+          if (move <= 0.001f) continue;
 
           packet.remove(move);
           packet.deRead(move);
@@ -108,14 +111,14 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
     for(MatrixGrid grid: network.grids){
       for(MatrixGrid.BuildingEntry<? extends Building> entry: grid.<Building>get(GridChildType.container, (e, c) -> c.get(GridChildType.container, ct)
           && e.acceptLiquid(core, ct))){
-
-        if(packet.amount() <= 0 || am <= 0) return;
-
         float accept = !entry.entity.acceptLiquid(core, ct)? 0:
             entry.entity.block.liquidCapacity - entry.entity.liquids.get(ct);
 
         float move = Math.min(packet.amount(), accept);
         move = Math.min(move, am);
+
+        move -= move%LiquidsBuffer.LiquidIntegerStack.packMulti;
+        if (move <= 0.001f) continue;
 
         packet.remove(move);
         packet.deRead(move);
@@ -141,21 +144,55 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
     return Liquids.water.color;
   }
 
-  public class LiquidPacket extends Packet<LiquidStack, Liquid>{
-    public LiquidPacket(Liquid liquid, float amount){
-      obj = new LiquidStack(liquid, amount);
-      putCaching += amount;
-    }
-    
-    public LiquidPacket(LiquidStack stack){
-      obj = stack.copy();
-      putCaching += obj.amount;
+  public static class LiquidIntegerStack{
+    public static final float packMulti = 0.25f;
+
+    Liquid liquid;
+    int amount;
+
+    public LiquidIntegerStack(){}
+
+    public LiquidIntegerStack(Liquid liquid, float amount){
+      set(liquid, amount);
     }
 
-    public void remove(float amount){
-      tmp.obj.liquid = obj.liquid;
-      tmp.obj.amount = amount;
+    public float set(Liquid liquid, float amount){
+      float rem;
+      this.liquid = liquid;
+      this.amount = (int) ((amount - (rem = amount%packMulti))/packMulti);
+
+      return rem;
+    }
+
+    public float getAmount(){
+      return amount*packMulti;
+    }
+
+    public LiquidStack toStack(){
+      return new LiquidStack(liquid, getAmount());
+    }
+
+    public LiquidIntegerStack copy(){
+      return new LiquidIntegerStack(liquid, getAmount());
+    }
+  }
+
+  public class LiquidPacket extends Packet<LiquidIntegerStack, Liquid>{
+    public LiquidPacket(Liquid liquid, float amount){
+      obj = new LiquidIntegerStack(liquid, amount);
+      putCaching += obj.getAmount();
+    }
+    
+    public LiquidPacket(LiquidIntegerStack stack){
+      obj = stack.copy();
+      putCaching += obj.getAmount();
+    }
+
+    public float remove(float amount){
+      float rem = tmp.obj.set(obj.liquid, amount);
       LiquidsBuffer.this.remove(tmp);
+
+      return rem;
     }
   
     @Override
@@ -185,12 +222,12 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
 
     @Override
     public int occupation(){
-      return (int)Math.ceil(obj.amount*bufferType().unit());
+      return obj.amount*bufferType().unit();
     }
   
     @Override
     public Float amount(){
-      return obj.amount;
+      return obj.getAmount();
     }
 
     @Override
@@ -200,7 +237,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
     }
   
     @Override
-    public void merge(Packet<LiquidStack, Liquid> other){
+    public void merge(Packet<LiquidIntegerStack, Liquid> other){
       if(other.id() == id()){
         obj.amount += other.obj.amount;
         putCaching += other.occupation();
@@ -208,7 +245,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
     }
   
     @Override
-    public void remove(Packet<LiquidStack, Liquid> other){
+    public void remove(Packet<LiquidIntegerStack, Liquid> other){
       if(other.id() == id()){
         obj.amount -= other.obj.amount;
         readCaching += other.occupation();
@@ -216,19 +253,17 @@ public class LiquidsBuffer extends BaseBuffer<LiquidStack, Liquid, LiquidsBuffer
     }
 
     public void deRead(float amount){
-      tmp.obj.liquid = obj.liquid;
-      tmp.obj.amount = amount;
+      tmp.obj.set(obj.liquid, amount);
       LiquidsBuffer.this.deReadFlow(tmp);
     }
 
     public void dePut(float amount){
-      tmp.obj.liquid = obj.liquid;
-      tmp.obj.amount = amount;
+      tmp.obj.set(obj.liquid, amount);
       LiquidsBuffer.this.dePutFlow(tmp);
     }
 
     @Override
-    public Packet<LiquidStack, Liquid> copy(){
+    public Packet<LiquidIntegerStack, Liquid> copy(){
       return new LiquidPacket(obj);
     }
   }

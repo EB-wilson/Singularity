@@ -15,14 +15,17 @@ import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.request.DistRequestBase;
 import universecore.util.colletion.TreeSeq;
 
+import java.util.Arrays;
+
 public class DistCoreModule extends BlockModule{
   private static final ObjectSet<DistRequestBase> blocked = new ObjectSet<>();
-  private static final Seq<DistRequestBase> tempQueue = new Seq<>();
   public static final DistRequestBase[] EMP_TMP = new DistRequestBase[0];
   public static final DistRequestBase[] EMPTY = new DistRequestBase[0];
 
   public TreeSeq<DistRequestBase> requestTasks = new TreeSeq<>((a, b) -> b.priority() - a.priority());
   protected DistRequestBase[] taskStack;
+  protected DistRequestBase[] taskQueue = new DistRequestBase[16];
+  protected int queueLength = 0;
 
   public int lastProcessed;
 
@@ -57,8 +60,8 @@ public class DistCoreModule extends BlockModule{
       process -= 1;
 
       lastProcessed = 0;
+      queueLength = 0;
       blocked.clear();
-      tempQueue.clear();
       int runCounter = calculatePower;
       if(requestTasks.removeIf(
           task -> task.finished() || task.sender.distributor().network != network
@@ -71,15 +74,20 @@ public class DistCoreModule extends BlockModule{
           if(executingAddress == firstAddress) break;
           if(firstAddress == -1) firstAddress = executingAddress;
 
-          tempQueue.add(taskStack[executingAddress]);
+          if (taskQueue.length <= queueLength) taskQueue = Arrays.copyOf(taskQueue, taskQueue.length*2);
+
+          taskQueue[queueLength] = taskQueue[executingAddress];
+          queueLength++;
+
           taskStack[executingAddress].onExecute();
           taskStack[executingAddress].checkWaking();
           runCounter--;
           lastProcessed++;
         }
       }
-      
-      for(DistRequestBase request: tempQueue){
+
+      for (int i = 0; i < queueLength; i++) {
+        DistRequestBase request = taskQueue[i];
         request.checkStatus();
 
         if(!request.sleeping()){
@@ -90,8 +98,9 @@ public class DistCoreModule extends BlockModule{
           else request.block(false);
         }
       }
-      
-      for(DistRequestBase request: tempQueue){
+
+      for (int i = 0; i < queueLength; i++) {
+        DistRequestBase request = taskQueue[i];
         if(!request.sleeping() && !blocked.contains(request)){
           if(!request.handle()){
             blocked.add(request);
@@ -105,16 +114,17 @@ public class DistCoreModule extends BlockModule{
         buffer.bufferContAssign(network);
         buffer.update();
       }
-  
-      for(DistRequestBase request : tempQueue){
+
+      for (int i = 0; i < queueLength; i++) {
+        DistRequestBase request = taskQueue[i];
         if(!request.sleeping() && !blocked.contains(request)){
           request.block(!request.afterHandle());
         }
       }
-
     }
 
-    for(DistRequestBase req: tempQueue){
+    for (int i = 0; i < queueLength; i++) {
+      DistRequestBase req = taskQueue[i];
       req.resetCallBack();
     }
   }

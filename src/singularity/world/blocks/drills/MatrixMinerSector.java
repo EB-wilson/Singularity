@@ -194,20 +194,17 @@ public class MatrixMinerSector extends MatrixMinerPlugin{
                 Item ore = owner.ores.get(t.pos());
                 if(ore == null || !owner.drillItem.contains(ore)) continue;
 
-                int c = Mathf.random(1, 2);
-                for(int i = 0; i < c; i++){
-                  OreParticle particle = Pools.obtain(OreParticle.class, OreParticle::new);
-                  particle.color = ore.color;
-                  particle.sides = Mathf.random(3, 5);
-                  particle.alpha = 1;
-                  particle.rotateSpeed = Mathf.random(0.6f, 5);
-                  particle.speed = Mathf.random(1f, 2.5f);
-                  particle.position.set(t.worldx(), t.worldy()).add(v1.rnd(Mathf.random(5f)));
-                  particle.targetPos.set(owner.x, owner.y).add(v1.rnd(Mathf.random(5f)));
-                  particle.size = Mathf.random(1f, 3f);
+                OreParticle particle = Pools.obtain(OreParticle.class, OreParticle::new);
+                particle.color = ore.color;
+                particle.sides = Mathf.random(3, 5);
+                particle.alpha = 1;
+                particle.rotateSpeed = Mathf.random(0.6f, 5);
+                particle.speed = Mathf.random(1f, 2.5f);
+                particle.position.set(t.worldx(), t.worldy()).add(v1.rnd(Mathf.random(5f)));
+                particle.targetPos.set(owner.x, owner.y).add(v1.rnd(Mathf.random(5f)));
+                particle.size = Mathf.random(1f, 3f);
 
-                  if(Sgl.config.animateLevel >= 3) particles.add(particle);
-                }
+                if(Sgl.config.animateLevel >= 3) particles.add(particle);
 
                 drillEffect.at(t.worldx(), t.worldy(), ore.color);
 

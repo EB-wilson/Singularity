@@ -78,6 +78,11 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   }
 
   default void resetFactories(){
+    for (ObjectMap.Entry<GridChildType, ObjectMap<ContentType, RequestHandler>> fac : tempFactories()) {
+      for (RequestHandler handler : fac.value.values()) {
+        handler.reset();
+      }
+    }
     tempFactories().clear();
   }
 

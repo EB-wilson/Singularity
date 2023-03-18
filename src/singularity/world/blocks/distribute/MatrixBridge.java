@@ -32,6 +32,7 @@ import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Tile;
+import mindustry.world.meta.BlockStatus;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 import singularity.Sgl;
@@ -244,6 +245,13 @@ public class MatrixBridge extends DistNetBlock{
     public Seq<EffTask> drawEffs = new Seq<>();
 
     float netEfficiency;
+
+    @Override
+    public BlockStatus status() {
+      return !enabled? BlockStatus.logicDisable:
+          distributor.network.netValid()? BlockStatus.active:
+          distributor.network.netStructValid()? distributor.network.topologyUsed <= distributor.network.totalTopologyCapacity? BlockStatus.noInput: BlockStatus.noOutput: consumer.status();
+    }
 
     @Override
     public MatrixBridge block(){
