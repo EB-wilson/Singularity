@@ -69,7 +69,7 @@ public class PutLiquidsRequest extends DistRequestBase{
     else{
       boolean test = false;
       for(LiquidStack stack: reqLiquids){
-        float move = Math.min(stack.amount, Math.min(source.get(stack.liquid), destination.remainingCapacity()));
+        float move = Math.min(source.maxCapacity()*stack.amount, Math.min(source.get(stack.liquid), destination.remainingCapacity()));
         move -= move%LiquidsBuffer.LiquidIntegerStack.packMulti;
 
         if(move < 0.001f) continue;

@@ -23,11 +23,18 @@ public class ReadItemsRequest extends DistRequestBase{
   private ItemsBuffer source;
   
   private final Seq<ItemStack> reqItems;
+  private final float total;
   
   public ReadItemsRequest(DistElementBuildComp sender, ItemsBuffer destination, Seq<ItemStack> items){
     super(sender);
     this.destination = destination;
     reqItems = items;
+    int i = 0;
+    for (ItemStack stack : items) {
+      i += stack.amount;
+    }
+
+    total = i;
   }
   
   @Override
@@ -50,7 +57,7 @@ public class ReadItemsRequest extends DistRequestBase{
     Arrays.fill(tempItems, 0);
     
     for(ItemStack stack : reqItems){
-      tempItems[stack.item.id] = stack.amount - source.get(stack.item);
+      tempItems[stack.item.id] = (int) Math.min(stack.amount/total*destination.maxCapacity() - destination.get(stack.item), stack.amount - source.get(stack.item));
     }
 
     itemFor: for(int id = 0; id<tempItems.length; id++){
@@ -89,6 +96,8 @@ public class ReadItemsRequest extends DistRequestBase{
     for(ItemStack stack : reqItems){
       int move = Math.min(stack.amount, source.get(stack.item));
       move = Math.min(move, destination.remainingCapacity());
+      move = (int) Math.min(stack.amount/total*destination.maxCapacity() - destination.get(stack.item), move);
+
       if(move <= 0) continue;
 
       source.remove(stack.item, move);

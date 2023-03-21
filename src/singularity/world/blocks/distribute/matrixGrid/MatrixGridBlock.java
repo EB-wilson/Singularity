@@ -4,10 +4,7 @@ import arc.Core;
 import arc.func.Cons;
 import arc.math.geom.Point2;
 import arc.scene.ui.layout.Table;
-import arc.struct.IntMap;
-import arc.struct.ObjectMap;
-import arc.struct.ObjectSet;
-import arc.struct.Seq;
+import arc.struct.*;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import arc.util.pooling.Pool;
@@ -161,7 +158,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
 
     public boolean configIOPoint = false, shouldUpdateTask = true;
     
-    public ObjectSet<DistRequestBase> requests = new ObjectSet<>();
+    public OrderedSet<DistRequestBase> requests = new OrderedSet<>();
 
     private boolean added;
     
@@ -244,39 +241,6 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
         if(entry.value > 0) res.add(entry.key.targetType());
       }
       return res.toArray(ContentType.class);
-    }
-
-    public void releaseRequest(){
-      for(DistRequestBase request : requests){
-        request.kill();
-      }
-      requests.clear();
-
-      resetFactories();
-      
-      for(TargetConfigure config : configs){
-        config.eachChildType((type, map) -> {
-          for(ContentType contType : map.keys()){
-            addConfig(type, contType, config);
-          }
-        });
-      }
-
-      requestHandlerMap.clear();
-      for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, RequestHandler>> entry : tempFactories()){
-        for(ObjectMap.Entry<ContentType, RequestHandler> e: entry.value){
-          DistRequestBase request = createRequest(entry.key, e.key);
-          if(request == null) continue;
-          requests.add(request);
-          distributor.assign(request, false);
-
-          requestHandlerMap.put(request, e.value);
-        }
-      }
-  
-      for(DistRequestBase request : requests){
-        request.init(distributor.network);
-      }
     }
   
     @Override

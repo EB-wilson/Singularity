@@ -102,9 +102,13 @@ public class UnitBuffer extends BaseBuffer<PayloadStack, UnitPayload, UnitBuffer
   @Override
   public void bufferContAssign(DistributeNetwork network, UnitPayload ct){}
   @Override
-  public void bufferContAssign(DistributeNetwork network, UnitPayload ct, Number amount){}
+  public Integer bufferContAssign(DistributeNetwork network, UnitPayload ct, Number amount){
+    return 0;
+  }
   @Override
-  public void bufferContAssign(DistributeNetwork network, UnitPayload ct, Number amount, boolean deFlow){}
+  public Integer bufferContAssign(DistributeNetwork network, UnitPayload ct, Number amount, boolean deFlow){
+    return 0;
+  }
 
   @Override
   public PayloadModule generateBindModule(){

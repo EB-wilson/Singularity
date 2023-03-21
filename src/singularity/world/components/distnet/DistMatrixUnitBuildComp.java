@@ -4,6 +4,7 @@ import arc.math.geom.Point2;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
 import arc.struct.OrderedMap;
+import arc.struct.OrderedSet;
 import mindustry.Vars;
 import mindustry.ctype.ContentType;
 import mindustry.gen.Building;
@@ -18,6 +19,7 @@ import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.request.DistRequestBase;
 import universecore.annotations.Annotations;
 import universecore.util.Empties;
+import universecore.util.colletion.TreeSeq;
 
 @SuppressWarnings("rawtypes")
 public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
@@ -26,13 +28,28 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
     return null;
   }
 
+  @Annotations.BindField(value = "requests", initialize = "new arc.struct.OrderedSet<>()")
+  default OrderedSet<DistRequestBase> requests(){
+    return null;
+  }
+
   @Annotations.BindField(value = "grid", initialize = "new singularity.world.distribution.MatrixGrid(this)")
   default MatrixGrid matrixGrid(){
     return null;
   }
 
-  @Annotations.BindField(value = "buffers", initialize = "new arc.struct.OrderedMap()")
+  @Annotations.BindField(value = "configs", initialize = "new universecore.util.colletion.TreeSeq<>((a, b) -> b.priority - a.priority)")
+  default TreeSeq<TargetConfigure> configs(){
+    return null;
+  }
+
+  @Annotations.BindField(value = "buffers", initialize = "new arc.struct.OrderedMap<>()")
   default OrderedMap<DistBufferType<?>, BaseBuffer<?, ?, ?>> buffers(){
+    return null;
+  }
+
+  @Annotations.BindField(value = "requestHandlerMap", initialize = "new arc.struct.ObjectMap()")
+  default ObjectMap<DistRequestBase, RequestHandler<?>>  requestHandlerMap(){
     return null;
   }
   
@@ -71,7 +88,40 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
     matrixGrid().priority = priority;
     distributor().network.priorityModified(this);
   }
-  
+
+  default void releaseRequest(){
+    for(DistRequestBase request : requests()){
+      request.kill();
+    }
+    requests().clear();
+
+    resetFactories();
+
+    for(TargetConfigure config : configs()){
+      config.eachChildType((type, map) -> {
+        for(ContentType contType : map.keys()){
+          addConfig(type, contType, config);
+        }
+      });
+    }
+
+    requestHandlerMap().clear();
+    for(ObjectMap.Entry<GridChildType, ObjectMap<ContentType, RequestHandler>> entry : tempFactories()){
+      for(ObjectMap.Entry<ContentType, RequestHandler> e: entry.value){
+        DistRequestBase request = createRequest(entry.key, e.key);
+        if(request == null) continue;
+        requests().add(request);
+        distributor().assign(request, false);
+
+        requestHandlerMap().put(request, e.value);
+      }
+    }
+
+    for(DistRequestBase request : requests()){
+      request.init(distributor().network);
+    }
+  }
+
   default boolean configValid(Building entity){
     if(entity instanceof IOPointComp io && (io.gridConfig() == null || io.parent() == this)) return true;
     return Sgl.matrixContainers.getContainer(entity.block) != null;

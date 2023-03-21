@@ -45,6 +45,11 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
   }
 
   @Override
+  public Integer maxCapacity() {
+    return super.maxCapacity().intValue();
+  }
+
+  @Override
   public DistBufferType<ItemsBuffer> bufferType(){
     return DistBufferType.itemBuffer;
   }
@@ -116,19 +121,19 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
   }
 
   @Override
-  public void bufferContAssign(DistributeNetwork network, Item ct, Number amount){
-    bufferContAssign(network, ct, amount, false);
+  public Integer bufferContAssign(DistributeNetwork network, Item ct, Number amount){
+    return bufferContAssign(network, ct, amount, false);
   }
 
   @SuppressWarnings({"unchecked"})
   @Override
-  public void bufferContAssign(DistributeNetwork network, Item ct, Number amount, boolean deFlow){
+  public Integer bufferContAssign(DistributeNetwork network, Item ct, Number amount, boolean deFlow){
     cores.clear();
     int counter = amount.intValue();
 
     Building core = network.getCore().getBuilding();
     ItemPacket packet = get(ct.id);
-    if(packet == null) return;
+    if(packet == null) return counter;
     for(MatrixGrid grid: network.grids){
       for(MatrixGrid.BuildingEntry<? extends Building> entry: grid.<Building>get(GridChildType.container, (e, c) -> c.get(GridChildType.container, ct)
           && e.acceptItem(core, ct))){
@@ -150,7 +155,7 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     //最后，分配额外的核心物资用来统计地区资源增量
     if(counter > 0){
       for(MatrixGrid.BuildingEntry<CoreBlock.CoreBuild> entry: cores){
-        if(counter <= 0) return;
+        if(counter <= 0) return 0;
         int rem = Math.min(packet.amount(), counter);
         rem = Math.min(entry.entity.acceptStack(packet.get(), packet.amount(), network.getCore().getBuilding()), rem);
         if (rem <= 0) continue;
@@ -161,6 +166,8 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
         counter -= rem;
       }
     }
+
+    return counter;
   }
   
   @Override

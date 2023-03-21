@@ -6,6 +6,8 @@ import arc.func.Boolp;
 import org.jetbrains.annotations.Nullable;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistributeNetwork;
+import universecore.annotations.Annotations;
+import universecore.components.ExtraVariableComp;
 
 public abstract class DistRequestBase{
   private long updateMark, executeMark;

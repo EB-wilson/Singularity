@@ -188,9 +188,9 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
 
   public abstract void bufferContAssign(DistributeNetwork network, CType ct);
 
-  public abstract void bufferContAssign(DistributeNetwork network, CType ct, Number amount);
+  public abstract Number bufferContAssign(DistributeNetwork network, CType ct, Number amount);
 
-  public abstract void bufferContAssign(DistributeNetwork network, CType ct, Number amount, boolean deFlow);
+  public abstract Number bufferContAssign(DistributeNetwork network, CType ct, Number amount, boolean deFlow);
 
   public abstract BlockModule generateBindModule();
 
@@ -203,7 +203,11 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
   public Iterator<T> iterator(){
     return memory.values().iterator();
   }
-  
+
+  public Number maxCapacity() {
+    return capacity/bufferType().unit();
+  }
+
   public static abstract class Packet<Obj, Type>{
     public Obj obj;
     WindowedMean putMean = new WindowedMean(6), readMean = new WindowedMean(6);

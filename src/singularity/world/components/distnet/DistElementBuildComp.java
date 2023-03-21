@@ -8,9 +8,10 @@ import mindustry.world.Tile;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.modules.DistributeModule;
 import universecore.annotations.Annotations;
+import universecore.components.ExtraVariableComp;
 import universecore.components.blockcomp.BuildCompBase;
 
-public interface DistElementBuildComp extends BuildCompBase{
+public interface DistElementBuildComp extends BuildCompBase {
   DistributeModule distributor();
 
   @Annotations.BindField("priority")

@@ -3,19 +3,23 @@ package singularity.world.distribution.buffers;
 import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
+import arc.math.WindowedMean;
 import arc.struct.IntMap;
 import arc.struct.Seq;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import mindustry.Vars;
 import mindustry.content.Liquids;
 import mindustry.gen.Building;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
+import mindustry.world.modules.LiquidModule;
 import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
 import singularity.world.modules.SglLiquidModule;
+import universecore.util.handler.FieldHandler;
 
 import static mindustry.Vars.content;
 
@@ -40,6 +44,11 @@ public class LiquidsBuffer extends BaseBuffer<LiquidsBuffer.LiquidIntegerStack, 
   @Override
   public Float remainingCapacity(){
     return super.remainingCapacity().floatValue();
+  }
+
+  @Override
+  public Float maxCapacity() {
+    return super.maxCapacity().floatValue();
   }
 
   @Override
@@ -97,15 +106,15 @@ public class LiquidsBuffer extends BaseBuffer<LiquidsBuffer.LiquidIntegerStack, 
   }
 
   @Override
-  public void bufferContAssign(DistributeNetwork network, Liquid ct, Number amount){
-    bufferContAssign(network, ct, amount, false);
+  public Float bufferContAssign(DistributeNetwork network, Liquid ct, Number amount){
+    return bufferContAssign(network, ct, amount, false);
   }
 
-  public void bufferContAssign(DistributeNetwork network, Liquid ct, Number amount, boolean deFlow){
+  public Float bufferContAssign(DistributeNetwork network, Liquid ct, Number amount, boolean deFlow){
     float am = amount.floatValue();
 
     LiquidPacket packet = get(ct.id);
-    if(packet == null) return;
+    if(packet == null) return am;
 
     Building core = network.getCore().getBuilding();
     for(MatrixGrid grid: network.grids){
@@ -124,9 +133,17 @@ public class LiquidsBuffer extends BaseBuffer<LiquidsBuffer.LiquidIntegerStack, 
         packet.deRead(move);
         am -= move;
         entry.entity.handleLiquid(core, packet.get(), move);
-        if (deFlow) entry.entity.liquids.handleFlow(packet.get(), -move);
+        if (deFlow && Vars.ui.hudfrag.blockfrag.hover() == entry.entity){
+          float[] cacheSums = FieldHandler.getValueDefault(LiquidModule.class, "cacheSums");
+          WindowedMean[] flow = FieldHandler.getValueDefault(entry.entity.liquids, "flow");
+          if(flow != null){
+            cacheSums[packet.id()] -= move;
+          }
+        }
       }
     }
+
+    return am;
   }
   
   @Override

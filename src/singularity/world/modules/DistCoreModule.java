@@ -22,9 +22,10 @@ public class DistCoreModule extends BlockModule{
   public static final DistRequestBase[] EMP_TMP = new DistRequestBase[0];
   public static final DistRequestBase[] EMPTY = new DistRequestBase[0];
 
-  public TreeSeq<DistRequestBase> requestTasks = new TreeSeq<>((a, b) -> b.priority() - a.priority());
   protected DistRequestBase[] taskStack;
   protected DistRequestBase[] taskQueue = new DistRequestBase[16];
+
+  public TreeSeq<DistRequestBase> requestTasks = new TreeSeq<>((a, b) -> b.priority() - a.priority());
   protected int queueLength = 0;
 
   public int lastProcessed;
@@ -76,7 +77,7 @@ public class DistCoreModule extends BlockModule{
 
           if (taskQueue.length <= queueLength) taskQueue = Arrays.copyOf(taskQueue, taskQueue.length*2);
 
-          taskQueue[queueLength] = taskQueue[executingAddress];
+          taskQueue[queueLength] = taskStack[executingAddress];
           queueLength++;
 
           taskStack[executingAddress].onExecute();

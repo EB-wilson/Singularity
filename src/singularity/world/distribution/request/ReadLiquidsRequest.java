@@ -49,7 +49,7 @@ public class ReadLiquidsRequest extends DistRequestBase{
 
     Arrays.fill(tempLiquid, 0);
     for(LiquidStack stack: reqLiquids){
-      tempLiquid[stack.liquid.id] = stack.amount - source.get(stack.liquid);
+      tempLiquid[stack.liquid.id] = stack.amount*destination.maxCapacity() - destination.get(stack.liquid) - source.get(stack.liquid);
     }
 
     liquidFor: for(int id = 0; id<tempLiquid.length; id++){
@@ -84,8 +84,9 @@ public class ReadLiquidsRequest extends DistRequestBase{
   public boolean handleTask(){
     boolean blockTest = false;
     for(LiquidStack stack : reqLiquids){
-      float move = Math.min(stack.amount, source.get(stack.liquid));
-      move = Math.min(move, destination.remainingCapacity());
+      float targetAmount = stack.amount*destination.maxCapacity();
+
+      float move = Math.min(targetAmount - destination.get(stack.liquid), source.get(stack.liquid));
 
       move -= move%LiquidsBuffer.LiquidIntegerStack.packMulti;
       if(move <= 0) continue;

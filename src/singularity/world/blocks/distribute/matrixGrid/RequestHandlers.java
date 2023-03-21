@@ -78,10 +78,9 @@ public class RequestHandlers{
       }
     }
 
-    protected void scaleTo(float targetAmount){
-      float scl = targetAmount/total;
-      for(LiquidStack stack: liquids.values()){
-        stack.amount *= scl;
+    protected void handleToOne(){
+      for (LiquidStack stack : liquids.values()) {
+        stack.amount /= total;
       }
     }
   }
@@ -142,19 +141,9 @@ public class RequestHandlers{
       return result;
     }
 
-    private final int[] tmp = new int[Vars.content.items().size];
-    private final ObjectSet<Item> tmpItems = new ObjectSet<>();
-
     @Override
     public boolean callBack(DistMatrixUnitBuildComp sender, ReadItemsRequest request, Boolp task){
-      Arrays.fill(tmp, 0);
-      tmpItems.clear();
-
       ItemsBuffer buffer = sender.getBuffer(DistBufferType.itemBuffer);
-      for(ItemsBuffer.ItemPacket packet: buffer){
-        tmp[packet.id()] = packet.amount();
-        tmpItems.add(packet.get());
-      }
 
       boolean taskStatus = task.get();
 
@@ -168,28 +157,7 @@ public class RequestHandlers{
             if(amount == 0) continue;
             buffer.remove((Item) item, 1);
             buffer.deReadFlow((Item) item, 1);
-
-            tmpItems.add((Item) item);
           }
-        }
-      }
-
-      ItemsBuffer coreBuffer = sender.distributor().core().distCore().getBuffer(DistBufferType.itemBuffer);
-      for(int id = 0; id < tmp.length; id++){
-        ItemsBuffer.ItemPacket packet = buffer.get(id);
-        if(packet != null){
-          if(!tmpItems.contains(packet.get())) continue;
-          int transBack = Math.min(packet.amount(), Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity()));
-          if(transBack <= 0) continue;
-
-          packet.remove(transBack);
-          packet.dePut(transBack);
-          packet.deRead(transBack);
-          coreBuffer.put(packet.get(), transBack);
-          coreBuffer.dePutFlow(packet.get(), transBack);
-          coreBuffer.deReadFlow(packet.get(), transBack);
-
-          coreBuffer.bufferContAssign(sender.distributor().network, packet.get(), transBack, true);
         }
       }
 
@@ -208,8 +176,7 @@ public class RequestHandlers{
 
     @Override
     public PutLiquidsRequest makeRequest(DistMatrixUnitBuildComp sender){
-      LiquidsBuffer buff = sender.getBuffer(DistBufferType.liquidBuffer);
-      scaleTo((float)buff.capacity/buff.bufferType().unit());
+      handleToOne();
       return liquids.isEmpty()? null: new PutLiquidsRequest(sender, sender.getBuffer(DistBufferType.liquidBuffer), new Seq<>(liquids.values().toArray()));
     }
   }
@@ -222,8 +189,7 @@ public class RequestHandlers{
 
     @Override
     public PutLiquidsRequest makeRequest(DistMatrixUnitBuildComp sender){
-      LiquidsBuffer buff = sender.getBuffer(DistBufferType.liquidBuffer);
-      scaleTo((float)buff.capacity/buff.bufferType().unit());
+      handleToOne();
       return liquids.isEmpty()? null: new PutLiquidsRequest(sender, sender.getBuffer(DistBufferType.liquidBuffer), new Seq<>(liquids.values().toArray()));
     }
   }
@@ -236,8 +202,7 @@ public class RequestHandlers{
 
     @Override
     public ReadLiquidsRequest makeRequest(DistMatrixUnitBuildComp sender){
-      LiquidsBuffer buff = sender.getBuffer(DistBufferType.liquidBuffer);
-      scaleTo((float)buff.capacity/buff.bufferType().unit());
+      handleToOne();
       Seq<LiquidStack> seq = new Seq<>(liquids.values().toArray());
 
       ReadLiquidsRequest result = liquids.isEmpty()? null: new ReadLiquidsRequest(sender, sender.getBuffer(DistBufferType.liquidBuffer), seq);
@@ -253,19 +218,9 @@ public class RequestHandlers{
       return result;
     }
 
-    private final float[] tmp = new float[Vars.content.liquids().size];
-    private final ObjectSet<Liquid> tmpLiquids = new ObjectSet<>();
-
     @Override
     public boolean callBack(DistMatrixUnitBuildComp sender, ReadLiquidsRequest request, Boolp task){
-      Arrays.fill(tmp, 0);
-      tmpLiquids.clear();
-
       LiquidsBuffer buffer = sender.getBuffer(DistBufferType.liquidBuffer);
-      for(LiquidsBuffer.LiquidPacket packet: buffer){
-        tmp[packet.id()] = packet.amount();
-        tmpLiquids.add(packet.get());
-      }
 
       boolean taskStatus = task.get();
 
@@ -283,29 +238,7 @@ public class RequestHandlers{
             if(amount <= 0) continue;
             buffer.remove(li, amount);
             buffer.deReadFlow(li, amount);
-
-            tmpLiquids.add(li);
           }
-        }
-      }
-
-      LiquidsBuffer coreBuffer = sender.distributor().core().distCore().getBuffer(DistBufferType.liquidBuffer);
-      for(int id = 0; id < tmp.length; id++){
-        LiquidsBuffer.LiquidPacket packet = buffer.get(id);
-        if(packet != null){
-          if(!tmpLiquids.contains(packet.get())) continue;
-          float transBack = Math.min(packet.amount(), Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity()));
-          transBack -= transBack%LiquidsBuffer.LiquidIntegerStack.packMulti;
-          if(transBack <= 0) continue;
-
-          packet.remove(transBack);
-          packet.dePut(transBack);
-          packet.deRead(transBack);
-          coreBuffer.put(packet.get(), transBack);
-          coreBuffer.dePutFlow(packet.get(), transBack);
-          coreBuffer.deReadFlow(packet.get(), transBack);
-
-          coreBuffer.bufferContAssign(sender.distributor().network, packet.get(), transBack, true);
         }
       }
 

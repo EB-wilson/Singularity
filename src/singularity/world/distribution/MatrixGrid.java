@@ -17,6 +17,7 @@ import universecore.util.colletion.TreeSeq;
 public class MatrixGrid{
   private static final Seq tmp = new Seq();
   public static final float[] DEF_VALUE = {0f};
+  public static final Boolf2<Object, TargetConfigure> REQ = (e, c) -> true;
 
   final public DistMatrixUnitBuildComp owner;
   final ObjectMap<Building, BuildingEntry<?>> all = new ObjectMap<>();
@@ -105,6 +106,10 @@ public class MatrixGrid{
 
   public void endStatContainer(){
     statUsed = false;
+  }
+
+  public <T> Seq<BuildingEntry<T>> get(GridChildType type){
+    return get(type, REQ, tmp);
   }
 
   public <T> Seq<BuildingEntry<T>> get(GridChildType type, Boolf2<T, TargetConfigure> req){
