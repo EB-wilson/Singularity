@@ -8,8 +8,11 @@ import arc.util.Eachable;
 import mindustry.content.Items;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
+import mindustry.gen.Teamc;
 import mindustry.type.Category;
+import mindustry.type.Item;
 import mindustry.type.ItemStack;
+import mindustry.type.Liquid;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.draw.DrawMulti;
@@ -364,9 +367,32 @@ public class DistributeBlocks implements ContentList{
           SglItems.strengthening_alloy, 40,
           SglItems.aluminium, 60
       ));
+
+      hasItems = hasLiquids = true;
+
+      setRecycle(DistBufferType.itemBuffer, e -> e.items.clear());
+      setRecycle(DistBufferType.liquidBuffer, e -> e.liquids.clear());
+
       size = 3;
       connectReq = LEFT | RIGHT;
       matrixEnergyUse = 0.4f;
+
+      buildType = () -> new AutoRecyclerCompBuild(){
+        @Override
+        public int acceptStack(Item item, int amount, Teamc source) {
+          return distributor.network.getCore() == source? amount: 0;
+        }
+
+        @Override
+        public boolean acceptItem(Building source, Item item) {
+          return distributor.network.getCore() == source;
+        }
+
+        @Override
+        public boolean acceptLiquid(Building source, Liquid liquid) {
+          return distributor.network.getCore() == source;
+        }
+      };
     }};
   }
 }

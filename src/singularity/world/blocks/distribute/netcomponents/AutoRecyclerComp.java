@@ -1,60 +1,137 @@
 package singularity.world.blocks.distribute.netcomponents;
 
 import arc.Core;
+import arc.func.Cons;
+import arc.func.Cons2;
+import arc.math.geom.Point2;
 import arc.scene.event.Touchable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Table;
-import arc.struct.ObjectMap;
-import arc.struct.ObjectSet;
-import arc.struct.Seq;
+import arc.struct.*;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
+import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
+import mindustry.gen.Building;
 import mindustry.gen.Icon;
+import mindustry.gen.Teamc;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
+import mindustry.type.Item;
+import mindustry.type.Liquid;
 import mindustry.ui.Styles;
+import mindustry.world.Tile;
+import mindustry.world.blocks.payloads.Payload;
+import singularity.world.blocks.distribute.TargetConfigure;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistBufferType;
+import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.request.DistRequestBase;
 import universecore.util.Empties;
 
+import java.util.HashMap;
+
 public class AutoRecyclerComp extends NetPluginComp{
+  public OrderedMap<DistBufferType<?>, Cons<Building>> usableRecycle = new OrderedMap<>();
+
   public AutoRecyclerComp(String name){
     super(name);
     configurable = true;
+
+    config(IntSeq.class, (AutoRecyclerCompBuild b, IntSeq c) -> {
+      ContentType type = ContentType.values()[c.get(0)];
+      UnlockableContent content = Vars.content.getByID(type, c.get(1));
+      ObjectSet<UnlockableContent> set = b.list.get(DistBufferType.typeOf(type), ObjectSet::new);
+      if(!set.add(content)) set.remove(content);
+
+      b.flush = true;
+    });
+    config(Integer.class, (AutoRecyclerCompBuild b, Integer i) -> {
+      if (i == -1){
+        b.list.clear();
+      }
+      else if(i == 1){
+        b.isBlackList = !b.isBlackList;
+      }
+      b.flush = true;
+    });
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public <E extends Building> void setRecycle(DistBufferType<?> type, Cons<E> recycle){
+    usableRecycle.put(type, (Cons)recycle);
   }
 
   public class AutoRecyclerCompBuild extends NetPluginCompBuild{
     ObjectMap<DistBufferType<?>, ObjectSet<UnlockableContent>> list = new ObjectMap<>();
     boolean isBlackList = true;
-
-    ClearBuffRequest currTask;
+    boolean flush;
 
     @Override
     public void onPluginValided(){
-      if(currTask != null) currTask.kill();
-      distributor.assign(currTask = new ClearBuffRequest(this));
+      flush = true;
     }
 
     @Override
     public void onPluginInvalided(){
-      if(currTask != null) currTask.kill();
+
     }
 
     @Override
     public void onPluginRemoved(){
-      if(currTask != null) currTask.kill();
+
+    }
+
+    public void updateConfig(){
+      if (distributor.network.netStructValid()) {
+        TargetConfigure config = new TargetConfigure();
+
+        config.priority = -65536;
+
+        Tile coreTile = distributor.network.getCore().getTile();
+        int dx = tile.x - coreTile.x;
+        int dy = tile.y - coreTile.y;
+        config.offsetPos = Point2.pack(dx, dy);
+
+        if (!isBlackList) {
+          for (DistBufferType<?> type : usableRecycle.orderedKeys()) {
+            for (Content content : Vars.content.getBy(type.targetType())) {
+              if (content instanceof UnlockableContent c && !list.get(type, Empties.nilSetO()).contains(c)) {
+                config.set(GridChildType.container, c, new byte[]{-1});
+              }
+            }
+          }
+        }
+        else {
+          for (ObjectSet<UnlockableContent> counts : list.values()) {
+            for (UnlockableContent content: counts) {
+              config.set(GridChildType.container, content, new byte[]{-1});
+            }
+          }
+        }
+
+        distributor.network.getCore().matrixGrid().remove(this);
+        distributor.network.getCore().matrixGrid().addConfig(config);
+      }
     }
 
     @Override
     public void updateTile(){
       super.updateTile();
-      if(currTask != null) currTask.update();
+
+      if (flush){
+        updateConfig();
+
+        flush = false;
+      }
+
+      for (DistBufferType<?> key : list.keys()) {
+        usableRecycle.get(key).get(this);
+      }
     }
 
     Runnable rebuildItems;
@@ -69,10 +146,8 @@ public class AutoRecyclerComp extends NetPluginComp{
             int counter = 0;
             for(UnlockableContent item: itemSeq){
               if(item.unlockedNow()){
-                ImageButton button = items.button(Tex.whiteui, Styles.selecti, 30, () -> {
-                  ObjectSet<UnlockableContent> set = list.get(currType, ObjectSet::new);
-                  if(!set.add(item)) set.remove(item);
-                }).size(40).get();
+                ImageButton button = items.button(Tex.whiteui, Styles.selecti, 30,
+                    () -> configure(IntSeq.with(item.getContentType().ordinal(), item.id))).size(40).get();
                 button.getStyle().imageUp = new TextureRegionDrawable(item.uiIcon);
                 button.update(() -> button.setChecked(list.get(currType, Empties.nilSetO()).contains(item)));
 
@@ -80,7 +155,7 @@ public class AutoRecyclerComp extends NetPluginComp{
               }
             }
           };
-          currType = DistBufferType.all[0];
+          currType = usableRecycle.orderedKeys().get(0);
           rebuildItems.run();
         }).size(225, 160);
 
@@ -88,7 +163,7 @@ public class AutoRecyclerComp extends NetPluginComp{
 
         main.table(sideBar -> {
           sideBar.pane(typesTable -> {
-            for(DistBufferType<?> type: DistBufferType.all){
+            for(DistBufferType<?> type: usableRecycle.orderedKeys()){
               typesTable.button(t -> t.add(Core.bundle.get("content." + type.targetType().name() + ".name")), Styles.underlineb, () -> {
                     currType = type;
                     rebuildItems.run();
@@ -98,59 +173,11 @@ public class AutoRecyclerComp extends NetPluginComp{
             }
           }).size(120, 100);
           sideBar.row();
-          sideBar.check("", isBlackList, b -> {
-            isBlackList = b;
-          }).update(c -> c.setText(Core.bundle.get(isBlackList? "misc.blackListMode": "misc.whiteListMode"))).size(120, 40);
+          sideBar.check("", isBlackList, b -> configure(1)).update(c -> c.setText(Core.bundle.get(isBlackList? "misc.blackListMode": "misc.whiteListMode"))).size(120, 40);
           sideBar.row();
-          sideBar.button(Core.bundle.get("misc.reset"), Icon.cancel, Styles.cleart, () -> {
-            list.clear();
-          }).size(120, 40);
+          sideBar.button(Core.bundle.get("misc.reset"), Icon.cancel, Styles.cleart, () -> configure(-1)).size(120, 40);
         }).fillX();
       }).fill();
-    }
-
-    public class ClearBuffRequest extends DistRequestBase{
-      public ClearBuffRequest(DistElementBuildComp sender){
-        super(sender);
-      }
-
-      @Override
-      public int priority(){
-        return 0;
-      }
-
-      @Override
-      protected boolean preHandleTask(){
-        return true;
-      }
-
-      @Override
-      protected boolean handleTask(){
-        return true;
-      }
-
-      @Override
-      protected boolean afterHandleTask(){
-        if(isBlackList){
-          for(ObjectMap.Entry<DistBufferType<?>, BaseBuffer<?, ?, ?>> entry: target.getCore().distCore().buffers){
-            for(UnlockableContent content: list.get(entry.key, Empties.nilSetO())){
-              entry.value.remove(content.id);
-            }
-          }
-        }
-        else{
-          for(ObjectMap.Entry<DistBufferType<?>, BaseBuffer<?, ?, ?>> entry: target.getCore().distCore().buffers){
-            ObjectSet<UnlockableContent> writeList = list.get(entry.key, Empties.nilSetO());
-            for(BaseBuffer.Packet<?, ?> packet: entry.value){
-              if(!writeList.contains(((UnlockableContent) packet.get()))){
-                entry.value.remove(packet.id());
-              }
-            }
-          }
-        }
-
-        return true;
-      }
     }
 
     @Override

@@ -36,18 +36,8 @@ public class DistCoreModule extends BlockModule{
 
   public float process;
   
-  public OrderedMap<DistBufferType<?>, BaseBuffer<?, ?, ?>> buffers = new OrderedMap<>();
-  
   public DistCoreModule(DistElementBuildComp entity){
     core = (DistNetworkCoreComp) entity;
-    for(DistBufferType<?> buffer: DistBufferType.all){
-      buffers.put(buffer, buffer.get(core.bufferSize().get(buffer, 0)));
-    }
-  }
-  
-  @SuppressWarnings("unchecked")
-  public <T extends BaseBuffer<?, ?, ?>> T getBuffer(DistBufferType<T> buffer){
-    return (T)buffers.get(buffer);
   }
   
   public void update(){
@@ -111,7 +101,7 @@ public class DistCoreModule extends BlockModule{
         }
       }
 
-      for(BaseBuffer<?, ?, ?> buffer : buffers.values()){
+      for(BaseBuffer<?, ?, ?> buffer : core.buffers().values()){
         buffer.bufferContAssign(network);
         buffer.update();
       }

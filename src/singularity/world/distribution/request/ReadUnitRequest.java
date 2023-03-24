@@ -37,7 +37,7 @@ public class ReadUnitRequest extends DistRequestBase{
   @Override
   public void init(DistributeNetwork target){
     super.init(target);
-    source = target.getCore().distCore().getBuffer(DistBufferType.unitBuffer);
+    source = target.getCore().getBuffer(DistBufferType.unitBuffer);
   }
 
   @Override

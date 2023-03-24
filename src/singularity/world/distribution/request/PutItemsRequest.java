@@ -45,7 +45,7 @@ public class PutItemsRequest extends DistRequestBase{
   @Override
   public void init(DistributeNetwork target){
     super.init(target);
-    destination = target.getCore().distCore().getBuffer(DistBufferType.itemBuffer);
+    destination = target.getCore().getBuffer(DistBufferType.itemBuffer);
   }
 
   @Override

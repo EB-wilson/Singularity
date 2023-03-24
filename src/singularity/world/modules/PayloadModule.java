@@ -65,6 +65,10 @@ public class PayloadModule extends BlockModule{
     }
   }
 
+  public void clear() {
+    payloads.clear();
+  }
+
   public boolean isEmpty(){
     return payloads.isEmpty();
   }

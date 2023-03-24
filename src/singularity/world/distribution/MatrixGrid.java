@@ -138,7 +138,7 @@ public class MatrixGrid{
 
   public void addConfig(TargetConfigure c){
     Building t = Vars.world.build(owner.getTile().x + Point2.x(c.offsetPos), owner.getTile().y + Point2.y(c.offsetPos));
-    if(t == null) return;
+    if(t == null || !owner.tileValid(t.tile)) return;
     boolean existed = all.containsKey(t);
     BuildingEntry<?> entry = all.get(t, new BuildingEntry<>(t, c));
 
@@ -177,7 +177,12 @@ public class MatrixGrid{
       remove(building);
     }
   }
-  
+
+  @Override
+  public String toString() {
+    return all.toString();
+  }
+
   public static class BuildingEntry<T>{
     public final T entity;
     public TargetConfigure config;

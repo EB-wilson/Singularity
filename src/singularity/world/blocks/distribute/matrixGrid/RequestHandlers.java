@@ -34,7 +34,7 @@ public class RequestHandlers{
     R makeRequest(DistMatrixUnitBuildComp sender);
 
     /**重置所有已添加的配置缓存*/
-    void reset();
+    void reset(DistMatrixUnitBuildComp sender);
 
     /**请求的处理前回调方法*/
     default boolean preCallBack(DistMatrixUnitBuildComp sender, R request, Boolp task){
@@ -53,8 +53,19 @@ public class RequestHandlers{
   private static abstract class AbstractItemRequestHandler{
     protected ItemSeq items = new ItemSeq();
 
-    public void reset(){
+    public void reset(DistMatrixUnitBuildComp sender){
       items.clear();
+
+      ItemsBuffer coreBuff = sender.distributor().core().getBuffer(DistBufferType.itemBuffer);
+      for (ItemsBuffer.ItemPacket packet : sender.getBuffer(DistBufferType.itemBuffer)) {
+        int move = Math.min(coreBuff.remainingCapacity(), packet.amount());
+
+        if (move <= 0) continue;
+        packet.remove(move);
+        coreBuff.put(packet.get(), move);
+
+        coreBuff.bufferContAssign(sender.distributor().network, packet.get(), move);
+      }
     }
   }
 
@@ -62,9 +73,20 @@ public class RequestHandlers{
     protected IntMap<LiquidStack> liquids = new IntMap<>();
     protected float total;
 
-    public void reset(){
+    public void reset(DistMatrixUnitBuildComp sender){
       liquids.clear();
       total = 0;
+
+      LiquidsBuffer coreBuff = sender.distributor().core().getBuffer(DistBufferType.liquidBuffer);
+      for (LiquidsBuffer.LiquidPacket packet : sender.getBuffer(DistBufferType.liquidBuffer)) {
+        float move = Math.min(coreBuff.remainingCapacity(), packet.amount());
+
+        if (move <= 0) continue;
+        packet.remove(move);
+        coreBuff.put(packet.get(), move);
+
+        coreBuff.bufferContAssign(sender.distributor().network, packet.get(), move);
+      }
     }
 
     protected void addParseConfig(TargetConfigure cfg, GridChildType type){
@@ -141,9 +163,19 @@ public class RequestHandlers{
       return result;
     }
 
+    private final int[] tmp = new int[Vars.content.items().size];
+    private final ObjectSet<Item> tmpItems = new ObjectSet<>();
+
     @Override
     public boolean callBack(DistMatrixUnitBuildComp sender, ReadItemsRequest request, Boolp task){
+      Arrays.fill(tmp, 0);
+      tmpItems.clear();
+
       ItemsBuffer buffer = sender.getBuffer(DistBufferType.itemBuffer);
+      for(ItemsBuffer.ItemPacket packet: buffer){
+        tmp[packet.id()] = packet.amount();
+        tmpItems.add(packet.get());
+      }
 
       boolean taskStatus = task.get();
 
@@ -157,7 +189,29 @@ public class RequestHandlers{
             if(amount == 0) continue;
             buffer.remove((Item) item, 1);
             buffer.deReadFlow((Item) item, 1);
+
+            tmpItems.add((Item) item);
           }
+        }
+      }
+
+      ItemsBuffer coreBuffer = sender.distributor().core().getBuffer(DistBufferType.itemBuffer);
+      for(int id = 0; id < tmp.length; id++){
+        ItemsBuffer.ItemPacket packet = buffer.get(id);
+        if(packet != null){
+          if(!tmpItems.contains(packet.get())) continue;
+          int transBack = Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity());
+          transBack -= transBack%LiquidsBuffer.LiquidIntegerStack.packMulti;
+          if(transBack <= 0) continue;
+
+          packet.remove(transBack);
+          packet.dePut(transBack);
+          packet.deRead(transBack);
+          coreBuffer.put(packet.get(), transBack);
+          coreBuffer.dePutFlow(packet.get(), transBack);
+          coreBuffer.deReadFlow(packet.get(), transBack);
+
+          coreBuffer.bufferContAssign(sender.distributor().network, packet.get(), transBack, true);
         }
       }
 
@@ -218,9 +272,19 @@ public class RequestHandlers{
       return result;
     }
 
+    private final float[] tmp = new float[Vars.content.liquids().size];
+    private final ObjectSet<Liquid> tmpLiquids = new ObjectSet<>();
+
     @Override
     public boolean callBack(DistMatrixUnitBuildComp sender, ReadLiquidsRequest request, Boolp task){
+      Arrays.fill(tmp, 0);
+      tmpLiquids.clear();
+
       LiquidsBuffer buffer = sender.getBuffer(DistBufferType.liquidBuffer);
+      for(LiquidsBuffer.LiquidPacket packet: buffer){
+        tmp[packet.id()] = packet.amount();
+        tmpLiquids.add(packet.get());
+      }
 
       boolean taskStatus = task.get();
 
@@ -238,7 +302,29 @@ public class RequestHandlers{
             if(amount <= 0) continue;
             buffer.remove(li, amount);
             buffer.deReadFlow(li, amount);
+
+            tmpLiquids.add(li);
           }
+        }
+      }
+
+      LiquidsBuffer coreBuffer = sender.distributor().core().getBuffer(DistBufferType.liquidBuffer);
+      for(int id = 0; id < tmp.length; id++){
+        LiquidsBuffer.LiquidPacket packet = buffer.get(id);
+        if(packet != null){
+          if(!tmpLiquids.contains(packet.get())) continue;
+          float transBack = Math.min(packet.amount() - tmp[id], coreBuffer.remainingCapacity());
+          transBack -= transBack%LiquidsBuffer.LiquidIntegerStack.packMulti;
+          if(transBack <= 0) continue;
+
+          packet.remove(transBack);
+          packet.dePut(transBack);
+          packet.deRead(transBack);
+          coreBuffer.put(packet.get(), transBack);
+          coreBuffer.dePutFlow(packet.get(), transBack);
+          coreBuffer.deReadFlow(packet.get(), transBack);
+
+          coreBuffer.bufferContAssign(sender.distributor().network, packet.get(), transBack, true);
         }
       }
 

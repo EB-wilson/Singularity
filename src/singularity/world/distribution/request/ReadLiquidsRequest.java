@@ -38,7 +38,7 @@ public class ReadLiquidsRequest extends DistRequestBase{
   @Override
   public void init(DistributeNetwork target){
     super.init(target);
-    source = target.getCore().distCore().getBuffer(DistBufferType.liquidBuffer);
+    source = target.getCore().getBuffer(DistBufferType.liquidBuffer);
   }
 
   @Override

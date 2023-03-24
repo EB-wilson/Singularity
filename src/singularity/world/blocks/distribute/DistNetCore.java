@@ -4,6 +4,7 @@ import arc.Core;
 import arc.func.Cons;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
+import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.struct.ObjectMap;
@@ -13,20 +14,25 @@ import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.graphics.Pal;
 import mindustry.world.Block;
+import mindustry.world.Tile;
 import mindustry.world.meta.BlockStatus;
 import mindustry.world.meta.StatUnit;
 import singularity.world.blocks.distribute.netcomponents.CoreNeighbourComponent;
+import singularity.world.components.distnet.DistMatrixUnitBuildComp;
+import singularity.world.components.distnet.DistMatrixUnitComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
+import singularity.world.components.distnet.IOPointComp;
 import singularity.world.distribution.DistBufferType;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.modules.DistCoreModule;
 import universecore.annotations.Annotations;
 import universecore.util.NumberStrify;
+import universecore.util.colletion.TreeSeq;
 
 import static mindustry.Vars.tilesize;
 
-public class DistNetCore extends DistNetBlock{
+public class DistNetCore extends DistNetBlock implements DistMatrixUnitComp {
   public int computingPower = 8;
   public int topologyCapacity = 8;
 
@@ -65,7 +71,7 @@ public class DistNetCore extends DistNetBlock{
   }
 
   @Annotations.ImplEntries
-  public class DistNetCoreBuild extends DistNetBuild implements DistNetworkCoreComp{
+  public class DistNetCoreBuild extends DistNetBuild implements DistNetworkCoreComp {
     DistCoreModule distCore;
 
     Seq<CoreNeighbourComponent.CoreNeighbourComponentBuild> proximityComps = new Seq<>();
@@ -89,6 +95,17 @@ public class DistNetCore extends DistNetBlock{
       super.updateNetLinked();
 
       netLinked.addAll(proximityComps);
+    }
+
+    @Override
+    public void priority(int priority) {
+      matrixGrid().priority = priority;
+      distributor.network.priorityModified(this);
+    }
+
+    @Override
+    public void networkValided() {
+      matrixGrid().clear();
     }
 
     @Override
@@ -120,9 +137,11 @@ public class DistNetCore extends DistNetBlock{
     public Building create(Block block, Team team){
       distCore = new DistCoreModule(this);
       super.create(block, team);
-      items = distCore.getBuffer(DistBufferType.itemBuffer).generateBindModule();
-      liquids = distCore.getBuffer(DistBufferType.liquidBuffer).generateBindModule();
+      initBuffers();
+      items = getBuffer(DistBufferType.itemBuffer).generateBindModule();
+      liquids = getBuffer(DistBufferType.liquidBuffer).generateBindModule();
 
+      priority(-65536);
       return this;
     }
 
@@ -144,6 +163,21 @@ public class DistNetCore extends DistNetBlock{
     @Override
     public float matrixEnergyConsume(){
       return matrixEnergyUse + requestEnergyCost*distCore.lastProcessed;
+    }
+
+    @Override
+    public void ioPointConfigBackEntry(IOPointComp ioPoint) {
+      //no action
+    }
+
+    @Override
+    public boolean tileValid(Tile tile) {
+      return true;
+    }
+
+    @Override
+    public void drawValidRange() {
+      //no action
     }
   }
 }

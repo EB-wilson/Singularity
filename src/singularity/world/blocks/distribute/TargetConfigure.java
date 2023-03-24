@@ -20,7 +20,7 @@ public class TargetConfigure implements DataPackable {
   public static final int FLIP_X = 0b0101;
   public static final int FLIP_Y = 0b1010;
 
-  public int offsetPos;
+  public int offsetPos = Point2.pack(0, 0);
   public int priority;
 
   protected ObjectMap<GridChildType, ObjectMap<ContentType, ObjectSet<UnlockableContent>>> data = new ObjectMap<>();

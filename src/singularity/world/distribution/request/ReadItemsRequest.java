@@ -45,7 +45,7 @@ public class ReadItemsRequest extends DistRequestBase{
   @Override
   public void init(DistributeNetwork target){
     super.init(target);
-    source = target.getCore().distCore().getBuffer(DistBufferType.itemBuffer);
+    source = target.getCore().getBuffer(DistBufferType.itemBuffer);
   }
   
   @Override

@@ -536,7 +536,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
           && ((source == this && consumer.current != null && consumer.current.selfAccess(ConsumeType.item, item))
           || !(consumer.hasConsume() || consumer.hasOptional())
           || filter().filter(this, SglConsumeType.item, item, acceptAll(SglConsumeType.item)))
-          && (independenceInventory? items.get(item): items.total()) < block().itemCapacity;
+          && (independenceInventory? items.get(item): items.total()) < getMaximumAccepted(item);
     }
 
     @Override
@@ -545,7 +545,11 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
           && ((source == this && consumer.current != null && consumer.current.selfAccess(ConsumeType.liquid, liquid))
           || !(consumer.hasConsume() || consumer.hasOptional())
           || filter().filter(this, SglConsumeType.liquid, liquid, acceptAll(SglConsumeType.liquid)))
-          && (independenceLiquidTank? liquids.get(liquid): ((SglLiquidModule)liquids).total()) <= block().liquidCapacity - 0.0001f;
+          && (independenceLiquidTank? liquids.get(liquid): ((SglLiquidModule)liquids).total()) <= getMaximumAccepted(liquid) - 0.0001f;
+    }
+
+    public float getMaximumAccepted(Liquid liquid){
+      return block.liquidCapacity;
     }
   
     @Override

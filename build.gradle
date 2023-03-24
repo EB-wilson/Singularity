@@ -5,7 +5,7 @@ plugins {
   id 'java'
 }
 
-version 'alpha-0.8.3'
+version 'alpha-0.8.4'
 
 sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]
@@ -16,7 +16,7 @@ ext{
   //the build number that this mod is made for
   mindustryVersion = "v141"
   arcVersion = "v141"
-  uncVersion = "1.7.1"
+  uncVersion = "1.7.3"
   //version of SDK you will be using
   minSdkAPI = 30
 
@@ -25,15 +25,7 @@ ext{
 
 tasks.withType(JavaCompile).configureEach {
   options.encoding = "UTF-8"
-  options.fork = true
-  options.forkOptions.jvmArgs.addAll([
-          "--add-opens", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-          "--add-opens", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-          "--add-opens", "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-          "--add-opens", "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
-          "--add-opens", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-          "--add-opens", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
-  ])
+
   options.compilerArgs.addAll(['--release', '8'])
 }
 
@@ -66,10 +58,11 @@ dependencies{
   compileOnly "com.github.EB-wilson.UniverseCore:dynamilizer:$uncVersion"
   compileOnly "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
 
+  testCompileOnly "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
+
   implementation 'org.jetbrains:annotations:23.0.0'
 
   annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
-  annotationProcessor "com.github.Anuken:jabel:0.7.0"
 }
 
 tasks.register('jarAndroid') {

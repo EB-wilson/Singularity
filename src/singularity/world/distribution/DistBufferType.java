@@ -3,7 +3,13 @@ package singularity.world.distribution;
 import arc.func.Prov;
 import arc.struct.Seq;
 import mindustry.ctype.ContentType;
+import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Building;
+import mindustry.type.Item;
+import mindustry.type.Liquid;
+import mindustry.type.UnitType;
+import mindustry.world.blocks.payloads.Payload;
+import mindustry.world.blocks.payloads.UnitPayload;
 import singularity.world.components.PayloadBuildComp;
 import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.buffers.ItemsBuffer;
@@ -34,6 +40,8 @@ public abstract class DistBufferType<T extends BaseBuffer<?, ?, ?>>{
     }
   };
   public static DistBufferType<UnitBuffer> unitBuffer = new DistBufferType<>(ContentType.unit, 64, UnitBuffer::new){
+    static final Seq<Payload> seq = new Seq<>();
+
     @Override
     public Number containerUsed(Building build){
       if(build instanceof PayloadBuildComp b){
@@ -63,7 +71,15 @@ public abstract class DistBufferType<T extends BaseBuffer<?, ?, ?>>{
 
     all = tmp.toArray(DistBufferType.class);
   }
-  
+
+  public static DistBufferType<?> typeOf(ContentType type) {
+    for (DistBufferType<?> distBufferType : all) {
+      if (distBufferType.targetType() == type) return distBufferType;
+    }
+
+    return null;
+  }
+
   public T get(int capacity){
     T buffer = initializer.get();
     buffer.capacity = capacity;

@@ -85,7 +85,7 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
 
     @Override
     public void linked(EdgeLinkerBuildComp next){
-      if(loaded)linkLerp(0);
+      if(loaded) linkLerp(0);
     }
 
     @Override
@@ -100,6 +100,7 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
     public void drawLink(){
       EdgeLinkerBuildComp.super.drawLink();
       if(nextEdge() != null){
+        float l = Draw.z();
         Draw.z(Layer.effect);
         Draw.alpha(0.65f);
         SglDraw.drawLink(
@@ -107,6 +108,7 @@ public class MatrixEdgeBlock extends Block implements EdgeLinkerComp{
             nextEdge().tile().drawx(), nextEdge().tile().drawy(), nextEdge().getEdgeBlock().linkOffset(),
             linkLightRegion, linkLightCapRegion, linkLerp()
         );
+        Draw.z(l);
       }
     }
 

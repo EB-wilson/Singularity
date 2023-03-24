@@ -25,7 +25,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   private static final ObjectSet<DistElementBuildComp> tmp = new ObjectSet<>();
   public static final DistElementBuildComp[] EMP_ARR = new DistElementBuildComp[0];
 
-  public TreeSeq<DistElementBuildComp> elements = new TreeSeq<>((a, b) -> b.priority() - a.priority());
+  public TreeSeq<DistElementBuildComp> elements = new TreeSeq<>((a, b) -> b instanceof DistNetworkCoreComp? 1: b.priority() - a.priority());
   public OrderedSet<DistElementBuildComp> energyBuffer = new OrderedSet<>();
   private DistElementBuildComp[] elementsIterateArr;
 
@@ -154,18 +154,18 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
     }
 
     if(netStructValid()){
-      DistCoreModule core = cores.first().distCore();
+      DistNetworkCoreComp core = getCore();
 
       for(DistBufferType<?> buffers: DistBufferType.all){
         core.getBuffer(buffers).capacity = 0;
       }
 
-      core.calculatePower = 0;
+      core.distCore().calculatePower = 0;
 
       for(DistComponent distComponent: components){
         if(!distComponent.componentValid()) continue;
 
-        core.calculatePower += distComponent.computingPower();
+        core.distCore().calculatePower += distComponent.computingPower();
 
         for(DistBufferType<?> buffers: DistBufferType.all){
           core.getBuffer(buffers).capacity += distComponent.bufferSize().get(buffers, 0);
@@ -257,7 +257,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
       elements.add(target);
       elementsIterateArr = elements.toArray(EMP_ARR);
     }
-    if(target instanceof DistMatrixUnitBuildComp && grids.remove(((DistMatrixUnitBuildComp) target).matrixGrid())) grids.add(((DistMatrixUnitBuildComp) target).matrixGrid());
+    if(target instanceof DistMatrixUnitBuildComp un && grids.remove(un.matrixGrid())) grids.add(un.matrixGrid());
   }
 
   private final Itr INST_ITR = new Itr();
@@ -282,7 +282,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   public NetStatus status(){
     if(netStructValid()){
       if(netValid()){
-        for(BaseBuffer<?, ?, ?> value: getCore().distCore().buffers.values()){
+        for(BaseBuffer<?, ?, ?> value: getCore().buffers().values()){
           if(value.space() <= 0) return NetStatus.bufferBlocked;
         }
         for(DistRequestBase task: getCore().distCore().requestTasks){

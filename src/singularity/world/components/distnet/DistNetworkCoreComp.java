@@ -3,7 +3,7 @@ package singularity.world.components.distnet;
 import singularity.world.modules.DistCoreModule;
 import universecore.annotations.Annotations;
 
-public interface DistNetworkCoreComp extends DistElementBuildComp, DistComponent{
+public interface DistNetworkCoreComp extends DistMatrixUnitBuildComp, DistComponent{
   @Annotations.BindField("distCore")
   default DistCoreModule distCore(){
     return null;

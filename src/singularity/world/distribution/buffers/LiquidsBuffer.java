@@ -133,7 +133,7 @@ public class LiquidsBuffer extends BaseBuffer<LiquidsBuffer.LiquidIntegerStack, 
         packet.deRead(move);
         am -= move;
         entry.entity.handleLiquid(core, packet.get(), move);
-        if (deFlow && Vars.ui.hudfrag.blockfrag.hover() == entry.entity){
+        if (deFlow){
           float[] cacheSums = FieldHandler.getValueDefault(LiquidModule.class, "cacheSums");
           WindowedMean[] flow = FieldHandler.getValueDefault(entry.entity.liquids, "flow");
           if(flow != null){

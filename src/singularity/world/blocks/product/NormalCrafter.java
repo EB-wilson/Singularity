@@ -43,6 +43,8 @@ import singularity.world.products.SglProduceType;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.FactoryBlockComp;
 import universecore.components.blockcomp.FactoryBuildComp;
+import universecore.components.blockcomp.ProducerBlockComp;
+import universecore.components.blockcomp.ProducerBuildComp;
 import universecore.util.UncLiquidStack;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeLiquidBase;

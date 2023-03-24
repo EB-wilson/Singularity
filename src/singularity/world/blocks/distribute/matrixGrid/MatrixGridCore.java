@@ -156,11 +156,9 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     protected float alpha;
 
     protected IntMap<float[]> childLinkWarmup = new IntMap<>();
-  
+
     @Override
     public void updateTile(){
-      super.updateTile();
-      
       if(lastPoly != edges.getPoly()){
         lastPoly = edges.getPoly();
         if(lastPoly != null){
@@ -179,6 +177,8 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       }
       
       alpha = Mathf.lerpDelta(alpha, configIOPoint? 1: 0, 0.02f);
+
+      super.updateTile();
     }
 
     @Override
@@ -186,7 +186,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       super.releaseRequest();
 
       TMP_EXI.clear();
-      for(TargetConfigure config: configs){
+      for(TargetConfigure config: configs()){
         float[] warmup = childLinkWarmup.get(config.offsetPos);
         if(warmup == null){
           warmup = new float[1];
@@ -262,6 +262,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     public void drawLink(){
       EdgeLinkerBuildComp.super.drawLink();
       if(nextEdge() != null){
+        float l = Draw.z();
         Draw.z(Layer.effect);
         Draw.alpha(0.65f);
         SglDraw.drawLink(
@@ -269,6 +270,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
             nextEdge().tile().drawx(), nextEdge().tile().drawy(), nextEdge().getEdgeBlock().linkOffset(),
             linkLightRegion, linkLightCapRegion, linkLerp()
         );
+        Draw.z(l);
       }
     }
 
@@ -277,7 +279,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       EdgeLinkerBuildComp.super.updateLinking();
       loaded = true;
     }
-  
+
     @Override
     public boolean onConfigureBuildTapped(Building other){
       boolean result = super.onConfigureBuildTapped(other);
@@ -296,7 +298,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     @Override
     public void drawConfigure(){
       super.drawConfigure();
-      for(IOPointComp io: ioPoints){
+      for(IOPointComp io: ioPoints()){
         if(UncCore.secConfig.getConfiguring() == io) continue;
         float radius = io.getBlock().size * tilesize / 2f + 1f;
         Building building = io.getBuilding();
@@ -316,7 +318,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   
     @Override
     public boolean tileValid(Tile tile){
-      return edges.inLerp(tile);
+      return !edges.isClosure() || edges.inLerp(tile);
     }
   
     @Override
@@ -338,7 +340,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       pair.configs.clear();
       for (IntMap.Entry<TargetConfigure> entry : configMap) {
         Building build = nearby(Point2.x(entry.key), Point2.y(entry.key));
-        if (build != null && !(build instanceof IOPointComp io && !ioPoints.contains(io))){
+        if (build != null && !(build instanceof IOPointComp io && !ioPoints().contains(io))){
           pair.configs.put(entry.key, entry.value);
         }
       }

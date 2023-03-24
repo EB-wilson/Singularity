@@ -33,7 +33,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
     return null;
   }
 
-  @Annotations.BindField(value = "grid", initialize = "new singularity.world.distribution.MatrixGrid(this)")
+  @Annotations.BindField(value = "matrixGrid", initialize = "new singularity.world.distribution.MatrixGrid(this)")
   default MatrixGrid matrixGrid(){
     return null;
   }
@@ -53,7 +53,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
     return null;
   }
   
-  @Annotations.BindField("ioPoints")
+  @Annotations.BindField(value = "ioPoints", initialize = "new arc.struct.ObjectSet<>()")
   default ObjectSet<IOPointComp> ioPoints(){
     return null;
   }
@@ -77,7 +77,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   default boolean gridValid(){
     return true;
   }
-  
+
   @Override
   default int priority(){
     return matrixGrid().priority;
@@ -130,7 +130,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
   default void resetFactories(){
     for (ObjectMap.Entry<GridChildType, ObjectMap<ContentType, RequestHandler>> fac : tempFactories()) {
       for (RequestHandler handler : fac.value.values()) {
-        handler.reset();
+        handler.reset(this);
       }
     }
     tempFactories().clear();
@@ -153,7 +153,7 @@ public interface DistMatrixUnitBuildComp extends DistElementBuildComp{
     RequestHandler factory = tempFactories().get(type, Empties.nilMapO()).get(contType);
     if(factory == null) return null;
     DistRequestBase result = factory.makeRequest(this);
-    factory.reset();
+    factory.reset(this);
     return result;
   }
   

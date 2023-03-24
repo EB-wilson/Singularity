@@ -25,7 +25,6 @@ import static mindustry.Vars.content;
 
 public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPacket>{
   private final ItemPacket tmp = new ItemPacket(Items.copper, 0);
-  Seq<MatrixGrid.BuildingEntry<CoreBlock.CoreBuild>> cores = new Seq<>();
 
   public void put(Item item, int amount){
     tmp.obj.item = item;
@@ -82,17 +81,14 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     return (Integer) super.usedCapacity();
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public void bufferContAssign(DistributeNetwork network){
     itemRead: for(ItemPacket packet : this){
-      cores.clear();
       Building handler = network.getCore().getBuilding();
       for(MatrixGrid grid : network.grids){
         for(MatrixGrid.BuildingEntry<? extends Building> entry: grid.<Building>get(
             GridChildType.container,
             (e, c) -> e.acceptItem(handler, packet.get()) && c.get(GridChildType.container, packet.get()))){
-          if(entry.entity instanceof CoreBlock.CoreBuild) cores.add((MatrixGrid.BuildingEntry<CoreBlock.CoreBuild>) entry);
 
           if(packet.amount() <= 0) continue itemRead;
           int amount = Math.min(packet.amount(), entry.entity.acceptStack(packet.get(), packet.amount(), handler));
@@ -102,15 +98,6 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
           packet.deRead(amount);
           entry.entity.handleStack(packet.get(), amount, handler);
         }
-      }
-
-      //最后，分配额外的核心物资用来统计地区资源增量
-      for(MatrixGrid.BuildingEntry<CoreBlock.CoreBuild> core: cores){
-        if(packet.amount() <= 0) return;
-        int amount = Math.min(packet.amount(), core.entity.acceptStack(packet.get(), packet.amount(), network.getCore().getBuilding()));
-        core.entity.handleStack(packet.get(), amount, network.getCore().getBuilding());
-        packet.remove(amount);
-        packet.deRead(amount);
       }
     }
   }
@@ -125,10 +112,8 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     return bufferContAssign(network, ct, amount, false);
   }
 
-  @SuppressWarnings({"unchecked"})
   @Override
   public Integer bufferContAssign(DistributeNetwork network, Item ct, Number amount, boolean deFlow){
-    cores.clear();
     int counter = amount.intValue();
 
     Building core = network.getCore().getBuilding();
@@ -137,8 +122,6 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
     for(MatrixGrid grid: network.grids){
       for(MatrixGrid.BuildingEntry<? extends Building> entry: grid.<Building>get(GridChildType.container, (e, c) -> c.get(GridChildType.container, ct)
           && e.acceptItem(core, ct))){
-
-        if(entry.entity instanceof CoreBlock.CoreBuild) cores.add((MatrixGrid.BuildingEntry<CoreBlock.CoreBuild>) entry);
 
         int move = Math.min(packet.amount(), entry.entity.acceptStack(packet.get(), packet.amount(), core));
         move = Math.min(move, counter);
@@ -149,21 +132,6 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
         counter -= move;
         entry.entity.handleStack(packet.get(), move, core);
         if (deFlow) entry.entity.items.handleFlow(packet.get(), -move);
-      }
-    }
-
-    //最后，分配额外的核心物资用来统计地区资源增量
-    if(counter > 0){
-      for(MatrixGrid.BuildingEntry<CoreBlock.CoreBuild> entry: cores){
-        if(counter <= 0) return 0;
-        int rem = Math.min(packet.amount(), counter);
-        rem = Math.min(entry.entity.acceptStack(packet.get(), packet.amount(), network.getCore().getBuilding()), rem);
-        if (rem <= 0) continue;
-
-        entry.entity.handleStack(ct, rem, network.getCore().getBuilding());
-        packet.remove(rem);
-        packet.deRead(rem);
-        counter -= rem;
       }
     }
 
