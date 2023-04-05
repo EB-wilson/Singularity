@@ -25,12 +25,10 @@ import mindustry.world.draw.*;
 import mindustry.world.meta.BuildVisibility;
 import singularity.Sgl;
 import singularity.graphic.SglDraw;
+import singularity.graphic.SglDrawConst;
 import singularity.type.SglCategory;
 import singularity.world.SglFx;
-import singularity.world.blocks.nuclear.EnergySource;
-import singularity.world.blocks.nuclear.EnergyVoid;
-import singularity.world.blocks.nuclear.NuclearPipeNode;
-import singularity.world.blocks.nuclear.NuclearReactor;
+import singularity.world.blocks.nuclear.*;
 import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.DrawBottom;
@@ -44,10 +42,7 @@ import universecore.world.consumers.ConsumeLiquids;
 import universecore.world.particles.MultiParticleModel;
 import universecore.world.particles.Particle;
 import universecore.world.particles.ParticleModel;
-import universecore.world.particles.models.RandDeflectParticle;
-import universecore.world.particles.models.ShapeParticle;
-import universecore.world.particles.models.TargetMoveParticle;
-import universecore.world.particles.models.TrailFadeParticle;
+import universecore.world.particles.models.*;
 
 public class NuclearBlocks implements ContentList{
   /**核能塔座*/
@@ -66,6 +61,12 @@ public class NuclearBlocks implements ContentList{
   lattice_reactor,
   /**超限裂变反应堆*/
   overrun_reactor,
+  /**托卡马克点火装置*/
+  tokamak_firer,
+  /**超导约束轨道*/
+  magnetic_confinement_orbit,
+  /**潮汐约束轨道*/
+  tidal_confinement_orbit,
   /**核能源*/
   nuclear_energy_source,
   /**核能黑洞*/
@@ -74,22 +75,28 @@ public class NuclearBlocks implements ContentList{
   @SuppressWarnings("rawtypes")
   @Override
   public void load(){
-    nuclear_pipe_node = new NuclearPipeNode("nuclear_pipe_node"){{
+    nuclear_pipe_node = new NuclearNode("nuclear_pipe_node"){{
       requirements(SglCategory.nuclear, ItemStack.with(
           SglItems.strengthening_alloy, 8,
           SglItems.crystal_FEX, 4
       ));
+      size = 2;
+
+      energyCapacity = 512;
     }};
     
-    phase_pipe_node = new NuclearPipeNode("phase_pipe_node"){{
+    phase_pipe_node = new NuclearNode("phase_pipe_node"){{
       requirements(SglCategory.nuclear, ItemStack.with(
           SglItems.strengthening_alloy, 24,
           SglItems.crystal_FEX, 16,
           Items.phaseFabric, 15
       ));
-      size = 2;
-      maxLinks = 10;
-      linkRange = 18;
+      size = 3;
+
+      maxLinks = 18;
+      linkRange = 22;
+
+      energyCapacity = 2048;
     }};
     
     decay_bin = new NormalCrafter("decay_bin"){{
@@ -229,7 +236,8 @@ public class NuclearBlocks implements ContentList{
             fadeColor = Pal.lightishGray;
             colorLerpSpeed = 0.03f;
           }},
-          new ShapeParticle()
+          new ShapeParticle(),
+          new DrawDefaultTrailParticle()
       ){
         {
           color = Pal.reactorPurple;
@@ -481,6 +489,102 @@ public class NuclearBlocks implements ContentList{
             }
           }
       );
+    }};
+
+    tokamak_firer = new TokamakCore("tokamak_firer"){{
+      requirements(SglCategory.nuclear, ItemStack.with(
+          Items.phaseFabric, 160,
+          Items.silicon, 200,
+          Items.surgeAlloy, 160,
+          Items.phaseFabric, 220,
+          SglItems.strengthening_alloy, 180,
+          SglItems.aerogel, 240,
+          SglItems.crystal_FEX, 160,
+          SglItems.crystal_FEX_power, 120,
+          SglItems.iridium, 100
+      ));
+      size = 5;
+
+      itemCapacity = 60;
+      liquidCapacity = 65;
+      energyCapacity = 131072;
+
+      warmupSpeed = 0.0005f;
+      stopSpeed = 0.001f;
+
+      conductivePower = true;
+
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawPlasma(){{
+            suffix = "_plasma_";
+            plasma1 = SglDrawConst.matrixNet;
+            plasma2 = Pal.reactorPurple;
+          }},
+          new DrawDefault(){
+            @Override
+            public void draw(Building build) {
+              Draw.z(Layer.blockOver);
+              super.draw(build);
+            }
+          }
+      );
+
+      setFuel(28);
+      consume.time(60);
+      consume.item(SglItems.hydrogen_fusion_fuel, 1);
+      consume.liquid(SglLiquids.phase_FEX_liquid, 0.1f);
+      consume.power(32);
+
+      setFuel(30);
+      consume.time(60);
+      consume.item(SglItems.helium_fusion_fuel, 1);
+      consume.liquid(SglLiquids.phase_FEX_liquid, 0.1f);
+      consume.power(32);
+    }};
+
+    magnetic_confinement_orbit = new TokamakOrbit("magnetic_confinement_orbit"){{
+      requirements(SglCategory.nuclear, ItemStack.with(
+          Items.phaseFabric, 60,
+          Items.surgeAlloy, 80,
+          Items.silicon, 100,
+          SglItems.strengthening_alloy, 120,
+          SglItems.crystal_FEX, 80,
+          SglItems.aerogel, 100,
+          SglItems.iridium, 60
+      ));
+      size = 3;
+
+      conductivePower = true;
+
+      newConsume();
+      consume.power(3);
+
+      itemCapacity = 20;
+      liquidCapacity = 20;
+
+      flueMulti = 1;
+      efficiencyPow = 1.5f;
+    }};
+
+    tidal_confinement_orbit = new TokamakOrbit("tidal_confinement_orbit"){{
+      requirements(SglCategory.nuclear, ItemStack.with(
+          Items.phaseFabric, 100,
+          Items.surgeAlloy, 120,
+          SglItems.degenerate_neutron_polymer, 60,
+          SglItems.strengthening_alloy, 140,
+          SglItems.crystal_FEX, 100,
+          SglItems.crystal_FEX_power, 80,
+          SglItems.aerogel, 160,
+          SglItems.iridium, 120
+      ));
+      size = 5;
+
+      itemCapacity = 40;
+      liquidCapacity = 45;
+
+      flueMulti = 2f;
+      efficiencyPow = 2f;
     }};
   
     nuclear_energy_source = new EnergySource("nuclear_energy_source"){{

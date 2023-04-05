@@ -40,6 +40,8 @@ public class ToolBarFrag {
     tools.top().defaults().top().size(50).pad(0);
 
     for (ToolEntry entry : this.tools.values()) {
+      if (!entry.shown) continue;
+
       ImageButton button = tools.button(Tex.clear, Styles.clearNoneTogglei, entry.listener).update(b -> {
         b.getStyle().imageUp = entry.icon.get();
         b.resizeImage(36);
@@ -49,7 +51,7 @@ public class ToolBarFrag {
         button.addListener(new Tooltip(t -> t.background(Tex.button).add(entry.hoverTip.get()).update(l -> {
           l.setText(entry.hoverTip.get());
           l.pack();
-        })));
+        })){{allowMobile = true;}});
       }
       tools.row();
     }
@@ -70,11 +72,30 @@ public class ToolBarFrag {
     if (toolsTable != null) buildTools(toolsTable);
   }
 
+  public void hideTool(String name){
+    setShown(name, false);
+  }
+
+  public void showTool(String name){
+    setShown(name, true);
+  }
+
+  public void setShown(String name, boolean shown){
+    ToolEntry entry = tools.get(name);
+    if (entry != null){
+      entry.shown = shown;
+    }
+
+    if (toolsTable != null) buildTools(toolsTable);
+  }
+
   public void clearTools(){
     tools.clear();
   }
 
   public static class ToolEntry{
+    boolean shown = true;
+
     Prov<Drawable> icon;
     Runnable listener;
     Boolp checked;

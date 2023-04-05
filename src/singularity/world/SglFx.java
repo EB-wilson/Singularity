@@ -52,6 +52,13 @@ public class SglFx{
     });
   }),
 
+  cloudGradient = new Effect(45, e -> {
+    Draw.color(e.color, 0f);
+
+    Draw.z(Layer.flyingUnit + 1);
+    SglDraw.gradientCircle(e.x, e.y, 14*e.fout(), 0.6f);
+  }),
+
   shootRecoilWave = new Effect(40, e -> {
     Draw.color(e.color);
     for(int i : signs){
@@ -256,6 +263,13 @@ public class SglFx{
           Layer.effect, Layer.bullet - 1, Time.time*Mathf.randomSeed(id, -3.5f, 3.35f) + randomSeed((long) (id + dx), 360),
           Mathf.angle(dx, dy), Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
     });
+  }),
+
+  crossLightMini = new Effect(22, e -> {
+    Draw.color(e.color);
+    for(int i: signs){
+      SglDraw.drawDiamond(e.x, e.y, 12 + 64*e.fin(Interp.pow3Out), 5*e.fout(Interp.pow3Out), e.rotation + 45 + i*45);
+    }
   }),
 
   crossLight = new Effect(30, e -> {

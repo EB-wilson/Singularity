@@ -1,8 +1,10 @@
 package singularity.world.products;
 
+import arc.scene.ui.layout.Table;
 import mindustry.gen.Building;
 import mindustry.world.meta.Stats;
 import singularity.world.components.NuclearEnergyBuildComp;
+import singularity.world.consumers.SglConsumeEnergy;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import universecore.components.blockcomp.ProducerBuildComp;
@@ -19,6 +21,11 @@ public class ProduceEnergy<T extends Building & NuclearEnergyBuildComp & Produce
   @Override
   public ProduceType<ProduceEnergy<?>> type(){
     return SglProduceType.energy;
+  }
+
+  @Override
+  public void buildIcons(Table table) {
+    SglConsumeEnergy.buildNuclearIcon(table, product);
   }
 
   @Override

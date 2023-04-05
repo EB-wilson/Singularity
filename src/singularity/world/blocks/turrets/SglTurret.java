@@ -9,10 +9,10 @@ import arc.graphics.Color;
 import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
+import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
 import arc.struct.EnumSet;
 import arc.struct.ObjectMap;
-import arc.struct.OrderedMap;
 import arc.struct.Seq;
 import arc.util.Strings;
 import arc.util.Time;
@@ -33,6 +33,7 @@ import mindustry.logic.LAccess;
 import mindustry.logic.Ranged;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
+import mindustry.type.LiquidStack;
 import mindustry.ui.LiquidDisplay;
 import mindustry.world.blocks.ControlBlock;
 import mindustry.world.meta.*;
@@ -42,10 +43,8 @@ import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.DrawSglTurret;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ConsumerBuildComp;
-import universecore.ui.table.RecipeTable;
-import universecore.util.UncLiquidStack;
+import universecore.components.blockcomp.FactoryBlockComp;
 import universecore.world.consumers.*;
-import universecore.world.meta.UncStat;
 
 import static mindustry.Vars.tilesize;
 import static mindustry.world.blocks.defense.turrets.Turret.logicControlCooldown;
@@ -251,7 +250,7 @@ public class SglTurret extends SglBlock{
       s.add(Stat.booster, t -> {
         t.row();
         if (c.get(ConsumeType.liquid) instanceof ConsumeLiquidCond cons){
-          for (UncLiquidStack stack : cons.getCons()) {
+          for (LiquidStack stack : cons.getCons()) {
             Liquid liquid = stack.liquid;
 
             t.add(new LiquidDisplay(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(10).left().top();
@@ -283,36 +282,51 @@ public class SglTurret extends SglBlock{
   }
 
   @Override
-  public void setConsumeStats(Stats stats){
+  public void setStats(){
+    super.setStats();
+
+    stats.add(Stat.shootRange, range / tilesize, StatUnit.blocks);
+    stats.add(Stat.inaccuracy, (int)inaccuracy, StatUnit.degrees);
+    stats.add(Stat.targetsAir, targetAir);
+    stats.add(Stat.targetsGround, targetGround);
+
     stats.add(Stat.ammo, table -> {
       table.defaults().padLeft(15);
       for(ObjectMap.Entry<BaseConsumers, AmmoDataEntry> entry: ammoTypes){
         Stats stat = new Stats();
-        stat.add(Stat.reload, 60f/entry.key.craftTime*shoot.shots, StatUnit.perSecond);
         entry.key.display(stat);
+        if (entry.key.showTime){
+          stat.remove(Stat.productionTime);
+          stat.add(Stat.reload, 60f/entry.key.craftTime*shoot.shots, StatUnit.perSecond);
+        }
+
+        Table details = new Table(Tex.pane);
+        FactoryBlockComp.buildStatTable(details, stat);
 
         table.row();
         table.table(t -> {
-          t.defaults().left().growX();
+          t.left().defaults().left().growX();
           t.table(st -> {
-            for(OrderedMap<Stat, Seq<StatValue>> map: stat.toMap().values()){
-              for(ObjectMap.Entry<Stat, Seq<StatValue>> statSeqEntry: map){
-                st.table(s -> {
-                  s.left();
-                  s.add("[lightgray]" + statSeqEntry.key.localized() + ":[] ").left();
-                  for(StatValue statValue: statSeqEntry.value){
-                    statValue.display(s);
-                    s.add().size(10.0F);
-                  }
-                }).growX().left();
-                st.row();
+            st.left().defaults().left();
+            st.table(c -> {
+              c.left().defaults().left();
+              for (BaseConsume<? extends ConsumerBuildComp> consume : entry.key.all()) {
+                c.table(cons -> {
+                  cons.left().defaults().left().padLeft(3).fill();
+
+                  consume.buildIcons(cons);
+                }).fill();
               }
-            }
-          });
+            }).fill();
+            st.row();
+            st.add(Stat.reload.localized() + ":" + Strings.autoFixed(60f/entry.key.craftTime*shoot.shots, 1) + StatUnit.perSecond.localized());
+          }).get().addListener(new Tooltip(tip -> tip.add(details)){{allowMobile = true;}});
           t.row();
 
           AmmoDataEntry ammoEntry = entry.value;
           BulletType type = ammoEntry.bulletType;
+
+          t.left().defaults().padRight(3).left();
 
           if(type.spawnUnit != null && type.spawnUnit.weapons.size > 0){
             StatUtils.buildAmmo(t, type.spawnUnit.weapons.first().bullet);
@@ -332,31 +346,6 @@ public class SglTurret extends SglBlock{
         }).fill();
       }
     });
-
-    if (optionalCons().size > 0) {
-      optionalRecipeTable(new RecipeTable(optionalCons().size));
-
-      for(int i = 0; i < optionalCons().size; ++i) {
-        optionalRecipeTable().stats[i] = new Stats();
-        optionalCons().get(i).display(optionalRecipeTable().stats[i]);
-      }
-
-      optionalRecipeTable().build();
-      stats.add(UncStat.optionalInputs, (table) -> {
-        table.row();
-        table.add(optionalRecipeTable()).grow();
-      });
-    }
-  }
-
-  @Override
-  public void setStats(){
-    super.setStats();
-
-    stats.add(Stat.shootRange, range / tilesize, StatUnit.blocks);
-    stats.add(Stat.inaccuracy, (int)inaccuracy, StatUnit.degrees);
-    stats.add(Stat.targetsAir, targetAir);
-    stats.add(Stat.targetsGround, targetGround);
   }
 
   @Override
@@ -472,7 +461,7 @@ public class SglTurret extends SglBlock{
             if(l != null) usage = con.usageMultiplier.get(l);
           }
           else if(c instanceof ConsumeLiquids con){
-            for(UncLiquidStack liquid: con.consLiquids){
+            for(LiquidStack liquid: con.consLiquids){
               usage += liquid.amount;
             }
           }

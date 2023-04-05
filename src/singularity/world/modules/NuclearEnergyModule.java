@@ -6,41 +6,45 @@ import arc.func.Func;
 import arc.graphics.Color;
 import arc.math.WindowedMean;
 import arc.scene.ui.layout.Table;
-import arc.struct.IntSeq;
 import arc.util.Interval;
+import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
+import mindustry.core.UI;
 import mindustry.game.EventType;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
 import mindustry.ui.Bar;
 import mindustry.world.modules.BlockModule;
 import singularity.world.blocks.SglBlock.SglBuilding;
-import singularity.world.blocks.nuclear.NuclearEnergyNet;
 import singularity.world.components.NuclearEnergyBuildComp;
 import universecore.util.handler.FieldHandler;
 
 public class NuclearEnergyModule extends BlockModule {
+  static NuclearEnergyBuildComp lastShowFlow;
+
   static {
     Events.run(EventType.Trigger.update, () -> {
       Building nextFlowBuild = FieldHandler.getValueDefault(Vars.ui.hudfrag.blockfrag, "nextFlowBuild");
 
-      if(nextFlowBuild instanceof NuclearEnergyBuildComp nuclearBuild){
-        if(nuclearBuild.energy() != null) nuclearBuild.energy().updateFlow();
+      if(nextFlowBuild instanceof NuclearEnergyBuildComp nuclearBuild && nuclearBuild.getNuclearBlock().hasEnergy()){
+        if (lastShowFlow != nuclearBuild){
+          nuclearBuild.energy().stopFlow();
+          lastShowFlow = nuclearBuild;
+        }
+
+        nuclearBuild.energy().updateFlow();
       }
     });
   }
 
   public final NuclearEnergyBuildComp entity;
   public final boolean buffered;
-  public final IntSeq linked = new IntSeq();
-  
-  public NuclearEnergyNet energyNet;
   
   private float added;
   private final WindowedMean moveMean = new WindowedMean(6);
-  private static final Interval flowTimer = new Interval(2);
+  private final Interval flowTimer = new Interval();
   
   /**目前具有的核能量大小*/
   private float energy = 0f;
@@ -52,8 +56,14 @@ public class NuclearEnergyModule extends BlockModule {
     this.buffered = buffered;
   }
 
+  public void stopFlow() {
+    added = 0;
+    moveMean.clear();
+    displayMoving = -1;
+  }
+
   public void updateFlow(){
-    if(flowTimer.get(1, 20f)){
+    if(flowTimer.get(20f)){
       moveMean.add(added);
       added = 0;
       displayMoving = moveMean.hasEnoughData() ? moveMean.mean()/20 : - 1;
@@ -61,18 +71,6 @@ public class NuclearEnergyModule extends BlockModule {
   }
   
   public void update(){
-    energyNet.update();
-  }
-  
-  public void setNet(){
-    setNet(null);
-  }
-  
-  public void setNet(NuclearEnergyNet net){
-    if(net == null){
-      new NuclearEnergyNet().add(entity);
-    }
-    else energyNet = net;
   }
   
   public float getEnergy(){
@@ -110,9 +108,10 @@ public class NuclearEnergyModule extends BlockModule {
       energyBoard.table(info -> {
         info.defaults().left().padLeft(5);
         info.left();
-        info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearContain", energy)));
+        info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearContain",
+            energy >= 1000? UI.formatAmount((long) energy): Strings.autoFixed(energy, 1))));
         info.row();
-        info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearMoving", displayMoving >= 0? displayMoving*60: "--")));
+        info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearMoving", displayMoving >= 0? Strings.autoFixed(displayMoving*60, 1): "--")));
         info.row();
       });
     }).fillX().growY();
@@ -121,18 +120,16 @@ public class NuclearEnergyModule extends BlockModule {
   @Override
   public void write(Writes write){
     write.f(energy);
-    write.i(linked.size);
-    for(int i=0; i<linked.size; i++){
-      write.i(linked.get(i));
-    }
   }
 
   @Override
-  public void read(Reads read){
+  public void read(Reads read, boolean revision){
     energy = read.f();
-    int length = read.i();
-    for(int i=0; i<length; i++){
-      linked.add(read.i());
+    if (revision) {
+      int length = read.i();
+      for (int i = 0; i < length; i++) {
+        read.i();
+      }
     }
   }
 }

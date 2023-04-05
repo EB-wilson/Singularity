@@ -33,6 +33,15 @@ public class ProduceMedium<T extends Building & ProducerBuildComp & MediumBuildC
   }
 
   @Override
+  public boolean hasIcons() {
+    return false;
+  }
+
+  @Override
+  public void buildIcons(Table table) {
+  }
+
+  @Override
   public void merge(BaseProduce<T> baseProduce){
     if(baseProduce instanceof ProduceMedium cons){
       product += cons.product;

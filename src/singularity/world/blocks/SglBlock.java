@@ -11,6 +11,7 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.PixmapRegion;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
+import arc.math.geom.Point2;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import arc.util.Eachable;
@@ -21,12 +22,14 @@ import mindustry.core.Renderer;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
+import mindustry.gen.Iconc;
 import mindustry.gen.Tex;
 import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
+import mindustry.type.LiquidStack;
 import mindustry.ui.Bar;
 import mindustry.ui.fragments.PlacementFragment;
 import mindustry.world.Block;
@@ -34,8 +37,7 @@ import mindustry.world.Tile;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.meta.*;
-import singularity.type.SglLiquidStack;
-import singularity.world.blocks.nuclear.NuclearPipeNode;
+import singularity.world.blocks.nuclear.NuclearNode;
 import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.consumers.SglConsumeType;
@@ -47,12 +49,13 @@ import universecore.annotations.Annotations;
 import universecore.components.ExtraVariableComp;
 import universecore.components.blockcomp.ConsumerBlockComp;
 import universecore.components.blockcomp.ConsumerBuildComp;
+import universecore.components.blockcomp.FactoryBlockComp;
 import universecore.util.DataPackable;
-import universecore.util.UncLiquidStack;
 import universecore.util.handler.FieldHandler;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeLiquidBase;
 import universecore.world.consumers.ConsumeType;
+import universecore.world.meta.UncStat;
 
 import static mindustry.Vars.*;
 
@@ -61,7 +64,7 @@ import static mindustry.Vars.*;
 public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyBlockComp{
   public boolean autoSelect = false;
   public boolean canSelect = true;
-  
+
   public boolean outputItems;
 
   public final Seq<BaseConsumers> consumers = new Seq<>();
@@ -101,7 +104,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   /**此方块接受的最大势能差，可设为-1将根据容量自动设置*/
   public float maxEnergyPressure = -1;
   
-  public String liquidsStr = Core.bundle.get("fragment.bars.liquids");
+  public String liquidsStr = Iconc.liquidWater + Core.bundle.get("fragment.bars.liquids");
   public String recipeIndfo = Core.bundle.get("fragment.buttons.selectPrescripts");
 
   public SglBlock(String name) {
@@ -188,13 +191,14 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     if((consumeEnergy || outputEnergy) && hasEnergy){
       Tile tile = world.tile(x, y);
       if(tile != null){
-        NuclearPipeNode.getNodeLinks(tile, this, player.team()).each(e -> {
-          if(!(e.getBlock() instanceof NuclearPipeNode node)) return;
+        for (NuclearEnergyBuildComp e : NuclearNode.getNodeLinks(tile, this, player.team())) {
+          if(!(e.getBlock() instanceof NuclearNode node)) continue;
 
           Draw.color(node.linkColor, Renderer.laserOpacity * 0.5f);
           node.drawLink(tile.worldx() + offset, tile.worldy() + offset, size, e.getBuilding().tile.drawx(), e.getBuilding().tile.drawy(), e.getBlock().size);
           Drawf.square(e.getBuilding().x, e.getBuilding().y, e.getBlock().size * tilesize / 2f + 2f, Pal.place);
-        });
+          break;
+        }
       }
     }
   }
@@ -224,6 +228,19 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     if (this.hasLiquids) this.stats.add(Stat.liquidCapacity, this.liquidCapacity, StatUnit.liquidUnits);
   
     if (this.hasItems && this.itemCapacity > 0) this.stats.add(Stat.itemCapacity, (float)this.itemCapacity, StatUnit.items);
+
+    if (!optionalCons().isEmpty()){
+      stats.add(UncStat.optionalInputs, t -> {
+        t.left().row();
+        for (BaseConsumers con : optionalCons()) {
+          t.table(Tex.pane, ta -> {
+            ta.left().defaults().left();
+            FactoryBlockComp.buildRecipe(ta, con, null);
+          }).growX().fillY().pad(4).left();
+          t.row();
+        }
+      });
+    }
   }
 
   @Override
@@ -253,6 +270,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
   @Annotations.ImplEntries
   public class SglBuilding extends Building implements ConsumerBuildComp, NuclearEnergyBuildComp, ExtraVariableComp{
+    private static final Seq<Liquid> temp = new Seq<>();
     private static final FieldHandler<PlacementFragment> fieldHandler = new FieldHandler<>(PlacementFragment.class);
 
     public SglConsumeModule consumer;
@@ -260,7 +278,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
     public boolean recipeSelected;
 
-    protected final Seq<SglLiquidStack> displayLiquids = new Seq<>();
+    protected final Seq<LiquidStack> displayLiquids = new Seq<>();
 
     @Annotations.FieldKey("consumeCurrent") public int recipeCurrent = -1;
     public int lastRecipe;
@@ -278,10 +296,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       
       consumer = new SglConsumeModule(this);
       
-      if(hasEnergy){
-        energy = new NuclearEnergyModule(this, energyBuffered);
-        energy.setNet();
-      }
+      if(hasEnergy) energy = new NuclearEnergyModule(this, energyBuffered);
       return this;
     }
 
@@ -310,12 +325,15 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       super.placed();
       if(net.client()) return;
   
-      if((consumeEnergy || outputEnergy) && hasEnergy){
-        NuclearPipeNode.getNodeLinks(tile, block(), player.team()).each(e -> {
-          if(!(e.getBlock() instanceof NuclearPipeNode)) return;
+      if(consumeEnergy && hasEnergy){
+        for (NuclearEnergyBuildComp e : NuclearNode.getNodeLinks(tile, block(), player.team())) {
+          if(!(e instanceof NuclearNode.NuclearNodeBuild n)) continue;
           
-          if(!e.energy().linked.contains(pos())) e.getBuilding().configureAny(pos());
-        });
+          if(!n.linked.contains(pos())){
+            e.getBuilding().configureAny(Point2.unpack(pos()));
+            break;
+          }
+        }
       }
     }
 
@@ -412,17 +430,16 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
     public void updateDisplayLiquid(){
       displayLiquids.clear();
-      Seq<Liquid> temp = new Seq<>();
       temp.clear();
       if(recipeCurrent >= 0 && consumer.current != null){
         if(consumer.current.get(SglConsumeType.liquid) != null){
-          for(UncLiquidStack stack: consumer.current.get(SglConsumeType.liquid).consLiquids){
+          for(LiquidStack stack: consumer.current.get(SglConsumeType.liquid).consLiquids){
             temp.add(stack.liquid);
           }
         }
       }
       liquids.each((key, val) -> {
-        if(!temp.contains(key) && val > 0.1f) displayLiquids.add(new SglLiquidStack(key, val));
+        if(!temp.contains(key) && val > 0.1f) displayLiquids.add(new LiquidStack(key, val));
       });
     }
     
@@ -448,20 +465,16 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       //显示流体存储量
       if(hasLiquids && displayLiquid) updateDisplayLiquid();
       if (!displayLiquids.isEmpty()){
-        bars.table(Tex.buttonTrans, t -> {
-          t.defaults().growX().height(18f).pad(4);
-          t.top().add(liquidsStr).padTop(0);
-          t.row();
-          for (SglLiquidStack stack : displayLiquids) {
-            t.add(new Bar(
-                () -> stack.liquid.localizedName,
-                () -> stack.liquid.barColor != null ? stack.liquid.barColor : stack.liquid.color,
-                () -> Math.min(liquids.get(stack.liquid) / block().liquidCapacity, 1f)
-            )).growX();
-            t.row();
-          }
-        }).height(26 * displayLiquids.size + 40);
+        bars.top().left().add(liquidsStr).left().padBottom(0);
         bars.row();
+        for (LiquidStack stack : displayLiquids) {
+          bars.add(new Bar(
+              () -> stack.liquid.localizedName,
+              () -> stack.liquid.barColor != null ? stack.liquid.barColor : stack.liquid.color,
+              () -> Math.min(liquids.get(stack.liquid) / block().liquidCapacity, 1f)
+          )).growX();
+          bars.row();
+        }
       }
 
       if(recipeCurrent == -1 || consumer.current == null) return;
@@ -479,36 +492,20 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
       ConsumeLiquidBase<?> cl = consumer.current.get(SglConsumeType.liquid);
       if(cl != null){
-        bars.table(Tex.buttonEdge1, t -> t.left().add(Core.bundle.get("fragment.bars.consume")).pad(4)).pad(0).height(38).padTop(4);
+        bars.defaults().grow().margin(0);
+        bars.add(Iconc.download + Core.bundle.get("fragment.bars.consume")).left().padBottom(0);
         bars.row();
-        bars.table(t -> {
-          t.defaults().grow().margin(0);
-          t.table(Tex.pane2, liquid -> {
-            liquid.defaults().growX().margin(0).pad(4).height(18);
-            liquid.left().add(Core.bundle.get("misc.liquid")).color(Pal.gray);
-            liquid.row();
-            for(UncLiquidStack stack: cl.consLiquids){
-              liquid.add(new Bar(
-                  () -> stack.liquid.localizedName,
-                  () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
-                  () -> Math.min(liquids.get(stack.liquid) / block().liquidCapacity, 1f)
-              ));
-              liquid.row();
-            }
-          });
-        }).height(46 + cl.consLiquids.length*26).padBottom(0).padTop(2);
+        for(LiquidStack stack: cl.consLiquids){
+          bars.add(new Bar(
+              () -> stack.liquid.localizedName,
+              () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
+              () -> Math.min(liquids.get(stack.liquid) / block().liquidCapacity, 1f)
+          ));
+          bars.row();
+        }
       }
 
       bars.row();
-    }
-  
-    @Override
-    public float getMoveResident(NuclearEnergyBuildComp destination){
-      float result = 0;
-      for(NuclearEnergyBuildComp next: energy.energyNet.getPath(this, destination)){
-        result += next.getResident();
-      }
-      return result;
     }
   
     @Override
@@ -603,8 +600,8 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       super.read(read, revision);
       if(revision >= 2) select = read.i();
       recipeCurrent = read.i();
-      if(consumer != null) consumer.read(read);
-      if(energy != null) energy.read(read);
+      if(consumer != null) consumer.read(read, revision < version());
+      if(energy != null) energy.read(read, revision < version());
     }
   }
 }

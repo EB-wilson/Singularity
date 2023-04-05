@@ -15,6 +15,7 @@ import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
 import arc.struct.Seq;
+import arc.util.Scaling;
 import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
@@ -53,6 +54,7 @@ import singularity.world.gameoflife.Cell;
 import singularity.world.gameoflife.LifeGrid;
 import singularity.world.meta.SglStat;
 import universecore.components.blockcomp.ConsumerBuildComp;
+import universecore.components.blockcomp.FactoryBlockComp;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeItems;
@@ -61,8 +63,6 @@ import universecore.world.consumers.ConsumeLiquids;
 import static mindustry.Vars.tilesize;
 
 public class GameOfLife extends SglBlock{
-  private static final Vec2 tmp = new Vec2();
-
   public float cellSize = 4*tilesize;
   public float gridFlushInterval = 60;
   public int gridSize = 32;
@@ -175,16 +175,7 @@ public class GameOfLife extends SglBlock{
 
   @Override
   public boolean canPlaceOn(Tile tile, Team team, int rotation){
-    boolean[] test = {true};
-    Vars.indexer.allBuildings(tile.worldx(), tile.worldy(), cellSize*gridSize*Mathf.sqrt2/2, b -> {
-      if(b.team != team || !test[0]) return;
-
-      if(b.block == this){
-        test[0] = false;
-      }
-    });
-
-    return test[0];
+    return Vars.indexer.findTile(team, tile.worldx(), tile.worldy(), cellSize*gridSize*Mathf.sqrt2/2, b -> b.block == this) == null;
   }
 
   @Override
@@ -230,7 +221,7 @@ public class GameOfLife extends SglBlock{
       launchCons.display(stat);
 
       t.row();
-      StatUtils.buildTable(t, stat);
+      FactoryBlockComp.buildStatTable(t, stat);
     });
     stats.add(SglStat.effect, t -> {
       t.row();
@@ -246,7 +237,7 @@ public class GameOfLife extends SglBlock{
         t.add(Core.bundle.format("infos.cellYears", i)).left().top().color(Pal.gray).fill();
         t.table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray), item -> {
           item.defaults().grow().left();
-          StatUtils.buildTable(item, stat);
+          FactoryBlockComp.buildStatTable(item, stat);
         }).fill().pad(5).left().margin(5);
         t.row();
       }
@@ -350,7 +341,7 @@ public class GameOfLife extends SglBlock{
           t.add(Core.bundle.get("misc.range") + ": " + Strings.autoFixed(range/tilesize, 1) + StatUnit.blocks.localized());
           t.row();
           t.table(e -> {
-            e.image(effect.uiIcon).size(25);
+            e.image(effect.uiIcon).size(25).scaling(Scaling.fit);
             e.add(Core.bundle.get("misc.toEnemy") + "[stat]" + effect.localizedName + "[lightgray] ~ " + "[stat]" + Strings.autoFixed(duration/60f, 1) + "*years[lightgray] " + Core.bundle.get("unit.seconds"));
             e.row();
           });
@@ -392,6 +383,8 @@ public class GameOfLife extends SglBlock{
   }
 
   public class GameOfLifeBuild extends SglBuilding{
+    private static final Vec2 tmp = new Vec2();
+
     public LifeGrid grid;
 
     public int lifeCells;

@@ -247,7 +247,7 @@ public class ModConfigDialog extends BaseDialog{
       }).growX().height(60).padRight(4);
 
       if(tip != null){
-        table.addListener(new Tooltip(ta -> ta.add(tip.get()).update(l -> l.setText(tip.get()))));
+        table.addListener(new Tooltip(ta -> ta.add(tip.get()).update(l -> l.setText(tip.get()))){{allowMobile = true;}});
       }
     }
 

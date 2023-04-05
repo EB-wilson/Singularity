@@ -23,6 +23,7 @@ public class DrawRegionDynamic<E extends Building> extends DrawBlock{
   public String suffix = "";
   public boolean spinSprite = false;
   public boolean drawPlan = false;
+  public boolean planRotate = true;
   public float x, y;
   /** Any number <=0 disables layer changes. */
   public float layer = -1;
@@ -59,7 +60,7 @@ public class DrawRegionDynamic<E extends Building> extends DrawBlock{
   @Override
   public void drawPlan(Block block, BuildPlan plan, Eachable<BuildPlan> list){
     if(!drawPlan) return;
-    Draw.rect(region, plan.drawx(), plan.drawy());
+    Draw.rect(region, plan.drawx(), plan.drawy(), planRotate? plan.rotation*90: 0);
   }
 
   @Override

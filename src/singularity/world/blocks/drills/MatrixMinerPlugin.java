@@ -10,6 +10,7 @@ import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.game.Team;
+import mindustry.gen.Building;
 import mindustry.graphics.Layer;
 import mindustry.world.Edges;
 import mindustry.world.Tile;
@@ -22,7 +23,7 @@ import singularity.world.blocks.SglBlock;
 import singularity.world.meta.SglStat;
 
 public abstract class MatrixMinerPlugin extends SglBlock{
-  public int maxRange;
+  public int range;
   public int drillSize;
   public boolean pierceBuild;
   public float energyMulti = 1;
@@ -36,7 +37,7 @@ public abstract class MatrixMinerPlugin extends SglBlock{
   @Override
   public void setStats(){
     super.setStats();
-    if(maxRange > 0) stats.add(Stat.range, maxRange + "x" + maxRange + StatUnit.blocks.localized());
+    if(range > 0) stats.add(Stat.range, range + "x" + range + StatUnit.blocks.localized());
     if(drillSize > 0) stats.add(SglStat.drillSize, drillSize, StatUnit.blocks);
     if(pierceBuild) stats.add(SglStat.pierceBuild, true);
     if(drillMoveMulti != 1) stats.add(SglStat.drillMoveMulti, drillMoveMulti + "x");
@@ -46,8 +47,8 @@ public abstract class MatrixMinerPlugin extends SglBlock{
   @Override
   public boolean canPlaceOn(Tile tile, Team team, int rotation){
     for(Point2 edge: Edges.getEdges(size)){
-      Tile t = Vars.world.tile(tile.x + edge.x, tile.y + edge.y);
-      if(t.build instanceof MatrixMiner.MatrixMinerBuild b && b.team == team && (b.tile.x == tile.x || b.tile.y == tile.y)){
+      Building build = Vars.world.build(tile.x + edge.x, tile.y + edge.y);
+      if(build instanceof MatrixMiner.MatrixMinerBuild b && b.team == team && (b.tile.x == tile.x || b.tile.y == tile.y)){
         return true;
       }
     }
@@ -136,8 +137,8 @@ public abstract class MatrixMinerPlugin extends SglBlock{
       return false;
     }
 
-    public int maxRange(){
-      return maxRange;
+    public int range(){
+      return range;
     }
 
     public int drillSize(){

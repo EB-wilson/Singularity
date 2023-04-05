@@ -324,6 +324,8 @@ public class ProductBlocks implements ContentList {
       ));
       size = 5;
       matrixEnergyUse = 0.6f;
+
+      baseRange = 32;
     }};
 
     matrix_miner_node = new MatrixMinerSector("matrix_miner_node"){{
@@ -334,7 +336,6 @@ public class ProductBlocks implements ContentList {
           SglItems.aerogel, 20
       ));
       size = 3;
-      maxRange = 32;
       drillSize = 3;
 
       clipSize = 64*tilesize;
@@ -508,7 +509,7 @@ public class ProductBlocks implements ContentList {
           Items.phaseFabric, 60
       ));
       size = 3;
-      maxRange = 48;
+      range = 16;
       drillMoveMulti = 2f;
       energyMulti = 2;
 

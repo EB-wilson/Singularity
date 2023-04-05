@@ -100,27 +100,6 @@ public class EntityInfoFrag{
       }
     });
 
-    Runnable add = () -> {
-      Sgl.ui.toolBar.addTool(
-          "changeMode",
-          () -> Core.bundle.get("infos.changeMode"),
-          () -> showRange? SglDrawConst.showRange: wasHold? SglDrawConst.hold: Icon.zoom,
-          this::changeMode,
-          () -> false
-      );
-      Sgl.ui.toolBar.addTool(
-          "infoScl",
-          () -> Core.bundle.get("infos.resizeInfoScl"),
-          () -> Icon.resize,
-          () -> {
-            resizing = !resizing;
-            if (!resizing) {
-              Sgl.config.save();
-            }
-          },
-          () -> resizing
-      );
-    };
     Interval t = new Interval();
     Sgl.ui.toolBar.addTool(
         "showInfos",
@@ -129,11 +108,12 @@ public class EntityInfoFrag{
         () -> {
           Sgl.config.showInfos = !Sgl.config.showInfos;
           if (Sgl.config.showInfos){
-            add.run();
+            Sgl.ui.toolBar.showTool("changeMode");
+            Sgl.ui.toolBar.showTool("infoScl");
           }
           else {
-            Sgl.ui.toolBar.removeTool("changeMode");
-            Sgl.ui.toolBar.removeTool("infoScl");
+            Sgl.ui.toolBar.hideTool("changeMode");
+            Sgl.ui.toolBar.hideTool("infoScl");
           }
 
           if(t.get(60)){
@@ -142,7 +122,25 @@ public class EntityInfoFrag{
         },
         () -> Sgl.config.showInfos
     );
-    add.run();
+    Sgl.ui.toolBar.addTool(
+        "changeMode",
+        () -> Core.bundle.get("infos.changeMode"),
+        () -> showRange? SglDrawConst.showRange: wasHold? SglDrawConst.hold: Icon.zoom,
+        this::changeMode,
+        () -> false
+    );
+    Sgl.ui.toolBar.addTool(
+        "infoScl",
+        () -> Core.bundle.get("infos.resizeInfoScl"),
+        () -> Icon.resize,
+        () -> {
+          resizing = !resizing;
+          if (!resizing) {
+            Sgl.config.save();
+          }
+        },
+        () -> resizing
+    );
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})

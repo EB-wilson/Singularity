@@ -45,6 +45,7 @@ public class MatrixMinerSector extends MatrixMinerPlugin{
 
   public float baseDrillTime = 30;
 
+
   public MatrixMinerSector(String name){
     super(name);
   }
@@ -71,7 +72,7 @@ public class MatrixMinerSector extends MatrixMinerPlugin{
       if(t.build instanceof MatrixMiner.MatrixMinerBuild b && b.team == Vars.player.team() && (b.tile.x == x || b.tile.y == y)){
         int side = b.relativeTo(x, y);
 
-        float l = maxRange*4;
+        float l = range *4;
         v1.set(l, 0).setAngle(side*90);
         v2.set(v1).rotate90(1);
         Drawf.dashLine(Pal.accent, b.x, b.y, b.x + v1.x + v2.x, b.y + v1.y + v2.y);

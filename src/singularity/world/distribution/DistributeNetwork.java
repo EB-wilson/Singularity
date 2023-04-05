@@ -7,7 +7,6 @@ import arc.struct.ObjectSet;
 import arc.struct.OrderedSet;
 import arc.util.Time;
 import mindustry.gen.Building;
-import org.jetbrains.annotations.NotNull;
 import singularity.world.FinderContainerBase;
 import singularity.world.components.distnet.DistComponent;
 import singularity.world.components.distnet.DistElementBuildComp;
@@ -15,7 +14,6 @@ import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
 import singularity.world.distribution.buffers.BaseBuffer;
 import singularity.world.distribution.request.DistRequestBase;
-import singularity.world.modules.DistCoreModule;
 import universecore.util.Empties;
 import universecore.util.colletion.TreeSeq;
 
@@ -262,7 +260,6 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
 
   private final Itr INST_ITR = new Itr();
 
-  @NotNull
   @Override
   public Iterator<DistElementBuildComp> iterator(){
     INST_ITR.cursor = 0;

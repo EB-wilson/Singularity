@@ -103,7 +103,7 @@ public class MatrixBridge extends DistNetBlock{
 
         if(((MatrixBridgeBuild) target).linkNext == e){
           ((MatrixBridgeBuild) target).linkNextPos = -1;
-          ((MatrixBridgeBuild) target).deLink((DistElementBuildComp) e);
+          ((MatrixBridgeBuild) target).deLink(e);
           ((MatrixBridgeBuild) target).linkNext = null;
         }
         else e.linkNextLerp = 0;
@@ -296,19 +296,19 @@ public class MatrixBridge extends DistNetBlock{
           if(!linkNext.isAdded()){
             linkNextPos = -1;
           }
-          deLink((DistElementBuildComp) linkNext);
+          deLink(linkNext);
           linkNext = null;
         }
         Building build = linkNextPos == -1? null: world.build(linkNextPos);
         if(build instanceof MatrixBridgeBuild){
           linkNext = (MatrixBridgeBuild) build;
           linkNextPos = linkNext.pos();//对齐偏移距离
-          link((DistElementBuildComp) linkNext);
+          link(linkNext);
         }
       }
       else if(linkNextPos == -1){
         if(linkNext != null){
-          deLink((DistElementBuildComp) linkNext);
+          deLink(linkNext);
           linkNext = null;
         }
         linkNextLerp = 0;

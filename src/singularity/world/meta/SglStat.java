@@ -61,7 +61,8 @@ public class SglStat{
       multiple = create("multiple", StatCat.crafting),
       autoSelect = create("autoSelect", 46, StatCat.crafting),
       controllable = create("controllable", 47, StatCat.crafting),
-      special = create("special", 50, StatCat.crafting),
+      recipes = create("recipes", 48, StatCat.crafting),
+      special = create("special", 51, StatCat.crafting),
       effect = create("effect", StatCat.function);
 
   private static Stat create(String name, StatCat cat){

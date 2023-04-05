@@ -65,7 +65,7 @@ public class DebugBlocks implements ContentList{
       hasShadow = false;
 
       draw = new DrawBlock(){
-        static final Distortion dist = new Distortion(Layer.min, Layer.flyingUnit - 0.5f);
+        static final Distortion dist = new Distortion();
         static final int drawIDD = SglDraw.nextTaskID();
 
         static final float[] param = new float[9];

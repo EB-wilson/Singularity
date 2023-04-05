@@ -6,12 +6,14 @@ import arc.func.Cons;
 import arc.func.Cons2;
 import arc.func.Floatp;
 import arc.graphics.Color;
-import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
-import arc.scene.ui.ImageButton;
+import arc.scene.style.TextureRegionDrawable;
+import arc.scene.ui.Image;
+import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
 import arc.struct.EnumSet;
 import arc.struct.Seq;
+import arc.util.Scaling;
 import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -19,21 +21,21 @@ import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.entities.Effect;
 import mindustry.game.Team;
+import mindustry.gen.Icon;
+import mindustry.gen.Iconc;
 import mindustry.gen.Sounds;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.logic.LAccess;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
+import mindustry.type.LiquidStack;
 import mindustry.ui.Bar;
 import mindustry.ui.ItemDisplay;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
-import mindustry.world.meta.BlockFlag;
-import mindustry.world.meta.BlockStatus;
-import mindustry.world.meta.Stat;
-import mindustry.world.meta.Stats;
-import singularity.type.SglLiquidStack;
+import mindustry.world.meta.*;
+import singularity.graphic.SglDrawConst;
 import singularity.world.blocks.SglBlock;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.meta.SglStat;
@@ -41,13 +43,11 @@ import singularity.world.modules.SglProductModule;
 import singularity.world.products.Producers;
 import singularity.world.products.SglProduceType;
 import universecore.annotations.Annotations;
+import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.components.blockcomp.FactoryBlockComp;
 import universecore.components.blockcomp.FactoryBuildComp;
-import universecore.components.blockcomp.ProducerBlockComp;
-import universecore.components.blockcomp.ProducerBuildComp;
-import universecore.util.UncLiquidStack;
+import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.ConsumeLiquidBase;
 import universecore.world.consumers.ConsumePower;
 import universecore.world.consumers.ConsumeType;
 import universecore.world.producers.BaseProduce;
@@ -88,7 +88,6 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     update = true;
     solid = true;
     sync = true;
-    conductivePower = true;
     ambientSound = Sounds.machine;
     ambientSoundVolume = 0.03f;
     flags = EnumSet.of(BlockFlag.factory);
@@ -166,6 +165,70 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       stats.add(SglStat.autoSelect, autoSelect);
       stats.add(SglStat.controllable, canSelect);
     }
+
+    stats.add(SglStat.recipes, t -> {
+      t.left().row();
+      for (int i = 0; i < consumers.size; i++) {
+        BaseConsumers cons = consumers.get(i);
+        BaseProducers prod = producers().get(i);
+
+        Table details = new Table(Tex.pane);
+        FactoryBlockComp.buildRecipe(details, cons, prod);
+        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray), ta -> {
+          ta.left().defaults().left();
+
+          if (cons.showTime){
+            ta.stack(
+                new Table(o -> {
+                  o.left();
+                  o.add(new Image(SglDrawConst.time)).size(32f).scaling(Scaling.fit);
+                }),
+                new Table(o -> {
+                  o.left().bottom();
+                  o.add("" + Strings.autoFixed(cons.craftTime/60, 1) + StatUnit.seconds.localized()).style(Styles.outlineLabel);
+                  o.pack();
+                })
+            );
+            ta.add(" > ");
+          }
+
+          buildRecipeSimple(cons, prod, ta);
+        }).margin(5).left().growX().fillY().pad(3).get().addListener(new Tooltip(tip -> tip.add(details)){{allowMobile = true;}});
+        t.row();
+      }
+    });
+  }
+
+  private static void buildRecipeSimple(BaseConsumers cons, BaseProducers prod, Table ta) {
+    boolean first = true;
+    for (BaseConsume<? extends ConsumerBuildComp> consume : cons.all()) {
+      if (!consume.hasIcons()) continue;
+
+      if (!first) ta.add("+").fillX().pad(4);
+      ta.table(c -> {
+        c.defaults().padLeft(3).fill();
+
+        consume.buildIcons(c);
+      }).fill();
+
+      first = false;
+    }
+
+    ta.image(Icon.right).padLeft(8).padRight(8).size(30);
+
+    first = true;
+    for (BaseProduce<? extends ConsumerBuildComp> produce : prod.all()) {
+      if (!produce.hasIcons()) continue;
+
+      if (!first) ta.add("+").fillX().pad(4);
+      ta.table(c -> {
+        c.defaults().padLeft(3).fill();
+
+        produce.buildIcons(c);
+      }).fill();
+
+      first = false;
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -201,20 +264,20 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       tempLiquid.clear();
       if(recipeCurrent >= 0 && consumer.current != null){
         if(consumer.current.get(SglConsumeType.liquid) != null){
-          for(UncLiquidStack stack: consumer.current.get(SglConsumeType.liquid).consLiquids){
+          for(LiquidStack stack: consumer.current.get(SglConsumeType.liquid).consLiquids){
             tempLiquid.add(stack.liquid);
           }
         }
       }
       if(recipeCurrent >= 0 && producer.current != null) {
         if(producer.current.get(SglProduceType.liquid) != null){
-          for(UncLiquidStack stack : producer.current.get(SglProduceType.liquid).liquids) {
+          for(LiquidStack stack : producer.current.get(SglProduceType.liquid).liquids) {
             tempLiquid.add(stack.liquid);
           }
         }
       }
       liquids.each((key, val) -> {
-        if(! tempLiquid.contains(key) && val > 0.1f) displayLiquids.add(new SglLiquidStack(key, val));
+        if(! tempLiquid.contains(key) && val > 0.1f) displayLiquids.add(new LiquidStack(key, val));
       });
     }
 
@@ -238,32 +301,27 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       }
       super.displayBars(bars);
       if(recipeCurrent == -1 || producer.current == null || consumer.current == null) return;
-  
-      ConsumeLiquidBase<?> cl = consumer.current.get(SglConsumeType.liquid);
-  
+
       ProduceLiquids<?> pl = producer.current.get(SglProduceType.liquid);
       if(pl != null){
-        bars.table(cl == null? Tex.buttonEdge1: Tex.pane, t -> t.left().add(Core.bundle.get("fragment.bars.product")).pad(4)).pad(0).height(38);
+        bars.add(Iconc.upload + Core.bundle.get("fragment.bars.product")).left().padBottom(0);
         bars.row();
-        bars.table(t -> {
-          t.defaults().grow().margin(0);
-          t.table(Tex.pane2, liquid -> {
-            liquid.defaults().growX().margin(0).pad(4).height(18);
-            liquid.add(Core.bundle.get("misc.liquid")).color(Pal.gray);
-            liquid.row();
-            for(UncLiquidStack stack: pl.liquids){
-              liquid.add(new Bar(
-                  () -> stack.liquid.localizedName,
-                  () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
-                  () -> Math.min(liquids.get(stack.liquid) / block.liquidCapacity, 1f)
-              ));
-              liquid.row();
-            }
-          });
-        }).height(46 + pl.liquids.length*26).padTop(2);
+        for(LiquidStack stack: pl.liquids){
+          bars.add(new Bar(
+              () -> stack.liquid.localizedName,
+              () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
+              () -> Math.min(liquids.get(stack.liquid) / block.liquidCapacity, 1f)
+          ));
+          bars.row();
+        }
       }
     }
-  
+
+    @Override
+    public float activeSoundVolume() {
+      return loopSoundVolume*workEfficiency();
+    }
+
     @Override
     public Seq<Item> outputItems(){
       if(recipeCurrent == -1) return null;
@@ -320,32 +378,34 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     @Override
     public void buildConfiguration(Table table){
       if(producers().size > 1){
-        Table prescripts = new Table(Tex.buttonTrans);
-        prescripts.defaults().grow().marginTop(0).marginBottom(0).marginRight(5).marginRight(5);
-        prescripts.add(Core.bundle.get("fragment.buttons.selectPrescripts")).padLeft(5).padTop(5).padBottom(5);
-        prescripts.row();
+        table.table(Tex.buttonTrans, prescripts -> {
+          prescripts.defaults().grow().marginTop(0).marginBottom(0).marginRight(5).marginRight(5);
 
-        TextureRegion icon;
-        Table buttons = new Table();
-        for(int i=0; i<producers().size; i++){
-          int s = i;
-          BaseProducers p = producers().get(i);
-          BaseConsumers c = consumers().get(i);
+          prescripts.add(Core.bundle.get("fragment.buttons.selectPrescripts")).padLeft(5).padTop(5).padBottom(5);
+          prescripts.row();
 
-          if(c.selectable.get() == BaseConsumers.Visibility.hidden) continue;
+          prescripts.pane(buttons -> {
+            for (int i = 0; i < producers().size; i++) {
+              int s = i;
+              BaseProducers p = producers().get(i);
+              BaseConsumers c = consumers().get(i);
 
-          icon = p.icon();
+              if (c.selectable.get() == BaseConsumers.Visibility.hidden) continue;
 
-          ImageButton button = new ImageButton(icon, Styles.selecti);
-          button.touchablility = () -> c.selectable.get().buttonValid;
-          button.clicked(() -> configure(s));
-          button.update(() -> button.setChecked(recipeCurrent == s));
-          buttons.add(button).size(50, 50);
-          if((i+1) % 4 == 0) buttons.row();
-        }
+              buttons.left().button(t -> {
+                t.left().defaults().left();
 
-        prescripts.add(buttons);
-        table.add(prescripts);
+                    buildRecipeSimple(c, p, t);
+                  }, Styles.underlineb, () -> configure(s))
+                  .touchable(() -> c.selectable.get().buttonValid)
+                  .update(b -> b.setChecked(recipeCurrent == s))
+                  .fillY().growX().left().margin(5).marginTop(8).marginBottom(8).pad(4);
+
+              buttons.row();
+            }
+          }).fill().maxHeight(280);
+        });
+
         table.row();
       }
     }

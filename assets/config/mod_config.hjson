@@ -4,7 +4,7 @@
 //This is the configuration file of the singularity mod. You can see most of the configuration items in the configuration UI page.
 //Configurations that are not usually used, such as debugging options, need to be adjusted in this file.
 {
-  "configVersion": 5,
+  "configVersion": 6,
 
   //=====Basic/基础设置=====//
   //--main menu/主菜单设置--
@@ -52,6 +52,8 @@
   "animateLevel": 3,
   //启用模组着色器
   "enableShaders": true,
+  //数学图形着色器精度
+  "mathShapePrecision": 1024,
   //启用扭曲着色器
   "enableDistortion": true,
   //启用粒子效果，禁用此项后将不会产生仅作用于画面效果的粒子

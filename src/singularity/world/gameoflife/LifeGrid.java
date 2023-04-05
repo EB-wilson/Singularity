@@ -3,7 +3,6 @@ package singularity.world.gameoflife;
 import arc.func.Cons;
 import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
 
@@ -80,7 +79,6 @@ public class LifeGrid implements Iterable<Cell>{
     return cells[x][y];
   }
 
-  @NotNull
   @Override
   public Iterator<Cell> iterator(){
     return new Itr();

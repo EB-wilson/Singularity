@@ -5,17 +5,13 @@ import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.gen.Tex;
-import mindustry.graphics.Drawf;
-import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.world.meta.Env;
 import singularity.Singularity;
 import singularity.ui.SglStyles;
 import singularity.world.components.NuclearEnergyBuildComp;
 
-import static mindustry.Vars.tilesize;
-
-public class EnergySource extends NuclearPipeNode{
+public class EnergySource extends NuclearNode {
   public EnergySource(String name){
     super(name);
     energyCapacity = 8192;
@@ -35,7 +31,7 @@ public class EnergySource extends NuclearPipeNode{
     configClear((EnergySourceBuild tile) -> tile.outputEnergy = 0);
   }
   
-  public class EnergySourceBuild extends NuclearPipeNodeBuild{
+  public class EnergySourceBuild extends NuclearNodeBuild {
     protected float outputEnergy = 0;
   
     @Override
@@ -43,6 +39,8 @@ public class EnergySource extends NuclearPipeNode{
       energy.set(outputEnergy);
       
       dumpEnergy();
+
+      super.updateTile();
     }
     
     @Override
@@ -63,16 +61,6 @@ public class EnergySource extends NuclearPipeNode{
         t.slider(0, energyCapacity, 0.01f, outputEnergy, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
         t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(outputEnergy, 2) + "NF"));
       });
-    }
-  
-    @Override
-    public void drawConfigure(){
-      super.drawConfigure();
-      for(NuclearEnergyBuildComp entity: energy.energyNet.consumer){
-        for(NuclearEnergyBuildComp e: energy.energyNet.getPath(this, entity)){
-          Drawf.square(e.getBuilding().x, e.getBuilding().y, e.getBuilding().block.size * tilesize / 2f + 1f, Pal.accent);
-        }
-      }
     }
   
     @Override

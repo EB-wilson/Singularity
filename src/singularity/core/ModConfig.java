@@ -15,7 +15,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 
 public class ModConfig{
-  private static final int configVersion = 5;
+  private static final int configVersion = 6;
   private static final Field[] configs = ModConfig.class.getFields();
 
   //basic/基础设置
@@ -57,6 +57,8 @@ public class ModConfig{
   public int animateLevel;
   @Order(12.1f)
   public boolean enableShaders;
+  @Order(12.15f)
+  public int mathShapePrecision;
   @Order(12.2f)
   public boolean enableDistortion;
   @Order(12.3f)

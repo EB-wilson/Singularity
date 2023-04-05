@@ -10,6 +10,7 @@ import arc.graphics.g2d.*;
 import arc.math.Angles;
 import arc.math.Interp;
 import arc.math.Mathf;
+import arc.math.geom.Vec2;
 import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
@@ -39,26 +40,30 @@ import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
+import mindustry.type.LiquidStack;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.draw.DrawMulti;
 import mindustry.world.meta.StatUnit;
 import singularity.Sgl;
 import singularity.Singularity;
+import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
+import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.SglUnitSorts;
 import singularity.world.blocks.turrets.*;
 import singularity.world.draw.DrawSglTurret;
 import singularity.world.draw.part.CustomPart;
 import singularity.world.meta.SglStat;
-import universecore.util.UncLiquidStack;
+import singularity.world.particles.SglParticleModels;
 import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.CircleGenerator;
 import universecore.world.lightnings.generator.LightningGenerator;
 import universecore.world.lightnings.generator.RandomGenerator;
 import universecore.world.lightnings.generator.VectorLightningGenerator;
+import universecore.world.particles.Particle;
 
 import static arc.math.Angles.randLenVectors;
 import static mindustry.Vars.control;
@@ -88,12 +93,16 @@ public class SglTurrets implements ContentList{
   dew,
   /**春分*/
   spring,
+  /**吹雪*/
+  fubuki,
   /**霜降*/
   frost,
-  /**虚妄*/
-  mirage,
   /**冬至*/
   winter,
+  /**虚妄*/
+  mirage,
+  /**阳炎*/
+  soflame,
   /**夏至*/
   summer;
 
@@ -121,12 +130,14 @@ public class SglTurrets implements ContentList{
         }
 
         if(entity instanceof Unit unit){
-          unit.apply(OtherContents.frost, unit.getDuration(OtherContents.frost) + 8);
+          unit.apply(OtherContents.frost, unit.getDuration(OtherContents.frost) + 6);
         }
       }
 
       @Override
       public void draw(Bullet b){
+        super.draw(b);
+
         Draw.color(SglDrawConst.frost);
         SglDraw.drawDiamond(b.x, b.y, 6*b.fout(), 3*b.fout(), b.rotation());
       }
@@ -155,6 +166,7 @@ public class SglTurrets implements ContentList{
         if(Mathf.chanceDelta(0.075f*b.fout())){
           SglFx.particleSpread.at(b.x, b.y, SglDrawConst.winter);
         }
+
         if(Mathf.chanceDelta(0.25f*b.fout(Interp.pow2Out))){
           Angles.randLenVectors((long) Time.time, 1, radius, (dx, dy) -> {
             if(Mathf.chanceDelta(0.7f)){
@@ -167,7 +179,7 @@ public class SglTurrets implements ContentList{
         }
 
         Units.nearbyEnemies(b.team, b.x, b.y, radius, unit -> {
-          unit.apply(OtherContents.frost, unit.getDuration(OtherContents.frost) + 2.5f*Time.delta);
+          unit.apply(OtherContents.frost, unit.getDuration(OtherContents.frost) + 2f*Time.delta);
         });
       }
 
@@ -371,6 +383,19 @@ public class SglTurrets implements ContentList{
       recoil = 6f;
       recoilTime = 120;
       cooldownTime = 120f;
+
+      shootY = 0;
+      shootEffect = new MultiEffect(
+          SglFx.crossLightMini,
+          new WaveEffect(){{
+            colorFrom = SglDrawConst.frost;
+            colorTo = Color.lightGray;
+            lifetime = 12f;
+            sizeTo = 40f;
+            strokeFrom = 6f;
+            strokeTo = 0.3f;
+          }}
+      );
 
       scaledHealth = 180;
 
@@ -873,7 +898,7 @@ public class SglTurrets implements ContentList{
         public void init(Bullet b){
           super.init(b);
 
-          LightningContainer container = Pools.obtain(LightningContainer.PoolLightningContainer.class, LightningContainer.PoolLightningContainer::new);;
+          LightningContainer container = Pools.obtain(LightningContainer.PoolLightningContainer.class, LightningContainer.PoolLightningContainer::new);
           container.lifeTime = lifetime;
           container.minWidth = 5;
           container.maxWidth = 8;
@@ -1594,6 +1619,227 @@ public class SglTurrets implements ContentList{
       );
     }};
 
+    fubuki = new LaserTurret("fubuki"){{
+      requirements(Category.turret, ItemStack.with());
+      size = 4;
+      scaledHealth = 400;
+      rotateSpeed = 2.4f;
+      warmupSpeed = 0.01f;
+      fireWarmupThreshold = 0;
+      linearWarmup = false;
+      range = 300;
+      targetGround = true;
+      targetAir = true;
+
+      shootY = 12;
+
+      needCooldown = false;
+      shootingConsume = true;
+
+      shootSound = Sounds.none;
+
+      newAmmo(new BulletType(){
+        final BulletType ice = crushedIce.copy();
+
+        final BulletType[] shootBullets = new BulletType[]{
+            ice,
+            new BulletType(){
+              {
+                damage = 26;
+                speed = 8;
+                lifetime = 37.5f;
+                hitColor = Color.white;
+                despawnEffect = SglFx.cloudGradient;
+
+                trailWidth = 1.5f;
+                trailColor = Color.white;
+                trailLength = 18;
+
+                trailEffect = SglFx.iceParticle;
+                trailRotation = true;
+                trailChance = 0.07f;
+
+                knockback = 2;
+              }
+
+              @Override
+              public void draw(Bullet b) {
+                super.draw(b);
+                Draw.color(hitColor, 0);
+
+                Draw.z(Layer.flyingUnit + 1);
+                SglDraw.gradientCircle(b.x, b.y, 14, 0.6f);
+                SglDraw.drawBloomUponFlyUnit(b, e -> {
+                  Draw.color(hitColor);
+                  SglDraw.drawDiamond(e.x, e.y, 14, 6 + Mathf.absin(1, 2), e.rotation());
+                });
+              }
+
+              @Override
+              public void hitEntity(Bullet b, Hitboxc entity, float health) {
+                super.hitEntity(b, entity, health);
+                if (entity instanceof Statusc u){
+                  u.apply(OtherContents.frost, u.getDuration(OtherContents.frost) + 10f);
+                }
+              }
+            },
+            new BulletType(){
+              {
+                damage = 36;
+                speed = 6;
+                lifetime = 50;
+                hitColor = SglDrawConst.frost;
+                despawnEffect = SglFx.cloudGradient;
+
+                trailWidth = 2;
+                trailColor = Color.white;
+                trailLength = 22;
+
+                trailEffect = SglFx.particleSpread;
+                trailRotation = true;
+                trailChance = 0.06f;
+
+                knockback = 4;
+              }
+
+              @Override
+              public void draw(Bullet b) {
+                super.draw(b);
+                Draw.color(hitColor, 0f);
+                Draw.z(Layer.flyingUnit + 1);
+                SglDraw.gradientCircle(b.x, b.y, 14, 0.6f);
+
+                SglDraw.drawBloomUponFlyUnit(b, e -> {
+                  Draw.color(Color.white);
+                  Fill.circle(e.x, e.y, 2);
+                  Lines.stroke(1, hitColor);
+                  Lines.circle(e.x, e.y, 4f);
+
+                  float step = 360f/6;
+                  for (int i = 0; i < 6; i++) {
+                    SglDraw.drawTransform(e.x, e.y, 6, 0, step*i + Time.time*2, (x, y, r) -> {
+                      Drawf.tri(x, y, 2.5f, 2.5f, r);
+                    });
+                  }
+                });
+              }
+
+              @Override
+              public void hitEntity(Bullet b, Hitboxc entity, float health) {
+                super.hitEntity(b, entity, health);
+                if (entity instanceof Statusc u){
+                  u.apply(OtherContents.frost, u.getDuration(OtherContents.frost) + 12f);
+                }
+              }
+            }
+        };
+
+        {
+          ice.speed = 10;
+          ice.lifetime = 30;
+          ice.trailWidth = 1;
+          ice.trailLength = 18;
+          ice.trailColor = SglDrawConst.frost;
+          ice.knockback = 1;
+
+          speed = 0;
+          lifetime = 10;
+          rangeOverride = 300;
+          despawnEffect = Fx.none;
+          hittable = false;
+          collides = false;
+        }
+
+        final Color trans = Color.white.cpy().a(0);
+
+        @Override
+        public void update(Bullet b) {
+          super.update(b);
+          if (b.owner instanceof SglTurretBuild t){
+            b.keepAlive = t.warmup > 0.01f;
+
+            t.warmup = Mathf.lerpDelta(t.warmup, t.wasShooting() && t.shootValid()? 1: 0, warmupSpeed);
+            t.reloadCounter = 0;
+
+            if (b.timer(5, t.warmup <= 0.01? Float.MAX_VALUE: 3/t.warmup)){
+              for (int i = 0; i < shootBullets.length; i++) {
+                BulletType bu = shootBullets[i];
+
+                if (Mathf.chance(1f/(i + 1))){
+                  bu.create(b, b.x, b.y, b.rotation() + Mathf.range(12*t.warmup));
+                }
+              }
+            }
+          }
+          else b.remove();
+        }
+
+        @Override
+        public void draw(Bullet b) {
+          super.draw(b);
+
+          if (b.owner instanceof SglTurretBuild t){
+            Draw.color(SglDrawConst.frost);
+            Fill.circle(b.x, b.y, 3*t.warmup);
+            Lines.stroke(0.7f*t.warmup);
+            SglDraw.dashCircle(b.x, b.y, 4, Time.time*1.5f);
+
+            Draw.draw(Draw.z(), () -> {
+              MathRenderer.setDispersion(0.2f*t.warmup);
+              MathRenderer.setThreshold(0.3f, 0.6f);
+              MathRenderer.drawOval(
+                  b.x, b.y,
+                  8*t.warmup,
+                  3*t.warmup,
+                  Time.time*Mathf.randomSeed(b.id, 1.5f, 3f)
+              );
+              MathRenderer.drawOval(
+                  b.x, b.y,
+                  9*t.warmup,
+                  4f*t.warmup,
+                  -Time.time*Mathf.randomSeed(b.id + 1, 1.5f, 3f)
+              );
+            });
+
+            Tmp.v1.set(range, 0).setAngle(t.rotation).scl(t.warmup);
+            Tmp.v2.set(Tmp.v1).rotate(t.warmup*15);
+            Tmp.v1.rotate(-t.warmup*15);
+
+            Draw.z(Layer.flyingUnit);
+            SglDraw.gradientLine(b.x, b.y, b.x + Tmp.v1.x, b.y + Tmp.v1.y, SglDrawConst.frost, trans, 0);
+            SglDraw.gradientLine(b.x, b.y, b.x + Tmp.v2.x, b.y + Tmp.v2.y, SglDrawConst.frost, trans, 0);
+          }
+        }
+      }, true, (t, b) -> {
+
+      });
+      consume.time(1);
+      consume.showTime = false;
+      consume.energy(3.2f);
+      consume.liquid(Liquids.cryofluid, 0.2f);
+
+      draw = new DrawSglTurret(
+          new RegionPart("_blade"){{
+            progress = PartProgress.warmup;
+            heatProgress = PartProgress.warmup;
+
+            heatColor = SglDrawConst.frost;
+
+            moveX = 2;
+            moveY = -6;
+
+            mirror = true;
+          }},
+          new RegionPart("_body"){{
+            progress = PartProgress.warmup;
+            heatProgress = PartProgress.warmup;
+            heatColor = SglDrawConst.frost;
+
+            moveY = -4;
+          }}
+      );
+    }};
+
     frost = new LaserTurret("frost"){{
       requirements(Category.turret, ItemStack.with(
           SglItems.strengthening_alloy, 160,
@@ -1637,7 +1883,7 @@ public class SglTurrets implements ContentList{
 
       newAmmo(new ContinuousLaserBulletType(){
         {
-          damage = 145;
+          damage = 115;
           lifetime = 300;
           damageInterval = 6;
           fadeTime = 30;
@@ -1667,13 +1913,21 @@ public class SglTurrets implements ContentList{
         }
 
         @Override
+        public void update(Bullet b) {
+          super.update(b);
+          if (b.owner instanceof SglTurretBuild t){
+            t.warmup = t.curRecoil = t.heat = 1;
+          }
+        }
+
+        @Override
         public void hitEntity(Bullet b, Hitboxc entity, float health){
           if(entity instanceof Healthc h){
             h.damage(b.damage);
           }
 
           if(entity instanceof Unit unit){
-            unit.apply(OtherContents.frost, unit.getDuration(OtherContents.frost) + 18);
+            unit.apply(OtherContents.frost, unit.getDuration(OtherContents.frost) + 10);
           }
         }
       });
@@ -1797,6 +2051,293 @@ public class SglTurrets implements ContentList{
               if(Sgl.config.animateLevel < 2) return;
 
               SglDraw.drawDiamond(x, y, 20 + 76*p, 32*p, r, SglDrawConst.frost, 0);
+            };
+          }}
+      );
+    }};
+
+    winter = new SglTurret("winter"){{
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 210,
+          SglItems.degenerate_neutron_polymer, 80,
+          Items.phaseFabric, 180,
+          SglItems.iridium, 100,
+          SglItems.aerogel, 200,
+          SglItems.aluminium, 220,
+          SglItems.matrix_alloy, 160,
+          SglItems.crystal_FEX_power, 180
+      ));
+      size = 6;
+      scaledHealth = 410;
+      recoil = 3.6f;
+      rotateSpeed = 1.75f;
+      warmupSpeed = 0.015f;
+      shake = 6;
+      fireWarmupThreshold = 0.925f;
+      linearWarmup = false;
+      range = 560;
+      targetGround = true;
+      targetAir = true;
+      shootEffect = new MultiEffect(
+          SglFx.winterShooting,
+          SglFx.shootRecoilWave,
+          new WaveEffect(){{
+            colorFrom = colorTo = Pal.reactorPurple;
+            lifetime = 12f;
+            sizeTo = 40f;
+            strokeFrom = 6f;
+            strokeTo = 0.3f;
+          }}
+      );
+      moveWhileCharging = true;
+      shootY = 4;
+
+      unitSort = SglUnitSorts.denser;
+
+      shoot.firstShotDelay = 120;
+      chargeSound = Sounds.lasercharge;
+      chargeSoundPitch = 0.9f;
+
+      shootSound = Sounds.plasmaboom;
+      shootSoundPitch = 0.6f;
+      shootSoundVolume = 2;
+
+      soundPitchRange = 0.05f;
+
+      newAmmo(new BulletType(){
+        {
+          lifetime = 20;
+          speed = 28;
+          collides = false;
+          absorbable = false;
+          scaleLife = true;
+          drawSize = 80;
+          fragBullet = new BulletType(){
+            {
+              lifetime = 120;
+              speed = 0.6f;
+              collides = false;
+              hittable = true;
+              absorbable = false;
+              despawnHit = true;
+              splashDamage = 2180;
+              splashDamageRadius = 84;
+              hitShake = 12;
+
+              trailEffect = SglFx.particleSpread;
+              trailInterval = 10;
+              trailColor = SglDrawConst.winter;
+
+              hitEffect = SglFx.iceExplode;
+              hitColor = SglDrawConst.winter;
+
+              hitSound = Sounds.release;
+              hitSoundPitch = 0.6f;
+              hitSoundVolume = 2.5f;
+
+              fragBullet = freezingField;
+              fragOnHit = false;
+              fragBullets = 1;
+              fragVelocityMin = 0;
+              fragVelocityMax = 0;
+            }
+
+            @Override
+            public void draw(Bullet b){
+              super.draw(b);
+              Draw.color(SglDrawConst.winter);
+
+              SglDraw.drawBloomUponFlyUnit(b, e -> {
+                float rot = e.fin(Interp.pow2Out)*3600;
+                SglDraw.drawCrystal(e.x, e.y, 30, 14, 8, 0, 0, 0.8f,
+                    Layer.effect, Layer.bullet, rot, e.rotation(), SglDrawConst.frost, SglDrawConst.winter);
+
+                Draw.alpha(1);
+                Fill.circle(e.x, e.y, 18*e.fin(Interp.pow3In));
+              });
+            }
+
+            @Override
+            public void update(Bullet b) {
+              super.update(b);
+              control.sound.loop(Sounds.spellLoop, b, 2);
+            }
+          };
+          fragBullets = 1;
+          fragSpread = 0;
+          fragRandomSpread = 0;
+          fragAngle = 0;
+          fragOnHit = false;
+          hitColor = SglDrawConst.winter;
+
+          hitEffect = Fx.none;
+          despawnEffect = Fx.none;
+          smokeEffect = Fx.none;
+
+          trailEffect = new MultiEffect(
+              SglFx.glowParticle,
+              SglFx.continuousLaserRecoil
+          );
+          trailRotation = true;
+          trailChance = 1;
+
+          trailLength = 75;
+          trailWidth = 7;
+          trailColor = SglDrawConst.winter;
+
+          chargeEffect = SglFx.shrinkIceParticleSmall;
+        }
+
+        @Override
+        public void draw(Bullet b){
+          super.draw(b);
+          Draw.z(Layer.bullet);
+          Draw.color(SglDrawConst.winter);
+          float rot = b.fin()*3600;
+
+          SglDraw.drawCrystal(b.x, b.y, 30, 14, 8, 0, 0, 0.8f,
+              Layer.effect, Layer.bullet, rot, b.rotation(), SglDrawConst.frost, SglDrawConst.winter);
+        }
+      }, true, (bt, ammo) -> {
+        bt.add(Core.bundle.format("bullet.splashdamage", (int)ammo.fragBullet.splashDamage , Strings.fixed(ammo.fragBullet.splashDamageRadius/tilesize, 1)));
+        bt.row();
+        bt.add(Core.bundle.get("infos.winterAmmo"));
+      });
+      consume.time(720);
+      consume.energy(1.1f);
+      consume.liquids(LiquidStack.with(
+          SglLiquids.phase_FEX_liquid, 0.2f,
+          Liquids.cryofluid, 0.2f
+      ));
+
+      updating = e -> {
+        SglTurretBuild t = (SglTurretBuild) e;
+        if(Mathf.chanceDelta(0.06f*t.warmup)){
+          Tmp.v1.set(36, 0).setAngle(t.rotation + (Mathf.randomBoolean()? 90: -90)).rotate(Mathf.random(-30, 30));
+          SglFx.iceParticle.at(e.x + Tmp.v1.x, e.y + Tmp.v1.y, Tmp.v1.angle(), SglDrawConst.frost);
+        }
+      };
+
+      draw = new DrawSglTurret(
+          new CustomPart(){{
+            progress = PartProgress.warmup;
+            draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 2) return;
+
+              Draw.color(SglDrawConst.winter);
+              SglDraw.gradientTri(x, y, 70 + 120*p, 92*p, r, 0);
+              SglDraw.gradientTri(x, y, 40 + 68*p, 92*p, r + 180, 0);
+              Draw.color();
+            };
+          }},
+          new RegionPart("_blade"){{
+            mirror = true;
+            turretShading = true;
+            heatColor = SglDrawConst.winter;
+            heatProgress = PartProgress.warmup.delay(0.3f);
+            moveX = 4;
+            moveY = 4;
+            progress = PartProgress.warmup;
+
+            moves.add(new PartMove(PartProgress.recoil, 0, -2, 0));
+          }},
+          new RegionPart("_side"){{
+            mirror = true;
+            turretShading = true;
+            heatColor = SglDrawConst.winter;
+            heatProgress = PartProgress.warmup.delay(0.3f);
+            moveX = 8;
+            moveRot = -20;
+            progress = PartProgress.warmup;
+
+            moves.add(new PartMove(PartProgress.recoil, 0, -2, -5));
+          }},
+          new RegionPart("_bot"){{
+            mirror = true;
+            turretShading = true;
+            heatColor = SglDrawConst.winter;
+            heatProgress = PartProgress.warmup.delay(0.3f);
+            moveX = 4;
+            progress = PartProgress.warmup;
+
+            moves.add(new PartMove(PartProgress.recoil, 0, -2, 0));
+          }},
+          new RegionPart("_body"){{
+            heatColor = SglDrawConst.winter;
+            heatProgress = PartProgress.warmup.delay(0.3f);
+          }},
+          new CustomPart(){{
+            mirror = true;
+            x = 20;
+            drawRadius = 0;
+            drawRadiusTo = 20;
+            rotation = -30;
+            layer = Layer.effect;
+            progress = PartProgress.warmup;
+            draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 3) return;
+
+              SglDraw.drawCrystal(x, y, 8 + 8*p, 6*p, 4*p, 0, 0, 0.4f*p,
+                  Layer.effect, Layer.bullet - 1, Time.time*1.24f, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
+            };
+          }},
+          new CustomPart(){{
+            mirror = true;
+            x = 20;
+            drawRadius = 0;
+            drawRadiusTo = 28;
+            rotation = -65;
+            layer = Layer.effect;
+            progress = PartProgress.warmup.delay(0.15f);
+            draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 3) return;
+
+              SglDraw.drawCrystal(x, y, 16 + 21*p, 12*p, 8*p, 0, 0, 0.7f*p,
+                  Layer.effect, Layer.bullet - 1, Time.time*1.24f + 45, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
+            };
+          }},
+          new CustomPart(){{
+            mirror = true;
+            x = 20;
+            drawRadius = 0;
+            drawRadiusTo = 24;
+            rotation = -105;
+            layer = Layer.effect;
+            progress = PartProgress.warmup.delay(0.3f);
+            draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 3) return;
+
+              SglDraw.drawCrystal(x, y, 12 + 14*p, 10*p, 6*p, 0, 0, 0.6f*p,
+                  Layer.effect, Layer.bullet - 1, Time.time*1.24f + 90, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
+            };
+          }},
+          new CustomPart(){{
+            mirror = true;
+            x = 20;
+            drawRadius = 0;
+            drawRadiusTo = 20;
+            rotation = -135;
+            layer = Layer.effect;
+            progress = PartProgress.warmup.delay(0.45f);
+            draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 3) return;
+
+              SglDraw.drawCrystal(x, y, 9 + 12*p, 8*p, 5*p, 0, 0, 0.65f*p,
+                  Layer.effect, Layer.bullet - 1, Time.time*1.24f + 135, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
+            };
+          }},
+          new CustomPart(){{
+            progress = PartProgress.charge;
+            y = 4;
+            layer = Layer.effect;
+            draw = (x, y, r, p) -> {
+              if(Sgl.config.animateLevel < 2) return;
+
+              Draw.color(SglDrawConst.winter);
+              Drawf.tri(x, y, 10*p, 12*p, r);
+              Drawf.tri(x, y, 10*p, 8*p, r + 180);
+              Draw.color(SglDrawConst.frost);
+              SglDraw.gradientCircle(x, y, 4 + 12*p, -7*p, 0);
             };
           }}
       );
@@ -2192,291 +2733,332 @@ public class SglTurrets implements ContentList{
       );
     }};
 
-    winter = new SglTurret("winter"){{
-      requirements(Category.turret, ItemStack.with(
-          SglItems.strengthening_alloy, 210,
-          SglItems.degenerate_neutron_polymer, 80,
-          Items.phaseFabric, 180,
-          SglItems.iridium, 100,
-          SglItems.aerogel, 200,
-          SglItems.aluminium, 220,
-          SglItems.matrix_alloy, 160,
-          SglItems.crystal_FEX_power, 180
-      ));
-      size = 6;
-      scaledHealth = 410;
-      recoil = 3.6f;
-      rotateSpeed = 1.75f;
-      warmupSpeed = 0.015f;
-      shake = 6;
-      fireWarmupThreshold = 0.925f;
+    soflame = new SglTurret("soflame"){{
+      requirements(Category.turret, ItemStack.with());
+      size = 5;
+      recoil = 4;
+      recoilTime = 120;
+      rotateSpeed = 1.5f;
+      shootCone = 3;
+      warmupSpeed = 0.016f;
+      fireWarmupThreshold = 0.9f;
       linearWarmup = false;
-      range = 560;
-      targetGround = true;
-      targetAir = true;
-      shootEffect = new MultiEffect(
-          SglFx.winterShooting,
-          SglFx.shootRecoilWave,
-          new WaveEffect(){{
-            colorFrom = colorTo = Pal.reactorPurple;
-            lifetime = 12f;
-            sizeTo = 40f;
-            strokeFrom = 6f;
-            strokeTo = 0.3f;
-          }}
-      );
-      moveWhileCharging = true;
-      shootY = 4;
+      range = 360;
+      shootY = 8;
+      shake = 8;
+
+      shootEffect = SglFx.shootRail;
+      shootSound = Sounds.shootSmite;
+      smokeEffect = Fx.shootSmokeSmite;
 
       unitSort = SglUnitSorts.denser;
 
-      shoot.firstShotDelay = 120;
-      chargeSound = Sounds.lasercharge;
-      chargeSoundPitch = 0.9f;
-
-      shootSound = Sounds.plasmaboom;
-      shootSoundPitch = 0.6f;
-      shootSoundVolume = 2;
-
-      soundPitchRange = 0.05f;
-
-      newAmmo(new BulletType(){
+      newAmmo(new HeatBullet(){
         {
-          lifetime = 20;
-          speed = 28;
-          collides = false;
-          absorbable = false;
-          scaleLife = true;
-          drawSize = 80;
-          fragBullet = new BulletType(){
-            {
-              lifetime = 120;
-              speed = 0.6f;
-              collides = false;
-              hittable = true;
-              absorbable = false;
-              despawnHit = true;
-              splashDamage = 2180;
-              splashDamageRadius = 84;
-              hitShake = 12;
+          damage = 260;
+          splashDamage = 540;
+          splashDamageRadius = 32;
+          hitSize = 5;
+          speed = 4;
+          lifetime = 90;
 
-              trailEffect = SglFx.particleSpread;
-              trailInterval = 10;
-              trailColor = SglDrawConst.winter;
+          hitShake = 14;
 
-              hitEffect = SglFx.iceExplode;
-              hitColor = SglDrawConst.winter;
+          hitColor = Pal.lighterOrange;
+          trailColor = Pal.lighterOrange;
 
-              hitSound = Sounds.release;
-              hitSoundPitch = 0.6f;
-              hitSoundVolume = 2.5f;
+          trailEffect = SglFx.trailParticle;
+          trailChance = 0.1f;
 
-              fragBullet = freezingField;
-              fragOnHit = false;
-              fragBullets = 1;
-              fragVelocityMin = 0;
-              fragVelocityMax = 0;
-            }
-
-            @Override
-            public void draw(Bullet b){
-              super.draw(b);
-              Draw.color(SglDrawConst.winter);
-
-              SglDraw.drawBloomUponFlyUnit(b, e -> {
-                float rot = e.fin(Interp.pow2Out)*3600;
-                SglDraw.drawCrystal(e.x, e.y, 30, 14, 8, 0, 0, 0.8f,
-                    Layer.effect, Layer.bullet, rot, e.rotation(), SglDrawConst.frost, SglDrawConst.winter);
-
-                Draw.alpha(1);
-                Fill.circle(e.x, e.y, 18*e.fin(Interp.pow3In));
-              });
-            }
-
-            @Override
-            public void update(Bullet b) {
-              super.update(b);
-              control.sound.loop(Sounds.spellLoop, b, 2);
-            }
-          };
-          fragBullets = 1;
-          fragSpread = 0;
-          fragRandomSpread = 0;
-          fragAngle = 0;
-          fragOnHit = false;
-          hitColor = SglDrawConst.winter;
-
-          hitEffect = Fx.none;
-          despawnEffect = Fx.none;
-          smokeEffect = Fx.none;
-
-          trailEffect = new MultiEffect(
-              SglFx.glowParticle,
-              SglFx.continuousLaserRecoil
+          hitEffect = new MultiEffect(
+              new WaveEffect(){{
+                colorFrom = colorTo = Pal.lighterOrange;
+                lifetime = 12f;
+                sizeTo = 50f;
+                strokeFrom = 7f;
+                strokeTo = 0.3f;
+              }},
+              SglFx.explodeImpWaveLarge,
+              SglFx.impactBubble
           );
-          trailRotation = true;
-          trailChance = 1;
 
-          trailLength = 75;
-          trailWidth = 7;
-          trailColor = SglDrawConst.winter;
-
-          chargeEffect = SglFx.shrinkIceParticleSmall;
+          meltDownTime = 90;
+          melDamageScl = 0.3f;
         }
+
+        final BulletType subBullet = new HeatBullet(){
+          {
+            speed = 4;
+            lifetime = 90;
+
+            damage = 90;
+
+            meltDownTime = 30;
+            melDamageScl = 0.5f;
+            maxExDamage = 150;
+
+            trailColor = Pal.lighterOrange;
+            hitColor = Pal.lighterOrange;
+            trailEffect = SglFx.glowParticle;
+            trailChance = 0.1f;
+            trailRotation = true;
+
+            hitEffect = Fx.circleColorSpark;
+            despawnEffect = Fx.absorb;
+            despawnHit = true;
+
+            trailWidth = 2f;
+            trailLength = 24;
+          }
+
+          @Override
+          public void draw(Bullet b) {
+            super.draw(b);
+            Draw.color(hitColor);
+            Fill.circle(b.x, b.y, 3);
+          }
+        };
 
         @Override
-        public void draw(Bullet b){
-          super.draw(b);
-          Draw.z(Layer.bullet);
-          Draw.color(SglDrawConst.winter);
-          float rot = b.fin()*3600;
+        public void init(Bullet b) {
+          super.init(b);
+          Particle p = SglParticleModels.heatBulletTrail.create(b.x, b.y, 0, 0, 5);
+          p.setVar(SglParticleModels.OWNER, b);
 
-          SglDraw.drawCrystal(b.x, b.y, 30, 14, 8, 0, 0, 0.8f,
-              Layer.effect, Layer.bullet, rot, b.rotation(), SglDrawConst.frost, SglDrawConst.winter);
+          Tmp.v1.set(1, 0).setAngle(b.rotation());
+          for (int i = 0; i < 3; i++) {
+            int fi = i;
+            Tmp.v1.setLength(Mathf.random(0, 8)).scl(Mathf.randomBoolean()? 1: -1);
+
+            float off = Mathf.random(0f, Mathf.PI2);
+            float scl = Mathf.random(3f, 6f);
+            for (int sign : Mathf.signs) {
+              subBullet.create(b, b.x + Tmp.v1.x, b.y + Tmp.v1.y, b.rotation())
+                  .mover = e -> e.moveRelative(0f, Mathf.sin(e.time + off, scl, (1 + fi)*sign));
+            }
+          }
         }
-      }, true, (bt, ammo) -> {
-        bt.add(Core.bundle.format("bullet.splashdamage", (int)ammo.fragBullet.splashDamage , Strings.fixed(ammo.fragBullet.splashDamageRadius/tilesize, 1)));
-        bt.row();
-        bt.add(Core.bundle.get("infos.winterAmmo"));
       });
-      consume.time(720);
-      consume.energy(1.1f);
-      consume.liquids(UncLiquidStack.with(
-          SglLiquids.phase_FEX_liquid, 0.2f,
-          Liquids.cryofluid, 0.2f
-      ));
-
-      updating = e -> {
-        SglTurretBuild t = (SglTurretBuild) e;
-        if(Mathf.chanceDelta(0.06f*t.warmup)){
-          Tmp.v1.set(36, 0).setAngle(t.rotation + (Mathf.randomBoolean()? 90: -90)).rotate(Mathf.random(-30, 30));
-          SglFx.iceParticle.at(e.x + Tmp.v1.x, e.y + Tmp.v1.y, Tmp.v1.angle(), SglDrawConst.frost);
-        }
-      };
+      consume.time(180);
+      consume.energy(5);
 
       draw = new DrawSglTurret(
-          new CustomPart(){{
-            progress = PartProgress.warmup;
-            draw = (x, y, r, p) -> {
-              if(Sgl.config.animateLevel < 2) return;
-
-              Draw.color(SglDrawConst.winter);
-              SglDraw.gradientTri(x, y, 70 + 120*p, 92*p, r, 0);
-              SglDraw.gradientTri(x, y, 40 + 68*p, 92*p, r + 180, 0);
-              Draw.color();
-            };
-          }},
           new RegionPart("_blade"){{
+            progress = PartProgress.warmup;
+            heatProgress = PartProgress.warmup;
             mirror = true;
-            turretShading = true;
-            heatColor = SglDrawConst.winter;
-            heatProgress = PartProgress.warmup.delay(0.3f);
             moveX = 4;
-            moveY = 4;
-            progress = PartProgress.warmup;
-
-            moves.add(new PartMove(PartProgress.recoil, 0, -2, 0));
-          }},
-          new RegionPart("_side"){{
-            mirror = true;
-            turretShading = true;
-            heatColor = SglDrawConst.winter;
-            heatProgress = PartProgress.warmup.delay(0.3f);
-            moveX = 8;
-            moveRot = -20;
-            progress = PartProgress.warmup;
-
-            moves.add(new PartMove(PartProgress.recoil, 0, -2, -5));
-          }},
-          new RegionPart("_bot"){{
-            mirror = true;
-            turretShading = true;
-            heatColor = SglDrawConst.winter;
-            heatProgress = PartProgress.warmup.delay(0.3f);
-            moveX = 4;
-            progress = PartProgress.warmup;
+            heatColor = Pal.lightishOrange;
 
             moves.add(new PartMove(PartProgress.recoil, 0, -2, 0));
           }},
           new RegionPart("_body"){{
-            heatColor = SglDrawConst.winter;
-            heatProgress = PartProgress.warmup.delay(0.3f);
+            mirror = false;
+            heatProgress = PartProgress.warmup;
+            heatColor = Pal.lightishOrange;
           }},
-          new CustomPart(){{
-            mirror = true;
-            x = 20;
-            drawRadius = 0;
-            drawRadiusTo = 20;
-            rotation = -30;
-            layer = Layer.effect;
+          new ShapePart(){{
             progress = PartProgress.warmup;
-            draw = (x, y, r, p) -> {
-              if(Sgl.config.animateLevel < 3) return;
-
-              SglDraw.drawCrystal(x, y, 8 + 8*p, 6*p, 4*p, 0, 0, 0.4f*p,
-                  Layer.effect, Layer.bullet - 1, Time.time*1.24f, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
-            };
+            y = shootY;
+            circle = true;
+            radius = 0;
+            radiusTo = 4;
+            layer = Layer.effect;
           }},
           new CustomPart(){{
-            mirror = true;
-            x = 20;
-            drawRadius = 0;
-            drawRadiusTo = 28;
-            rotation = -65;
+            progress = PartProgress.warmup;
+            y = shootY;
             layer = Layer.effect;
-            progress = PartProgress.warmup.delay(0.15f);
             draw = (x, y, r, p) -> {
-              if(Sgl.config.animateLevel < 3) return;
-
-              SglDraw.drawCrystal(x, y, 16 + 21*p, 12*p, 8*p, 0, 0, 0.7f*p,
-                  Layer.effect, Layer.bullet - 1, Time.time*1.24f + 45, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
+              Lines.stroke(0.8f*p, Pal.lighterOrange);
+              SglDraw.dashCircle(x, y, 6*p, Time.time*1.7f);
             };
           }},
-          new CustomPart(){{
-            mirror = true;
-            x = 20;
-            drawRadius = 0;
-            drawRadiusTo = 24;
-            rotation = -105;
+          new ShapePart(){{
+            progress = PartProgress.warmup;
+            color = Pal.lighterOrange;
             layer = Layer.effect;
-            progress = PartProgress.warmup.delay(0.3f);
-            draw = (x, y, r, p) -> {
-              if(Sgl.config.animateLevel < 3) return;
-
-              SglDraw.drawCrystal(x, y, 12 + 14*p, 10*p, 6*p, 0, 0, 0.6f*p,
-                  Layer.effect, Layer.bullet - 1, Time.time*1.24f + 90, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
-            };
+            circle = true;
+            y = -18;
+            radius = 0;
+            radiusTo = 4;
           }},
-          new CustomPart(){{
-            mirror = true;
-            x = 20;
-            drawRadius = 0;
-            drawRadiusTo = 20;
-            rotation = -135;
+          new ShapePart(){{
+            progress = PartProgress.warmup;
+            color = Pal.lighterOrange;
             layer = Layer.effect;
-            progress = PartProgress.warmup.delay(0.45f);
-            draw = (x, y, r, p) -> {
-              if(Sgl.config.animateLevel < 3) return;
-
-              SglDraw.drawCrystal(x, y, 9 + 12*p, 8*p, 5*p, 0, 0, 0.65f*p,
-                  Layer.effect, Layer.bullet - 1, Time.time*1.24f + 135, r, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
-            };
+            circle = true;
+            hollow = true;
+            y = -18;
+            stroke = 0;
+            strokeTo = 2f;
+            radius = 0;
+            radiusTo = 10;
           }},
-          new CustomPart(){{
-            progress = PartProgress.charge;
-            y = 4;
+          new HaloPart(){{
+            progress = PartProgress.warmup;
+            color = Pal.lighterOrange;
             layer = Layer.effect;
-            draw = (x, y, r, p) -> {
-              if(Sgl.config.animateLevel < 2) return;
-
-              Draw.color(SglDrawConst.winter);
-              Drawf.tri(x, y, 10*p, 12*p, r);
-              Drawf.tri(x, y, 10*p, 8*p, r + 180);
-              Draw.color(SglDrawConst.frost);
-              SglDraw.gradientCircle(x, y, 4 + 12*p, -7*p, 0);
-            };
+            tri = true;
+            y = -18;
+            haloRadius = 10;
+            haloRotateSpeed = 1;
+            shapes = 4;
+            radius = 4;
+            triLength = 0;
+            triLengthTo = 8;
+          }},
+          new HaloPart(){{
+            progress = PartProgress.warmup;
+            color = Pal.lighterOrange;
+            layer = Layer.effect;
+            tri = true;
+            y = -18;
+            haloRadius = 10;
+            haloRotateSpeed = 1;
+            shapes = 4;
+            radius = 4;
+            triLength = 0;
+            triLengthTo = 4;
+            shapeRotation = 180;
+          }},
+          new HaloPart(){{
+            progress = PartProgress.warmup;
+            color = Pal.lighterOrange;
+            layer = Layer.effect;
+            y = -18;
+            tri = true;
+            shapes = 2;
+            haloRadius = 10;
+            haloRotation = 90;
+            radius = 5;
+            triLength = 0;
+            triLengthTo = 30;
+            shapeRotation = 0;
+          }},
+          new HaloPart(){{
+            progress = PartProgress.warmup;
+            color = Pal.lighterOrange;
+            layer = Layer.effect;
+            y = -18;
+            tri = true;
+            shapes = 2;
+            haloRadius = 10;
+            haloRotation = 90;
+            radius = 5;
+            triLength = 0;
+            triLengthTo = 5;
+            shapeRotation = 180;
+          }},
+          new HaloPart(){{
+            progress = PartProgress.warmup.delay(0.2f);
+            color = Pal.lighterOrange;
+            layer = Layer.effect;
+            y = 0;
+            tri = true;
+            shapes = 2;
+            haloRadius = 18;
+            haloRotation = 90;
+            radius = 4;
+            triLength = 0;
+            triLengthTo = 20;
+            shapeRotation = 0;
+          }},
+          new HaloPart(){{
+            progress = PartProgress.warmup.delay(0.2f);
+            color = Pal.lighterOrange;
+            layer = Layer.effect;
+            y = 0;
+            tri = true;
+            shapes = 2;
+            haloRadius = 18;
+            haloRotation = 90;
+            radius = 4;
+            triLength = 0;
+            triLengthTo = 4;
+            shapeRotation = 180;
+          }},
+          new HaloPart(){{
+            progress = PartProgress.warmup.delay(0.4f);
+            color = Pal.lighterOrange;
+            layer = Layer.effect;
+            y = 8;
+            tri = true;
+            shapes = 2;
+            haloRadius = 15;
+            haloRotation = 90;
+            radius = 4;
+            triLength = 0;
+            triLengthTo = 16;
+            shapeRotation = 0;
+          }},
+          new HaloPart(){{
+            progress = PartProgress.warmup.delay(0.4f);
+            color = Pal.lighterOrange;
+            layer = Layer.effect;
+            y = 8;
+            tri = true;
+            shapes = 2;
+            haloRadius = 15;
+            haloRotation = 90;
+            radius = 4;
+            triLength = 0;
+            triLengthTo = 4;
+            shapeRotation = 180;
+          }},
+          new HaloPart(){{
+            progress = PartProgress.warmup.delay(0.6f);
+            color = Pal.lighterOrange;
+            layer = Layer.effect;
+            y = 16;
+            tri = true;
+            shapes = 2;
+            haloRadius = 12;
+            haloRotation = 90;
+            radius = 4;
+            triLength = 0;
+            triLengthTo = 12;
+            shapeRotation = 0;
+          }},
+          new HaloPart(){{
+            progress = PartProgress.warmup.delay(0.6f);
+            color = Pal.lighterOrange;
+            layer = Layer.effect;
+            y = 16;
+            tri = true;
+            shapes = 2;
+            haloRadius = 12;
+            haloRotation = 90;
+            radius = 4;
+            triLength = 0;
+            triLengthTo = 4;
+            shapeRotation = 180;
           }}
-      );
+      ){
+        static final float[] param = new float[9];
+
+        @Override
+        public void draw(Building build) {
+          super.draw(build);
+
+          Draw.z(Layer.effect);
+          SglDraw.drawTransform(build.x, build.y, shootX, shootY, build.drawrot(), (ox, oy, rot) -> {
+            for (int i = 0; i < 3; i++) {
+              boolean bool = Mathf.randomSeed(build.id + i, 1) > 0.5f;
+              for (int d = 0; d < 3; d++) {
+                param[d * 3] = Mathf.randomSeed(build.id + i + d + 3, 1f, 4f) / (d + 1) * (bool != (d % 2 == 0) ? -1 : 1);
+                param[d * 3 + 1] = Mathf.randomSeed(build.id + i + d + 4, 0f, 360f);
+                param[d * 3 + 2] = Mathf.randomSeed(build.id + i + d + 5, 3f, 6f) / ((d + 1) * (d + 1));
+              }
+              Vec2 v = MathTransform.fourierTransform(Time.time, param);
+
+              v.add(ox, oy);
+              Draw.color(Pal.lighterOrange);
+              Fill.circle(v.x, v.y, 1.3f*build.warmup());
+            }
+          });
+        }
+      };
     }};
 
     summer = new SglTurret("summer"){{
@@ -2530,7 +3112,7 @@ public class SglTurrets implements ContentList{
       shoot.shots = 12;
       shoot.shotDelay = 5f;
 
-      newAmmo(new BulletType(){
+      newAmmo(new HeatBullet(){
         {
           speed = 4.5f;
           lifetime = 180;
@@ -2543,6 +3125,10 @@ public class SglTurrets implements ContentList{
           trailColor = Pal.lightishOrange.cpy().a(0.7f);
           hitColor = Pal.lightishOrange;
           shootEffect = Fx.shootSmallColor;
+          hitEffect = new MultiEffect(
+              Fx.absorb,
+              Fx.circleColorSpark
+          );
           smokeEffect = Fx.none;
           despawnEffect = Fx.none;
           despawnHit = false;
@@ -2553,8 +3139,9 @@ public class SglTurrets implements ContentList{
           hitSoundPitch = 2;
           hitSoundVolume = 1.6f;
 
-          status = OtherContents.meltdown;
-          statusDuration = 12;
+          meltDownTime = 12;
+          melDamageScl = 0.3f;
+          maxExDamage = 90;
         }
 
         @Override
@@ -2565,22 +3152,6 @@ public class SglTurrets implements ContentList{
           SglDraw.drawLightEdge(b.x, b.y, 35 + Mathf.absin(0.5f, 3.5f), 2, 14 + Mathf.absin(0.4f, 2.5f), 2, 30, Pal.lightishOrange);
           SglDraw.drawDiamond(b.x, b.y, 16 + Mathf.absin(0.6f, 2f), 2, 90, Pal.lightishOrange);
           Fill.circle(b.x, b.y, 2.2f);
-        }
-
-        @Override
-        public void hitEntity(Bullet b, Hitboxc entity, float health) {
-          if(entity instanceof Healthc h){
-            if(pierceArmor){
-              h.damagePierce(b.damage);
-            }else{
-              h.damage(b.damage);
-            }
-          }
-
-          if(entity instanceof Unit unit){
-            unit.damagePierce(Math.min(unit.getDuration(status)/30, 90));
-            unit.apply(status, statusDuration + unit.getDuration(status));
-          }
         }
       }, true, (t, b) -> {
         t.add(Core.bundle.format("bullet.damage", (int)b.damage));

@@ -2,106 +2,76 @@ package singularity.graphic;
 
 import arc.Core;
 import arc.Events;
-import arc.func.Cons;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.gl.FrameBuffer;
 import arc.graphics.gl.Shader;
-import arc.struct.ObjectMap;
-import arc.struct.Seq;
 import arc.util.Disposable;
 import mindustry.game.EventType;
+import mindustry.graphics.Layer;
 import singularity.Singularity;
-import universecore.util.Empties;
-import universecore.util.handler.FieldHandler;
-
-import java.lang.reflect.Field;
-import java.util.Iterator;
 
 import static singularity.graphic.SglDraw.*;
 
 public class Distortion implements Disposable {
-  Shader distortion, baseShader;
-  FrameBuffer buffer, samplerBuffer;
+  static FrameBuffer samplerBuffer = new FrameBuffer();
+  static Shader baseShader;
 
-  boolean buffering, disposed;
-  boolean sampleComplete;
+  static {
+    baseShader = new Shader(Core.files.internal("shaders/screenspace.vert"), Singularity.getInternalFile("shaders").child("dist_base.frag"));
 
-  final float sampleEndLayer;
-
-  final Runnable r;
-
-  public Distortion(float sampleMin, float sampleMax){
-    init();
-
-    sampleEndLayer = sampleMax;
-
-    Events.run(EventType.Trigger.draw, r = () -> {
-      Draw.draw(sampleMin, this::startSampling);
-      Draw.draw(sampleMax, this::endSampling);
+    Events.run(EventType.Trigger.drawOver, () -> {
+      Draw.draw(Layer.min, () -> {
+        samplerBuffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+        samplerBuffer.begin(Color.clear);
+      });
+      Draw.draw(Layer.end, () -> {
+        samplerBuffer.end();
+        samplerBuffer.blit(baseShader);
+      });
     });
   }
 
-  public void init(){
-    baseShader = new Shader(Core.files.internal("shaders/screenspace.vert"), Singularity.getInternalFile("shaders").child("dist_base.frag"));
+  Shader distortion;
+  FrameBuffer buffer, pingpong;
+  boolean buffering, disposed;
 
+  public Distortion(){
     distortion = new Shader(Core.files.internal("shaders/screenspace.vert"), Singularity.getInternalFile("shaders").child("distortion.frag"));
 
+    buffer = new FrameBuffer();
+    pingpong = new FrameBuffer();
+
+    init();
+  }
+
+  public void init(){
     distortion.bind();
     distortion.setUniformi("u_texture0", 0);
     distortion.setUniformi("u_texture1", 1);
     distortion.setUniformf("strength", -64);
 
-    buffer = new FrameBuffer();
-    samplerBuffer = new FrameBuffer();
+    resize();
   }
 
   public void resize(){
     buffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-    samplerBuffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-  }
-
-  public void startSampling(){
-    if (!sampleComplete) return;
-    samplerBuffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-    samplerBuffer.begin(Color.clear);
-
-    sampleComplete = false;
-  }
-
-  public void endSampling(){
-    if (sampleComplete) return;
-
-    samplerBuffer.end();
-    samplerBuffer.blit(baseShader);
-
-    sampleComplete = true;
+    pingpong.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
   }
 
   public void capture(){
-    if (!sampleComplete)
-      throw new RuntimeException("sample was not completed");
-
     if (buffering) return;
+
+    samplerBuffer.end();
+    pingpong.begin();
+    samplerBuffer.blit(baseShader);
+    pingpong.end();
+    samplerBuffer.begin();
 
     buffering = true;
     buffer.begin(Color.clear);
-  }
-
-  public void pause(){
-    if (!buffering) return;
-
-    buffering = false;
-    buffer.end();
-  }
-
-  public void continueDis(){
-    if (buffering) return;
-
-    buffering = true;
-    buffer.begin();
   }
 
   public void render(){
@@ -109,10 +79,11 @@ public class Distortion implements Disposable {
 
     buffer.end();
 
-    samplerBuffer.getTexture().bind(1);
+    pingpong.getTexture().bind(1);
     distortion.bind();
-    distortion.setUniformf("width", samplerBuffer.getWidth());
-    distortion.setUniformf("height", samplerBuffer.getHeight());
+    distortion.setUniformf("width", pingpong.getWidth());
+    distortion.setUniformf("height", pingpong.getHeight());
+
     buffer.blit(distortion);
   }
 
@@ -124,22 +95,9 @@ public class Distortion implements Disposable {
   @Override
   public void dispose() {
     buffer.dispose();
-    samplerBuffer.dispose();
+    pingpong.dispose();
     distortion.dispose();
     disposed = true;
-
-    ObjectMap<Object, Seq<Cons<?>>> map = FieldHandler.getValueDefault(Events.class, "events");
-    Iterator<Cons<?>> itr = map.get(EventType.Trigger.draw, Empties.nilSeq()).iterator();
-    if(!itr.hasNext()) return;
-    a: for(Cons<?> c = itr.next(); itr.hasNext(); c = itr.next()){
-      for(Field field: c.getClass().getDeclaredFields()){
-        if(FieldHandler.getValueDefault(c, field.getName()) == r){
-          itr.remove();
-          break a;
-        }
-      }
-    }
-
   }
 
   @Override

@@ -27,10 +27,7 @@ import mindustry.gen.Sounds;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
-import mindustry.type.Category;
-import mindustry.type.Item;
-import mindustry.type.ItemStack;
-import mindustry.type.Liquid;
+import mindustry.type.*;
 import mindustry.ui.Bar;
 import mindustry.world.Block;
 import mindustry.world.blocks.liquid.LiquidBlock;
@@ -43,7 +40,6 @@ import singularity.graphic.Distortion;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.graphic.SglShaders;
-import singularity.type.SglLiquidStack;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.blocks.function.Destructor;
@@ -57,7 +53,6 @@ import singularity.world.draw.DrawRegionDynamic;
 import singularity.world.meta.SglStat;
 import singularity.world.particles.SglParticleModels;
 import universecore.components.blockcomp.FactoryBuildComp;
-import universecore.util.UncLiquidStack;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeItems;
@@ -219,7 +214,7 @@ public class CrafterBlocks implements ContentList{
         newConsume();
         consume.liquid(Liquids.water, 0.02f);
         newProduce();
-        produce.liquids(UncLiquidStack.with(
+        produce.liquids(LiquidStack.with(
             Liquids.ozone, 0.01f,
             SglLiquids.algae_mud, 0.006f
         ));
@@ -345,7 +340,7 @@ public class CrafterBlocks implements ContentList{
       newConsume();
       consume.time(60);
       consume.power(2.2f);
-      consume.liquids(UncLiquidStack.with(
+      consume.liquids(LiquidStack.with(
           Liquids.water, 0.4f,
           SglLiquids.spore_cloud, 0.06f
       ));
@@ -355,7 +350,7 @@ public class CrafterBlocks implements ContentList{
       newConsume();
       consume.time(45);
       consume.power(2.2f);
-      consume.liquids(UncLiquidStack.with(
+      consume.liquids(LiquidStack.with(
           SglLiquids.purified_water, 0.3f,
           SglLiquids.spore_cloud, 0.08f
       ));
@@ -395,7 +390,7 @@ public class CrafterBlocks implements ContentList{
       consume.liquid(Liquids.water, 0.6f);
       consume.power(6f);
       newProduce();
-      produce.liquids(SglLiquidStack.with(
+      produce.liquids(LiquidStack.with(
           Liquids.ozone, 0.6f,
           Liquids.hydrogen, 0.8f
       ));
@@ -404,14 +399,14 @@ public class CrafterBlocks implements ContentList{
       consume.liquid(SglLiquids.purified_water, 0.4f);
       consume.power(5.8f);
       newProduce();
-      produce.liquids(SglLiquidStack.with(
+      produce.liquids(LiquidStack.with(
           Liquids.ozone, 0.6f,
           Liquids.hydrogen, 0.8f
       ));
 
       newConsume();
       consume.time(120f);
-      consume.liquids(UncLiquidStack.with(
+      consume.liquids(LiquidStack.with(
           SglLiquids.mixed_ore_solution, 0.4f,
           SglLiquids.lye, 0.2f
       ));
@@ -431,7 +426,7 @@ public class CrafterBlocks implements ContentList{
       consume.item(SglItems.alkali_stone, 1);
       consume.power(3f);
       newProduce();
-      produce.liquids(UncLiquidStack.with(
+      produce.liquids(LiquidStack.with(
           SglLiquids.lye, 0.4f,
           SglLiquids.chlorine, 0.6f
       ));
@@ -488,7 +483,7 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.time(60f);
-      consume.liquids(UncLiquidStack.with(
+      consume.liquids(LiquidStack.with(
           SglLiquids.lye, 0.2f,
           SglLiquids.uranium_salt_solution, 0.2f,
           Liquids.ozone, 0.2f
@@ -500,7 +495,7 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.time(120f);
-      consume.liquids(UncLiquidStack.with(
+      consume.liquids(LiquidStack.with(
           SglLiquids.acid, 0.2f,
           Liquids.ozone, 0.4f
       ));
@@ -563,7 +558,7 @@ public class CrafterBlocks implements ContentList{
       produce.liquid(SglLiquids.uranium_salt_solution, 0.2f);
 
       newConsume();
-      consume.liquids(UncLiquidStack.with(
+      consume.liquids(LiquidStack.with(
           SglLiquids.purified_water, 0.4f,
           SglLiquids.sulfur_dioxide, 0.4f,
           SglLiquids.chlorine, 0.2f
@@ -578,13 +573,13 @@ public class CrafterBlocks implements ContentList{
           Items.silicon, 2,
           SglItems.flocculant, 1
       ));
-      consume.liquids(UncLiquidStack.with(
+      consume.liquids(LiquidStack.with(
           SglLiquids.purified_water, 0.4f,
           SglLiquids.chlorine, 0.2f
       ));
       consume.power(1.5f);
       newProduce();
-      produce.liquids(UncLiquidStack.with(
+      produce.liquids(LiquidStack.with(
           SglLiquids.silicon_chloride_sol, 0.4f,
           SglLiquids.acid, 0.2f
       ));
@@ -712,7 +707,7 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.time(60);
-      consume.liquids(UncLiquidStack.with(
+      consume.liquids(LiquidStack.with(
           SglLiquids.silicon_chloride_sol, 0.2f,
           Liquids.hydrogen, 0.4f
       ));
@@ -1808,7 +1803,7 @@ public class CrafterBlocks implements ContentList{
           }},
           new DrawDefault(),
           new DrawBlock(){
-            static final Distortion dist = new Distortion(Layer.min, Layer.flyingUnit + 0.02f);
+            static final Distortion dist = new Distortion();
             final int taskID = SglDraw.nextTaskID();
 
             @Override

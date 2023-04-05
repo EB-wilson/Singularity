@@ -48,12 +48,14 @@ public class SglUI{
 
   public ToolBarFrag toolBar;
 
+  public DebugInfos debugInfos;
+
   private static final Object[][] grapPreset = {
-      {1, false, false, false, 64, false},
-      {2, true, false, true, 256, false},
-      {2, true, false, true, 512, true},
-      {3, true, true, true, 1024, true},
-      {3, true, true, true, 4096, true},
+      {1, false, 128, false, false, 64, false},
+      {2, true, 256, false, true, 256, false},
+      {2, true, 512, false, true, 512, true},
+      {3, true, 1024, true, true, 1024, true},
+      {3, true, 2048, true, true, 4096, true},
   };
 
   public BaseDialog setPosDialog = new BaseDialog(Core.bundle.get("settings.setCamPos")){
@@ -191,6 +193,8 @@ public class SglUI{
 
     toolBar = new ToolBarFrag();
 
+    debugInfos = new DebugInfos();
+
     entityInfoFrag.build(Vars.ui.hudGroup);
 
     mainMenu.build();
@@ -198,6 +202,10 @@ public class SglUI{
     contributors.build();
 
     toolBar.init();
+
+    if (Sgl.config.debugMode){
+      debugInfos.build(Vars.ui.hudGroup);
+    }
 
     if(!Sgl.config.disableModMainMenu){
       Vars.ui.menufrag = new SglMenuFrag();
@@ -302,14 +310,15 @@ public class SglUI{
                 Object[] a = grapPreset[(int) f];
                 Sgl.config.animateLevel = ((Number) a[0]).intValue();
                 Sgl.config.enableShaders = (Boolean) a[1];
-                Sgl.config.enableDistortion = (Boolean) a[2];
-                Sgl.config.enableParticle = (Boolean) a[3];
-                Sgl.config.maxParticleCount = ((Number) a[4]).intValue();
-                Sgl.config.enableLightning = (Boolean) a[5];
+                Sgl.config.mathShapePrecision = ((Number) a[2]).intValue();
+                Sgl.config.enableDistortion = (Boolean) a[3];
+                Sgl.config.enableParticle = (Boolean) a[4];
+                Sgl.config.maxParticleCount = ((Number) a[5]).intValue();
+                Sgl.config.enableLightning = (Boolean) a[6];
               }
             },
             this::matchLevel,
-            0, 4, 1
+            0, grapPreset.length, 1
         ){{
           str = () -> Core.bundle.get("settings.graph_" + matchLevel());
         }},
@@ -320,6 +329,12 @@ public class SglUI{
             1, 3, 1
         ),
         new ConfigCheck("enableShaders", b -> Sgl.config.enableShaders = b, () -> Sgl.config.enableShaders),
+        new ConfigSlider(
+            "mathShapePrecision",
+            f -> Sgl.config.mathShapePrecision = (int)f,
+            () -> Sgl.config.mathShapePrecision,
+            128, 2048, 8
+        ),
         new ConfigCheck("enableDistortion", b -> Sgl.config.enableDistortion = b, () -> Sgl.config.enableDistortion),
         new ConfigCheck("enableParticle", b -> Sgl.config.enableParticle = b, () -> Sgl.config.enableParticle),
         new ConfigSlider(
@@ -353,10 +368,11 @@ public class SglUI{
 
       if(a[0].equals(Sgl.config.animateLevel)
       && a[1].equals(Sgl.config.enableShaders)
-      && a[2].equals(Sgl.config.enableDistortion)
-      && a[3].equals(Sgl.config.enableParticle)
-      && a[4].equals(Sgl.config.maxParticleCount)
-      && a[5].equals(Sgl.config.enableLightning)
+      && a[2].equals(Sgl.config.mathShapePrecision)
+      && a[3].equals(Sgl.config.enableDistortion)
+      && a[4].equals(Sgl.config.enableParticle)
+      && a[5].equals(Sgl.config.maxParticleCount)
+      && a[6].equals(Sgl.config.enableLightning)
       ) return i;
     }
     return grapPreset.length;

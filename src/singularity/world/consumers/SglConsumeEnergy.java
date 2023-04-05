@@ -1,11 +1,16 @@
 package singularity.world.consumers;
 
 import arc.math.Mathf;
+import arc.scene.ui.Image;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
+import arc.util.Scaling;
+import mindustry.core.UI;
 import mindustry.ctype.Content;
 import mindustry.gen.Building;
+import mindustry.ui.Styles;
 import mindustry.world.meta.Stats;
+import singularity.graphic.SglDrawConst;
 import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
@@ -28,6 +33,25 @@ public class SglConsumeEnergy<T extends Building & NuclearEnergyBuildComp & Cons
   @Override
   public ConsumeType<SglConsumeEnergy<?>> type(){
     return SglConsumeType.energy;
+  }
+
+  @Override
+  public void buildIcons(Table table) {
+    buildNuclearIcon(table, usage);
+  }
+
+  public static void buildNuclearIcon(Table table, float amount) {
+    table.stack(
+        new Table(o -> {
+          o.left();
+          o.add(new Image(SglDrawConst.nuclearIcon)).size(32f).scaling(Scaling.fit);
+        }),
+        new Table(t -> {
+          t.left().bottom();
+          t.add(amount*60 >= 1000 ? UI.formatAmount((long) (amount*60))+ "NF/s" : amount*60 + "NF/s").style(Styles.outlineLabel);
+          t.pack();
+        })
+    );
   }
 
   @Override

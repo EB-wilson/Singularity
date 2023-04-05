@@ -37,6 +37,16 @@ public class SglConsumeMedium<T extends Building & MediumBuildComp & ConsumerBui
   }
 
   @Override
+  public boolean hasIcons() {
+    return false;
+  }
+
+  @Override
+  public void buildIcons(Table table) {
+
+  }
+
+  @Override
   public void merge(BaseConsume<T> baseConsume){
     if(baseConsume instanceof SglConsumeMedium cons){
       request += cons.request;

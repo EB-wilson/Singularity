@@ -36,8 +36,12 @@ import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.request.PutItemsRequest;
 
+import static mindustry.Vars.tilesize;
+
 public class MatrixMiner extends DistNetBlock{
   public static final Integer[] NIL = new Integer[0];
+
+  public int baseRange = 0;
 
   public MatrixMiner(String name){
     super(name);
@@ -72,6 +76,26 @@ public class MatrixMiner extends DistNetBlock{
         () -> SglDrawConst.matrixNet,
         () -> m.matrixEnergyConsume() > 0.01f? 1: 0
     ));
+  }
+
+  @Override
+  public boolean canPlaceOn(Tile tile, Team team, int rotation) {
+    return Vars.indexer.findTile(team, tile.worldx(), tile.worldy(), baseRange*1.44f, b -> {
+      if (Math.abs(b.tileX() - tile.x) > baseRange/2 || Math.abs(b.tileY() - tile.y) > baseRange/2) return false;
+
+      return b.block == this;
+    }) == null;
+  }
+
+  @Override
+  public void drawPlace(int x, int y, int rotation, boolean valid) {
+    super.drawPlace(x, y, rotation, valid);
+
+    float l = baseRange*tilesize/2f;
+    Drawf.dashLine(Pal.accent, x - l, y - l, x - l, y + l);
+    Drawf.dashLine(Pal.accent, x - l, y - l, x + l, y - l);
+    Drawf.dashLine(Pal.accent, x + l, y + l, x - l, y + l);
+    Drawf.dashLine(Pal.accent, x + l, y + l, x + l, y - l);
   }
 
   public class MatrixMinerBuild extends DistNetBuild{
@@ -134,7 +158,7 @@ public class MatrixMiner extends DistNetBlock{
     @Override
     public void drawConfigure(){
       super.drawConfigure();
-      float l = drillRange*4;
+      float l = drillRange*tilesize/2f;
       Drawf.dashLine(Pal.accent, x - l, y - l, x - l, y + l);
       Drawf.dashLine(Pal.accent, x - l, y - l, x + l, y - l);
       Drawf.dashLine(Pal.accent, x + l, y + l, x - l, y + l);
@@ -153,7 +177,7 @@ public class MatrixMiner extends DistNetBlock{
       boost = 1;
       drillMoveMulti = 1;
       drillSize = 0;
-      maxRange = 0;
+      maxRange = baseRange;
       pierce = false;
 
       itemBuffer.update();
@@ -164,8 +188,8 @@ public class MatrixMiner extends DistNetBlock{
         energyConsMultiplier *= plugin.energyMultiplier();
         boost *= plugin.boost();
         drillMoveMulti *= plugin.drillMoveMulti();
+        maxRange += plugin.range();
         drillSize = Math.max(drillSize, plugin.drillSize());
-        maxRange = Math.max(maxRange, plugin.maxRange());
         pierce |= plugin.pierceBuild();
       }
 

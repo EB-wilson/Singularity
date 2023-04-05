@@ -11,8 +11,8 @@ import arc.math.Mathf;
 import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
 import arc.math.geom.Vec3;
-import arc.struct.IntMap;
 import arc.util.Nullable;
+import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.game.EventType;
 import mindustry.graphics.Drawf;
@@ -22,7 +22,6 @@ import singularity.util.func.Floatc3;
 import universecore.world.particles.Particle;
 
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static arc.Core.settings;
 
@@ -38,10 +37,10 @@ public class SglDraw{
   static final Color c1 = new Color(), c2 = new Color(), c3 = new Color(), c4 = new Color(), c5 = new Color(),
       c6 = new Color(), c7 = new Color(), c8 = new Color(), c9 = new Color(), c10 = new Color();
 
-  private static final IntMap<DrawTask> drawTasks = new IntMap<>();
-  private static final IntMap<FrameBuffer> taskBuffer = new IntMap<>();
+  private static DrawTask[] drawTasks = new DrawTask[16];
+  private static FrameBuffer[] taskBuffer = new FrameBuffer[16];
 
-  private static final IntMap<Bloom> blooms = new IntMap<>();
+  private static Bloom[] blooms = new Bloom[16];
 
   private static int idCount = 0;
 
@@ -55,12 +54,10 @@ public class SglDraw{
   static {
     Events.run(EventType.Trigger.draw, () -> {
       Particle.maxAmount = Sgl.config.enableParticle? Sgl.config.maxParticleCount: 0;
+      MathRenderer.precision = Sgl.config.mathShapePrecision;
     });
-  }
 
-  public static void removeTaskCache(int id){
-    drawTasks.remove(id);
-    taskBuffer.remove(id);
+    Time.run(0, () -> Sgl.ui.debugInfos.addMonitor("drawTaskCount", () -> idCount));
   }
 
   /**发布缓存的任务并在首次发布时的z轴时进行绘制，传递的一些参数只在初始化时起了效果，之后都被选择性的无视了
@@ -71,7 +68,14 @@ public class SglDraw{
    * @param drawLast <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，用于声明这个任务组在完成主绘制后要执行的操作
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
   public static <T, D> void drawTask(int taskId, T target, D defTarget, DrawAcceptor<D> drawFirst, DrawAcceptor<D> drawLast, DrawAcceptor<T> draw){
-    DrawTask task = drawTasks.get(taskId, DrawTask::new);
+    while (taskId >= drawTasks.length){
+      drawTasks = Arrays.copyOf(drawTasks, drawTasks.length*2);
+    }
+
+    DrawTask task = drawTasks[taskId];
+    if (task == null){
+      task = drawTasks[taskId] = new DrawTask();
+    }
     if (!task.init){
       task.defaultFirstTask = drawFirst;
       task.defaultLastTask = drawLast;
@@ -105,14 +109,21 @@ public class SglDraw{
       return;
     }
 
+    while (taskID >= taskBuffer.length){
+      taskBuffer = Arrays.copyOf(taskBuffer, taskBuffer.length*2);
+    }
+
+    FrameBuffer buffer = taskBuffer[taskID];
+    if (buffer == null){
+      buffer = taskBuffer[taskID] = new FrameBuffer();
+    }
+    FrameBuffer b = buffer;
     drawTask(taskID, target, shader, e -> {
-      FrameBuffer buffer = taskBuffer.get(taskID, FrameBuffer::new);
-      buffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-      buffer.begin(Color.clear);
+      b.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+      b.begin(Color.clear);
     }, e -> {
-      FrameBuffer buffer = taskBuffer.get(taskID);
-      buffer.end();
-      buffer.blit(e);
+      b.end();
+      b.blit(e);
     }, draw);
   }
 
@@ -129,15 +140,22 @@ public class SglDraw{
       return;
     }
 
+    while (taskID >= taskBuffer.length){
+      taskBuffer = Arrays.copyOf(taskBuffer, taskBuffer.length*2);
+    }
+
+    FrameBuffer buffer = taskBuffer[taskID];
+    if (buffer == null){
+      buffer = taskBuffer[taskID] = new FrameBuffer();
+    }
+    FrameBuffer b = buffer;
     drawTask(taskID, target, shader, e -> {
-      FrameBuffer buffer = taskBuffer.get(taskID, FrameBuffer::new);
-      buffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-      buffer.begin(Color.clear);
+      b.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+      b.begin(Color.clear);
     }, e -> {
-      FrameBuffer buffer = taskBuffer.get(taskID);
-      buffer.end();
+      b.end();
       applyShader.draw(e);
-      buffer.blit(e);
+      b.blit(e);
     }, draw);
   }
 
@@ -157,7 +175,15 @@ public class SglDraw{
    * @param target 递给绘制任务的数据目标，这是为了优化lambda的内存而添加的，避免产生大量闭包的lambda实例造成不必要的内存占用
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
   public static <T> void drawTask(int taskID, T target, DrawAcceptor<T> draw){
-    DrawTask task = drawTasks.get(taskID, DrawTask::new);
+    while (taskID >= drawTasks.length){
+      drawTasks = Arrays.copyOf(drawTasks, drawTasks.length*2);
+    }
+
+    DrawTask task = drawTasks[taskID];
+    if (task == null){
+      task = drawTasks[taskID] = new DrawTask();
+    }
+
     if (!task.init){
       Draw.draw(Draw.z(), task::flush);
       task.init = true;
@@ -171,7 +197,15 @@ public class SglDraw{
    * @param taskID 任务的标识ID，用于区分任务缓存
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
   public static void drawTask(int taskID, DrawDef draw){
-    DrawTask task = drawTasks.get(taskID, DrawTask::new);
+    while (taskID >= drawTasks.length){
+      drawTasks = Arrays.copyOf(drawTasks, drawTasks.length*2);
+    }
+
+    DrawTask task = drawTasks[taskID];
+    if (task == null){
+      task = drawTasks[taskID] = new DrawTask();
+    }
+
     if (!task.init){
       Draw.draw(Draw.z(), task::flush);
       task.init = true;
@@ -190,7 +224,14 @@ public class SglDraw{
       return;
     }
 
-    Bloom bloom = blooms.get(taskID, () -> new Bloom(true));
+    while (taskID >= blooms.length){
+      blooms = Arrays.copyOf(blooms, blooms.length*2);
+    }
+
+    Bloom bloom = blooms[taskID];
+    if (bloom == null){
+      bloom = blooms[taskID] = new Bloom(true);
+    }
     drawTask(taskID, obj, bloom, e -> {
       e.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
       e.setBloomIntesity(settings.getInt("bloomintensity", 6) / 4f + 1f);
@@ -206,7 +247,15 @@ public class SglDraw{
 
   /**@see SglDraw#drawBloom(int, Object, DrawAcceptor) */
   public static void drawBloom(int taskID, DrawAcceptor<Bloom> draw){
-    Bloom bloom = blooms.get(taskID, () -> new Bloom(true));
+    while (taskID >= blooms.length){
+      blooms = Arrays.copyOf(blooms, blooms.length*2);
+    }
+
+    Bloom bloom = blooms[taskID];
+    if (bloom == null){
+      bloom = blooms[taskID] = new Bloom(true);
+    }
+
     if (!settings.getBool("bloom", false)){
       draw.draw(bloom);
       return;
@@ -585,7 +634,7 @@ public class SglDraw{
     float lastGX = -1, lastGY = -1;
 
     for(int i = 0; i < edges + (fanAngle == 360? 1: 0); i++){
-      if(i == edges) v1.setAngle(rotation - fanAngle%360/2);
+      v1.setAngle(i*step + rotation - fanAngle%360/2);
       v2.set(v1).sub(gradientCenterX - x, gradientCenterY - y);
 
       if(lastX != -1){
@@ -603,7 +652,6 @@ public class SglDraw{
       lastY = y + v1.y;
       lastGX = v2.x;
       lastGY = v2.y;
-      v1.rotate(step);
     }
   }
 
@@ -833,41 +881,33 @@ public class SglDraw{
   private static class DrawTask {
     DrawAcceptor<?> defaultFirstTask, defaultLastTask;
     protected Object defaultTarget;
-    protected AtomicReference<DrawAcceptor<?>>[] tasks = new AtomicReference[16];
-    protected AtomicReference<Object>[] dataTarget = new AtomicReference[16];
+    protected DrawAcceptor<?>[] tasks = new DrawAcceptor<?>[16];
+    protected Object[] dataTarget = new Object[16];
     int taskCounter;
     boolean init;
-
-    {
-      for (int i = 0; i < tasks.length; i++) {
-        tasks[i] = new AtomicReference<>();
-        dataTarget[i] = new AtomicReference<>();
-      }
-    }
 
     <T> void addTask(T dataAcceptor, DrawAcceptor<T> task){
       if (tasks.length <= taskCounter){
         tasks = Arrays.copyOf(tasks, tasks.length + 1);
-        tasks[taskCounter] = new AtomicReference<>(task);
         dataTarget = Arrays.copyOf(dataTarget, tasks.length);
-        dataTarget[taskCounter++] = new AtomicReference<>(dataAcceptor);
       }
-      else{
-        tasks[taskCounter].set(task);
-        dataTarget[taskCounter++].set(dataAcceptor);
-      }
+
+      tasks[taskCounter] = task;
+      dataTarget[taskCounter++] = dataAcceptor;
     }
 
     @SuppressWarnings("rawtypes")
     void flush(){
       if (defaultFirstTask != null) ((DrawAcceptor)defaultFirstTask).draw(defaultTarget);
+
       for (int i = 0; i < taskCounter; i++) {
-        ((DrawAcceptor)tasks[i].get()).draw(dataTarget[i].get());
+        ((DrawAcceptor)tasks[i]).draw(dataTarget[i]);
       }
-      taskCounter = 0;
-      init = false;
+
       if (defaultLastTask != null) ((DrawAcceptor)defaultLastTask).draw(defaultTarget);
 
+      taskCounter = 0;
+      init = false;
     }
   }
 

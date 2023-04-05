@@ -5,7 +5,6 @@ import arc.Events;
 import arc.files.Fi;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.style.Drawable;
-import arc.struct.Seq;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.ctype.Content;
@@ -23,8 +22,6 @@ import singularity.world.meta.SglAttribute;
 import universecore.UncCore;
 import universecore.annotations.Annotations;
 import universecore.util.OverrideContentList;
-
-import java.util.ArrayList;
 
 import static mindustry.game.EventType.*;
 
@@ -93,9 +90,6 @@ public class Singularity extends Mod{
 
     //游戏本体更改初始化
     Init.init();
-
-    Seq<String> seq = new Seq<>();
-
 
     initialized = true;
 

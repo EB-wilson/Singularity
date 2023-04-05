@@ -29,6 +29,9 @@ public class MathRenderer{
 
   static TextureRegion blank;
 
+  public static int precision = 1024;
+  static int lastPrecision;
+
   static class MathShader extends Shader{
     private static final String vert = """
         uniform mat4 u_projTrans;
@@ -164,11 +167,16 @@ public class MathRenderer{
     }
   }
 
+  public static void setPrecision(int precision){
+    MathRenderer.precision = precision;
+  }
+
   private static TextureRegion getBlank(){
-    if(blank == null){
-      Pixmap pix = new Pixmap(1024, 1024);
+    if(blank == null || lastPrecision != precision){
+      Pixmap pix = new Pixmap(precision, precision);
       pix.fill(Color.white);
       blank = new TextureRegion(new Texture(pix));
+      lastPrecision = precision;
     }
 
     return blank;

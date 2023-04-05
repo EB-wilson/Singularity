@@ -8,10 +8,10 @@ import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.gen.Tex;
 import mindustry.type.Liquid;
+import mindustry.type.LiquidStack;
 import mindustry.ui.LiquidDisplay;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.Stats;
-import universecore.util.UncLiquidStack;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeLiquidCond;
 import universecore.world.consumers.ConsumeType;
@@ -36,7 +36,7 @@ public class MatrixMinerComponent extends MatrixMinerPlugin{
       s.add(Stat.booster, t -> {
         t.row();
         if (c.get(ConsumeType.liquid) instanceof ConsumeLiquidCond cons){
-          for (UncLiquidStack stack : cons.getCons()) {
+          for (LiquidStack stack : cons.getCons()) {
             Liquid liquid = stack.liquid;
 
             t.add(new LiquidDisplay(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(10).left().top();

@@ -173,8 +173,10 @@ public class SglSerploGenerator extends PlanetGenerator{
   protected void generate(){
 
     class Room{
-      int x, y, radius;
-      ObjectSet<Room> connected = new ObjectSet<>();
+      final int x;
+      final int y;
+      final int radius;
+      final ObjectSet<Room> connected = new ObjectSet<>();
 
       Room(int x, int y, int radius){
         this.x = x;

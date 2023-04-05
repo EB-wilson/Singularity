@@ -12,6 +12,7 @@ import arc.util.Scaling;
 import arc.util.Strings;
 import mindustry.ctype.Content;
 import mindustry.gen.Building;
+import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
@@ -52,6 +53,11 @@ public class SglConsumeFloor<T extends Building & ConsumerBuildComp & FloorCraft
   @Override
   public ConsumeType<?> type() {
     return SglConsumeType.floor;
+  }
+
+  @Override
+  public void buildIcons(Table table) {
+    table.image(Icon.terrain);
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})

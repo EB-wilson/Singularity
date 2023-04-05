@@ -10,9 +10,9 @@ import mindustry.gen.Building;
 import mindustry.graphics.Pal;
 import mindustry.world.Block;
 import mindustry.world.meta.BlockStatus;
+import singularity.world.blocks.SglBlock;
 import singularity.world.components.distnet.DistElementBlockComp;
 import singularity.world.components.distnet.DistElementBuildComp;
-import singularity.world.blocks.SglBlock;
 import singularity.world.modules.DistributeModule;
 import universecore.annotations.Annotations;
 
@@ -26,6 +26,7 @@ public class DistNetBlock extends SglBlock implements DistElementBlockComp{
   public DistNetBlock(String name){
     super(name);
     update = true;
+    unloadable = false;
     saveConfig = false;
     canOverdrive = false;
   }

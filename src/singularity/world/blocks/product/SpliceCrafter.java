@@ -17,12 +17,12 @@ import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
+import mindustry.type.LiquidStack;
 import mindustry.ui.Bar;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.modules.ItemModule;
 import mindustry.world.modules.LiquidModule;
-import singularity.type.SglLiquidStack;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.modules.SglConsumeModule;
 import singularity.world.modules.SglLiquidModule;
@@ -30,7 +30,6 @@ import singularity.world.modules.SglProductModule;
 import singularity.world.products.SglProduceType;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.*;
-import universecore.util.UncLiquidStack;
 import universecore.world.blocks.chains.ChainsContainer;
 import universecore.world.blocks.modules.ChainsModule;
 import universecore.world.consumers.BaseConsume;
@@ -156,7 +155,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
           t.defaults().growX().height(18f).pad(4);
           t.top().add(liquidsStr).padTop(0);
           t.row();
-          for (SglLiquidStack stack : displayLiquids) {
+          for (LiquidStack stack : displayLiquids) {
             Func<Building, Bar> bar = entity -> new Bar(
                 () -> stack.liquid.localizedName,
                 () -> stack.liquid.barColor != null ? stack.liquid.barColor : stack.liquid.color,
@@ -192,7 +191,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
             liquid.defaults().growX().margin(0).pad(4).height(18);
             liquid.left().add(Core.bundle.get("misc.liquid")).color(Pal.gray);
             liquid.row();
-            for(UncLiquidStack stack: cl.consLiquids){
+            for(LiquidStack stack: cl.consLiquids){
               Func<Building, Bar> bar = (entity -> new Bar(
                   () -> stack.liquid.localizedName,
                   () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
@@ -219,7 +218,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
             liquid.defaults().growX().margin(0).pad(4).height(18);
             liquid.add(Core.bundle.get("misc.liquid")).color(Pal.gray);
             liquid.row();
-            for(UncLiquidStack stack: pl.liquids){
+            for(LiquidStack stack: pl.liquids){
               Func<Building, Bar> bar = (entity -> new Bar(
                   () -> stack.liquid.localizedName,
                   () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,

@@ -23,7 +23,7 @@ public class SglDrawConst{
 
   //Texture regions
   public static Drawable transparent, sglLaunchLogo, squareMarker, matrixArrow, sglIcon, artistIcon, codeIcon, translateIcon,
-      soundsIcon,
+      soundsIcon, time,
 
       startIcon, databaseIcon, publicInfoIcon, aboutIcon, configureIcon, contributeIcon, debuggingIcon, nuclearIcon, matrixIcon,
 
@@ -40,6 +40,7 @@ public class SglDrawConst{
     codeIcon = Singularity.getModDrawable("code");
     translateIcon = Singularity.getModDrawable("translate");
     soundsIcon = Singularity.getModDrawable("sound");
+    time = Singularity.getModDrawable("time");
     startIcon = Singularity.getModDrawable("icon_start");
     databaseIcon = Singularity.getModDrawable("icon_database");
     publicInfoIcon = Singularity.getModDrawable("icon_publicInfo");

@@ -11,6 +11,7 @@ public class LaserTurret extends SglTurret{
   public float shootingRotateSpeedScl = 0.35f;
   public float shootEffInterval = 5;
   public boolean needCooldown = true;
+  public boolean shootingConsume = false;
 
   public LaserTurret(String name){
     super(name);
@@ -32,9 +33,6 @@ public class LaserTurret extends SglTurret{
 
       if(allLaser.any()){
         wasShooting = true;
-        heat = 1f;
-        curRecoil = 1f;
-        warmup = 1;
 
         for(Turret.BulletEntry entry: allLaser){
           float bulletX = x + Angles.trnsx(rotation - 90, shootX + entry.x, shootY + entry.y),
@@ -59,7 +57,7 @@ public class LaserTurret extends SglTurret{
 
     @Override
     public boolean shouldConsume(){
-      return super.shouldConsume() && allLaser.isEmpty() && !(heat > 0 && needCooldown);
+      return super.shouldConsume() && (shootingConsume || allLaser.isEmpty()) && !(heat > 0 && needCooldown);
     }
 
     @Override
@@ -69,7 +67,7 @@ public class LaserTurret extends SglTurret{
 
     @Override
     public float activeSoundVolume() {
-      return 1;
+      return warmup;
     }
 
     @Override

@@ -7,7 +7,6 @@ import arc.scene.ui.layout.Table;
 import arc.struct.IntMap;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
-import arc.util.Log;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import arc.util.pooling.Pool;
@@ -54,7 +53,6 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
     independenceInventory = false;
     independenceLiquidTank = false;
 
-    unloadable = false;
     displayLiquid = false;
   }
   

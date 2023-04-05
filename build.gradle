@@ -58,10 +58,6 @@ dependencies{
   compileOnly "com.github.EB-wilson.UniverseCore:dynamilizer:$uncVersion"
   compileOnly "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
 
-  testCompileOnly "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
-
-  implementation 'org.jetbrains:annotations:23.0.0'
-
   annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
 }
 
@@ -71,7 +67,7 @@ tasks.register('jarAndroid') {
   doLast {
     try {
       File fi = new File("$sdkRoot/platforms/")
-      if (!fi.exists()) throw new RuntimeException("android SDK platfroms was not found");
+      if (!fi.exists()) throw new RuntimeException("android SDK platfroms was not found")
       def platformRoot = fi.listFiles().sort().reverse().find { f -> new File(f, "android.jar").exists() }
 
       //collect dependencies needed for desugaring

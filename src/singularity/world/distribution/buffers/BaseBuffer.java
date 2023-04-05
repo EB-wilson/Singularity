@@ -6,10 +6,8 @@ import arc.math.Mathf;
 import arc.math.WindowedMean;
 import arc.struct.IntMap;
 import arc.util.Interval;
-import arc.util.Log;
+import arc.util.Nullable;
 import mindustry.world.modules.BlockModule;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import singularity.world.distribution.DistBufferType;
 import singularity.world.distribution.DistributeNetwork;
 
@@ -198,7 +196,6 @@ public abstract class BaseBuffer<C, CType, T extends BaseBuffer.Packet<C, CType>
 
   public abstract Color displayColor();
 
-  @NotNull
   @Override
   public Iterator<T> iterator(){
     return memory.values().iterator();

@@ -33,7 +33,6 @@ public class BasicEmpBulletType extends EmpBulletType {
     this(speed, damage, "bullet");
   }
 
-  /** For mods. */
   public BasicEmpBulletType(){
     this(1f, 1f, "bullet");
   }

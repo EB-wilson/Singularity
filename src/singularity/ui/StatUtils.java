@@ -2,43 +2,15 @@ package singularity.ui;
 
 import arc.Core;
 import arc.scene.ui.layout.Table;
-import arc.struct.OrderedMap;
-import arc.struct.Seq;
 import arc.util.Strings;
 import mindustry.content.StatusEffects;
 import mindustry.entities.bullet.BulletType;
-import mindustry.graphics.Pal;
-import mindustry.world.meta.*;
+import mindustry.world.meta.StatUnit;
 import singularity.world.blocks.turrets.EmpBulletType;
 
 import static mindustry.Vars.tilesize;
 
 public class StatUtils{
-  public static void buildTable(Table table, Stats stat){
-    for(StatCat cat : stat.toMap().keys()){
-      OrderedMap<Stat, Seq<StatValue>> map = stat.toMap().get(cat);
-      if(map.size == 0) continue;
-
-      if(stat.useCategories){
-        table.add("@category." + cat.name).color(Pal.accent).fillX();
-        table.row();
-      }
-
-      for(Stat state : map.keys()){
-        table.table(inset -> {
-          inset.left();
-          inset.add("[lightgray]" + state.localized() + ":[] ").left();
-          Seq<StatValue> arr = map.get(state);
-          for(StatValue value : arr){
-            value.display(inset);
-            inset.add().size(10f);
-          }
-        }).fillX().padLeft(10);
-        table.row();
-      }
-    }
-  }
-
   public static void buildAmmo(Table table, BulletType bullet){
     table.left().defaults().padRight(3).left();
 
