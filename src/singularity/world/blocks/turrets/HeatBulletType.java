@@ -7,7 +7,7 @@ import mindustry.gen.Hitboxc;
 import mindustry.gen.Unit;
 import singularity.contents.OtherContents;
 
-public class HeatBullet extends BulletType {
+public class HeatBulletType extends BulletType {
   public float melDamageScl = 0.4f;
   public float maxExDamage = -1;
   public float meltDownTime = 10;

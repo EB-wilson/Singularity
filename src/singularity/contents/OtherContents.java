@@ -386,12 +386,13 @@ public class OtherContents implements ContentList{
         SglDraw.drawBloomUponFlyUnit(unit, u -> {
           float rate = Mathf.clamp(90/(time/30));
           Lines.stroke(2.2f*rate, Pal.lighterOrange);
-          Draw.color(rate*0.7f);
+          Draw.alpha(rate*0.7f);
           Lines.circle(u.x, u.y, u.hitSize/2 + rate*u.hitSize/2);
 
           for(int i = 0; i < 8; i++){
-            SglDraw.drawTransform(u.x, u.y, u.hitSize/2 + rate*u.hitSize/2, 0, Time.time + Mathf.randomSeed(u.id, 360f), (x, y, r) -> {
-              float len = Mathf.randomSeed(u.id, u.hitSize/4, u.hitSize/1.5f);
+            int finalI = i;
+            SglDraw.drawTransform(u.x, u.y, u.hitSize/2 + rate*u.hitSize/2, 0, Time.time + Mathf.randomSeed(u.id + i, 360f), (x, y, r) -> {
+              float len = Mathf.randomSeed(u.id + finalI + 1, u.hitSize/4, u.hitSize/1.5f);
               SglDraw.drawDiamond(x, y, len, len*0.135f, r);
             });
           }

@@ -2,11 +2,14 @@ package singularity.ui;
 
 import arc.Core;
 import arc.scene.ui.layout.Table;
+import arc.util.Scaling;
 import arc.util.Strings;
 import mindustry.content.StatusEffects;
 import mindustry.entities.bullet.BulletType;
 import mindustry.world.meta.StatUnit;
+import singularity.contents.OtherContents;
 import singularity.world.blocks.turrets.EmpBulletType;
+import singularity.world.blocks.turrets.HeatBulletType;
 
 import static mindustry.Vars.tilesize;
 
@@ -16,14 +19,23 @@ public class StatUtils{
 
     if(bullet.damage > 0 && (bullet.collides || bullet.splashDamage <= 0)){
       if(bullet.continuousDamage() > 0){
-        table.add(Core.bundle.format("bullet.damage", bullet.continuousDamage()) + StatUnit.perSecond.localized());
+        sep(table, Core.bundle.format("bullet.damage", bullet.continuousDamage()) + StatUnit.perSecond.localized());
       }else{
-        table.add(Core.bundle.format("bullet.damage", bullet.damage));
+        sep(table, Core.bundle.format("bullet.damage", bullet.damage));
       }
     }
 
     if (bullet instanceof EmpBulletType emp){
       sep(table, Core.bundle.format("bullet.empDamage", emp.empDamage, emp.empRange > 0? "[lightgray]~ [accent]" + emp.empRange/tilesize + "[lightgray]" + StatUnit.blocks.localized() : ""));
+    }
+
+    if (bullet instanceof HeatBulletType heat){
+      table.row();
+      table.table(t -> {
+        t.left().defaults().padRight(3).left();
+        t.image(OtherContents.meltdown.uiIcon).size(25).scaling(Scaling.fit);
+        t.add(Core.bundle.format("infos.heatAmmo", Strings.autoFixed(heat.meltDownTime/60, 1), Strings.autoFixed(heat.melDamageScl*60, 1), heat.maxExDamage > 0? heat.maxExDamage: Math.max(heat.damage, heat.splashDamage)));
+      });
     }
 
     if(bullet.buildingDamageMultiplier != 1){

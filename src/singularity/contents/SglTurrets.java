@@ -50,6 +50,7 @@ import singularity.Singularity;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
+import singularity.ui.StatUtils;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.SglUnitSorts;
@@ -1620,7 +1621,14 @@ public class SglTurrets implements ContentList{
     }};
 
     fubuki = new LaserTurret("fubuki"){{
-      requirements(Category.turret, ItemStack.with());
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 100,
+          SglItems.aluminium, 140,
+          SglItems.crystal_FEX_power, 60,
+          SglItems.aerogel, 80,
+          SglItems.iridium, 30,
+          Items.phaseFabric, 60
+      ));
       size = 4;
       scaledHealth = 400;
       rotateSpeed = 2.4f;
@@ -1637,6 +1645,9 @@ public class SglTurrets implements ContentList{
       shootingConsume = true;
 
       shootSound = Sounds.none;
+
+      loopSound = Sounds.windhowl;
+      loopSoundVolume = 1;
 
       newAmmo(new BulletType(){
         final BulletType ice = crushedIce.copy();
@@ -1753,6 +1764,15 @@ public class SglTurrets implements ContentList{
         final Color trans = Color.white.cpy().a(0);
 
         @Override
+        public float continuousDamage() {
+          float res = 0;
+          for (int i = 0; i < shootBullets.length; i++) {
+            res += shootBullets[i].damage*(1f/(i + 1));
+          }
+          return res*4;
+        }
+
+        @Override
         public void update(Bullet b) {
           super.update(b);
           if (b.owner instanceof SglTurretBuild t){
@@ -1810,8 +1830,6 @@ public class SglTurrets implements ContentList{
             SglDraw.gradientLine(b.x, b.y, b.x + Tmp.v2.x, b.y + Tmp.v2.y, SglDrawConst.frost, trans, 0);
           }
         }
-      }, true, (t, b) -> {
-
       });
       consume.time(1);
       consume.showTime = false;
@@ -2734,7 +2752,16 @@ public class SglTurrets implements ContentList{
     }};
 
     soflame = new SglTurret("soflame"){{
-      requirements(Category.turret, ItemStack.with());
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 150,
+          SglItems.aluminium, 180,
+          SglItems.crystal_FEX, 140,
+          SglItems.crystal_FEX_power, 120,
+          SglItems.aerogel, 180,
+          SglItems.iridium, 60,
+          Items.surgeAlloy, 120,
+          Items.phaseFabric, 100
+      ));
       size = 5;
       recoil = 4;
       recoilTime = 120;
@@ -2753,7 +2780,39 @@ public class SglTurrets implements ContentList{
 
       unitSort = SglUnitSorts.denser;
 
-      newAmmo(new HeatBullet(){
+      final BulletType subBullet = new HeatBulletType(){
+        {
+          speed = 4;
+          lifetime = 90;
+
+          damage = 90;
+
+          meltDownTime = 30;
+          melDamageScl = 0.5f;
+          maxExDamage = 150;
+
+          trailColor = Pal.lighterOrange;
+          hitColor = Pal.lighterOrange;
+          trailEffect = SglFx.glowParticle;
+          trailChance = 0.1f;
+          trailRotation = true;
+
+          hitEffect = Fx.circleColorSpark;
+          despawnEffect = Fx.absorb;
+          despawnHit = true;
+
+          trailWidth = 2f;
+          trailLength = 24;
+        }
+
+        @Override
+        public void draw(Bullet b) {
+          super.draw(b);
+          Draw.color(hitColor);
+          Fill.circle(b.x, b.y, 3);
+        }
+      };
+      newAmmo(new HeatBulletType(){
         {
           damage = 260;
           splashDamage = 540;
@@ -2766,6 +2825,9 @@ public class SglTurrets implements ContentList{
 
           hitColor = Pal.lighterOrange;
           trailColor = Pal.lighterOrange;
+
+          hitSound = Sounds.largeExplosion;
+          hitSoundVolume = 4;
 
           trailEffect = SglFx.trailParticle;
           trailChance = 0.1f;
@@ -2786,39 +2848,6 @@ public class SglTurrets implements ContentList{
           melDamageScl = 0.3f;
         }
 
-        final BulletType subBullet = new HeatBullet(){
-          {
-            speed = 4;
-            lifetime = 90;
-
-            damage = 90;
-
-            meltDownTime = 30;
-            melDamageScl = 0.5f;
-            maxExDamage = 150;
-
-            trailColor = Pal.lighterOrange;
-            hitColor = Pal.lighterOrange;
-            trailEffect = SglFx.glowParticle;
-            trailChance = 0.1f;
-            trailRotation = true;
-
-            hitEffect = Fx.circleColorSpark;
-            despawnEffect = Fx.absorb;
-            despawnHit = true;
-
-            trailWidth = 2f;
-            trailLength = 24;
-          }
-
-          @Override
-          public void draw(Bullet b) {
-            super.draw(b);
-            Draw.color(hitColor);
-            Fill.circle(b.x, b.y, 3);
-          }
-        };
-
         @Override
         public void init(Bullet b) {
           super.init(b);
@@ -2826,18 +2855,26 @@ public class SglTurrets implements ContentList{
           p.setVar(SglParticleModels.OWNER, b);
 
           Tmp.v1.set(1, 0).setAngle(b.rotation());
-          for (int i = 0; i < 3; i++) {
+          for (int i = 0; i < 4; i++) {
             int fi = i;
-            Tmp.v1.setLength(Mathf.random(0, 8)).scl(Mathf.randomBoolean()? 1: -1);
 
             float off = Mathf.random(0f, Mathf.PI2);
             float scl = Mathf.random(3f, 6f);
-            for (int sign : Mathf.signs) {
-              subBullet.create(b, b.x + Tmp.v1.x, b.y + Tmp.v1.y, b.rotation())
-                  .mover = e -> e.moveRelative(0f, Mathf.sin(e.time + off, scl, (1 + fi)*sign));
-            }
+
+            float x = b.x, y = b.y;
+            Time.run(i*5, () -> {
+              for (int sign : Mathf.signs) {
+                subBullet.create(b, x, y, b.rotation())
+                    .mover = e -> e.moveRelative(0f, Mathf.sin(e.time + off, scl, (1 + fi)*sign));
+              }
+            });
           }
         }
+      }, (t, b) -> {
+        t.table(child -> {
+          child.left().add(Core.bundle.format("infos.shots", 6)).color(Color.lightGray).left();
+          StatUtils.buildAmmo(child, subBullet);
+        }).padLeft(15);
       });
       consume.time(180);
       consume.energy(5);
@@ -3112,7 +3149,7 @@ public class SglTurrets implements ContentList{
       shoot.shots = 12;
       shoot.shotDelay = 5f;
 
-      newAmmo(new HeatBullet(){
+      newAmmo(new HeatBulletType(){
         {
           speed = 4.5f;
           lifetime = 180;
@@ -3153,10 +3190,6 @@ public class SglTurrets implements ContentList{
           SglDraw.drawDiamond(b.x, b.y, 16 + Mathf.absin(0.6f, 2f), 2, 90, Pal.lightishOrange);
           Fill.circle(b.x, b.y, 2.2f);
         }
-      }, true, (t, b) -> {
-        t.add(Core.bundle.format("bullet.damage", (int)b.damage));
-        t.row();
-        t.add(Core.bundle.get("infos.summerAmmo"));
       });
       consume.energy(5);
       consume.time(60);

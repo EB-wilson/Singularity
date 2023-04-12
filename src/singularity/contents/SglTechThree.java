@@ -161,8 +161,10 @@ public class SglTechThree implements ContentList{
 
       node(spectre, dew, dew -> {});
 
-      node(duo, frost, frost -> {
-        frost.node(winter, winter -> {});
+      node(duo, fubuki, fbk -> {
+        fbk.node(frost, frost -> {
+          frost.node(winter, winter -> {});
+        });
       });
 
       node(duo, spring, spring -> {});
@@ -171,7 +173,9 @@ public class SglTechThree implements ContentList{
 
       node(cyclone, mirage, mirage -> {});
 
-      node(meltdown, summer, summer -> {});
+      node(meltdown, soflame, sof -> {
+        sof.node(summer, summer -> {});
+      });
 
       node(foreshadow, thunder, thunder -> {});
 

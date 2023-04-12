@@ -1,9 +1,14 @@
 package singularity.world.blocks.nuclear;
 
 import arc.Core;
+import arc.graphics.Color;
+import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.GlyphLayout;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.struct.Seq;
+import arc.util.Align;
 import arc.util.Nullable;
 import arc.util.Strings;
 import arc.util.Tmp;
@@ -15,6 +20,7 @@ import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.ui.Bar;
+import mindustry.ui.Fonts;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.meta.BlockStatus;
@@ -28,6 +34,7 @@ import universecore.components.blockcomp.*;
 import universecore.world.blocks.modules.ChainsModule;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
+import universecore.world.meta.UncStat;
 import universecore.world.particles.MultiParticleModel;
 import universecore.world.particles.Particle;
 import universecore.world.particles.ParticleModel;
@@ -40,7 +47,7 @@ import static mindustry.Vars.tilesize;
 
 @Annotations.ImplEntries
 public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
-  public static final float INV = 0.006f;
+  public static final float INV = 0.01f;
   public static final String IN_CORNER = "inCorner";
   public static final String VALID = "valid";
   public static final String TOTAL_ITEM_CAPACITY = "totalItemCapacity";
@@ -72,6 +79,12 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
 
       return res[0];
     });
+  }
+
+  @Override
+  public void setStats() {
+    super.setStats();
+    stats.remove(UncStat.maxStructureSize);
   }
 
   @Override
@@ -274,7 +287,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
 
     @Override
     public BlockStatus status() {
-      return !isValid()? BlockStatus.noOutput: super.status();
+      return !structValid()? BlockStatus.noOutput: super.status();
     }
 
     @Override
@@ -380,8 +393,8 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
         scale = w*h;
         float area = scale*INV;
 
-        fuelConsMulti = area*outLinked.block().flueMulti;
-        energyOutMulti = Mathf.pow(area, outLinked.block().efficiencyPow);
+        fuelConsMulti = Mathf.sqrt(area)*outLinked.block().flueMulti;
+        energyOutMulti = area*outLinked.block().efficiencyPow;
 
         chains.putVar(TOTAL_ITEM_CAPACITY, itemCap);
         chains.putVar(TOTAL_LIQUID_CAPACITY, liqCap);
@@ -414,6 +427,32 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
     @Override
     public boolean shouldConsume() {
       return structValid() && !recooldown && super.shouldConsume();
+    }
+
+    @Override
+    public void drawStatus() {
+      super.drawStatus();
+
+      String status = !structValid()? Core.bundle.get("infos.structInvalid"):
+          recooldown? Core.bundle.get("infos.recoolanting"): null;
+
+      if (status == null) return;
+      GlyphLayout layout = GlyphLayout.obtain();
+      layout.setText(Fonts.outline, status);
+
+      float w = layout.width*0.1f;
+      float h = layout.height*0.1f;
+
+      layout.free();
+      Draw.color(Color.darkGray, 0.6f);
+      Fill.quad(
+          x - w/2 - 2, y + size*tilesize/2f + h + 2,
+          x - w/2 - 2, y + size*tilesize/2f - 2,
+          x + w/2 + 2, y + size*tilesize/2f - 2,
+          x + w/2 + 2, y + size*tilesize/2f + h + 2
+      );
+
+      Fonts.outline.draw(status, x, y + size*tilesize/2f + h, Color.white, 0.1f, false, Align.center);
     }
 
     @Override

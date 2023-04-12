@@ -26,6 +26,7 @@ import universecore.components.blockcomp.ChainsBuildComp;
 import universecore.components.blockcomp.SpliceBlockComp;
 import universecore.components.blockcomp.SpliceBuildComp;
 import universecore.world.blocks.modules.ChainsModule;
+import universecore.world.meta.UncStat;
 
 @Annotations.ImplEntries
 public class TokamakOrbit extends SglBlock implements SpliceBlockComp {
@@ -168,6 +169,12 @@ public class TokamakOrbit extends SglBlock implements SpliceBlockComp {
           }
         }
     );
+  }
+
+  @Override
+  public void setStats() {
+    super.setStats();
+    stats.remove(UncStat.maxStructureSize);
   }
 
   @Override
