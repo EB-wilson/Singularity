@@ -23,7 +23,7 @@ public class MediumCrafter extends NormalCrafter implements MediumComp{
   public void init(){
     super.init();
     ProduceMedium<?> m;
-    for(BaseProducers producer: producers){
+    for(BaseProducers producer: producers()){
       outputMedium |= (m = producer.get(SglProduceType.medium)) != null && (mediumMoveRate = m.product) > 0;
     }
   }

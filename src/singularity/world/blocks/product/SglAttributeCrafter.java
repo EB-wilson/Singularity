@@ -29,7 +29,7 @@ import universecore.math.Functions;
 import static mindustry.Vars.indexer;
 import static mindustry.Vars.state;
 
-/**一w个由其下方地板具有的属性计算效率的工厂*/
+/**一个由其下方地板具有的属性计算效率的工厂*/
 public class SglAttributeCrafter extends NormalCrafter{
   protected ObjectMap<Attribute, Floatf<Float>> attributeBoosters = new ObjectMap<>();
   protected ObjectMap<Attribute, Cons2<Table, Seq<? extends Block>>> boostDisplay = new ObjectMap<>();

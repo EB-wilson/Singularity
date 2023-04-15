@@ -2853,6 +2853,7 @@ public class SglTurrets implements ContentList{
           super.init(b);
           Particle p = SglParticleModels.heatBulletTrail.create(b.x, b.y, 0, 0, 5);
           p.setVar(SglParticleModels.OWNER, b);
+          p.setVar(SglParticleModels.BULLET, );
 
           Tmp.v1.set(1, 0).setAngle(b.rotation());
           for (int i = 0; i < 4; i++) {

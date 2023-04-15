@@ -5,10 +5,18 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.math.Mathf;
+import arc.math.geom.Geometry;
+import arc.math.geom.Rect;
+import arc.math.geom.Vec2;
+import arc.util.Interval;
 import arc.util.Time;
+import mindustry.entities.Units;
+import mindustry.entities.bullet.BulletType;
+import mindustry.game.EventType;
 import mindustry.gen.Bullet;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
+import singularity.world.blocks.turrets.HeatBulletType;
 import universecore.world.particles.MultiParticleModel;
 import universecore.world.particles.Particle;
 import universecore.world.particles.ParticleModel;
@@ -19,6 +27,17 @@ import universecore.world.particles.models.TrailFadeParticle;
 
 public class SglParticleModels{
   public static final String OWNER = "owner";
+  public static final String BULLET = "bullet";
+
+  public static final Rect rect = new Rect(), hitrect = new Rect();
+
+  public static BulletType defHeatTrailHitter = new HeatBulletType(){
+    {
+    }
+
+    final EventType.UnitDamageEvent bulletDamageEvent = new EventType.UnitDamageEvent();
+
+  };
 
   public static ParticleModel nuclearParticle = new MultiParticleModel(
       new RandDeflectParticle(){{
@@ -99,8 +118,30 @@ public class SglParticleModels{
     public void updateTrail(Particle p, Particle.Cloud c) {
       super.updateTrail(p, c);
       c.size -= 0.03f*Time.delta;
-      float dx = c.nextCloud.x - c.x;
-      float dy = c.nextCloud.y - c.y;
+
+      if (p.getVar(BULLET) instanceof Bullet b && p.getVar("timer", Interval::new).get(5) && c.nextCloud != null) {
+        float dx = c.nextCloud.x - c.x;
+        float dy = c.nextCloud.y - c.y;
+
+        float expand = 3;
+
+        rect.set(c.x, c.y, dx, dy).normalize().grow(expand * 2f);
+        b.hitbox(hitrect);
+
+        Units.nearbyEnemies(b.team, rect, u -> {
+          if(u.checkTarget(b.type.collidesAir, b.type.collidesGround) && u.hittable()){
+            u.hitbox(hitrect);
+
+            Vec2 vec = Geometry.raycastRect(c.x, c.y, c.nextCloud.x, c.nextCloud.y, hitrect.grow(expand * 2));
+
+            if(vec != null){
+              if (!b.collided.contains(u.id)){
+                b.collision(u, u.x, u.y);
+              }
+            }
+          }
+        });
+      }
     }
 
     @Override
