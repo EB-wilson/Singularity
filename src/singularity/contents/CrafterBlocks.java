@@ -8,6 +8,7 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Angles;
+import arc.math.Interp;
 import arc.math.Mathf;
 import arc.math.Rand;
 import arc.math.geom.Geometry;
@@ -1905,7 +1906,7 @@ public class CrafterBlocks implements ContentList{
         LightningContainer con;
         e.setVar("lightnings", con = new LightningContainer(){{
           generator = new VectorLightningGenerator(){{
-            lerp = f -> 1 - f*f;
+            lerp = Interp.pow2Out;
 
             maxSpread = 8f;
             minInterval = 8f;

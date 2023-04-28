@@ -37,6 +37,10 @@ public class RelatedWeapon extends DataWeapon {
         bullet(unit, mount, xOffset, yOffset, angle, mover);
       }
     });
+
+    if(mount instanceof DataWeaponMount m){
+      shoot(unit, m, shootX, shootY, rotation);
+    }
   }
 
   @Override

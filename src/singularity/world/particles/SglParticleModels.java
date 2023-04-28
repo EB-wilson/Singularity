@@ -10,9 +10,9 @@ import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
 import arc.util.Interval;
 import arc.util.Time;
+import mindustry.content.Fx;
 import mindustry.entities.Units;
 import mindustry.entities.bullet.BulletType;
-import mindustry.game.EventType;
 import mindustry.gen.Bullet;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
@@ -31,13 +31,22 @@ public class SglParticleModels{
 
   public static final Rect rect = new Rect(), hitrect = new Rect();
 
-  public static BulletType defHeatTrailHitter = new HeatBulletType(){
-    {
-    }
-
-    final EventType.UnitDamageEvent bulletDamageEvent = new EventType.UnitDamageEvent();
-
-  };
+  public static BulletType defHeatTrailHitter = new HeatBulletType(){{
+    damage = 20;
+    melDamageScl = 0.8f;
+    meltDownTime = 6;
+    lifetime = 60;
+    speed = 0;
+    collidesAir = false;
+    collidesGround = true;
+    collides = false;
+    pierce = true;
+    hittable = false;
+    absorbable = false;
+    hitEffect = Fx.circleColorSpark;
+    hitColor = Pal.lighterOrange;
+    despawnEffect = Fx.none;
+  }};
 
   public static ParticleModel nuclearParticle = new MultiParticleModel(
       new RandDeflectParticle(){{
@@ -105,21 +114,23 @@ public class SglParticleModels{
 
     @Override
     public void update(Particle p) {
-      super.update(p);
       if (p.getVar(OWNER) instanceof Bullet b) {
         if (b.isAdded()) {
           p.set(b.x, b.y);
         }
         else p.setVar(OWNER, null);
       }
+
+      if (p.getVar(BULLET) instanceof Bullet b && b.isAdded()){
+        b.keepAlive = true;
+      }
     }
 
     @Override
     public void updateTrail(Particle p, Particle.Cloud c) {
-      super.updateTrail(p, c);
       c.size -= 0.03f*Time.delta;
 
-      if (p.getVar(BULLET) instanceof Bullet b && p.getVar("timer", Interval::new).get(5) && c.nextCloud != null) {
+      if (p.getVar(BULLET) instanceof Bullet b && b.isAdded() && p.getVar("timer", Interval::new).get(5) && c.nextCloud != null) {
         float dx = c.nextCloud.x - c.x;
         float dy = c.nextCloud.y - c.y;
 

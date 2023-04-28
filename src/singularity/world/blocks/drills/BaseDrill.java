@@ -310,7 +310,12 @@ public class BaseDrill extends SglBlock{
         speed = Mathf.lerpDelta(speed, 0, warmupSpeed*1.5f);
         warmup = Mathf.lerpDelta(warmup, 0, warmupSpeed*1.5f);
       }
-      
+
+      if(currentMines.length != outputItems.size){
+        currentMines = new boolean[outputItems.size];
+        progress = new float[outputItems.size];
+        lastDrillSpeed = new float[outputItems.size];
+      }
       for(int index=0; index<outputItems.size; index++){
         if(!currentMines[index]) continue;
         ItemStack ore = outputItems.get(index);

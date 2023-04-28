@@ -6,7 +6,7 @@
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/UniverseCore/annotations/1.7.3/annotations-1.7.3.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/UniverseCore/annotations/1.7.4/annotations-1.7.4.jar" />
         </processorPath>
         <module name="Singularity.main" />
       </profile>

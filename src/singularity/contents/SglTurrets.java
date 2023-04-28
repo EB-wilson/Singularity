@@ -115,7 +115,7 @@ public class SglTurrets implements ContentList{
       {
         lifetime = 45;
         hitColor = SglDrawConst.frost;
-        hitEffect = SglFx.continuousLaserRecoil;
+        hitEffect = SglFx.railShootRecoil;
         damage = 18;
         speed = 2;
         collidesGround = true;
@@ -199,7 +199,7 @@ public class SglTurrets implements ContentList{
       {
         lifetime = 60;
         hitColor = SglDrawConst.fexCrystal;
-        hitEffect = SglFx.continuousLaserRecoil;
+        hitEffect = SglFx.railShootRecoil;
         damage = 48;
         speed = 3.5f;
         collidesGround = true;
@@ -870,7 +870,7 @@ public class SglTurrets implements ContentList{
             };
           }};
 
-          fragBullet = lightning(60, 42, 6.5f, Pal.reactorPurple, true, b -> {
+          fragBullet = lightning(60, 42, 4.8f, Pal.reactorPurple, true, b -> {
             Unit u = Units.closest(b.team, b.x, b.y, 80, e -> true);
             g.originAngle = u == null? b.rotation(): b.angleTo(u);
             return g;
@@ -904,6 +904,7 @@ public class SglTurrets implements ContentList{
           container.minWidth = 5;
           container.maxWidth = 8;
           container.time = 6;
+          container.lerp = Interp.linear;
           b.data = container;
 
           Tmp.v1.set(b.aimX - b.originX, b.aimY - b.originY);
@@ -984,7 +985,7 @@ public class SglTurrets implements ContentList{
           }};
           lifeTime = 45f;
           maxWidth = 2f;
-          lerp = f -> 1 - f;
+          lerp = Interp.linear;
           time = 0;
         }});
       };
@@ -1024,7 +1025,6 @@ public class SglTurrets implements ContentList{
               }},
               new RegionPart("_side"){{
                 mirror = true;
-                turretShading = true;
                 moveX = 5;
                 moveY = -5;
                 progress = PartProgress.warmup;
@@ -1188,6 +1188,12 @@ public class SglTurrets implements ContentList{
         }
 
         @Override
+        public void update(Bullet b) {
+          super.update(b);
+          b.damage = b.type.damage + b.type.damage*b.fin()*0.3f;
+        }
+
+        @Override
         public void draw(Bullet b){
           SglDraw.drawDiamond(b.x, b.y, 18, 6, b.rotation(), SglDrawConst.matrixNet);
           Draw.color(SglDrawConst.matrixNet);
@@ -1240,7 +1246,6 @@ public class SglTurrets implements ContentList{
       draw = new DrawSglTurret(
           new RegionPart("_blade"){{
             mirror = true;
-            turretShading = true;
             moveX = 4;
             progress = PartProgress.warmup;
             heatColor = SglDrawConst.dew;
@@ -1250,7 +1255,6 @@ public class SglTurrets implements ContentList{
           }},
           new RegionPart("_side"){{
             mirror = true;
-            turretShading = true;
             moveX = 8;
             moveRot = -25;
             progress = PartProgress.warmup;
@@ -1525,7 +1529,6 @@ public class SglTurrets implements ContentList{
       draw = new DrawSglTurret(
           new RegionPart("_side"){{
             mirror = true;
-            turretShading = true;
             moveX = 2;
             heatColor = Pal.heal;
             progress = PartProgress.warmup;
@@ -1535,7 +1538,6 @@ public class SglTurrets implements ContentList{
           }},
           new RegionPart("_blade"){{
             mirror = true;
-            turretShading = true;
             moveY = 4;
             moveRot = -30;
             heatColor = Pal.heal;
@@ -1730,6 +1732,7 @@ public class SglTurrets implements ContentList{
                   for (int i = 0; i < 6; i++) {
                     SglDraw.drawTransform(e.x, e.y, 6, 0, step*i + Time.time*2, (x, y, r) -> {
                       Drawf.tri(x, y, 2.5f, 2.5f, r);
+                      Drawf.tri(x, y, 2.5f, 6f, r + 180);
                     });
                   }
                 });
@@ -1877,7 +1880,7 @@ public class SglTurrets implements ContentList{
       range = 360;
       targetGround = true;
       targetAir = true;
-      shootEffect = SglFx.continuousLaserRecoil;
+      shootEffect = SglFx.railShootRecoil;
 
       shootSound = Sounds.laserbig;
       loopSound = Sounds.beam;
@@ -1920,7 +1923,7 @@ public class SglTurrets implements ContentList{
           pointyScaling = 0.7f;
           oscMag = 0.8f;
           oscScl = 1.2f;
-          frontLength = 70;
+          frontLength = 220;
           lightColor = SglDrawConst.frost;
           colors = new Color[]{
               Color.valueOf("6CA5FF").a(0.6f),
@@ -1955,7 +1958,6 @@ public class SglTurrets implements ContentList{
 
       draw = new DrawSglTurret(
           new RegionPart("_side"){{
-            turretShading = true;
             mirror = true;
             moveX = 8;
             moveRot = -22;
@@ -1966,7 +1968,6 @@ public class SglTurrets implements ContentList{
             moves.add(new PartMove(PartProgress.recoil, 0, -2, -8));
           }},
           new RegionPart("_blade"){{
-            turretShading = true;
             mirror = true;
             moveY = 2;
             moveX = 4;
@@ -2194,7 +2195,7 @@ public class SglTurrets implements ContentList{
 
           trailEffect = new MultiEffect(
               SglFx.glowParticle,
-              SglFx.continuousLaserRecoil
+              SglFx.railShootRecoil
           );
           trailRotation = true;
           trailChance = 1;
@@ -2250,7 +2251,6 @@ public class SglTurrets implements ContentList{
           }},
           new RegionPart("_blade"){{
             mirror = true;
-            turretShading = true;
             heatColor = SglDrawConst.winter;
             heatProgress = PartProgress.warmup.delay(0.3f);
             moveX = 4;
@@ -2261,7 +2261,6 @@ public class SglTurrets implements ContentList{
           }},
           new RegionPart("_side"){{
             mirror = true;
-            turretShading = true;
             heatColor = SglDrawConst.winter;
             heatProgress = PartProgress.warmup.delay(0.3f);
             moveX = 8;
@@ -2272,7 +2271,6 @@ public class SglTurrets implements ContentList{
           }},
           new RegionPart("_bot"){{
             mirror = true;
-            turretShading = true;
             heatColor = SglDrawConst.winter;
             heatProgress = PartProgress.warmup.delay(0.3f);
             moveX = 4;
@@ -2356,6 +2354,40 @@ public class SglTurrets implements ContentList{
               Drawf.tri(x, y, 10*p, 8*p, r + 180);
               Draw.color(SglDrawConst.frost);
               SglDraw.gradientCircle(x, y, 4 + 12*p, -7*p, 0);
+            };
+          }},
+          new CustomPart(){{
+            progress = PartProgress.warmup;
+            y = -18;
+            layer = Layer.effect;
+            draw = (x, y, r, p) -> {
+              if (Sgl.config.animateLevel < 2) return;
+
+              Draw.color(SglDrawConst.frost);
+              Lines.stroke(1.8f*p);
+              Lines.circle(x, y, 3.5f);
+              Draw.alpha(0.7f);
+
+              for (int i = 0; i < 6; i++) {
+                SglDraw.drawTransform(x, y, 14*p, 0, r + Time.time*1.5f + i*60, (dx, dy, dr) -> {
+                  Drawf.tri(dx, dy, 4*p, 4, dr);
+                  Drawf.tri(dx, dy, 4*p, 14, dr + 180f);
+                });
+              }
+
+              Draw.color(SglDrawConst.winter);
+              float pl = Mathf.clamp((p - 0.3f)/0.7f);
+              for (int i = 0; i < 4; i++) {
+                SglDraw.drawTransform(x, y, 16*pl, 0, r - Time.time + i*90, (dx, dy, dr) -> {
+                  if (Sgl.config.animateLevel < 3){
+                    SglDraw.drawDiamond(dx, dy, 12, 8* pl, dr);
+                  }
+                  else {
+                    SglDraw.drawCrystal(dx, dy, 12, 8* pl, 8* pl, 0, 0, 0.5f* pl,
+                        Layer.effect, Layer.bullet - 1, Time.time, dr, Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
+                  }
+                });
+              }
             };
           }}
       );
@@ -2449,7 +2481,7 @@ public class SglTurrets implements ContentList{
               return branch;
             };
           }};
-          intervalBullet = lightning(30, 45, 5.6f, SglDrawConst.fexCrystal, true, b -> {
+          intervalBullet = lightning(30, 45, 4f, SglDrawConst.fexCrystal, true, b -> {
             Unit e = Units.bestEnemy(b.team, b.x, b.y, 80, u -> true, UnitSorts.farthest);
             if(e == null){
               gen.vector.rnd(Mathf.random(40f, 80f));
@@ -2545,7 +2577,7 @@ public class SglTurrets implements ContentList{
               cont.lifeTime = 16;
               cont.minWidth = 2.5f;
               cont.maxWidth = 4.5f;
-              cont.lerp = f -> Mathf.pow(1 - f, 2);
+              cont.lerp = Interp.pow2Out;
               cont.time = 0;
             }
 
@@ -2641,7 +2673,7 @@ public class SglTurrets implements ContentList{
               return branch;
             };
           }};
-          intervalBullet = lightning(30, 60, 5.6f, SglDrawConst.fexCrystal, true, b -> {
+          intervalBullet = lightning(30, 60, 4f, SglDrawConst.fexCrystal, true, b -> {
             Unit e = Units.bestEnemy(b.team, b.x, b.y, 80, u -> true, UnitSorts.farthest);
             if(e == null){
               gen.vector.rnd(Mathf.random(40f, 80f));
@@ -2853,7 +2885,7 @@ public class SglTurrets implements ContentList{
           super.init(b);
           Particle p = SglParticleModels.heatBulletTrail.create(b.x, b.y, 0, 0, 5);
           p.setVar(SglParticleModels.OWNER, b);
-          p.setVar(SglParticleModels.BULLET, );
+          p.setVar(SglParticleModels.BULLET, SglParticleModels.defHeatTrailHitter.create(b, b.x, b.y, b.rotation()));
 
           Tmp.v1.set(1, 0).setAngle(b.rotation());
           for (int i = 0; i < 4; i++) {
@@ -3198,7 +3230,6 @@ public class SglTurrets implements ContentList{
       draw = new DrawSglTurret(
           new RegionPart("_side"){{
             mirror = true;
-            turretShading = true;
             moveX = 4;
             progress = PartProgress.warmup;
             heatColor = Pal.lightishOrange;
@@ -3206,7 +3237,6 @@ public class SglTurrets implements ContentList{
           }},
           new RegionPart("_bot"){{
             mirror = true;
-            turretShading = true;
             moveY = -4;
             moveX = 2;
             progress = PartProgress.warmup;
@@ -3219,7 +3249,6 @@ public class SglTurrets implements ContentList{
           }},
           new RegionPart("_blade"){{
             mirror = true;
-            turretShading = true;
             moveX = 2;
             moveY = 8;
             moveRot = -45;
@@ -3406,7 +3435,7 @@ public class SglTurrets implements ContentList{
         container.generator = generator.get(b);
         container.maxWidth = size;
         container.minWidth = size*0.85f;
-        container.lerp = f -> Mathf.pow(1 - f, 2);
+        container.lerp = Interp.linear;
 
         container.trigger = (last, vert) -> {
           if(!b.isAdded()) return;

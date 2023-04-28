@@ -460,6 +460,13 @@ public class SglFx{
     Drawf.tri(e.x, e.y, 2f*e.fout(), 8 + 10*e.fout(), e.rotation + 180);
   }),
 
+  trailLineLong = new Effect(30, e -> {
+    color(e.color);
+
+    Drawf.tri(e.x, e.y, 4*e.fout(), 6 + 8*e.fout(), e.rotation);
+    Drawf.tri(e.x, e.y, 4*e.fout(), 10 + 16*e.fout(), e.rotation + 180);
+  }),
+
   spreadSparkLarge = new Effect(28, e -> {
     color(Color.white, e.color, e.fin());
     stroke(e.fout()*1.2f + 0.5f);
@@ -487,7 +494,7 @@ public class SglFx{
     });
   }),
 
-  continuousLaserRecoil = new Effect(12, e -> {
+  railShootRecoil = new Effect(12, e -> {
     Draw.color(e.color);
 
     randLenVectors(e.id, randomSeed(e.id, 2, 4), 24, e.rotation + 180, 60, (x, y) -> {
@@ -656,7 +663,7 @@ public class SglFx{
       if(!(data instanceof Float)) data = 90f;
       LightningContainer.PoolLightningContainer lightning = LightningContainer.PoolLightningContainer.create(generator, lifetime, 1.4f, 2.5f);
 
-      lightning.lerp = f -> 1 - f*f;
+      lightning.lerp = Interp.pow2Out;
       lightning.time = lifetime/2;
       generator.maxLength = random(((float)data)/2, (float)data);
       lightning.create();
@@ -704,7 +711,7 @@ public class SglFx{
 
       LightningContainer.PoolLightningContainer lightning = LightningContainer.PoolLightningContainer.create(generator, lifetime, 1.5f,2.6f);
 
-      lightning.lerp = f -> 1 - f*f;
+      lightning.lerp = Interp.pow2Out;
       lightning.time = lifetime/2;
       int amount = random(4, 6);
       for(int i = 0; i < amount; i++){
