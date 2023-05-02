@@ -81,7 +81,7 @@ public class Sgl{
     //注册所有打包数据类型id
     BytePackAssign.assignAll();
 
-    ScreenSampler.init();
+    ScreenSampler.setup();
     //载入着色器
     SglShaders.load();
     //载入数学着色器
