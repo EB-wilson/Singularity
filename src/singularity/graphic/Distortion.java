@@ -2,7 +2,6 @@ package singularity.graphic;
 
 import arc.Core;
 import arc.graphics.Color;
-import arc.graphics.Gl;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.gl.FrameBuffer;
@@ -13,6 +12,8 @@ import singularity.Singularity;
 import static singularity.graphic.SglDraw.*;
 
 public class Distortion implements Disposable {
+  static final FrameBuffer tmpBffer = new FrameBuffer();
+
   Shader distortion;
   FrameBuffer buffer;
   boolean capturing, disposed;
@@ -50,18 +51,12 @@ public class Distortion implements Disposable {
 
     buffer.end();
 
-    Gl.disable(Gl.blend);
-    Gl.disable(Gl.depthTest);
-    Gl.depthMask(false);
-
-    ScreenSampler.getSampler().bind(1);
+    ScreenSampler.getToBuffer(tmpBffer, false);
+    tmpBffer.getTexture().bind(1);
     distortion.bind();
     distortion.setUniformf("width", buffer.getWidth());
     distortion.setUniformf("height", buffer.getHeight());
     buffer.blit(distortion);
-
-    Gl.enable(Gl.blend);
-    Gl.blendFunc(Gl.srcAlpha, Gl.oneMinusSrcAlpha);
   }
 
   public void setStrength(float strength){

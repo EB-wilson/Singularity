@@ -43,38 +43,36 @@ public class DebugBlocks implements ContentList{
       requirements(SglCategory.debugging, ItemStack.with());
 
       configurable = true;
-      draw = new DrawBlock(){
+      hasShadow = false;
+
+      buildType = () -> new TestBlockBuild(){
+        float alp = 1;
+
         static final Blur blur = new Blur();
         static final int id = SglDraw.nextTaskID();
 
         @Override
-        public void draw(Building b) {
+        public void draw() {
           Draw.z(Layer.flyingUnit + 1);
 
-          SglDraw.drawBlur(id, b, blur, e -> {
-            Draw.color(Color.white);
-            Draw.alpha(((SglBuilding) b).getVar("alp"));
+          SglDraw.drawBlur(id, this, blur, e -> {
+            Draw.color();
+            Draw.alpha(alp);
             Fill.circle(e.x, e.y, 32);
             SglDraw.gradientCircle(e.x, e.y, 32, 4, 0);
           });
 
           Draw.color(Color.darkGray, 0.7f);
-          SglDraw.gradientCircle(b.x, b.y, 32, 4, 0);
+          SglDraw.gradientCircle(this.x, this.y, 32, 4, 0);
           Draw.color(Color.gray, 0.45f);
-          SglDraw.gradientCircle(b.x, b.y, 32, 0.65f);
-        }
-      };
-
-      buildType = () -> new TestBlockBuild(){
-        {
-          setVar("alp", 1f);
+          SglDraw.gradientCircle(this.x, this.y, 32, 0.45f);
         }
 
         @Override
         public void buildConfiguration(Table table) {
           table.table(t -> {
-            t.slider(0, 1, 0.01f, getVar("alp"), f -> setVar("alp", f)).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
-            t.add("0").size(50).update(lable -> lable.setText(Mathf.round(this.<Float>getVar("alp")*100f) + "%"));
+            t.slider(0, 1, 0.01f, alp, f -> alp = f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+            t.add("0").size(50).update(lable -> lable.setText(Mathf.round(alp*100f) + "%"));
           });
         }
       };
