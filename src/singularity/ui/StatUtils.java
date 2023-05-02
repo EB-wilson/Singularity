@@ -1,11 +1,14 @@
 package singularity.ui;
 
 import arc.Core;
+import arc.scene.ui.layout.Collapser;
 import arc.scene.ui.layout.Table;
 import arc.util.Scaling;
 import arc.util.Strings;
 import mindustry.content.StatusEffects;
 import mindustry.entities.bullet.BulletType;
+import mindustry.gen.Icon;
+import mindustry.ui.Styles;
 import mindustry.world.meta.StatUnit;
 import singularity.contents.OtherContents;
 import singularity.world.blocks.turrets.EmpBulletType;
@@ -87,10 +90,40 @@ public class StatUtils{
           "[stat]" + Strings.autoFixed(bullet.statusDuration/60f, 1) + "[lightgray] " + Core.bundle.get("unit.seconds"));
     }
 
-    if(bullet.fragBullet != null){
-      sep(table, Core.bundle.format("bullet.frags", bullet.fragBullets));
+    if(bullet.intervalBullet != null){
       table.row();
-      table.table(st -> buildAmmo(st, bullet.fragBullet)).left().padLeft(15);
+
+      Table ic = new Table();
+      buildAmmo(ic, bullet.intervalBullet);
+      Collapser coll = new Collapser(ic, true);
+      coll.setDuration(0.1f);
+
+      table.table(it -> {
+        it.left().defaults().left();
+
+        it.add(Core.bundle.format("bullet.interval", Strings.autoFixed(bullet.intervalBullets / bullet.bulletInterval * 60, 2)));
+        it.button(Icon.downOpen, Styles.emptyi, () -> coll.toggle(false)).update(i -> i.getStyle().imageUp = (!coll.isCollapsed() ? Icon.upOpen : Icon.downOpen)).size(8).padLeft(16f).expandX();
+      });
+      table.row();
+      table.add(coll).padLeft(16);
+    }
+
+    if(bullet.fragBullet != null){
+      table.row();
+
+      Table ic = new Table();
+      buildAmmo(ic, bullet.fragBullet);
+      Collapser coll = new Collapser(ic, true);
+      coll.setDuration(0.1f);
+
+      table.table(ft -> {
+        ft.left().defaults().left();
+
+        ft.add(Core.bundle.format("bullet.frags", bullet.fragBullets));
+        ft.button(Icon.downOpen, Styles.emptyi, () -> coll.toggle(false)).update(i -> i.getStyle().imageUp = (!coll.isCollapsed() ? Icon.upOpen : Icon.downOpen)).size(8).padLeft(16f).expandX();
+      });
+      table.row();
+      table.add(coll).padLeft(16);
     }
 
     table.row();

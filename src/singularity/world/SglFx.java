@@ -115,6 +115,14 @@ public class SglFx{
     });
   }),
 
+  impactBubbleSmall = new Effect(40, e -> {
+    Draw.color(e.color);
+    randLenVectors(e.id, 9, 20, (x, y) -> {
+      float s = randomSeed((int) (e.id + x), 3f, 6f);
+      Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), s*e.fout());
+    });
+  }),
+
   impactBubble = new Effect(60, e -> {
     Draw.color(e.color);
     randLenVectors(e.id, 12, 26, (x, y) -> {
@@ -272,11 +280,25 @@ public class SglFx{
     }
   }),
 
+  crossLightSmall = new Effect(26, e -> {
+    Draw.color(e.color);
+    for(int i: signs){
+      SglDraw.drawDiamond(e.x, e.y, 22 + 74*e.fin(Interp.pow3Out), 8*e.fout(Interp.pow3Out), e.rotation + 45 + i*45);
+    }
+  }),
+
   crossLight = new Effect(30, e -> {
     Draw.color(e.color);
     for(int i: signs){
       SglDraw.drawDiamond(e.x, e.y, 32 + 128*e.fin(Interp.pow3Out), 12*e.fout(Interp.pow3Out), e.rotation + 45 + i*45);
     }
+  }),
+
+  shootCrossLight = new Effect(120, e -> {
+    Draw.color(e.color);
+
+    float l = e.fout(Interp.pow3Out);
+    SglDraw.drawLightEdge(e.x, e.y, 140, 5.5f*l, 140, 5.5f*l, e.rotation + 220*e.fin(Interp.pow3Out));
   }),
 
   ploymerGravityField = new Effect(32, e -> {
@@ -309,6 +331,8 @@ public class SglFx{
     Fill.circle(e.x, e.y, e.fin() * 8);
     Drawf.light(e.x, e.y, e.fin() * 16f, Pal.heal, 0.7f);
   }).rotWithParent(true).followParent(true),
+
+  explodeImpWaveSmall = impactExplode(22, 40f),
 
   explodeImpWave = impactExplode(32, 50f),
 

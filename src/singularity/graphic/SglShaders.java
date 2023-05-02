@@ -5,6 +5,8 @@ import arc.files.Fi;
 import arc.graphics.Color;
 import arc.graphics.Texture;
 import arc.graphics.gl.Shader;
+import arc.math.Mat;
+import arc.math.geom.Vec2;
 import arc.util.Time;
 import singularity.Singularity;
 
@@ -12,13 +14,40 @@ import static mindustry.Vars.renderer;
 
 public class SglShaders {
   public static SglSurfaceShader boundWater;
+  public static BlurShader blur;
   public static WaveShader wave;
+  public static Shader baseShader;
 
   private static final Fi internalShaderDir = Singularity.getInternalFile("shaders");
 
   public static void load() {
     boundWater = new SglSurfaceShader("boundwater");
+    //blur = new BlurShader();
     wave = new WaveShader("wave");
+    baseShader = new Shader(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child("dist_base.frag"));
+  }
+
+  public static class BlurShader extends Shader {
+    private final Mat convMat = new Mat();
+    private final Vec2 size = new Vec2();
+
+    public BlurShader() {
+      super(Core.files.internal("bloomshaders/blurspace.vert"), internalShaderDir.child("gaussian_blur_convolution.frag"));
+    }
+
+    public void setConvMat(float... conv){
+      convMat.set(conv);
+    }
+
+    public void setBlurSize(float width, float height){
+      size.set(width, height);
+    }
+
+    @Override
+    public void apply() {
+      setUniformMatrix("conv", convMat);
+      setUniformf("size", size);
+    }
   }
 
   public static class SglSurfaceShader extends Shader {

@@ -35,6 +35,7 @@ import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import mindustry.ui.LiquidDisplay;
+import mindustry.ui.Styles;
 import mindustry.world.blocks.ControlBlock;
 import mindustry.world.meta.*;
 import singularity.ui.StatUtils;
@@ -333,7 +334,7 @@ public class SglTurret extends SglBlock{
             return;
           }
 
-          t.table(bt -> {
+          t.table(Styles.grayPanel,  bt -> {
             bt.defaults().left();
             if(!ammoEntry.override){
               StatUtils.buildAmmo(bt, type);
@@ -342,7 +343,7 @@ public class SglTurret extends SglBlock{
             for(Cons2<Table, BulletType> value: ammoEntry.statValues){
               value.get(bt, type);
             }
-          }).padTop(-9).padLeft(0).left().get().background(Tex.underline);
+          }).padTop(-9).padLeft(0).left();
         }).fill();
       }
     });

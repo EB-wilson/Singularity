@@ -117,7 +117,7 @@ public class SglConsumeFloor<T extends Building & ConsumerBuildComp & FloorCraft
   @Override
   public void build(T t, Table table) {
     table.add(new Bar(
-        () -> Core.bundle.get("misc.floorEfficiency") + ": " + Strings.autoFixed(Mathf.round(efficiency(t)*100), 0) + "%",
+        () -> Core.bundle.get("infos.floorEfficiency") + ": " + Strings.autoFixed(Mathf.round(efficiency(t)*100), 0) + "%",
         () -> Pal.accent,
         () -> Mathf.clamp(efficiency(t))
     )).growX().height(18f).pad(4);

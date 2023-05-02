@@ -23,8 +23,8 @@ import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
 import singularity.Sgl;
+import singularity.graphic.Blur;
 import singularity.graphic.Distortion;
-import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.type.SglCategory;
 import singularity.ui.SglStyles;
@@ -42,19 +42,39 @@ public class DebugBlocks implements ContentList{
     drawTest = new TestBlock("draw_test"){{
       requirements(SglCategory.debugging, ItemStack.with());
 
+      configurable = true;
       draw = new DrawBlock(){
+        static final Blur blur = new Blur();
+        static final int id = SglDraw.nextTaskID();
+
         @Override
-        public void draw(Building e) {
-          Draw.color(Pal.accent);
-          Draw.draw(Draw.z(), () -> {
-            MathRenderer.setDispersion(0.2f);
-            MathRenderer.setThreshold(0.3f, 0.6f);
-            MathRenderer.drawOval(
-                e.x, e.y,
-                40,
-                20,
-                Time.time
-            );
+        public void draw(Building b) {
+          Draw.z(Layer.flyingUnit + 1);
+
+          SglDraw.drawBlur(id, b, blur, e -> {
+            Draw.color(Color.white);
+            Draw.alpha(((SglBuilding) b).getVar("alp"));
+            Fill.circle(e.x, e.y, 32);
+            SglDraw.gradientCircle(e.x, e.y, 32, 4, 0);
+          });
+
+          Draw.color(Color.darkGray, 0.7f);
+          SglDraw.gradientCircle(b.x, b.y, 32, 4, 0);
+          Draw.color(Color.gray, 0.45f);
+          SglDraw.gradientCircle(b.x, b.y, 32, 0.65f);
+        }
+      };
+
+      buildType = () -> new TestBlockBuild(){
+        {
+          setVar("alp", 1f);
+        }
+
+        @Override
+        public void buildConfiguration(Table table) {
+          table.table(t -> {
+            t.slider(0, 1, 0.01f, getVar("alp"), f -> setVar("alp", f)).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+            t.add("0").size(50).update(lable -> lable.setText(Mathf.round(this.<Float>getVar("alp")*100f) + "%"));
           });
         }
       };

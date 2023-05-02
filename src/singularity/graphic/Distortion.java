@@ -1,48 +1,26 @@
 package singularity.graphic;
 
 import arc.Core;
-import arc.Events;
 import arc.graphics.Color;
-import arc.graphics.g2d.Draw;
+import arc.graphics.Gl;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.gl.FrameBuffer;
 import arc.graphics.gl.Shader;
 import arc.util.Disposable;
-import mindustry.game.EventType;
-import mindustry.graphics.Layer;
 import singularity.Singularity;
 
 import static singularity.graphic.SglDraw.*;
 
 public class Distortion implements Disposable {
-  static FrameBuffer samplerBuffer = new FrameBuffer();
-  static Shader baseShader;
-
-  static {
-    baseShader = new Shader(Core.files.internal("shaders/screenspace.vert"), Singularity.getInternalFile("shaders").child("dist_base.frag"));
-
-    Events.run(EventType.Trigger.drawOver, () -> {
-      Draw.draw(Layer.min, () -> {
-        samplerBuffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-        samplerBuffer.begin(Color.clear);
-      });
-      Draw.draw(Layer.end, () -> {
-        samplerBuffer.end();
-        samplerBuffer.blit(baseShader);
-      });
-    });
-  }
-
   Shader distortion;
-  FrameBuffer buffer, pingpong;
-  boolean buffering, disposed;
+  FrameBuffer buffer;
+  boolean capturing, disposed;
 
   public Distortion(){
     distortion = new Shader(Core.files.internal("shaders/screenspace.vert"), Singularity.getInternalFile("shaders").child("distortion.frag"));
 
     buffer = new FrameBuffer();
-    pingpong = new FrameBuffer();
 
     init();
   }
@@ -58,33 +36,32 @@ public class Distortion implements Disposable {
 
   public void resize(){
     buffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-    pingpong.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
   }
 
   public void capture(){
-    if (buffering) return;
+    if (capturing) return;
 
-    samplerBuffer.end();
-    pingpong.begin();
-    samplerBuffer.blit(baseShader);
-    pingpong.end();
-    samplerBuffer.begin();
-
-    buffering = true;
+    capturing = true;
     buffer.begin(Color.clear);
   }
 
   public void render(){
-    buffering = false;
+    capturing = false;
 
     buffer.end();
 
-    pingpong.getTexture().bind(1);
-    distortion.bind();
-    distortion.setUniformf("width", pingpong.getWidth());
-    distortion.setUniformf("height", pingpong.getHeight());
+    Gl.disable(Gl.blend);
+    Gl.disable(Gl.depthTest);
+    Gl.depthMask(false);
 
+    ScreenSampler.getSampler().bind(1);
+    distortion.bind();
+    distortion.setUniformf("width", buffer.getWidth());
+    distortion.setUniformf("height", buffer.getHeight());
     buffer.blit(distortion);
+
+    Gl.enable(Gl.blend);
+    Gl.blendFunc(Gl.srcAlpha, Gl.oneMinusSrcAlpha);
   }
 
   public void setStrength(float strength){
@@ -95,7 +72,6 @@ public class Distortion implements Disposable {
   @Override
   public void dispose() {
     buffer.dispose();
-    pingpong.dispose();
     distortion.dispose();
     disposed = true;
   }

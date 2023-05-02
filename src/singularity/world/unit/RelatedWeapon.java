@@ -1,8 +1,13 @@
 package singularity.world.unit;
 
+import arc.Core;
 import arc.func.Boolf;
+import arc.func.Cons2;
+import arc.graphics.Color;
 import arc.math.Angles;
 import arc.math.Mathf;
+import arc.scene.ui.layout.Table;
+import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.entities.Effect;
@@ -10,18 +15,81 @@ import mindustry.entities.Mover;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.pattern.ShootPattern;
 import mindustry.entities.units.WeaponMount;
+import mindustry.gen.Flyingc;
 import mindustry.gen.Unit;
+import mindustry.graphics.Pal;
+import mindustry.type.UnitType;
+import mindustry.world.meta.Stat;
+import mindustry.world.meta.StatUnit;
+import singularity.ui.StatUtils;
 
 public class RelatedWeapon extends DataWeapon {
+  public static final RelatedAlt
+      isFlying = new DefaultAlt(Core.bundle.get("infos.wenUnitIsFlying"), Flyingc::isFlying),
+      none = new DefaultAlt("", u -> false);
+
   public ShootPattern alternativeShoot;
   public BulletType alternativeBullet;
-  public Boolf<Unit> useAlternative = e -> false;
+  public RelatedAlt useAlternative = none;
+
+  public Cons2<BulletType, Table> customAltDisplay;
+  public boolean overrideAlt;
+
+  public RelatedWeapon() {
+  }
+
+  public RelatedWeapon(String name) {
+    super(name);
+  }
+
+  @Override
+  public void addStats(UnitType u, Table t) {
+    if (alternativeBullet != null) {
+      if (inaccuracy > 0) {
+        t.row();
+        t.add("[lightgray]" + Stat.inaccuracy.localized() + ": [white]" + (int) inaccuracy + " " + StatUnit.degrees.localized());
+      }
+
+      t.row();
+      t.add(Core.bundle.get("misc.preferred")).color(Pal.accent);
+      if (!alwaysContinuous && reload > 0) {
+        t.row();
+        t.add("[lightgray]" + Stat.reload.localized() + ": " + (mirror ? "2x " : "") + "[white]" + Strings.autoFixed(60f/reload*shoot.shots, 2) + " " + StatUnit.perSecond.localized());
+      }
+      if (!override) {
+        StatUtils.buildAmmo(t, bullet);
+      }
+      if (customDisplay != null){
+        customDisplay.get(bullet, t);
+      }
+
+      t.row();
+      t.image().color(Color.lightGray).height(3).growX().pad(0).padTop(3).padBottom(3).colspan(2);
+      t.row();
+
+      t.add(useAlternative.getInfo() == null? Core.bundle.get("misc.alternative"): useAlternative.getInfo()).color(Pal.accent);
+      if (!alwaysContinuous && reload > 0) {
+        t.row();
+        t.add("[lightgray]" + Stat.reload.localized() + ": " + (mirror ? "2x " : "") + "[white]" + Strings.autoFixed(60f/reload*(alternativeShoot == null ? shoot.shots : alternativeShoot.shots), 2) + " " + StatUnit.perSecond.localized());
+      }
+      if (!overrideAlt) {
+        StatUtils.buildAmmo(t, alternativeBullet);
+      }
+      if (customAltDisplay != null){
+        customDisplay.get(alternativeBullet, t);
+      }
+
+      t.row();
+      t.image().color(Color.lightGray).height(3).growX().pad(0).padTop(3).padBottom(3).colspan(2);
+    }
+    else super.addStats(u, t);
+  }
 
   @Override
   protected void shoot(Unit unit, WeaponMount mount, float shootX, float shootY, float rotation){
     unit.apply(shootStatus, shootStatusDuration);
 
-    ShootPattern shoot = alternativeShoot != null && useAlternative.get(unit)? alternativeShoot: this.shoot;
+    ShootPattern shoot = alternativeShoot != null && useAlternative.alt(unit)? alternativeShoot: this.shoot;
 
     if(shoot.firstShotDelay > 0){
       mount.charging = true;
@@ -59,7 +127,7 @@ public class RelatedWeapon extends DataWeapon {
         lifeScl = bullet.scaleLife ? Mathf.clamp(Mathf.dst(bulletX, bulletY, mount.aimX, mount.aimY) / bullet.range) : 1f,
         angle = angleOffset + shootAngle + Mathf.range(inaccuracy + bullet.inaccuracy);
 
-    mount.bullet = (alternativeBullet != null && useAlternative.get(unit)? alternativeBullet: bullet)
+    mount.bullet = (alternativeBullet != null && useAlternative.alt(unit)? alternativeBullet: bullet)
         .create(unit, unit.team, bulletX, bulletY, angle, -1f, (1f - velocityRnd) + Mathf.random(velocityRnd), lifeScl, null, mover, mount.aimX, mount.aimY);
     handleBullet(unit, mount, mount.bullet);
 
@@ -75,5 +143,30 @@ public class RelatedWeapon extends DataWeapon {
     Effect.shake(shake, shake, bulletX, bulletY);
     mount.recoil = 1f;
     mount.heat = 1f;
+  }
+
+  public interface RelatedAlt{
+    boolean alt(Unit unit);
+    String getInfo();
+  }
+
+  private static class DefaultAlt implements RelatedAlt{
+    public String info;
+    public Boolf<Unit> boolf;
+
+    public DefaultAlt(String info, Boolf<Unit> boolf){
+      this.info = info;
+      this.boolf = boolf;
+    }
+
+    @Override
+    public boolean alt(Unit unit) {
+      return boolf.get(unit);
+    }
+
+    @Override
+    public String getInfo() {
+      return info;
+    }
   }
 }

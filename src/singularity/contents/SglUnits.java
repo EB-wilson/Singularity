@@ -1,22 +1,25 @@
 package singularity.contents;
 
+import arc.Core;
 import arc.func.Func2;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.math.Angles;
+import arc.math.Interp;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.math.geom.Vec2;
 import arc.struct.Seq;
 import arc.util.Interval;
-import arc.util.Log;
 import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.content.Fx;
 import mindustry.entities.Damage;
+import mindustry.entities.Effect;
 import mindustry.entities.Units;
 import mindustry.entities.bullet.*;
 import mindustry.entities.effect.MultiEffect;
@@ -45,52 +48,21 @@ import singularity.graphic.SglDrawConst;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.blocks.product.PayloadCrafter;
+import singularity.world.blocks.turrets.EmpBulletType;
+import singularity.world.blocks.turrets.EmpLightningBulletType;
 import singularity.world.blocks.turrets.EmpMultiTrailBulletType;
 import singularity.world.blocks.turrets.MultiTrailBulletType;
 import singularity.world.draw.part.CustomPart;
 import singularity.world.unit.*;
 import universecore.util.handler.ObjectHandler;
+import universecore.world.lightnings.LightningContainer;
+import universecore.world.lightnings.generator.VectorLightningGenerator;
 
 import java.util.Iterator;
 
 import static mindustry.Vars.headless;
 
 public class SglUnits implements ContentList{
-  public static final BulletType LIGHTEDGE_FRAG_BULLET = new BulletType() {
-    {
-      damage = 80;
-      splashDamage = 80;
-      splashDamageRadius = 24;
-      speed = 4;
-      hitSize = 3;
-      lifetime = 120;
-      despawnHit = true;
-      hitEffect = SglFx.diamondSpark;
-      hitColor = SglDrawConst.matrixNet;
-
-      collidesTiles = false;
-
-      homingRange = 160;
-      homingPower = 0.075f;
-
-      trailColor = SglDrawConst.matrixNet;
-      trailLength = 25;
-      trailWidth = 3f;
-    }
-
-    @Override
-    public void draw(Bullet b) {
-      super.draw(b);
-      SglDraw.drawDiamond(b.x, b.y, 10, 4, b.rotation());
-    }
-
-    @Override
-    public void update(Bullet b) {
-      super.update(b);
-
-      b.vel.lerpDelta(Vec2.ZERO, 0.04f);
-    }
-  };
   public static final String EPHEMERAS = "ephemeras";
   public static final String TIMER = "timer";
   /**棱镜*/
@@ -155,7 +127,7 @@ public class SglUnits implements ContentList{
       );
 
       weapons.addAll(
-          new Weapon(Sgl.modName + "-mornstar_cannon"){{
+          new SglWeapon(Sgl.modName + "-mornstar_cannon"){{
             recoil = 0;
             recoilTime = 120;
             cooldownTime = 120;
@@ -206,7 +178,7 @@ public class SglUnits implements ContentList{
                 );
                 smokeEffect = Fx.shootSmokeSmite;
 
-                shootSound = Sounds.malignShoot;
+                shootSound = Sounds.shootSmite;
 
                 damage = 500;
                 empDamage = 100;
@@ -215,7 +187,8 @@ public class SglUnits implements ContentList{
                 pierceCap = 4;
                 hittable = false;
 
-                fragBullet = LIGHTEDGE_FRAG_BULLET;
+                fragBullet = new EdgeFragBullet();
+                fragOnHit = true;
                 fragBullets = 3;
                 fragRandomSpread = 115;
               }
@@ -239,7 +212,13 @@ public class SglUnits implements ContentList{
               @Override
               public void init(Bullet b) {
                 super.init(b);
-                b.data = new TrailMoveLightning();
+                b.data = Pools.obtain(TrailMoveLightning.class, TrailMoveLightning::new);
+              }
+
+              @Override
+              public void despawned(Bullet b) {
+                super.despawned(b);
+                if (b.data instanceof TrailMoveLightning l) Pools.free(l);
               }
 
               @Override
@@ -253,24 +232,6 @@ public class SglUnits implements ContentList{
                   if (!(b.data instanceof TrailMoveLightning m)) return;
                   m.update();
                   SglDraw.drawTransform(b.x, b.y, 0, m.off, b.rotation(), (x, y, r) -> b.trail.update(x, y));
-                }
-              }
-
-              class TrailMoveLightning{
-                float off;
-                float offDelta;
-
-                {
-                  flushDelta(0);
-                }
-
-                private void flushDelta(int i) {
-                  offDelta = Mathf.random(i <= 0? -4: 0, i >= 0? 4: 0);
-                }
-
-                public void update() {
-                  if (Mathf.chanceDelta(0.3f) || off >= 4 || off <= -4) flushDelta(off >= 4? -1: off <= 4? 1: 0);
-                  off += offDelta*Time.delta;
                 }
               }
             };
@@ -288,24 +249,33 @@ public class SglUnits implements ContentList{
                 }}
             );
           }},
-          new Weapon(Sgl.modName + "-mornstar_turret"){{
+          new SglWeapon(Sgl.modName + "-mornstar_turret"){{
             x = 26;
             y = -28;
             shootY = 0;
             recoil = 5;
             recoilTime = 60;
-            reload = 8;
+            reload = 6;
 
             rotate = true;
             rotateSpeed = 8;
 
+            customDisplay = (b, t) -> {
+              t.row();
+              t.add(Core.bundle.get("infos.damageAttenuationWithDist")).color(Pal.accent);
+            };
+
             bullet = new BulletType(){
               {
-                speed = 10;
+                speed = 12;
                 lifetime = 30;
                 damage = 120;
 
+                pierceCap = 1;
+
                 despawnHit = true;
+
+                shootSound = Sounds.bolt;
 
                 hitColor = trailColor = SglDrawConst.matrixNet;
                 hitEffect = new MultiEffect(
@@ -321,7 +291,7 @@ public class SglUnits implements ContentList{
                 trailLength = 8;
 
                 trailEffect = SglFx.glowParticle;
-                trailChance = 0.1f;
+                trailChance = 0.12f;
               }
 
               @Override
@@ -342,9 +312,9 @@ public class SglUnits implements ContentList{
               }
             };
           }},
-          new RelatedWeapon(){
+          new RelatedWeapon(Sgl.modName + "-lightedge"){
             {
-              useAlternative = Flyingc::isFlying;
+              useAlternative = isFlying;
               mirror = false;
               x = 0;
               y = -25;
@@ -353,23 +323,346 @@ public class SglUnits implements ContentList{
               recoil = 0;
               recoilTime = 1;
 
+              alternate = false;
+
               linearWarmup = false;
               shootWarmupSpeed = 0.025f;
               minWarmup = 0.9f;
 
               reload = 60;
 
-              bullet = new ContinuousBulletType(){{
-                speed = 0;
-                lifetime = 180;
-                length = 360;
-              }};
+              bullet = new ContinuousBulletType(){
+                {
+                  speed = 0;
+                  lifetime = 180;
+                  length = 420;
 
-              alternativeBullet = new BulletType(){{
-                speed = 8;
-                lifetime = 240;
-                rangeOverride = 360;
-              }};
+                  damage = 80;
+                  damageInterval = 5;
+
+                  hitEffect = SglFx.railShootRecoil;
+
+                  trailColor = hitColor = SglDrawConst.matrixNet;
+                  trailEffect = SglFx.movingCrystalFrag;
+                  trailInterval = 4;
+
+                  shootEffect = new MultiEffect(
+                      SglFx.shootCrossLight,
+                      SglFx.explodeImpWaveSmall
+                  );
+                }
+
+                @Override
+                public void init(Bullet b) {
+                  super.init(b);
+
+                  Sounds.laserblast.at(b.x, b.y, 1.25f);
+
+                  if (b.owner instanceof Unit u){
+                    b.rotation(b.angleTo(u.aimX, u.aimY));
+                  }
+                }
+
+                @Override
+                public void update(Bullet b) {
+                  super.update(b);
+
+                  Effect.shake(4, 4, b.x, b.y);
+                  updateTrailEffects(b);
+                  if (b.owner instanceof Unit u){
+                    b.rotation(Angles.moveToward(b.rotation(), b.angleTo(u.aimX, u.aimY), 8*Time.delta));
+                  }
+                }
+
+                @Override
+                public void applyDamage(Bullet b) {
+                  Damage.collideLaser(b, length, largeHit, laserAbsorb, pierceCap);
+                }
+
+                @Override
+                public void draw(Bullet b) {
+                  super.draw(b);
+
+                  float realLen = b.fdata;
+                  float lerp = Mathf.clamp(b.time/40);
+                  float out = Mathf.clamp((b.type.lifetime - b.time)/30);
+                  lerp*=out;
+
+                  lerp = 1 - Mathf.pow(1 - lerp, 3);
+
+                  Draw.color(SglDrawConst.matrixNet);
+                  Drawf.tri(b.x, b.y, 12*lerp, realLen, b.rotation());
+                  Draw.color(Color.black);
+                  Drawf.tri(b.x, b.y, 5*lerp, realLen*0.8f, b.rotation());
+                  Draw.color(SglDrawConst.matrixNet);
+                  Fill.circle(b.x, b.y, 4*out + 3*lerp);
+                  SglDraw.drawDiamond(b.x, b.y, 24, 10*lerp, Time.time);
+                  SglDraw.drawDiamond(b.x, b.y, 28, 12*lerp, -Time.time*1.2f);
+                  Lines.stroke(0.8f);
+                  Lines.circle(b.x, b.y, 6);
+                  Draw.color(Color.black);
+                  Fill.circle(b.x, b.y, 4f*lerp);
+
+                  Draw.color(SglDrawConst.matrixNet);
+                  SglDraw.gapTri(b.x + Angles.trnsx(Time.time, 8, 0), b.y + Angles.trnsy(Time.time, 8, 0), 8*lerp, 12 + 14*lerp, 8, Time.time);
+                  SglDraw.gapTri(b.x + Angles.trnsx(Time.time + 180, 8, 0), b.y + Angles.trnsy(Time.time + 180, 8, 0), 8*lerp, 12 + 14*lerp, 8, Time.time + 180);
+                  SglDraw.drawDiamond(b.x + Angles.trnsx(-Time.time*1.2f, 12, 0), b.y + Angles.trnsy(-Time.time*1.2f, 12, 0), 16, 5*lerp, -Time.time*1.2f);
+                  SglDraw.drawDiamond(b.x + Angles.trnsx(-Time.time*1.2f + 180, 12, 0), b.y + Angles.trnsy(-Time.time*1.2f + 180, 12, 0), 16, 5*lerp, -Time.time*1.2f + 180);
+
+                  float out2 = Mathf.pow(1 - out, 3);
+                  Tmp.v1.set(35 + 30*out2, 0).setAngle(b.rotation());
+                  Tmp.v2.set(Tmp.v1).setLength(8 + 10*lerp).rotate90(1);
+
+                  float len = 100 + out2*80;
+                  float an = Mathf.atan2(len/2, 8*lerp)*Mathf.radDeg;
+
+                  Drawf.tri(b.x + Tmp.v1.x + Tmp.v2.x, b.y + Tmp.v1.y + Tmp.v2.y, len, 8*lerp, b.rotation() - 90 - an);
+                  Drawf.tri(b.x + Tmp.v1.x - Tmp.v2.x, b.y + Tmp.v1.y - Tmp.v2.y, len, 8*lerp, b.rotation() + 90 + an);
+                }
+              };
+
+              alternativeBullet = new BulletType(){
+                {
+                  splashDamage = 380;
+                  splashDamageRadius = 32;
+
+                  speed = 8;
+                  lifetime = 360;
+                  rangeOverride = 360;
+                  homingDelay = 60;
+
+                  homingPower = 0.03f;
+                  homingRange = 360;
+
+                  despawnShake = 6;
+
+                  collides = false;
+                  absorbable = false;
+                  hittable = false;
+
+                  keepVelocity = false;
+
+                  trailColor = hitColor = SglDrawConst.matrixNet;
+                  trailLength = 34;
+                  trailWidth = 4.5f;
+
+                  despawnEffect = new MultiEffect(
+                      SglFx.explodeImpWave,
+                      SglFx.crossLightSmall,
+                      SglFx.diamondSparkLarge
+                  );
+
+                  trailEffect = SglFx.movingCrystalFrag;
+                  trailInterval = 4;
+
+                  fragBullet = new BulletType(){
+                    {
+                      damage = 60;
+                      splashDamage = 80;
+                      splashDamageRadius = 24;
+                      speed = 4;
+                      hitSize = 3;
+                      lifetime = 120;
+                      despawnHit = true;
+                      hitEffect = SglFx.diamondSpark;
+                      hitColor = SglDrawConst.matrixNet;
+
+                      collidesTiles = false;
+
+                      homingRange = 240;
+                      homingPower = 0.035f;
+
+                      trailColor = SglDrawConst.matrixNet;
+                      trailLength = 25;
+                      trailWidth = 3f;
+                      trailEffect = SglFx.movingCrystalFrag;
+                      trailInterval = 5;
+                    }
+
+                    @Override
+                    public void draw(Bullet b) {
+                      drawTrail(b);
+                      Draw.color(hitColor);
+                      Fill.circle(b.x, b.y, 4);
+                      Draw.color(Color.black);
+                      Fill.circle(b.x, b.y, 2.5f);
+                    }
+
+                    @Override
+                    public void updateHoming(Bullet b) {
+                      Posc target = Units.closestTarget(b.team, b.x, b.y, homingRange,
+                            e -> e != null && e.checkTarget(collidesAir, collidesGround) && !b.hasCollided(e.id),
+                            t -> t != null && collidesGround && !b.hasCollided(t.id));
+
+                      if (target == null){
+                        b.vel.lerpDelta(Vec2.ZERO, homingPower);
+                      }
+                      else{
+                        b.vel.lerpDelta(Tmp.v1.set(target.x() - b.x, target.y() - b.y).setLength(speed*0.5f), homingPower);
+                      }
+                    }
+                  };
+                  fragBullets = 5;
+
+                  intervalBullet = new EmpLightningBulletType(){
+                    {
+                      speed = 0;
+                      lifetime = 30;
+                      damage = 150;
+                      empDamage = 20;
+                      rangeOverride = 80;
+                      collides = false;
+                      absorbable = false;
+                      hittable = false;
+
+                      keepVelocity = false;
+
+                      hitColor = SglDrawConst.matrixNet;
+
+                      despawnEffect = Fx.none;
+
+                      pierce = true;
+                    }
+
+                    final VectorLightningGenerator generator = new VectorLightningGenerator(){{
+                      minInterval = 8;
+                      maxInterval = 12;
+                      maxSpread = 9;
+                    }};
+
+                    @Override
+                    public void init(Bullet b, LightningContainer c) {
+                      Sounds.spark.at(b.x, b.y, 1.2f);
+
+                      Teamc target = Units.closestTarget(b.team, b.x, b.y, range,
+                          e -> e != null && e.checkTarget(collidesAir, collidesGround) && !b.hasCollided(e.id),
+                          t -> t != null && collidesGround && !b.hasCollided(t.id));
+
+                      if (target != null){
+                        b.rotation(b.angleTo(target));
+                      }
+
+                      c.lifeTime = lifetime;
+                      c.time = 5;
+                      c.lerp = Interp.linear;
+                      c.minWidth = 2f;
+                      c.maxWidth = 3.25f;
+
+                      Damage.collideLaser(b, range, false, true, -1);
+                      generator.vector.set(b.fdata*1.3f, 0).setAngle(b.rotation());
+                      c.generator = generator;
+                      c.create();
+                      c.create();
+                    }
+
+                    @Override
+                    public void draw(Bullet b) {
+                      super.draw(b);
+
+                      float len = b.fdata/2;
+                      Tmp.v1.set(len/2, 0).setAngle(b.rotation());
+
+                      float fin2 = b.fin(Interp.pow2);
+                      float out2 = 1 - fin2;
+                      float dx = b.x + Tmp.v1.x*(1 + fin2);
+                      float dy = b.y + Tmp.v1.y*(1 + fin2);
+
+                      Draw.color(hitColor);
+                      Drawf.tri(dx, dy, 8*out2, (len/2 - 6)*(1 + fin2), b.rotation() - 180);
+                      Drawf.tri(dx, dy, 8*out2, len*(1 + 2f*fin2), b.rotation());
+                    }
+                  };
+                  bulletInterval = 15f;
+                }
+
+                final Rand rnd = new Rand();
+                @Override
+                public void draw(Bullet b) {
+                  super.draw(b);
+                  Draw.color(SglDrawConst.matrixNet);
+
+                  float lerp = Mathf.clamp(b.time/homingDelay);
+                  lerp = 1 - Mathf.pow(1 - lerp, 2);
+
+                  Fill.circle(b.x, b.y, 4 + 2*lerp);
+                  SglDraw.drawDiamond(b.x, b.y, 22, 10*lerp, Time.time);
+                  Lines.stroke(0.8f);
+                  Lines.circle(b.x, b.y, 6);
+                  Draw.color(Color.black);
+                  Fill.circle(b.x, b.y, 3.75f*lerp);
+                  Draw.color(SglDrawConst.matrixNet);
+
+                  rnd.setSeed(b.id);
+                  for (int i = 0; i < 7; i++) {
+                    float w = rnd.random(1f, 2.5f)*(rnd.nextFloat() > 0.5? 1: -1);
+                    float f = rnd.random(360f);
+                    float r = rnd.random(12f, 28f);
+                    float size = rnd.random(18f, 26f)*lerp;
+
+                    float a = f + Time.time * w;
+                    Tmp.v1.set(r, 0).setAngle(a);
+
+                    SglDraw.drawHaloPart(b.x + Tmp.v1.x, b.y + Tmp.v1.y, size, size*0.5f, a);
+                  }
+                }
+
+                @Override
+                public void despawned(Bullet b) {
+                  super.despawned(b);
+                  Sounds.malignShoot.at(b, 2);
+                }
+
+                @Override
+                public void update(Bullet b) {
+                  super.update(b);
+
+                  if (b.timer(4, 18f)){
+                    Teamc target = Units.closestTarget(b.team, b.x, b.y, range,
+                        e -> e != null && e.checkTarget(collidesAir, collidesGround) && !b.hasCollided(e.id),
+                        t -> t != null && collidesGround && !b.hasCollided(t.id));
+
+                    fragBullet.create(b, b.x, b.y, target != null? b.angleTo(target): Mathf.random(0, 360));
+                  }
+                }
+
+                @Override
+                public void updateHoming(Bullet b) {
+                  if(homingPower > 0.0001f && b.time >= homingDelay){
+                    float realAimX = b.aimX < 0 ? b.x : b.aimX;
+                    float realAimY = b.aimY < 0 ? b.y : b.aimY;
+
+                    Posc target;
+                    if(b.aimTile != null && b.aimTile.build != null && b.aimTile.build.team != b.team && collidesGround && !b.hasCollided(b.aimTile.build.id)){
+                      target = b.aimTile.build;
+                    }else{
+                      target = Units.closestTarget(b.team, realAimX, realAimY, homingRange,
+                          e -> e != null && e.checkTarget(collidesAir, collidesGround) && !b.hasCollided(e.id),
+                          t -> t != null && collidesGround && !b.hasCollided(t.id));
+                    }
+
+                    if(target != null){
+                      float dst = target.dst(b);
+                      float v = Mathf.lerpDelta(b.vel.len(), speed*(dst/homingRange), 0.05f);
+                      b.vel.setLength(v);
+
+                      float degA = b.rotation();
+                      float degB = b.angleTo(target);
+
+                      if (degA - degB > 180){
+                        degB += 360;
+                      }
+                      else if (degA - degB < -180){
+                        degB -= 360;
+                      }
+
+                      b.vel.setAngle(Mathf.lerpDelta(degA, degB, homingPower));
+                    }
+                    else{
+                      b.vel.lerpDelta(0, 0, 0.03f);
+                    }
+                  }
+                }
+              };
             }
 
             @Override
@@ -383,10 +676,9 @@ public class SglUnits implements ContentList{
             protected void shoot(Unit unit, WeaponMount mount, float shootX, float shootY, float rotation) {
               DataWeaponMount m = (DataWeaponMount) mount;
               Seq<Ephemera> seq = m.getVar(EPHEMERAS);
-              Log.info("shoot");
               for (Ephemera ephemera : seq) {
                 if (ephemera.alpha > 0.9f) {
-                  ephemera.shoot(unit, useAlternative.get(unit) ? bullet : alternativeBullet);
+                  ephemera.shoot(unit, useAlternative.alt(unit) ? alternativeBullet: bullet);
                   ephemera.removed = true;
                   break;
                 }
@@ -402,8 +694,8 @@ public class SglUnits implements ContentList{
                 Fill.circle(x, y, 6);
                 Lines.stroke(0.8f);
                 SglDraw.dashCircle(x, y, 8, 4, 180, Time.time);
-                Draw.alpha(0.65f);
-                SglDraw.gradientCircle(x, y, 16, 10, 0);
+                Lines.stroke(0.5f);
+                Lines.circle(x, y, 10);
 
                 Draw.alpha(1);
                 SglDraw.drawDiamond(x, y, 20 + 14*mount.warmup, 2 + 3*mount.warmup, Time.time*1.2f);
@@ -427,7 +719,7 @@ public class SglUnits implements ContentList{
                     SglDraw.drawDiamond(ephemera.x - Tmp.v1.x, ephemera.y - Tmp.v1.y, 20, w, Time.time + i*120);
                   }
 
-                  ephemera.trail.draw(SglDrawConst.matrixNet, 4.5f);
+                  ephemera.trail.draw(SglDrawConst.matrixNet, 4f*ephemera.alpha);
                 }
               });
             }
@@ -438,22 +730,20 @@ public class SglUnits implements ContentList{
               float mx = unit.x + Tmp.v1.x;
               float my = unit.y + Tmp.v1.y;
               Seq<Ephemera> seq = mount.getVar(EPHEMERAS);
-              if (mount.warmup <= 0.1f){
-                if (seq.size < 4){
-                  if (mount.<Interval>getVar(TIMER).get(0, 240)) {
-                    mount.totalShots++;
 
-                    Ephemera ephemera = Pools.obtain(Ephemera.class, Ephemera::new);
-                    ephemera.x = mx;
-                    ephemera.y = my;
-                    ephemera.move = Mathf.random(0.02f, 0.04f);
-                    ephemera.angelOff = Mathf.random(15, 45) * (mount.totalShots%2 == 0 ? 1 : -1);
-                    ephemera.bestDst = Mathf.random(18, 36);
-                    ephemera.trail.clear();
-                    ephemera.vel.rnd(Mathf.random(0.6f, 2));
+              if (seq.size < 4){
+                if (mount.<Interval>getVar(TIMER).get(0, 240)) {
+                  mount.totalShots++;
 
-                    seq.add(ephemera);
-                  }
+                  Ephemera ephemera = Pools.obtain(Ephemera.class, Ephemera::new);
+                  ephemera.x = mx;
+                  ephemera.y = my;
+                  ephemera.move = Mathf.random(0.02f, 0.04f);
+                  ephemera.angelOff = Mathf.random(15, 45) * (mount.totalShots%2 == 0 ? 1 : -1);
+                  ephemera.bestDst = Mathf.random(18, 36);
+                  ephemera.vel.rnd(Mathf.random(0.6f, 2));
+
+                  seq.add(ephemera);
                 }
               }
 
@@ -463,15 +753,18 @@ public class SglUnits implements ContentList{
 
               for (Iterator<Ephemera> iterator = seq.iterator(); iterator.hasNext(); ) {
                 Ephemera ephemera = iterator.next();
-                ephemera.alpha = Mathf.lerpDelta(ephemera.alpha, ephemera.removed? 0: 1, 0.02f);
-                if (ephemera.removed && ephemera.alpha <= 0.1f){
-                  iterator.remove();
-                  Pools.free(ephemera);
+                ephemera.alpha = Mathf.lerpDelta(ephemera.alpha, ephemera.removed? 0: 1, 0.015f);
+                ephemera.trail.update(ephemera.x, ephemera.y);
+                if (ephemera.removed){
+                  if (ephemera.alpha <= 0.05f) {
+                    iterator.remove();
+                    Pools.free(ephemera);
+                  }
+                  continue;
                 }
 
                 ephemera.x += ephemera.vel.x * Time.delta;
                 ephemera.y += ephemera.vel.y * Time.delta;
-                ephemera.trail.update(ephemera.x, ephemera.y);
 
                 float dst = (ephemera.bestDst + ephemera.bestDst * mount.warmup) - Mathf.dst(ephemera.x - mx, ephemera.y - my);
                 float speed = dst / 30;
@@ -487,7 +780,7 @@ public class SglUnits implements ContentList{
               float bestDst, alpha;
               boolean removed;
               final Vec2 vel = new Vec2();
-              final Trail trail = new Trail(42);
+              final Trail trail = new Trail(60);
 
               @Override
               public void reset() {
@@ -495,6 +788,7 @@ public class SglUnits implements ContentList{
                 alpha = 0;
                 removed = false;
                 vel.setZero();
+                trail.clear();
                 bestDst = 0;
                 move = 0;
                 angelOff = 0;
@@ -502,16 +796,14 @@ public class SglUnits implements ContentList{
 
               public void shoot(Unit u, BulletType bullet) {
                 Bullet b = bullet.create(u, x, y, vel.angle());
-                if (bullet.speed > 0){
-                  b.vel.set(vel);
-                }
-
-                Fx.trailFade.at(x, y, vel.angle(), SglDrawConst.matrixNet, trail);
+                if(b.type.speed > 0.01f) b.vel.set(vel);
+                b.set(x, y);
+                bullet.shootEffect.at(b.x, b.y, vel.angle(), b.type.hitColor);
+                bullet.smokeEffect.at(b.x, b.y, vel.angle(), b.type.hitColor);
               }
             }
           }
       );
-      weapons.get(weapons.size - 1).flip();
     }};
 
     kaguya = new UnitType("kaguya"){
@@ -531,7 +823,7 @@ public class SglUnits implements ContentList{
 
         engineSize = 0;
 
-        Func2<Float, Float, Weapon> laser = (dx, dy) -> new Weapon(Sgl.modName + "-kaguya_laser"){{
+        Func2<Float, Float, Weapon> laser = (dx, dy) -> new SglWeapon(Sgl.modName + "-kaguya_laser"){{
           this.x = dx;
           this.y = dy;
           mirror = true;
@@ -562,7 +854,7 @@ public class SglUnits implements ContentList{
         weapons.addAll(
             laser.get(19.25f, 16f),
             laser.get(13.5f, 33.5f),
-            new Weapon(Sgl.modName + "-kaguya_cannon"){
+            new SglWeapon(Sgl.modName + "-kaguya_cannon"){
               {
                 x = 30.5f;
                 y = -3.5f;
@@ -628,7 +920,7 @@ public class SglUnits implements ContentList{
                     trailEffect = SglFx.trailParticle;
                     trailChance = 0.5f;
 
-                    fragBullet = LIGHTEDGE_FRAG_BULLET;
+                    fragBullet = new EdgeFragBullet();
                     fragBullets = 4;
                     fragOnHit = true;
                     fragOnAbsorb = true;
@@ -676,7 +968,7 @@ public class SglUnits implements ContentList{
                 rangeOverride = 420;
               }};
             }},
-            new DataWeapon(){
+            new DataWeapon(Sgl.modName + "-lightedge"){
               {
                 x = 0;
                 y = -14;
@@ -909,7 +1201,7 @@ public class SglUnits implements ContentList{
         );
 
         weapons.addAll(
-            new Weapon(Sgl.modName + "-aurora_lightcone"){{
+            new SglWeapon(Sgl.modName + "-aurora_lightcone"){{
                 shake = 5f;
                 shootSound = Sounds.pulseBlast;
                 x = 29;
@@ -925,10 +1217,10 @@ public class SglUnits implements ContentList{
 
                 layerOffset = 1;
 
-                bullet = new BulletType(){
+                bullet = new EmpBulletType(){
                   {
                     trailLength = 36;
-                    trailWidth = 3.25f;
+                    trailWidth = 2.2f;
                     trailColor = SglDrawConst.matrixNet;
                     trailRotation = true;
                     trailChance = 1;
@@ -938,8 +1230,7 @@ public class SglUnits implements ContentList{
                     damage = 620;
                     range = 480;
 
-                    homingRange = 30;
-                    homingPower = 0.15f;
+                    empDamage = 26;
 
                     pierce = true;
                     hittable = false;
@@ -950,10 +1241,41 @@ public class SglUnits implements ContentList{
 
                     trailEffect = new MultiEffect(
                         SglFx.lightConeTrail,
-                        SglFx.lightCone
+                        SglFx.lightCone,
+                        SglFx.trailLineLong
                     );
                     hitEffect = SglFx.lightConeHit;
                     hitColor = SglDrawConst.matrixNet;
+                  }
+
+                  @Override
+                  public void init(Bullet b) {
+                    super.init(b);
+                    TrailMoveLightning l = Pools.obtain(TrailMoveLightning.class, TrailMoveLightning::new);
+                    l.range = 8f;
+                    l.maxOff = 7.5f;
+                    l.chance = 0.4f;
+                    b.data = l;
+                  }
+
+                  @Override
+                  public void despawned(Bullet b) {
+                    super.despawned(b);
+                    if (b.data instanceof TrailMoveLightning l) Pools.free(l);
+                  }
+
+                  @Override
+                  public void updateTrail(Bullet b) {
+                    if(!headless && trailLength > 0){
+                      if(b.trail == null){
+                        b.trail = new Trail(trailLength);
+                      }
+                      b.trail.length = trailLength;
+
+                      if (!(b.data instanceof TrailMoveLightning m)) return;
+                      m.update();
+                      SglDraw.drawTransform(b.x, b.y, 0, m.off, b.rotation(), (x, y, r) -> b.trail.update(x, y));
+                    }
                   }
 
                   @Override
@@ -973,7 +1295,7 @@ public class SglUnits implements ContentList{
                   }
                 };
             }},
-            new Weapon(Sgl.modName + "-aurora_turret"){{
+            new SglWeapon(Sgl.modName + "-aurora_turret"){{
               shake = 4f;
               shootSound = Sounds.laser;
               x = 22;
@@ -1000,7 +1322,7 @@ public class SglUnits implements ContentList{
                 hitColor = colors[0];
               }};
             }},
-            new RelatedWeapon(){
+            new RelatedWeapon(Sgl.modName + "-lightedge"){
               {
                 x = 0;
                 y = -22;
@@ -1031,7 +1353,7 @@ public class SglUnits implements ContentList{
                 alternativeShoot.shots = 12;
                 alternativeShoot.shotDelay = 3;
                 alternativeShoot.firstShotDelay = 0;
-                useAlternative = Flyingc::isFlying;
+                useAlternative = isFlying;
                 parentizeEffects = true;
 
                 parts.addAll(
@@ -1102,7 +1424,7 @@ public class SglUnits implements ContentList{
                 Weapon s = this;
                 bullet = new ContinuousLaserBulletType(){
                   {
-                    damage = 260;
+                    damage = 210;
                     lifetime = 180;
                     fadeTime = 30;
                     length = 720;
@@ -1207,7 +1529,8 @@ public class SglUnits implements ContentList{
                 alternativeBullet = new BulletType(){
                   {
                     pierceArmor = true;
-                    damage = 320;
+                    damage = 240;
+                    pierceCap = 3;
                     splashDamageRadius = 60;
                     splashDamage = 180;
                     speed = 10;
@@ -1217,11 +1540,11 @@ public class SglUnits implements ContentList{
                     hitColor = SglDrawConst.matrixNet;
                     hitEffect = Fx.flakExplosion;
 
-                    trailLength = 40;
+                    trailLength = 32;
                     trailWidth = 3;
                     trailColor = SglDrawConst.matrixNet;
-                    trailEffect = SglFx.trailParticle;
-                    trailChance = 0.4f;
+                    trailEffect = SglFx.movingCrystalFrag;
+                    trailInterval = 3;
 
                     homingDelay = 30;
                   }
@@ -1262,6 +1585,11 @@ public class SglUnits implements ContentList{
                     Draw.color(SglDrawConst.matrixNet);
                     Drawf.tri(b.x, b.y, 8, 24, b.rotation());
                     Drawf.tri(b.x, b.y, 8, 10, b.rotation() + 180);
+
+                    Tmp.v1.set(1, 0).setAngle(b.rotation());
+                    SglDraw.gapTri(b.x + Tmp.v1.x*8*b.fout(), b.y + Tmp.v1.y*3*b.fout(), 16, 24, 18, b.rotation());
+                    SglDraw.gapTri(b.x + Tmp.v1.x*2*b.fout(), b.y - Tmp.v1.y*3*b.fout(), 12, 20, 16, b.rotation());
+                    SglDraw.gapTri(b.x - Tmp.v1.x*2*b.fout(), b.y - Tmp.v1.y*5*b.fout(), 8, 14, 10, b.rotation());
                   }
 
                   public void hitEntity(Bullet b, Hitboxc entity, float health){
@@ -1356,5 +1684,74 @@ public class SglUnits implements ContentList{
       requirements(Category.units, ItemStack.with());
       size = 5;
     }};
+  }
+
+  static class EdgeFragBullet extends BulletType{
+    {
+      damage = 80;
+      splashDamage = 40;
+      splashDamageRadius = 24;
+      speed = 4;
+      hitSize = 3;
+      lifetime = 120;
+      despawnHit = true;
+      hitEffect = SglFx.diamondSpark;
+      hitColor = SglDrawConst.matrixNet;
+
+      collidesTiles = false;
+
+      homingRange = 160;
+      homingPower = 0.075f;
+
+      trailColor = SglDrawConst.matrixNet;
+      trailLength = 25;
+      trailWidth = 3f;
+    }
+
+    @Override
+    public void draw(Bullet b) {
+      super.draw(b);
+      SglDraw.drawDiamond(b.x, b.y, 10, 4, b.rotation());
+    }
+
+    @Override
+    public void update(Bullet b) {
+      super.update(b);
+
+      b.vel.lerpDelta(Vec2.ZERO, 0.04f);
+    }
+  }
+
+  static class TrailMoveLightning implements Pool.Poolable {
+    float off;
+    float offDelta;
+
+    float chance = 0.3f;
+    float maxOff = 4;
+    float range = 4;
+
+    Trail trail;
+
+    {
+      flushDelta(0);
+    }
+
+    private void flushDelta(int i) {
+      offDelta = Mathf.random(i <= 0? -range: 0, i >= 0? range: 0);
+    }
+
+    public void update() {
+      if (Mathf.chanceDelta(chance) || off >= maxOff || off <= -maxOff) flushDelta(off >= maxOff? -1: off <= -maxOff? 1: 0);
+      off += offDelta*Time.delta;
+    }
+
+
+    @Override
+    public void reset() {
+      off = 0;
+      offDelta = 0;
+      maxOff = 4;
+      range = 4;
+    }
   }
 }

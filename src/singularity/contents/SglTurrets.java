@@ -555,6 +555,7 @@ public class SglTurrets implements ContentList{
               LightningContainer c;
               b.data = c = Pools.obtain(LightningContainer.PoolLightningContainer.class, LightningContainer.PoolLightningContainer::new);
               c.maxWidth = 6;
+              c.lerp = Interp.linear;
               c.minWidth = 4;
               c.lifeTime = 60;
               c.time = 30;

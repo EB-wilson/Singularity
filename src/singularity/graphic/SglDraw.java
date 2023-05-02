@@ -310,14 +310,27 @@ public class SglDraw{
    * @param distortion 扭曲绘制工具
    * @param draw 绘制任务*/
   public static <T> void drawDistortion(int taskID, T target, Distortion distortion, DrawAcceptor<T> draw){
-    if(!Sgl.config.enableDistortion){
-      return;
-    }
+    if(!Sgl.config.enableDistortion) return;
 
     drawTask(taskID, target, distortion, e -> {
       e.resize();
       e.capture();
     }, Distortion::render, draw);
+  }
+
+  /**发布一个高斯模糊遮罩层绘制任务，基于{@link SglDraw#drawTask(int, Object, DrawAcceptor, DrawAcceptor, DrawAcceptor)}实现
+   *
+   * @param taskID 任务的标识ID，用于区分任务缓存
+   * @param target 传递给绘制任务的数据对象
+   * @param blur 模糊绘制对象
+   * @param draw 绘制任务*/
+  public static <T> void drawBlur(int taskID, T target, Blur blur, DrawAcceptor<T> draw){
+    if(!Sgl.config.enableShaders) return;
+
+    drawTask(taskID, target, blur, e -> {
+      e.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+      e.capture();
+    }, Blur::render, draw);
   }
 
   public static void drawTransform(float originX, float originY, Vec2 vec, float rotate, Floatc3 draw){
@@ -522,7 +535,7 @@ public class SglDraw{
   }
 
   public static void drawHaloPart(float x, float y, float width, float len, float rotate){
-    drawHaloPart(x, y, width*0.2f, len*0.8f, width, len*0.2f, rotate);
+    drawHaloPart(x, y, width*0.2f, len*0.7f, width, len*0.3f, rotate);
   }
 
   public static void drawHaloPart(float x, float y, float interWidth, float interLen, float width, float len, float rotate){

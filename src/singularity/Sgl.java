@@ -4,6 +4,7 @@ import arc.files.Fi;
 import arc.files.ZipFi;
 import singularity.core.ModConfig;
 import singularity.graphic.MathRenderer;
+import singularity.graphic.ScreenSampler;
 import singularity.graphic.SglDrawConst;
 import singularity.graphic.SglShaders;
 import singularity.ui.SglStyles;
@@ -80,6 +81,7 @@ public class Sgl{
     //注册所有打包数据类型id
     BytePackAssign.assignAll();
 
+    ScreenSampler.init();
     //载入着色器
     SglShaders.load();
     //载入数学着色器
