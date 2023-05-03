@@ -2,7 +2,8 @@
 uniform lowp sampler2D u_texture0;
 uniform lowp sampler2D u_texture1;
 
-uniform mat3 convolution;
+uniform mat4 convolution;
+uniform float conv_len;
 uniform vec2 dir;
 uniform vec2 size;
 
@@ -17,11 +18,14 @@ void main(){
     if(blur.a > 0.01) {
         vec3 blurColor = vec3(0);
 
-        float offset = -4.0;
-        for (int y = 0; y < 3; y++) {
-           for (int x = 0; x < 3; x++){
+        float offset = -(conv_len - 1.0)/2.0;
+        float up = (conv_len - 1.0)/2.0;
+        for (int y = 0; y < 4; y++) {
+           for (int x = 0; x < 4; x++){
                blurColor += convolution[y][x]*texture2D(u_texture1, v_texCoords + len*offset).rgb;
-               offset = offset + 1.0;
+               offset += 1.0;
+
+               if(offset > up) break;
            }
         }
 
