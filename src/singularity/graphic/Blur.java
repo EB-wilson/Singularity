@@ -54,7 +54,8 @@ public class Blur {
 
   boolean capturing;
 
-  public float blurSpace = 3.26f;
+  public int blurScl = 4;
+  public float blurSpace = 2.26f;
 
   public Blur(){
     this(DEf_F);
@@ -133,6 +134,8 @@ public class Blur {
     String fragmentShader = """
         uniform lowp sampler2D u_texture0;
         uniform lowp sampler2D u_texture1;
+        
+        uniform lowp float def_alpha;
                 
         varying vec2 v_texCoords;
         %varying%
@@ -145,12 +148,12 @@ public class Blur {
                 %convolution%
                
             gl_FragColor.rgb = mix(color, blurColor, blur.a);
+            gl_FragColor.a = 1.0;
           }
           else{
             gl_FragColor.rgb = color;
+            gl_FragColor.a = def_alpha;
           }
-               
-          gl_FragColor.a = 1.0;
         }
         """.replace("%varying%", varyings).replace("%convolution%", convolution);
 
@@ -162,6 +165,9 @@ public class Blur {
   }
 
   public void resize(int width, int height){
+    width /= blurScl;
+    height /= blurScl;
+
     buffer.resize(width, height);
     pingpong.resize(width, height);
 
@@ -189,16 +195,18 @@ public class Blur {
     pingpong.begin();
     blurShader.bind();
     blurShader.setUniformf("dir", blurSpace, 0f);
+    blurShader.setUniformi("def_alpha", 1);
     ScreenSampler.getSampler().bind(1);
     buffer.blit(blurShader);
     pingpong.end();
 
     blurShader.bind();
     blurShader.setUniformf("dir", 0f, blurSpace);
+    blurShader.setUniformf("def_alpha", 0);
     pingpong.getTexture().bind(1);
-    buffer.blit(blurShader);
 
     Gl.enable(Gl.blend);
     Gl.blendFunc(Gl.srcAlpha, Gl.oneMinusSrcAlpha);
+    buffer.blit(blurShader);
   }
 }
