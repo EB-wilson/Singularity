@@ -1,13 +1,11 @@
 package singularity.graphic;
 
-import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.Gl;
 import arc.graphics.gl.FrameBuffer;
 import arc.graphics.gl.Shader;
-import singularity.Singularity;
-
-import java.util.Arrays;
+import arc.util.Log;
+import singularity.Sgl;
 
 public class Blur {
   public static final float[] DEf_A = {
@@ -51,9 +49,6 @@ public class Blur {
       0.2561736558128f,
   };
 
-  private final float[] convolution = new float[16];
-  private int convLen;
-
   Shader blurShader;
   FrameBuffer buffer, pingpong;
 
@@ -62,7 +57,11 @@ public class Blur {
   public float blurSpace = 3.26f;
 
   public Blur(){
-    blurShader = new Shader(Core.files.internal("shaders/screenspace.vert"), Singularity.getInternalFile("shaders").child("gaussian_blur.frag"));
+    this(DEf_F);
+  }
+
+  public Blur(float... convolutions){
+    blurShader = genShader(convolutions);
 
     buffer = new FrameBuffer();
     pingpong = new FrameBuffer();
@@ -70,8 +69,96 @@ public class Blur {
     blurShader.bind();
     blurShader.setUniformi("u_texture0", 0);
     blurShader.setUniformi("u_texture1", 1);
+  }
 
-    setConvolution(DEf_F);
+  private Shader genShader(float... convolutions) {
+    if (convolutions.length%2 != 1)
+      throw new IllegalArgumentException("convolution numbers length must be odd number!");
+
+    int convLen = convolutions.length;
+
+    StringBuilder varyings = new StringBuilder();
+    StringBuilder assignVar = new StringBuilder();
+    StringBuilder convolution = new StringBuilder();
+
+    int c = 0;
+    int half = convLen/2;
+    for (float v : convolutions) {
+      varyings.append("varying vec2 v_texCoords")
+          .append(c)
+          .append(";")
+          .append(Sgl.NL);
+
+      assignVar.append("v_texCoords")
+          .append(c)
+          .append(" = ")
+          .append("a_texCoord0");
+      if (c - half != 0) {
+          assignVar.append(c - half > 0? "+": "-")
+              .append(Math.abs((float) c - half))
+              .append("*len");
+      }
+      assignVar.append(";")
+          .append(Sgl.NL).append("  ");
+
+      if (c > 0) convolution.append("        + ");
+      convolution.append(v)
+          .append("*texture2D(u_texture1, v_texCoords")
+          .append(c)
+          .append(")")
+          .append(".rgb")
+          .append(Sgl.NL);
+
+      c++;
+    }
+    convolution.append(";");
+
+    String vertexShader = """
+        attribute vec4 a_position;
+        attribute vec2 a_texCoord0;
+                
+        uniform vec2 dir;
+        uniform vec2 size;
+                
+        varying vec2 v_texCoords;
+        %varying%
+        void main(){
+          vec2 len = dir/size;
+          
+          v_texCoords = a_texCoord0;
+          %assignVar%
+          gl_Position = a_position;
+        }
+        """.replace("%varying%", varyings).replace("%assignVar%", assignVar);
+    String fragmentShader = """
+        uniform lowp sampler2D u_texture0;
+        uniform lowp sampler2D u_texture1;
+                
+        varying vec2 v_texCoords;
+        %varying%
+        void main(){
+          vec4 blur = texture2D(u_texture0, v_texCoords);
+          vec3 color = texture2D(u_texture1, v_texCoords).rgb;
+          
+          if(blur.a > 0.0){
+            vec3 blurColor =
+                %convolution%
+               
+            gl_FragColor.rgb = mix(color, blurColor, blur.a);
+          }
+          else{
+            gl_FragColor.rgb = color;
+          }
+               
+          gl_FragColor.a = 1.0;
+        }
+        """.replace("%varying%", varyings).replace("%convolution%", convolution);
+
+    if(Sgl.config.loadInfo && Sgl.config.debugMode){
+      Log.info("[DEBUG] [Singularity] blur shader generate, shader content:" + Sgl.NL + "=vertexShader=" + Sgl.NL + vertexShader + Sgl.NL + "=fragShader=" + Sgl.NL + fragmentShader);
+    }
+
+    return new Shader(vertexShader, fragmentShader);
   }
 
   public void resize(int width, int height){
@@ -80,12 +167,6 @@ public class Blur {
 
     blurShader.bind();
     blurShader.setUniformf("size", width, height);
-  }
-
-  public void setConvolution(float... values){
-    Arrays.fill(convolution, 0);
-    System.arraycopy(values, 0, convolution, 0, values.length);
-    convLen = values.length;
   }
 
   public void capture(){
@@ -107,8 +188,6 @@ public class Blur {
 
     pingpong.begin();
     blurShader.bind();
-    blurShader.setUniformMatrix4("convolution", convolution);
-    blurShader.setUniformf("conv_len", convLen);
     blurShader.setUniformf("dir", blurSpace, 0f);
     ScreenSampler.getSampler().bind(1);
     buffer.blit(blurShader);

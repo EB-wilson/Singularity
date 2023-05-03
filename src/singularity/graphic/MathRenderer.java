@@ -104,7 +104,7 @@ public class MathRenderer{
           .replace("%hScl%", Float.toString(heightScl*2f));
 
       if(Sgl.config.loadInfo && Sgl.config.debugMode){
-        Log.info("[DEBUG] [Singularity] math shader generate, frag shader content:\n" + res);
+        Log.info("[DEBUG] [Singularity] math shader generate, frag shader content:" + Sgl.NL + res);
       }
 
       return res;
