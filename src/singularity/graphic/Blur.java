@@ -7,6 +7,8 @@ import arc.graphics.gl.FrameBuffer;
 import arc.graphics.gl.Shader;
 import singularity.Singularity;
 
+import java.util.Arrays;
+
 public class Blur {
   public static final float[] DEf_A = {
       0.0086973240159f, 0.0359949776755f, 0.1093610049784f,
@@ -81,6 +83,7 @@ public class Blur {
   }
 
   public void setConvolution(float... values){
+    Arrays.fill(convolution, 0);
     System.arraycopy(values, 0, convolution, 0, values.length);
     convLen = values.length;
   }
