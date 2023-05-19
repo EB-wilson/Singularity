@@ -37,6 +37,12 @@ public enum HealthBarStyle {
   public float sclX = 4, sclY = 4;
   public float infoHeight = 1;
 
+  public static void loadAll(){
+    for (HealthBarStyle style : values()) {
+      style.load();
+    }
+  }
+
   HealthBarStyle(float healthOffX, float healthOffY, float empOffX, float empOffY, float infoOffX, float infoOffY, float infoHeight){
     healthBarOffsetX = healthOffX;
     healthBarOffsetY = healthOffY;

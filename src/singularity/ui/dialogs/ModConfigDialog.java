@@ -150,7 +150,7 @@ public class ModConfigDialog extends BaseDialog{
     cfgCount = 0;
     for(ConfigLayout entry: entries.get(currCat)){
       cfgCount++;
-      settings.table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray.cpy().a(cfgCount % 2)), ent -> {
+      settings.table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray.cpy().a(0.5f*(cfgCount % 2))), ent -> {
         ent.setClip(false);
         ent.defaults().growY();
         entry.build(ent);
@@ -308,6 +308,8 @@ public class ModConfigDialog extends BaseDialog{
     Floatp curr;
     float min, max, step;
 
+    int fix;
+
     public ConfigSlider(String name, Floatc slided, Floatp curr, float min, float max, float step){
       super(name);
       this.slided = slided;
@@ -315,13 +317,23 @@ public class ModConfigDialog extends BaseDialog{
       this.min = min;
       this.max = max;
       this.step = step;
+
+      step %= 1;
+      for (int i = 0; ; i++) {
+        if (Mathf.zero(step)){
+          fix = i;
+          break;
+        }
+        step *= 10;
+        step %= 1;
+      }
     }
 
     @Override
     public void buildCfg(Table table){
       if(str == null){
         table.add("").update(l -> {
-          l.setText(Strings.autoFixed(curr.get(), 1));
+          l.setText(Strings.autoFixed(curr.get(), fix));
         }).padRight(0);
       }
       table.slider(min, max, step, curr.get(), slided).width(360).padLeft(4).update(s -> {

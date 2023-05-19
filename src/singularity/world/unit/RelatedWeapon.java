@@ -52,32 +52,39 @@ public class RelatedWeapon extends DataWeapon {
 
       t.row();
       t.add(Core.bundle.get("misc.preferred")).color(Pal.accent);
-      if (!alwaysContinuous && reload > 0) {
-        t.row();
-        t.add("[lightgray]" + Stat.reload.localized() + ": " + (mirror ? "2x " : "") + "[white]" + Strings.autoFixed(60f/reload*shoot.shots, 2) + " " + StatUnit.perSecond.localized());
-      }
-      if (!override) {
-        StatUtils.buildAmmo(t, bullet);
-      }
-      if (customDisplay != null){
-        customDisplay.get(bullet, t);
-      }
+      t.row();
+      t.table(ta -> {
+        ta.left().defaults().left().fill();
+        if (!alwaysContinuous && reload > 0) {
+          ta.add("[lightgray]" + Stat.reload.localized() + ": " + (mirror ? "2x " : "") + "[white]" + Strings.autoFixed(60f/reload*shoot.shots, 2) + " " + StatUnit.perSecond.localized());
+        }
+        if (!override) {
+          StatUtils.buildAmmo(ta, bullet);
+        }
+        if (customDisplay != null){
+          customDisplay.get(bullet, ta);
+        }
+      }).padLeft(16);
 
       t.row();
       t.image().color(Color.lightGray).height(3).growX().pad(0).padTop(3).padBottom(3).colspan(2);
       t.row();
 
       t.add(useAlternative.getInfo() == null? Core.bundle.get("misc.alternative"): useAlternative.getInfo()).color(Pal.accent);
-      if (!alwaysContinuous && reload > 0) {
-        t.row();
-        t.add("[lightgray]" + Stat.reload.localized() + ": " + (mirror ? "2x " : "") + "[white]" + Strings.autoFixed(60f/reload*(alternativeShoot == null ? shoot.shots : alternativeShoot.shots), 2) + " " + StatUnit.perSecond.localized());
-      }
-      if (!overrideAlt) {
-        StatUtils.buildAmmo(t, alternativeBullet);
-      }
-      if (customAltDisplay != null){
-        customDisplay.get(alternativeBullet, t);
-      }
+      t.row();
+      t.table(ta -> {
+        ta.left().defaults().left().fill();
+        if (!alwaysContinuous && reload > 0) {
+          ta.row();
+          ta.add("[lightgray]" + Stat.reload.localized() + ": " + (mirror ? "2x " : "") + "[white]" + Strings.autoFixed(60f/reload*(alternativeShoot == null ? shoot.shots : alternativeShoot.shots), 2) + " " + StatUnit.perSecond.localized());
+        }
+        if (!overrideAlt) {
+          StatUtils.buildAmmo(ta, alternativeBullet);
+        }
+        if (customAltDisplay != null){
+          customDisplay.get(alternativeBullet, ta);
+        }
+      }).padLeft(16);
 
       t.row();
       t.image().color(Color.lightGray).height(3).growX().pad(0).padTop(3).padBottom(3).colspan(2);

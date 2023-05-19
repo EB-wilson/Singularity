@@ -1,12 +1,11 @@
 package singularity.contents;
 
 import arc.Core;
-import arc.Events;
 import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
 import arc.util.Time;
-import mindustry.game.EventType;
 import mindustry.type.Item;
+import singularity.core.UpdatePool;
 
 @SuppressWarnings("SpellCheckingInspection")
 public class SglItems implements ContentList{
@@ -112,7 +111,7 @@ public class SglItems implements ContentList{
         fullIcon = new TextureRegion(fullIcon);
         uiIcon = new TextureRegion(uiIcon);
 
-        Events.run(EventType.Trigger.update, () -> {
+        UpdatePool.receive("dynamicIcon-" + name, () -> {
           int frame = (int)(Time.globalTime / frameTime) % regions.length;
 
           fullIcon.set(regions[frame]);

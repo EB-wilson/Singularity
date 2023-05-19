@@ -235,7 +235,7 @@ public class GameOfLife extends SglBlock{
         }
 
         t.add(Core.bundle.format("infos.cellYears", i)).left().top().color(Pal.gray).fill();
-        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray), item -> {
+        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.5f)), item -> {
           item.defaults().grow().left();
           FactoryBlockComp.buildStatTable(item, stat);
         }).fill().pad(5).left().margin(5);
@@ -244,7 +244,7 @@ public class GameOfLife extends SglBlock{
 
       if (cellSenescence){
         t.add().left().top();
-        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray), item -> {
+        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.5f)), item -> {
           item.defaults().grow().left();
           item.add(Core.bundle.get("infos.cellYearsOverflow"));
         }).fill().pad(5).left().margin(5);

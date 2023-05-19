@@ -1,7 +1,6 @@
 package singularity.world.modules;
 
 import arc.Core;
-import arc.Events;
 import arc.func.Func;
 import arc.graphics.Color;
 import arc.math.WindowedMean;
@@ -12,11 +11,11 @@ import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.core.UI;
-import mindustry.game.EventType;
 import mindustry.gen.Building;
 import mindustry.gen.Tex;
 import mindustry.ui.Bar;
 import mindustry.world.modules.BlockModule;
+import singularity.core.UpdatePool;
 import singularity.world.blocks.SglBlock.SglBuilding;
 import singularity.world.components.NuclearEnergyBuildComp;
 import universecore.util.handler.FieldHandler;
@@ -25,7 +24,7 @@ public class NuclearEnergyModule extends BlockModule {
   static NuclearEnergyBuildComp lastShowFlow;
 
   static {
-    Events.run(EventType.Trigger.update, () -> {
+    UpdatePool.receive("updateEnergyFlow", () -> {
       Building nextFlowBuild = FieldHandler.getValueDefault(Vars.ui.hudfrag.blockfrag, "nextFlowBuild");
 
       if(nextFlowBuild instanceof NuclearEnergyBuildComp nuclearBuild && nuclearBuild.getNuclearBlock().hasEnergy()){

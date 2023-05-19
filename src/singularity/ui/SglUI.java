@@ -22,6 +22,8 @@ import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import mindustry.world.meta.StatUnit;
 import singularity.Sgl;
+import singularity.core.UpdatePool;
+import singularity.graphic.Blur;
 import singularity.graphic.SglDrawConst;
 import singularity.graphic.renders.SglPlanetRender;
 import singularity.ui.dialogs.*;
@@ -49,6 +51,18 @@ public class SglUI{
   public ToolBarFrag toolBar;
 
   public DebugInfos debugInfos;
+
+  public static Blur uiBlur = new Blur(Blur.DEf_B);
+
+  static {
+    UpdatePool.receive("syncUIBlurCfg", () -> {
+      uiBlur.blurScl = Sgl.config.blurLevel;
+      uiBlur.blurSpace = Sgl.config.backBlurLen;
+
+      SglStyles.blurBack.stageBackground = Sgl.config.enableBlur? SglStyles.BLUR_BACK: Styles.black9;
+      Styles.defaultDialog.stageBackground = Sgl.config.enableBlur? SglStyles.BLUR_BACK: Styles.black9;
+    });
+  }
 
   private static final Object[][] grapPreset = {
       {1, false, 128, false, false, 64, false},
@@ -236,7 +250,7 @@ public class SglUI{
             () -> Sgl.config.flushInterval,
             0, 60, 1
         ){{
-          str = () -> Strings.autoFixed(Sgl.config.flushInterval/60, 1) + StatUnit.seconds.localized();
+          str = () -> Strings.autoFixed(Sgl.config.flushInterval/60, 2) + StatUnit.seconds.localized();
         }},
         new ConfigSlider(
             "maxDisplay",
@@ -303,6 +317,22 @@ public class SglUI{
         new ConfigCheck("showStatusTime", b -> Sgl.config.showStatusTime = b, () -> Sgl.config.showStatusTime)
     );
     config.addConfig("graphic", Icon.image,
+        new ConfigSepLine("uiView", Core.bundle.get("misc.uiView")),
+        new ConfigCheck("enableBlur", b -> Sgl.config.enableBlur = b, () -> Sgl.config.enableBlur),
+        new ConfigSlider(
+            "blurLevel",
+            f -> Sgl.config.blurLevel = (int) f,
+            () -> Sgl.config.blurLevel,
+            1, 8, 1
+        ),
+        new ConfigSlider(
+            "backBlurLen",
+            f -> Sgl.config.backBlurLen = f,
+            () -> Sgl.config.backBlurLen,
+            0.5f, 8, 0.25f
+        ),
+
+        new ConfigSepLine("animateView", Core.bundle.get("misc.animateView")),
         new ConfigSlider(
             "preset",
             f -> {

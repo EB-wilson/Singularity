@@ -48,8 +48,12 @@ public class DebugBlocks implements ContentList{
       buildType = () -> new TestBlockBuild(){
         float alp = 1;
 
-        static final Blur blur = new Blur();
+        static final Blur blur = new Blur(Blur.DEf_B);
         static final int id = SglDraw.nextTaskID();
+
+        static {
+          blur.blurSpace = 1f;
+        }
 
         @Override
         public void draw() {

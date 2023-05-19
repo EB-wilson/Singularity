@@ -4,7 +4,7 @@
 //This is the configuration file of the singularity mod. You can see most of the configuration items in the configuration UI page.
 //Configurations that are not usually used, such as debugging options, need to be adjusted in this file.
 {
-  "configVersion": 6,
+  "configVersion": 7,
 
   //=====Basic/基础设置=====//
   //--main menu/主菜单设置--
@@ -49,6 +49,14 @@
   "showStatusTime": true,
 
   //===Graphic/图形设置===//
+
+  //启用UI模糊视效
+  "enableBlur": true,
+  //模糊度
+  "blurLevel": 4,
+  //模糊强度
+  "backBlurLen": 1.25,
+
   "animateLevel": 3,
   //启用模组着色器
   "enableShaders": true,

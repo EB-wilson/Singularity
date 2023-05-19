@@ -15,7 +15,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 
 public class ModConfig{
-  private static final int configVersion = 6;
+  private static final int configVersion = 7;
   private static final Field[] configs = ModConfig.class.getFields();
 
   //basic/基础设置
@@ -53,6 +53,15 @@ public class ModConfig{
   @Order(12f)
   public boolean showStatusTime;
 
+  //UI视觉
+  @Order(12.01f)
+  public boolean enableBlur;
+  @Order(12.02f)
+  public int blurLevel;
+  @Order(12.03f)
+  public float backBlurLen;
+
+  //图形效果
   @Order(12.05f)
   public int animateLevel;
   @Order(12.1f)

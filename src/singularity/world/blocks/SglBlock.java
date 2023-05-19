@@ -431,11 +431,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public void updateDisplayLiquid(){
       displayLiquids.clear();
       temp.clear();
-      if(recipeCurrent >= 0 && consumer.current != null){
-        if(consumer.current.get(SglConsumeType.liquid) != null){
-          for(LiquidStack stack: consumer.current.get(SglConsumeType.liquid).consLiquids){
-            temp.add(stack.liquid);
-          }
+      if(recipeCurrent >= 0 && consumer.current != null && consumer.current.get(SglConsumeType.liquid) != null){
+        for(LiquidStack stack: consumer.current.get(SglConsumeType.liquid).consLiquids){
+          temp.add(stack.liquid);
         }
       }
       liquids.each((key, val) -> {

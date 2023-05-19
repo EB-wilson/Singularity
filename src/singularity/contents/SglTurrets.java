@@ -3409,7 +3409,7 @@ public class SglTurrets implements ContentList{
     };
   }
 
-  public BulletType lightning(float lifeTime, float damage, float size, Color color, boolean gradient, Func<Bullet, LightningGenerator> generator){
+  public static BulletType lightning(float lifeTime, float damage, float size, Color color, boolean gradient, Func<Bullet, LightningGenerator> generator){
     return new singularity.world.blocks.turrets.LightningBulletType(0, damage){
       {
         lifetime = lifeTime;

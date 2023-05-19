@@ -18,27 +18,16 @@ public class ScreenSampler {
     if (activity)
       throw new RuntimeException("forbid setup sampler twice");
 
-    Events.run(EventType.Trigger.preDraw, ScreenSampler::capture);
-    Events.run(EventType.Trigger.uiDrawBegin, ScreenSampler::capture);
-    Events.run(EventType.Trigger.uiDrawEnd, ScreenSampler::end);
+    Events.run(EventType.Trigger.uiDrawEnd, ScreenSampler::flush);
     activity = true;
   }
 
-  private static boolean capturing;
-
-  private static void capture(){
-    if (capturing) return;
-    capturing = true;
+  private static void flush(){
+    samplerBuffer.end();
+    samplerBuffer.blit(baseShader);
 
     samplerBuffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
     samplerBuffer.begin(Color.clear);
-  }
-
-  private static void end(){
-    capturing = false;
-
-    samplerBuffer.end();
-    samplerBuffer.blit(baseShader);
   }
 
   /**获取当前屏幕纹理，纹理对象是当前屏幕纹理的引用或者映射，它会随渲染过程同步变化，请勿使用此对象暂存屏幕数据

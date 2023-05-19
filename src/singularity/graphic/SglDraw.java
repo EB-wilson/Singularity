@@ -50,6 +50,7 @@ public class SglDraw{
 
   public static final int sharedUnderBlockBloomID = nextTaskID();
   public static final int sharedUponFlyUnitBloomID = nextTaskID();
+  public static final int sharedUnderFlyUnitBloomID = nextTaskID();
 
   static {
     Events.run(EventType.Trigger.draw, () -> {
@@ -80,8 +81,8 @@ public class SglDraw{
       task.defaultFirstTask = drawFirst;
       task.defaultLastTask = drawLast;
       task.defaultTarget = defTarget;
-      Draw.draw(Draw.z(), task::flush);
       task.init = true;
+      Draw.draw(Draw.z(), task::flush);
     }
     task.addTask(target, draw);
   }
@@ -185,8 +186,8 @@ public class SglDraw{
     }
 
     if (!task.init){
-      Draw.draw(Draw.z(), task::flush);
       task.init = true;
+      Draw.draw(Draw.z(), task::flush);
     }
     task.addTask(target, draw);
   }
@@ -207,8 +208,8 @@ public class SglDraw{
     }
 
     if (!task.init){
-      Draw.draw(Draw.z(), task::flush);
       task.init = true;
+      Draw.draw(Draw.z(), task::flush);
     }
     task.addTask(null, draw);
   }
@@ -300,6 +301,23 @@ public class SglDraw{
     float z = Draw.z();
     Draw.z(Layer.flyingUnit + 1);
     drawBloom(sharedUponFlyUnitBloomID, target, draw);
+    Draw.z(z);
+  }
+
+  /**@see SglDraw#drawBloomUnderFlyUnit(Object, DrawAcceptor) */
+  public static void drawBloomUnderFlyUnit(DrawDef draw){
+    drawBloomUnderFlyUnit(null, draw);
+  }
+
+  /**在共享的泛光绘制组中发布一个泛光绘制任务，绘制的层位于低空单位下方（86, {@link Layer#flyingUnitLow}-1）
+   * <p>关于泛光绘制任务，请参阅{@link SglDraw#drawBloom(int, Object, DrawAcceptor)}
+   *
+   * @param target 传递给绘制任务的数据对象
+   * @param draw 绘制任务*/
+  public static <T> void drawBloomUnderFlyUnit(T target, DrawAcceptor<T> draw){
+    float z = Draw.z();
+    Draw.z(Layer.plans + 1);
+    drawBloom(sharedUnderFlyUnitBloomID, target, draw);
     Draw.z(z);
   }
 
@@ -899,7 +917,7 @@ public class SglDraw{
     int taskCounter;
     boolean init;
 
-    <T> void addTask(T dataAcceptor, DrawAcceptor<T> task){
+    public <T> void addTask(T dataAcceptor, DrawAcceptor<T> task){
       if (tasks.length <= taskCounter){
         tasks = Arrays.copyOf(tasks, tasks.length + 1);
         dataTarget = Arrays.copyOf(dataTarget, tasks.length);
@@ -910,7 +928,7 @@ public class SglDraw{
     }
 
     @SuppressWarnings("rawtypes")
-    void flush(){
+    public void flush(){
       if (defaultFirstTask != null) ((DrawAcceptor)defaultFirstTask).draw(defaultTarget);
 
       for (int i = 0; i < taskCounter; i++) {

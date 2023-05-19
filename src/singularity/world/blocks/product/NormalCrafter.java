@@ -7,14 +7,15 @@ import arc.func.Cons2;
 import arc.func.Floatp;
 import arc.graphics.Color;
 import arc.math.Mathf;
+import arc.scene.event.Touchable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Image;
-import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
 import arc.struct.EnumSet;
 import arc.struct.Seq;
 import arc.util.Scaling;
 import arc.util.Strings;
+import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.content.Fx;
@@ -54,6 +55,9 @@ import universecore.world.producers.BaseProduce;
 import universecore.world.producers.BaseProducers;
 import universecore.world.producers.ProduceLiquids;
 import universecore.world.producers.ProduceType;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**常规的工厂类方块，具有强大的consume-produce制造系统的近乎全能的制造类方块*/
 @Annotations.ImplEntries
@@ -140,7 +144,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
   @Override
   public void init(){
     if(effectRange == -1) effectRange = size;
-    
+
     if(producers().size > 0) for(BaseProducers prod: producers()){
       hasItems |= outputItems |= prod.get(SglProduceType.item) != null;
       hasLiquids |= outputsLiquid |= prod.get(SglProduceType.liquid) != null;
@@ -168,13 +172,16 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
 
     stats.add(SglStat.recipes, t -> {
       t.left().row();
+      t.add(Core.bundle.get("infos.touchShowDetails")).color(Color.gray).left();
+      t.row();
       for (int i = 0; i < consumers.size; i++) {
         BaseConsumers cons = consumers.get(i);
         BaseProducers prod = producers().get(i);
 
-        Table details = new Table(Tex.pane);
+        Table details = new Table();
         FactoryBlockComp.buildRecipe(details, cons, prod);
-        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray), ta -> {
+
+        Table simple = new Table(ta -> {
           ta.left().defaults().left();
 
           if (cons.showTime){
@@ -185,7 +192,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
                 }),
                 new Table(o -> {
                   o.left().bottom();
-                  o.add("" + Strings.autoFixed(cons.craftTime/60, 1) + StatUnit.seconds.localized()).style(Styles.outlineLabel);
+                  o.add(Strings.autoFixed(cons.craftTime/60, 1) + StatUnit.seconds.localized()).style(Styles.outlineLabel);
                   o.pack();
                 })
             );
@@ -193,7 +200,24 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
           }
 
           buildRecipeSimple(cons, prod, ta);
-        }).margin(5).left().growX().fillY().pad(3).get().addListener(new Tooltip(tip -> tip.add(details)){{allowMobile = true;}});
+        });
+
+        AtomicBoolean isSim = new AtomicBoolean(false);
+        AtomicReference<Runnable> rebuild = new AtomicReference<>();
+
+        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.5f)),ta -> {
+          rebuild.set(() -> {
+            ta.clearChildren();
+            ta.left().add(isSim.get()? details: simple);
+
+            isSim.set(!isSim.get());
+          });
+          rebuild.get().run();
+
+          ta.touchable = Touchable.enabled;
+        }).margin(5).left().growX().fillY().pad(3).get().clicked(() -> {
+          rebuild.get().run();
+        });
         t.row();
       }
     });

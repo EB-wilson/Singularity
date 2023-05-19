@@ -85,7 +85,7 @@ public class StatUtils{
       sep(table, "@bullet.armorpierce");
     }
 
-    if(bullet.status != StatusEffects.none){
+    if(bullet.status != StatusEffects.none && bullet.status != null){
       sep(table, (bullet.status.minfo.mod == null? bullet.status.emoji(): "") + "[stat]" + bullet.status.localizedName + "[lightgray] ~ " +
           "[stat]" + Strings.autoFixed(bullet.statusDuration/60f, 1) + "[lightgray] " + Core.bundle.get("unit.seconds"));
     }

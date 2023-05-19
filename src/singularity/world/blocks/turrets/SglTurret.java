@@ -9,7 +9,7 @@ import arc.graphics.Color;
 import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
-import arc.scene.ui.Tooltip;
+import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.EnumSet;
 import arc.struct.ObjectMap;
@@ -35,7 +35,6 @@ import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import mindustry.ui.LiquidDisplay;
-import mindustry.ui.Styles;
 import mindustry.world.blocks.ControlBlock;
 import mindustry.world.meta.*;
 import singularity.ui.StatUtils;
@@ -44,7 +43,6 @@ import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.DrawSglTurret;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ConsumerBuildComp;
-import universecore.components.blockcomp.FactoryBlockComp;
 import universecore.world.consumers.*;
 
 import static mindustry.Vars.tilesize;
@@ -294,18 +292,8 @@ public class SglTurret extends SglBlock{
     stats.add(Stat.ammo, table -> {
       table.defaults().padLeft(15);
       for(ObjectMap.Entry<BaseConsumers, AmmoDataEntry> entry: ammoTypes){
-        Stats stat = new Stats();
-        entry.key.display(stat);
-        if (entry.key.showTime){
-          stat.remove(Stat.productionTime);
-          stat.add(Stat.reload, 60f/entry.key.craftTime*shoot.shots, StatUnit.perSecond);
-        }
-
-        Table details = new Table(Tex.pane);
-        FactoryBlockComp.buildStatTable(details, stat);
-
         table.row();
-        table.table(t -> {
+        table.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.5f)), t -> {
           t.left().defaults().left().growX();
           t.table(st -> {
             st.left().defaults().left();
@@ -321,7 +309,7 @@ public class SglTurret extends SglBlock{
             }).fill();
             st.row();
             st.add(Stat.reload.localized() + ":" + Strings.autoFixed(60f/entry.key.craftTime*shoot.shots, 1) + StatUnit.perSecond.localized());
-          }).get().addListener(new Tooltip(tip -> tip.add(details)){{allowMobile = true;}});
+          });
           t.row();
 
           AmmoDataEntry ammoEntry = entry.value;
@@ -334,7 +322,7 @@ public class SglTurret extends SglBlock{
             return;
           }
 
-          t.table(Styles.grayPanel,  bt -> {
+          t.table(bt -> {
             bt.defaults().left();
             if(!ammoEntry.override){
               StatUtils.buildAmmo(bt, type);
@@ -343,7 +331,7 @@ public class SglTurret extends SglBlock{
             for(Cons2<Table, BulletType> value: ammoEntry.statValues){
               value.get(bt, type);
             }
-          }).padTop(-9).padLeft(0).left();
+          }).left();
         }).fill();
       }
     });

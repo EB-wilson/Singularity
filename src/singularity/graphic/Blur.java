@@ -1,5 +1,6 @@
 package singularity.graphic;
 
+import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.Gl;
 import arc.graphics.gl.FrameBuffer;
@@ -55,7 +56,7 @@ public class Blur {
   boolean capturing;
 
   public int blurScl = 4;
-  public float blurSpace = 2.26f;
+  public float blurSpace = 2.16f;
 
   public Blur(){
     this(DEf_F);
@@ -208,5 +209,12 @@ public class Blur {
     Gl.enable(Gl.blend);
     Gl.blendFunc(Gl.srcAlpha, Gl.oneMinusSrcAlpha);
     buffer.blit(blurShader);
+  }
+
+  public void directDraw(Runnable draw){
+    resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+    capture();
+    draw.run();
+    render();
   }
 }

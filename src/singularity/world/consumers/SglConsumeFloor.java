@@ -10,6 +10,7 @@ import arc.struct.ObjectIntMap;
 import arc.struct.Seq;
 import arc.util.Scaling;
 import arc.util.Strings;
+import arc.util.Tmp;
 import mindustry.ctype.Content;
 import mindustry.gen.Building;
 import mindustry.gen.Icon;
@@ -90,7 +91,7 @@ public class SglConsumeFloor<T extends Building & ConsumerBuildComp & FloorCraft
   @Override
   public void display(Stats stats) {
     stats.add(Stat.tiles, st -> {
-      st.row().table(((TextureRegionDrawable)Tex.whiteui).tint(Pal.darkestGray), t -> {
+      st.row().table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.5f)), t -> {
         t.clearChildren();
         t.defaults().pad(5).left();
 

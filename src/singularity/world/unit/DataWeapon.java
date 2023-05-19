@@ -22,7 +22,7 @@ public class DataWeapon extends SglWeapon{
         if(unit.mounts[i] == mount){
           DataWeaponMount m;
           unit.mounts[i] = m = new DataWeaponMount();
-          init(m);
+          init(unit, m);
           break;
         }
       }
@@ -36,7 +36,7 @@ public class DataWeapon extends SglWeapon{
   }
 
   /**对武器的初始化，此方法通常用于分配武器的初始变量*/
-  public void init(DataWeaponMount mount){
+  public void init(Unit unit, DataWeaponMount mount){
 
   }
 
