@@ -17,11 +17,9 @@ import mindustry.content.Fx;
 import mindustry.content.Liquids;
 import mindustry.content.StatusEffects;
 import mindustry.entities.UnitSorts;
-import mindustry.entities.Units;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.bullet.LaserBulletType;
 import mindustry.entities.pattern.ShootPattern;
-import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Bullet;
 import mindustry.gen.Unit;
@@ -37,6 +35,7 @@ import mindustry.world.draw.DrawRegion;
 import singularity.Sgl;
 import singularity.graphic.SglDrawConst;
 import singularity.world.SglFx;
+import singularity.world.SglUnitSorts;
 import singularity.world.blocks.defence.GameOfLife;
 import singularity.world.blocks.defence.PhasedRadar;
 import singularity.world.blocks.defence.SglWall;
@@ -44,8 +43,6 @@ import singularity.world.draw.DrawDirSpliceBlock;
 import singularity.world.meta.SglStat;
 import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.VectorLightningGenerator;
-
-import java.util.Arrays;
 
 import static mindustry.Vars.tilesize;
 
@@ -284,10 +281,6 @@ public class DefenceBlocks implements ContentList{
       }));
 
       addDeathTrigger(5, shootBullet(new BulletType(){
-        private static final float[] cpriority = new float[3];
-        private static final float[] cdist = new float[3];
-        private static final Unit[] result = new Unit[3];
-
         {
           damage = 180;
           clipSize = 200;
@@ -352,32 +345,7 @@ public class DefenceBlocks implements ContentList{
               d.related.clear();
               d.aim = null;
 
-              Arrays.fill(result, null);
-              Arrays.fill(cdist, 0f);
-              Arrays.fill(cpriority, -99999f);
-              Units.nearbyEnemies(b.team, b.x, b.y, 320, e -> {
-                if(e.dead() || e.team == Team.derelict || !e.within(b.x, b.y, 320 + e.hitSize/2f) || !e.targetable(b.team) || e.inFogTo(b.team)) return;
-
-                float cost = UnitSorts.closest.cost(e, b.x, b.y);
-
-                for(int i = 2; i >= 0; i--){
-                  if((result[i] == null || cost < cdist[i] || e.type.targetPriority > cpriority[i]) && e.type.targetPriority >= cpriority[i]){
-                    if(result[i] != null){
-                      for(int j = 2; j > i; j--){
-                        result[j] = result[j - 1];
-                        cdist[j] = cdist[j - 1];
-                        cpriority[j] = cpriority[j - 1];
-                      }
-                    }
-
-                    result[i] = e;
-                    cdist[i] = cost;
-                    cpriority[i] = e.type.targetPriority;
-                  }
-                }
-              });
-
-              for(Unit unit: result){
+              for(Unit unit: SglUnitSorts.findEnemies(3, b, 320, UnitSorts.farthest)){
                 if(unit == null) continue;
 
                 if(d.aim == null) d.aim = unit;

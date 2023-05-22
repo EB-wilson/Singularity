@@ -20,7 +20,7 @@ public class StatUtils{
   public static void buildAmmo(Table table, BulletType bullet){
     table.left().defaults().padRight(3).left();
 
-    if(bullet.damage > 0 && (bullet.collides || bullet.splashDamage <= 0)){
+    if(bullet.damage > 0){
       if(bullet.continuousDamage() > 0){
         sep(table, Core.bundle.format("bullet.damage", bullet.continuousDamage()) + StatUnit.perSecond.localized());
       }else{

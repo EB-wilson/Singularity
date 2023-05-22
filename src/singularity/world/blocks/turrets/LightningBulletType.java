@@ -5,7 +5,6 @@ import arc.util.Time;
 import arc.util.pooling.Pools;
 import mindustry.entities.bullet.BulletType;
 import mindustry.gen.Bullet;
-import mindustry.graphics.Layer;
 import singularity.world.SglFx;
 import universecore.world.lightnings.LightningContainer;
 
@@ -52,7 +51,6 @@ public class LightningBulletType extends BulletType{
 
   public void draw(Bullet b, LightningContainer c){
     Draw.color(b.type.hitColor);
-    Draw.z(Layer.bullet);
     c.draw(b.x, b.y);
   }
 

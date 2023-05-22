@@ -8,6 +8,7 @@ import arc.graphics.g2d.Lines;
 import arc.math.Angles;
 import arc.math.Interp;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.math.geom.Geometry;
 import arc.math.geom.Position;
 import arc.math.geom.Vec2;
@@ -50,41 +51,54 @@ public class SglFx{
     randLenVectors(e.id, 1, 8f + e.fin()*(param + 3), (x, y) -> {
       Fill.circle(e.x + x, e.y + y, 0.55f + e.fslope()*4.5f);
     });
-  }),
+  });
 
-  cloudGradient = new Effect(45, e -> {
+  public final static Effect moveParticle = new Effect(90, e -> {
+    Draw.color(e.color);
+
+    Tmp.v1.setZero();
+    if (e.data instanceof Number n){
+      Tmp.v1.set(n.floatValue(), 0).setAngle(e.rotation);
+    }
+
+    float rad = Mathf.randomSeed(e.id, 1f, 3f)*e.fout(Interp.pow2Out);
+
+    Fill.circle(e.x + Tmp.v1.x*e.fin(), e.y + Tmp.v1.y*e.fin(), rad);
+  });
+
+  public final static Effect cloudGradient = new Effect(45, e -> {
     Draw.color(e.color, 0f);
 
     Draw.z(Layer.flyingUnit + 1);
     SglDraw.gradientCircle(e.x, e.y, 14*e.fout(), 0.6f);
-  }),
+  });
 
-  shootRecoilWave = new Effect(40, e -> {
+  public final static Effect shootRecoilWave = new Effect(40, e -> {
     Draw.color(e.color);
     for(int i : signs){
       Drawf.tri(e.x, e.y, 15f * e.fout(), 50f, e.rotation + 40f*i);
     }
-  }),
+  });
 
-  impactWaveSmall = new Effect(18, e -> {
+  public final static Effect impactWaveSmall = new Effect(18, e -> {
     Draw.color(e.color);
     Lines.stroke(5*e.fout());
     Lines.circle(e.x, e.y, 36*e.fin(Interp.pow3Out));
-  }),
+  });
 
-  impactWave = new Effect(24, e -> {
+  public final static Effect impactWave = new Effect(24, e -> {
     Draw.color(e.color);
     Lines.stroke(6*e.fout());
     Lines.circle(e.x, e.y, 48*e.fin(Interp.pow3Out));
-  }),
+  });
 
-  impactWaveBig = new Effect(30, e -> {
+  public final static Effect impactWaveBig = new Effect(30, e -> {
     Draw.color(e.color);
     Lines.stroke(6.5f*e.fout());
     Lines.circle(e.x, e.y, 55*e.fin(Interp.pow3Out));
-  }),
+  });
 
-  polyParticle = new Effect(150, e -> {//这段代码很特殊，闪光线的代码并不是我写的，这来自一个bug，大概是来自Lines的闭合线问题，意料之外，但效果还不错，就留着了
+  public final static Effect polyParticle = new Effect(150, e -> {//这段代码很特殊，闪光线的代码并不是我写的，这来自一个bug，大概是来自Lines的闭合线问题，意料之外，但效果还不错，就留着了
     randLenVectors(e.id, 1, 24, e.rotation + 180, 20, (x, y) -> {
       int vertices = randomSeed((int) (e.id + x), 3, 6);
       float step = 360f/vertices;
@@ -113,33 +127,41 @@ public class SglFx{
       Lines.stroke(0.4f*e.fout(), e.color);
       Lines.endLine(true);
     });
-  }),
+  });
 
-  impactBubbleSmall = new Effect(40, e -> {
+  public final static Effect impactBubbleSmall = new Effect(40, e -> {
     Draw.color(e.color);
     randLenVectors(e.id, 9, 20, (x, y) -> {
       float s = randomSeed((int) (e.id + x), 3f, 6f);
       Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), s*e.fout());
     });
-  }),
+  });
 
-  impactBubble = new Effect(60, e -> {
+  public final static Effect impactBubble = new Effect(60, e -> {
     Draw.color(e.color);
     randLenVectors(e.id, 12, 26, (x, y) -> {
       float s = randomSeed((int) (e.id + x), 4f, 8f);
       Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), s*e.fout());
     });
-  }),
+  });
 
-  crystalConstructed = new Effect(60, e -> {
+  public final static Effect impactBubbleBig = new Effect(79, e -> {
+    Draw.color(e.color);
+    randLenVectors(e.id, 15, 45, (x, y) -> {
+      float s = randomSeed((int) (e.id + x), 5f, 10f);
+      Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), s*e.fout());
+    });
+  });
+
+  public final static Effect crystalConstructed = new Effect(60, e -> {
     Draw.color(e.color);
     Lines.stroke(4*e.fout());
 
     Draw.z(Layer.effect);
     Lines.square(e.x, e.y, 12*e.fin(), 45);
-  }),
+  });
 
-  hadronReconstruct = new Effect(60, e -> {
+  public final static Effect hadronReconstruct = new Effect(60, e -> {
     Draw.color(Pal.reactorPurple);
     Lines.stroke(3f*e.fout());
 
@@ -147,25 +169,25 @@ public class SglFx{
     randLenVectors(e.id, 3, 12, (x, y) -> {
       Lines.square(e.x + x, e.y + y, (14 + randomSeed(e.id + (int) (x*y), -2, 2))*e.fin(), e.fin()* randomSeed(e.id + (int) (x*y), -90, 90));
     });
-  }),
+  });
 
-  polymerConstructed = new Effect(60, e -> {
+  public final static Effect polymerConstructed = new Effect(60, e -> {
     Draw.color(Pal.reactorPurple);
     Lines.stroke(6*e.fout());
 
     Lines.square(e.x, e.y, 30*e.fin());
     Lines.square(e.x, e.y, 30*e.fin(), 45);
-  }),
+  });
 
-  spreadField = new Effect(60, e -> {
+  public final static Effect spreadField = new Effect(60, e -> {
     Draw.color(e.color);
     Lines.stroke(8*e.fout());
 
     Lines.square(e.x, e.y, 38*e.fin(Interp.pow2Out));
     Lines.square(e.x, e.y, 38*e.fin(Interp.pow2Out), 45);
-  }),
+  });
 
-  forceField = new Effect(45, e -> {
+  public final static Effect forceField = new Effect(45, e -> {
     Draw.color(e.color);
     if(e.data instanceof Float f){
       Draw.alpha(f);
@@ -175,9 +197,9 @@ public class SglFx{
     Draw.z(Layer.effect);
     Lines.stroke(lerp(1.5f, 0.4f, e.fin()));
     Lines.square(e.x, e.y, lerp(35, 3, e.fin()), lerp(e.rotation, endRot, e.fin()));
-  }),
+  });
 
-  FEXsmoke = new Effect(80, e -> {
+  public final static Effect FEXsmoke = new Effect(80, e -> {
     float move = clamp(e.fin()/0.35f);
     float size = 1 - clamp((e.fin() - 0.65f)/0.35f);
 
@@ -186,9 +208,9 @@ public class SglFx{
       color(SglDrawConst.fexCrystal, Color.lightGray, clamp(e.fin() + random(-0.1f, 0.1f)));
       Fill.square(e.x + x, e.y + y, 0.2f + size*2f + random(-0.15f, 0.15f), 45);
     });
-  }),
+  });
 
-  shootSmokeMissileSmall = new Effect(130f, 300f, e -> {
+  public final static Effect shootSmokeMissileSmall = new Effect(130f, 300f, e -> {
     color(e.color);
     alpha(0.5f);
     rand.setSeed(e.id);
@@ -198,24 +220,24 @@ public class SglFx{
         Fill.circle(e.x + Tmp.v1.x, e.y + Tmp.v1.y, b.fout() * 3.5f + 0.3f);
       });
     }
-  }),
+  });
 
-  impWave = new Effect(10f, e -> {
+  public final static Effect impWave = new Effect(10f, e -> {
     Draw.color(Color.white);
 
     Lines.stroke(e.fout());
     Lines.circle(e.x, e.y, randomSeed(e.id, 8, 10)*e.fin());
-  }),
+  });
 
-  glowParticle = new Effect(45, e -> {
+  public final static Effect glowParticle = new Effect(45, e -> {
     Draw.color(e.color, Color.white, e.fin());
 
     randLenVectors(e.id, 1, 3.5f, e.rotation, 5, (x, y) -> {
       Fill.circle(e.x + x*e.fin(Interp.pow2Out), e.y + y*e.fin(Interp.pow2Out), 1.6f*e.fout(Interp.pow2Out));
     });
-  }),
+  });
 
-  freezingBreakDown = new Effect(180, e -> {
+  public final static Effect freezingBreakDown = new Effect(180, e -> {
     if(!(e.data instanceof Unit u)) return;
     float size = u.hitSize*1.2f;
 
@@ -271,37 +293,44 @@ public class SglFx{
           Layer.effect, Layer.bullet - 1, Time.time*Mathf.randomSeed(id, -3.5f, 3.35f) + randomSeed((long) (id + dx), 360),
           Mathf.angle(dx, dy), Tmp.c1.set(SglDrawConst.frost).a(0.65f), SglDrawConst.winter);
     });
-  }),
+  });
 
-  crossLightMini = new Effect(22, e -> {
+  public final static Effect crossLightMini = new Effect(22, e -> {
     Draw.color(e.color);
     for(int i: signs){
       SglDraw.drawDiamond(e.x, e.y, 12 + 64*e.fin(Interp.pow3Out), 5*e.fout(Interp.pow3Out), e.rotation + 45 + i*45);
     }
-  }),
+  });
 
-  crossLightSmall = new Effect(26, e -> {
+  public final static Effect crossLightSmall = new Effect(26, e -> {
     Draw.color(e.color);
     for(int i: signs){
       SglDraw.drawDiamond(e.x, e.y, 22 + 74*e.fin(Interp.pow3Out), 8*e.fout(Interp.pow3Out), e.rotation + 45 + i*45);
     }
-  }),
+  });
 
-  crossLight = new Effect(30, e -> {
+  public final static Effect crossLight = new Effect(30, e -> {
     Draw.color(e.color);
     for(int i: signs){
       SglDraw.drawDiamond(e.x, e.y, 32 + 128*e.fin(Interp.pow3Out), 12*e.fout(Interp.pow3Out), e.rotation + 45 + i*45);
     }
-  }),
+  });
 
-  shootCrossLight = new Effect(120, e -> {
+  public final static Effect shootCrossLight = new Effect(120, e -> {
     Draw.color(e.color);
 
     float l = e.fout(Interp.pow3Out);
     SglDraw.drawLightEdge(e.x, e.y, 140, 5.5f*l, 140, 5.5f*l, e.rotation + 220*e.fin(Interp.pow3Out));
-  }),
+  });
 
-  ploymerGravityField = new Effect(32, e -> {
+  public final static Effect shootCrossLightLarge = new Effect(140, e -> {
+    Draw.color(e.color);
+
+    float l = e.fout(Interp.pow3Out);
+    SglDraw.drawLightEdge(e.x, e.y, 180, 11.5f*l, 180, 11.5f*l, e.rotation + 237*e.fin(Interp.pow3Out));
+  });
+
+  public final static Effect ploymerGravityField = new Effect(32, e -> {
     Draw.color(e.color);
     if(e.data instanceof NormalCrafter.NormalCrafterBuild b){
       float fout = e.fout();
@@ -312,9 +341,9 @@ public class SglFx{
         Lines.circle(x, y, r*fout);
       });
     }
-  }),
+  });
 
-  auroraCoreCharging = new Effect(80, 100, e -> {
+  public final static Effect auroraCoreCharging = new Effect(80, 100, e -> {
     Draw.color(SglDrawConst.matrixNet);
     stroke(e.fin() * 2f);
     Lines.circle(e.x, e.y, 4f + e.fout() * 100f);
@@ -330,17 +359,19 @@ public class SglFx{
 
     Fill.circle(e.x, e.y, e.fin() * 8);
     Drawf.light(e.x, e.y, e.fin() * 16f, Pal.heal, 0.7f);
-  }).rotWithParent(true).followParent(true),
+  }).rotWithParent(true).followParent(true);
 
-  explodeImpWaveSmall = impactExplode(22, 40f),
+  public final static Effect explodeImpWaveSmall = impactExplode(22, 40f);
 
-  explodeImpWave = impactExplode(32, 50f),
+  public final static Effect explodeImpWave = impactExplode(32, 50f);
 
-  explodeImpWaveBig = impactExplode(40, 65f),
+  public final static Effect explodeImpWaveBig = impactExplode(40, 65f);
 
-  explodeImpWaveLarge = impactExplode(60, 95f),
+  public final static Effect explodeImpWaveLarge = impactExplode(60, 95f);
 
-  reactorExplode = new MultiEffect(Fx.reactorExplosion, new Effect(180,e -> {
+  public final static Effect explodeImpWaveLaserBlase = impactExplode(80, 150f);
+
+  public final static Effect reactorExplode = new MultiEffect(Fx.reactorExplosion, new Effect(180, e -> {
     float size = e.data() instanceof Float ? e.data() : 120;
 
     float fin1 = clamp(e.fin()/0.1f);
@@ -413,9 +444,9 @@ public class SglFx{
         Drawf.light(b.x + x, b.y + y, (out*4*(3f + intensity))*3.5f, Draw.getColor(), 0.8f);
       });
     });
-  })),
+  }));
 
-  steam = new Effect(90, e -> {
+  public final static Effect steam = new Effect(90, e -> {
     Vec2 motion = e.data() instanceof Vec2 ? e.data() : new Vec2(0, 0);
     float len = motion.len();
     Draw.color(Color.white);
@@ -425,9 +456,9 @@ public class SglFx{
       Vec2 curr = motion.cpy().rotate(randomSeed(e.id, -20, 20)).setLength(len*e.finpow());
       Fill.circle(e.x + curr.x, e.y + curr.y, randomSeed(e.id, 3.5f, 5)*(0.3f + 0.7f*e.fslope()));
     }
-  }),
+  });
 
-  steamBreakOut = new Effect(24, e -> {
+  public final static Effect steamBreakOut = new Effect(24, e -> {
     float[] data = e.data instanceof float[] ? e.data() : new float[]{18, 24, 0.3f};
 
     float leng = random(data[0], data[1]);
@@ -435,15 +466,15 @@ public class SglFx{
       if(chanceDelta(data[2]))
         steam.at(e.x, e.y, 0, new Vec2(leng*Geometry.d8(i*2 + 1).x, leng*Geometry.d8(i*2 + 1).y));
     }
-  }),
+  });
 
-  lightCone = new Effect(16, e -> {
+  public final static Effect lightCone = new Effect(16, e -> {
     Draw.color(e.color);
 
     SglDraw.drawDiamond(e.x, e.y, 8, 26 * e.fout(), e.rotation);
-  }),
+  });
 
-  lightConeHit = new Effect(30, e -> {
+  public final static Effect lightConeHit = new Effect(30, e -> {
     Draw.color(e.color);
 
     float fout = e.fout(Interp.pow2Out);
@@ -452,17 +483,17 @@ public class SglFx{
       Drawf.tri(e.x - dx*fin, e.y - dy*fin, 6f*fout, 6 + 15*fout, Mathf.angle(dx, dy) + 180);
       Drawf.tri(e.x - dx*fin, e.y - dy*fin, 6f*fout, 6f*fout, Mathf.angle(dx, dy));
     });
-  }),
+  });
 
-  matrixDrill = new Effect(45, e -> {
+  public final static Effect matrixDrill = new Effect(45, e -> {
     Draw.color(e.color);
 
     Lines.stroke(1.8f*e.fout());
     Lines.square(e.x, e.y, 3f + 12*e.fin(), 45);
     Fill.square(e.x, e.y, 3*e.fout(), 45 + 360*e.fin(Interp.pow3Out));
-  }),
+  });
 
-  lightConeTrail = new Effect(20, e -> {
+  public final static Effect lightConeTrail = new Effect(20, e -> {
     Draw.color(e.color);
 
     int i = randomSeed(e.id) > 0.5f? 1: -1;
@@ -475,50 +506,59 @@ public class SglFx{
 
     Drawf.tri(e.x + dx, e.y + dy, 8f*fout, 8 + 24*fout, rot);
     Drawf.tri(e.x + dx, e.y + dy, 8f*fout, 8f*fout, rot + 180);
-  }),
+  });
 
-  trailLine = new Effect(24, e -> {
+  public final static Effect trailLine = new Effect(24, e -> {
     color(e.color);
 
     Drawf.tri(e.x, e.y, 2f*e.fout(), 2 + 6*e.fout(), e.rotation);
     Drawf.tri(e.x, e.y, 2f*e.fout(), 8 + 10*e.fout(), e.rotation + 180);
-  }),
+  });
 
-  trailLineLong = new Effect(30, e -> {
+  public final static Effect trailLineLong = new Effect(30, e -> {
     color(e.color);
 
     Drawf.tri(e.x, e.y, 4*e.fout(), 6 + 8*e.fout(), e.rotation);
     Drawf.tri(e.x, e.y, 4*e.fout(), 10 + 16*e.fout(), e.rotation + 180);
-  }),
+  });
 
-  spreadSparkLarge = new Effect(28, e -> {
+  public final static Effect spreadSparkLarge = new Effect(28, e -> {
     color(Color.white, e.color, e.fin());
     stroke(e.fout()*1.2f + 0.5f);
 
     randLenVectors(e.id, 20, 10f*e.fin(), 27f, (x, y) -> {
       lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), e.fslope()*5f + 0.5f);
     });
-  }),
+  });
 
-  diamondSpark = new Effect(30, e -> {
+  public final static Effect circleSparkLarge = new Effect(65, e -> {
+    color(Color.white, e.color, e.fin());
+    stroke(e.fout()*1.4f + 0.5f);
+
+    randLenVectors(e.id, 37, 28f*e.fin(), 49f, (x, y) -> {
+      lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), e.fslope()*9f);
+    });
+  });
+
+  public final static Effect diamondSpark = new Effect(30, e -> {
     color(Color.white, e.color, e.fin());
     stroke(e.fout()*1.2f + 0.5f);
 
     randLenVectors(e.id, 7, 6f*e.fin(), 20f, (x, y) -> {
       SglDraw.drawDiamond(e.x + x, e.y + y, 10, e.fout(Interp.pow2Out)*4f, Mathf.angle(x, y));
     });
-  }),
+  });
 
-  diamondSparkLarge = new Effect(30, e -> {
+  public final static Effect diamondSparkLarge = new Effect(30, e -> {
     color(Color.white, e.color, e.fin());
     stroke(e.fout()*1.2f + 0.5f);
 
     randLenVectors(e.id, 9, 8f*e.fin(), 24f, (x, y) -> {
       SglDraw.drawDiamond(e.x + x, e.y + y, 12, e.fout(Interp.pow2Out)*5f, Mathf.angle(x, y));
     });
-  }),
+  });
 
-  railShootRecoil = new Effect(12, e -> {
+  public final static Effect railShootRecoil = new Effect(12, e -> {
     Draw.color(e.color);
 
     randLenVectors(e.id, randomSeed(e.id, 2, 4), 24, e.rotation + 180, 60, (x, y) -> {
@@ -526,17 +566,17 @@ public class SglFx{
       float lerp = e.fin(Interp.pow2Out);
       SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, size, size/2f*e.fout(), Mathf.angle(x, y));
     });
-  }),
+  });
 
-  trailParticle = new Effect(95, e -> {
+  public final static Effect trailParticle = new Effect(95, e -> {
     Draw.color(e.color);
 
     randLenVectors(e.id, 3, 35, (x, y) -> {
       Fill.circle(e.x + x * e.fin(Interp.pow2In), e.y + y * e.fin(Interp.pow2In), 1.2f * e.fout());
     });
-  }),
+  });
 
-  iceParticle = new Effect(124, e -> {
+  public final static Effect iceParticle = new Effect(124, e -> {
     Draw.color(e.color);
 
     int amo = randomSeed(e.id, 2, 5);
@@ -547,9 +587,9 @@ public class SglFx{
       float y = Angles.trnsy(e.rotation, len) + Angles.trnsy(e.rotation + 90, off);
       Fill.circle(e.x + x, e.y + y, 0.9f*e.fout(Interp.pow2Out));
     }
-  }),
+  });
 
-  iceExplode = new Effect(128, e -> {
+  public final static Effect iceExplode = new Effect(128, e -> {
     float rate = e.fout(Interp.pow2In);
     float l = 176*rate;
     float w = 38*rate;
@@ -579,37 +619,37 @@ public class SglFx{
         SglDraw.drawDiamond(x + dx*lerp, y + dy*lerp, size, size*(1 - pow(fin, 2))*0.35f, Mathf.angle(dx, dy));
       });
     });
-  }),
+  });
 
-  particleSpread = new Effect(125, e -> {
+  public final static Effect particleSpread = new Effect(125, e -> {
     Draw.color(e.color);
 
     randLenVectors(e.id, 3, 32, (x, y) -> {
       Fill.circle(e.x + x*e.fin(), e.y + y*e.fin(), 0.9f*e.fout(Interp.pow2Out));
     });
-  }),
+  });
 
-  movingCrystalFrag = new Effect(45, e -> {
+  public final static Effect movingCrystalFrag = new Effect(45, e -> {
     float size = randomSeed(e.id, 4, 6)*e.fout();
     Draw.color(e.color);
     randLenVectors(e.id, 1, 3, 6, e.rotation, 20, (x, y) -> {
       SglDraw.drawDiamond(e.x + x*e.fin(Interp.pow2Out), e.y + y*e.fin(Interp.pow2Out), size*2.5f, size, Angles.angle(x, y));
     });
-  }),
+  });
 
-  crystalFrag = new Effect(26, e -> {
+  public final static Effect crystalFrag = new Effect(26, e -> {
     float size = randomSeed(e.id, 2, 4)*e.fout();
     Draw.color(e.color);
     SglDraw.drawDiamond(e.x, e.y, size*2.5f, size, Mathf.randomSeed(e.id, 0f, 360f));
-  }),
+  });
 
-  crystalFragFex = new Effect(26, e -> {
+  public final static Effect crystalFragFex = new Effect(26, e -> {
     float size = randomSeed(e.id, 2, 4)*e.fout();
     Draw.color(SglDrawConst.fexCrystal, 0.7f);
     SglDraw.drawDiamond(e.x, e.y, size*2.5f, size, Mathf.randomSeed(e.id, 0f, 360f));
-  }),
+  });
 
-  iceCrystal = new Effect(120, e -> {
+  public final static Effect iceCrystal = new Effect(120, e -> {
     float size = randomSeed(e.id, 2, 6)*e.fslope();
     Draw.color(e.color);
     float rot = randomSeed(e.id + 1, 360);
@@ -619,9 +659,9 @@ public class SglFx{
       SglDraw.drawDiamond(ec.x + blingX, ec.y + blingY, 85*ec.fslope(), 1.2f*ec.fslope(),
           randomSeed(ec.id + 2, 360) + randomSeed(ec.id + 3, -15, 15)*ec.fin());
     });
-  }),
+  });
 
-  shootRail = new Effect(60, e -> {
+  public final static Effect shootRail = new Effect(60, e -> {
     e.scaled(12f, b -> {
       Lines.stroke(b.fout()*4f + 0.2f, e.color);
       Lines.circle(b.x, b.y, b.fin()*70f);
@@ -632,9 +672,9 @@ public class SglFx{
     float lerp = e.fout(Interp.pow2Out);
     Draw.color(e.color);
     SglDraw.drawLightEdge(e.x, e.y, 64 + 64*lerp, 10*lerp, 60 + 80*lerp, 6*lerp, e.rotation + 90);
-  }),
+  });
 
-  winterShooting = new Effect(60, e -> {
+  public final static Effect winterShooting = new Effect(60, e -> {
     e.scaled(12f, b -> {
       Lines.stroke(b.fout()*4f + 0.2f, SglDrawConst.winter);
       Lines.circle(b.x, b.y, b.fin()*75f);
@@ -649,9 +689,52 @@ public class SglFx{
       float size = randomSeed((int) (e.id + x), 12, 20);
       SglDraw.drawDiamond(e.x + x*l, e.y + y*l, size, size/2f*e.fout(), Mathf.angle(x, y));
     });
-  }),
+  });
 
-  randomLightning = new LightningEffect(){
+  public final static Effect laserBlastWeaveLarge = new Effect(220, 200, e -> {
+    float size = 120;
+
+    float fin1 = clamp(e.fin()/0.1f);
+    float fin2 = clamp((e.fin() - 0.1f)/0.3f);
+
+    Draw.color(e.color);
+    Lines.stroke(6*e.fout());
+    float radius = size*e.fin(Interp.pow4Out);
+
+    SglDraw.gradientCircle(e.x, e.y, radius, -radius*e.fout(Interp.pow3In), 0);
+
+    float h, w;
+    float rate = e.fin() > 0.1f ? 1 - fin2 : fin1;
+    h = size*1.26f*rate;
+    w = h/4;
+
+    Lines.stroke(3f*rate);
+    Lines.circle(e.x, e.y, h/2);
+
+    SglDraw.drawLightEdge(e.x, e.y, h, w, h, w);
+
+    Rand r = rand;
+    r.setSeed(e.id);
+    for (int i = 0; i < 12; i++) {
+      float rot = r.random(0, 360f);
+      float wi = r.random(12, 18);
+      float le = r.random(wi*2f, wi*4f);
+
+      SglDraw.drawTransform(e.x, e.y, radius, 0, rot, (x, y, ro) -> {
+        Drawf.tri(x, y, wi*e.fout(), le, ro - 180);
+      });
+    }
+
+    e.scaled(140, ef -> {
+      Angles.randLenVectors(e.id, 10, 45, 140, (x, y) -> {
+        float lerp = ef.fin(Interp.pow3Out);
+        float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.6f, 0.8f);
+        SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, si, si/12*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
+      });
+    });
+  });
+
+  public final static Effect randomLightning = new LightningEffect(){
     final RandomGenerator branch = new RandomGenerator();
 
     final RandomGenerator generator = new RandomGenerator(){{
@@ -695,9 +778,9 @@ public class SglFx{
       Time.run(lifetime + 5, () -> Pools.free(lightning));
       return lightning;
     }
-  },
+  };
 
-  spreadLightning = new LightningEffect(){
+  public final static Effect spreadLightning = new LightningEffect(){
     final RandomGenerator branch = new RandomGenerator(){{
       maxDeflect = 50;
     }};
@@ -746,9 +829,9 @@ public class SglFx{
       Time.run(lifetime + 5, () -> Pools.free(lightning));
       return lightning;
     }
-  },
+  };
 
-  shrinkIceParticleSmall = new Effect(120, e -> {
+  public final static Effect shrinkIceParticleSmall = new Effect(120, e -> {
     Draw.color(SglDrawConst.winter);
 
     randLenVectors(e.id, randomSeed(e.id, 6, 12), 32, (x, y) -> {
@@ -756,11 +839,11 @@ public class SglFx{
       float lerp = e.fout(Interp.pow3Out);
       SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, size, size/2f*e.fin(), Mathf.angle(x, y));
     });
-  }),
+  });
 
-  shrinkParticleSmall = shrinkParticle(12, 2, 120, null),
+  public final static Effect shrinkParticleSmall = shrinkParticle(12, 2, 120, null);
 
-  blingSmall = new Effect(320, e -> {
+  public final static Effect blingSmall = new Effect(320, e -> {
     Draw.z(Layer.effect);
     Draw.color(e.color);
     float size = randomSeed(e.id, 6, 10);
@@ -769,18 +852,18 @@ public class SglFx{
     float i = e.fin(Interp.pow3Out);
     float dx = randomSeed(e.id, 16), dy = randomSeed(e.id + 1, 16);
     SglDraw.drawLightEdge(e.x + dx*i, e.y + dy*i, size, size*0.15f, size, size*0.15f);
-  }),
+  });
 
-  staticBlingSmall = new Effect(320, e -> {
+  public final static Effect staticBlingSmall = new Effect(320, e -> {
     Draw.z(Layer.effect);
     Draw.color(e.color);
     float size = randomSeed(e.id, 6, 10);
     size *= e.fout(Interp.pow4In);
     size += absin(Time.time + randomSeed(e.id, 2* pi), 3.5f, 2f);
     SglDraw.drawLightEdge(e.x, e.y, size, size*0.15f, size, size*0.15f);
-  }),
+  });
 
-  lightningBoltWave = new Effect(90, e -> {
+  public final static Effect lightningBoltWave = new Effect(90, e -> {
     Draw.color(e.color);
     float rate = e.fout(Interp.pow2In);
     float l = 168*rate;
@@ -799,63 +882,63 @@ public class SglFx{
       float size = randomSeed((int) (e.id + x), 18, 26);
       SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, size, size*0.23f*e.fout(), Mathf.angle(x, y));
     });
-  }),
+  });
 
-  neutronWeaveMicro = new Effect(45, e -> {
+  public final static Effect neutronWeaveMicro = new Effect(45, e -> {
     Draw.color(e.color);
 
     Lines.stroke(e.fout());
     Lines.square(e.x, e.y, 2.2f + 6.8f*e.fin(), 45);
     Fill.square(e.x, e.y, 2.2f*e.fout(), 45);
-  }),
+  });
 
-  neutronWeaveMini = new Effect(45, e -> {
+  public final static Effect neutronWeaveMini = new Effect(45, e -> {
     Draw.color(e.color);
 
     Lines.stroke(1.5f*e.fout());
     Lines.square(e.x, e.y, 3f + 9f*e.fin(), 45);
     Fill.square(e.x, e.y, 3f*e.fout(), 45);
-  }),
+  });
 
-  neutronWeave = new Effect(45, e -> {
+  public final static Effect neutronWeave = new Effect(45, e -> {
     Draw.color(e.color);
 
     Lines.stroke(1.8f*e.fout());
     Lines.square(e.x, e.y, 4f + 12*e.fin(), 45);
     Fill.square(e.x, e.y, 4*e.fout(), 45);
-  }),
+  });
 
-  neutronWeaveBig = new Effect(45, e -> {
+  public final static Effect neutronWeaveBig = new Effect(45, e -> {
     Draw.color(e.color);
 
     Lines.stroke(2f*e.fout());
     Lines.square(e.x, e.y, 5f + 18*e.fin(), 45);
     Fill.square(e.x, e.y, 5*e.fout(), 45);
-  }),
+  });
 
-  cellScan = new Effect(45, e -> {
+  public final static Effect cellScan = new Effect(45, e -> {
     Draw.color(e.color, 0.6f);
 
     if(e.data instanceof GameOfLife b){
       Fill.square(e.x, e.y, b.cellSize/2*e.fslope(), e.rotation);
     }
-  }),
+  });
 
-  spreadDiamond = new Effect(35, e -> {
+  public final static Effect spreadDiamond = new Effect(35, e -> {
     Draw.color(e.color);
 
     Lines.stroke(12f*e.fout());
     Lines.square(e.x, e.y, 32*e.fin(Interp.pow2Out), 45);
-  }),
+  });
 
-  spreadDiamondSmall = new Effect(25, e -> {
+  public final static Effect spreadDiamondSmall = new Effect(25, e -> {
     Draw.color(e.color);
 
     Lines.stroke(8f*e.fout());
     Lines.square(e.x, e.y, 18*e.fin(Interp.pow2Out), 45);
-  }),
+  });
 
-  cellDeath = new Effect(45, e -> {
+  public final static Effect cellDeath = new Effect(45, e -> {
     Draw.color(e.color);
 
     if(e.data instanceof GameOfLife b){
@@ -863,9 +946,9 @@ public class SglFx{
 
       Lines.square(e.x, e.y, b.gridSize*2*e.fin(Interp.pow2Out), e.rotation);
     }
-  }),
+  });
 
-  lightningCont = new Effect(200, e -> {
+  public final static Effect lightningCont = new Effect(200, e -> {
     if(e.data instanceof LightningContainer cont){
       cont.update();
 

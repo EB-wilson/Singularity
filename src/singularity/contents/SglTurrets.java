@@ -3410,6 +3410,10 @@ public class SglTurrets implements ContentList{
   }
 
   public static BulletType lightning(float lifeTime, float damage, float size, Color color, boolean gradient, Func<Bullet, LightningGenerator> generator){
+    return lightning(lifeTime, gradient? lifeTime/2: 0, damage, size, color, generator);
+  }
+
+  public static BulletType lightning(float lifeTime, float time, float damage, float size, Color color, Func<Bullet, LightningGenerator> generator){
     return new singularity.world.blocks.turrets.LightningBulletType(0, damage){
       {
         lifetime = lifeTime;
@@ -3431,7 +3435,7 @@ public class SglTurrets implements ContentList{
 
       @Override
       public void init(Bullet b, LightningContainer container){
-        container.time = gradient? lifeTime/2: 0;
+        container.time = time;
         container.lifeTime = lifeTime;
         container.generator = generator.get(b);
         container.maxWidth = size;

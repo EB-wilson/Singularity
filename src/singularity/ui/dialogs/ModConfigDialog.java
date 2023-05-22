@@ -110,6 +110,7 @@ public class ModConfigDialog extends BaseDialog{
                   over = Tex.underlineOver;
                   disabled = Tex.underlineDisabled;
                 }},
+                38,
                 () -> {
                   currCat = key;
                   settings.clearActions();
