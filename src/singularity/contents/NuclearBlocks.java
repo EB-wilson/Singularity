@@ -223,6 +223,7 @@ public class NuclearBlocks implements ContentList{
       craftedSoundVolume = 1f;
 
       ParticleModel model = new MultiParticleModel(
+          new SizeVelRelatedParticle(),
           new TargetMoveParticle(){{
             dest = p -> p.getVar("dest");
             deflection = p -> p.getVar("eff");
@@ -238,12 +239,7 @@ public class NuclearBlocks implements ContentList{
           }},
           new ShapeParticle(),
           new DrawDefaultTrailParticle()
-      ){
-        {
-          color = Pal.reactorPurple;
-          trailColor = Pal.reactorPurple;
-        }
-      };
+      );
   
       craftTrigger = e -> {
         for(Particle particle : Particle.get(p -> p.x < e.x + 20 && p.x > e.x - 20 && p.y < e.y + 20 && p.y > e.y - 20)){
@@ -253,14 +249,14 @@ public class NuclearBlocks implements ContentList{
         Effect.shake(4f, 18f, e.x, e.y);
         Angles.randLenVectors(System.nanoTime(), Mathf.random(5, 9), 4.75f, 6.25f, (x, y) -> {
           Tmp.v1.set(x, y).setLength(4);
-          Particle p = model.create(e.x + Tmp.v1.x, e.y + Tmp.v1.y, x, y, Mathf.random(5f, 7f));
+          Particle p = model.create(e.x + Tmp.v1.x, e.y + Tmp.v1.y, Pal.reactorPurple, x, y, Mathf.random(5f, 7f));
           p.setVar("dest", new Vec2(e.x, e.y));
           p.setVar("eff", e.workEfficiency()*0.15f);
         });
       };
       crafting = e -> {
         if(Mathf.chanceDelta(0.02f)) Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f,
-            (x, y) -> SglParticleModels.nuclearParticle.create(e.x, e.y, x, y, Mathf.random(3.25f, 4f)));
+            (x, y) -> SglParticleModels.floatParticle.create(e.x, e.y, Pal.reactorPurple, x, y, Mathf.random(3.25f, 4f)));
       };
       
       warmupSpeed = 0.0008f;
@@ -427,7 +423,7 @@ public class NuclearBlocks implements ContentList{
         if(Mathf.chanceDelta(0.06f*e.workEfficiency())) Angles.randVectors(System.nanoTime(), 1, 15, (x, y) -> {
           float iff = Mathf.random(0.4f, Math.max(0.4f, e.workEfficiency()));
           Tmp.v1.set(x, y).scl(0.5f*iff/2);
-          SglParticleModels.nuclearParticle.create(e.x + x, e.y + y, Tmp.v1.x, Tmp.v1.y, iff*6.5f*e.workEfficiency());
+          SglParticleModels.floatParticle.create(e.x + x, e.y + y, Pal.reactorPurple, Tmp.v1.x, Tmp.v1.y, iff*6.5f*e.workEfficiency());
         });
       };
 

@@ -9,14 +9,13 @@ import mindustry.entities.EntityCollisions;
 import mindustry.gen.Building;
 import mindustry.gen.Unit;
 import mindustry.gen.UnitWaterMove;
-import mindustry.type.UnitType;
 import mindustry.world.Tile;
 import mindustry.world.meta.Env;
 
 import static mindustry.Vars.state;
 import static mindustry.Vars.tilesize;
 
-public class AirSeaAmphibiousUnit extends UnitType {
+public class AirSeaAmphibiousUnit extends SglUnitType {
   public float airReloadMulti = 0.75f;
   public float airShootingSpeedMulti = 0.8f;
 

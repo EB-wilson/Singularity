@@ -98,6 +98,12 @@ public class SglFx{
     Lines.circle(e.x, e.y, 55*e.fin(Interp.pow3Out));
   });
 
+  public final static Effect impactWaveLarge = new Effect(38, e -> {
+    Draw.color(e.color);
+    Lines.stroke(7.3f*e.fout());
+    Lines.circle(e.x, e.y, 80*e.fin(Interp.pow3Out));
+  });
+
   public final static Effect polyParticle = new Effect(150, e -> {//这段代码很特殊，闪光线的代码并不是我写的，这来自一个bug，大概是来自Lines的闭合线问题，意料之外，但效果还不错，就留着了
     randLenVectors(e.id, 1, 24, e.rotation + 180, 20, (x, y) -> {
       int vertices = randomSeed((int) (e.id + x), 3, 6);
@@ -327,7 +333,7 @@ public class SglFx{
     Draw.color(e.color);
 
     float l = e.fout(Interp.pow3Out);
-    SglDraw.drawLightEdge(e.x, e.y, 180, 11.5f*l, 180, 11.5f*l, e.rotation + 237*e.fin(Interp.pow3Out));
+    SglDraw.drawLightEdge(e.x, e.y, 240, 12.5f*l, 240, 12.5f*l, e.rotation + 237*e.fin(Interp.pow3Out));
   });
 
   public final static Effect ploymerGravityField = new Effect(32, e -> {
@@ -369,7 +375,7 @@ public class SglFx{
 
   public final static Effect explodeImpWaveLarge = impactExplode(60, 95f);
 
-  public final static Effect explodeImpWaveLaserBlase = impactExplode(80, 150f);
+  public final static Effect explodeImpWaveLaserBlase = impactExplode(86, 200f);
 
   public final static Effect reactorExplode = new MultiEffect(Fx.reactorExplosion, new Effect(180, e -> {
     float size = e.data() instanceof Float ? e.data() : 120;
@@ -691,17 +697,20 @@ public class SglFx{
     });
   });
 
-  public final static Effect laserBlastWeaveLarge = new Effect(220, 200, e -> {
-    float size = 120;
+  public final static Effect laserBlastWeaveLarge = new Effect(280, 200, e -> {
+    float size = 140;
 
     float fin1 = clamp(e.fin()/0.1f);
     float fin2 = clamp((e.fin() - 0.1f)/0.3f);
 
     Draw.color(e.color);
-    Lines.stroke(6*e.fout());
     float radius = size*e.fin(Interp.pow4Out);
 
-    SglDraw.gradientCircle(e.x, e.y, radius, -radius*e.fout(Interp.pow3In), 0);
+    Draw.alpha(0.6f);
+    SglDraw.gradientCircle(e.x, e.y, radius, -radius*e.fout(Interp.pow2Out), 0);
+    Draw.alpha(1);
+    Lines.stroke(6*e.fout(Interp.pow2Out));
+    Lines.circle(e.x, e.y, radius);
 
     float h, w;
     float rate = e.fin() > 0.1f ? 1 - fin2 : fin1;
@@ -715,7 +724,7 @@ public class SglFx{
 
     Rand r = rand;
     r.setSeed(e.id);
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 14; i++) {
       float rot = r.random(0, 360f);
       float wi = r.random(12, 18);
       float le = r.random(wi*2f, wi*4f);
@@ -725,11 +734,33 @@ public class SglFx{
       });
     }
 
-    e.scaled(140, ef -> {
-      Angles.randLenVectors(e.id, 10, 45, 140, (x, y) -> {
+    e.scaled(100, ef -> {
+      Angles.randLenVectors(e.id, 7, 45, 164, (x, y) -> {
         float lerp = ef.fin(Interp.pow3Out);
         float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.6f, 0.8f);
-        SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, si, si/12*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
+        SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
+      });
+    });
+
+    e.scaled(130, ef -> {
+      Angles.randLenVectors(e.id*2L, 8, 40, 154, (x, y) -> {
+        float lerp = ef.fin(Interp.pow3Out);
+        float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.7f, 0.9f);
+        SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
+      });
+    });
+
+    e.scaled(160, ef -> {
+      Angles.randLenVectors(e.id*3L, 9, 32, 144, (x, y) -> {
+        float lerp = ef.fin(Interp.pow3Out);
+        float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.9f, 1f);
+        SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
+      });
+
+      Lines.stroke(4*ef.fout());
+      randLenVectors(e.id*4L, ef.finpow() + 0.001f, 58, size*1.2f, (dx, dy, in, out) -> {
+        lineAngle(e.x + dx, e.y + dy, Mathf.angle(dx, dy), 8 + out*64f);
+        Drawf.light(e.x + dx, e.y + dy, out*size/2, Draw.getColor(), 0.8f);
       });
     });
   });

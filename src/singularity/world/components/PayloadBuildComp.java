@@ -3,8 +3,11 @@ package singularity.world.components;
 import arc.graphics.g2d.Draw;
 import arc.math.Angles;
 import arc.math.Mathf;
+import arc.math.geom.Vec2;
+import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import mindustry.Vars;
 import mindustry.gen.Building;
 import mindustry.gen.Unit;
 import mindustry.type.PayloadSeq;
@@ -19,6 +22,7 @@ import static mindustry.world.blocks.payloads.PayloadBlock.pushOutput;
 
 public interface PayloadBuildComp extends BuildCompBase{
   PayloadSeq temp = new PayloadSeq();
+  Vec2 tempVec = new Vec2();
 
   @Annotations.BindField("inputting")
   default Payload inputting(){
@@ -82,17 +86,21 @@ public interface PayloadBuildComp extends BuildCompBase{
 
   default float handleOutputPayload() {
     if (outputting() != null){
-      float dx = Angles.trnsx(getBuilding().rotation*90, getBlock().size*tilesize/2f), dy = Angles.trnsy(getBuilding().rotation*90, getBlock().size*tilesize/2f);
+      Vec2 outputVec = outputtingOffset();
       outputting().set(
-          Mathf.approachDelta(outputting().x(), getBuilding().x + dx, getPayloadBlock().payloadSpeed()),
-          Mathf.approachDelta(outputting().y(), getBuilding().y + dy, getPayloadBlock().payloadSpeed()),
-          Mathf.approachDelta(outputting().rotation(), getBuilding().rotation*90, getPayloadBlock().payloadRotateSpeed())
+          Mathf.approachDelta(outputting().x(), getBuilding().x + outputVec.x, getPayloadBlock().payloadSpeed()),
+          Mathf.approachDelta(outputting().y(), getBuilding().y + outputVec.y, getPayloadBlock().payloadSpeed()),
+          Angles.moveToward(outputting().rotation(), outputVec.angle(), getPayloadBlock().payloadRotateSpeed()*Time.delta)
       );
 
       return Mathf.len(outputting().x() - getBuilding().x, outputting().y() - getBuilding().y)/(getBlock().size*tilesize/2f);
     }
 
     return 0;
+  }
+
+  default Vec2 outputtingOffset(){
+    return tempVec.set(Angles.trnsx(getBuilding().rotation*90, getBlock().size*tilesize/2f), Angles.trnsy(getBuilding().rotation*90, getBlock().size*tilesize/2f));
   }
 
   default boolean blends(int direction){
@@ -190,7 +198,13 @@ public interface PayloadBuildComp extends BuildCompBase{
       payload.update(null, getBuilding());
     }
 
-    Building front = getBuilding().front();
+    Vec2 offset = outputtingOffset();
+    Building front;
+    if (Math.max(Math.abs(offset.x), Math.abs(offset.y)) <= getBlock().size/2f*tilesize + 0.5f){
+      front = getBuilding().front();
+    }
+    else front = Vars.world.buildWorld(getBuilding().x + offset.x, getBuilding().y + offset.y);
+
     boolean canDump = front == null || !front.tile().solid();
     boolean canMove = front != null && (front.block.outputsPayload || front.block.acceptsPayload);
 

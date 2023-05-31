@@ -56,7 +56,7 @@ public class DrawPayloadFactory<E> extends DrawDirSpliceBlock<E>{
   @Override
   public void draw(Building build) {
     Draw.rect(build.block.region, build.x, build.y);
-    super.draw(build);
+    Draw.rect(regions[spliceBits.get((E) build)], build.x, build.y);
     Draw.rect(outRegion, build.x, build.y, build.rotdeg());
 
     drawPayload.get((E) build);

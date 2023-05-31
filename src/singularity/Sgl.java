@@ -1,8 +1,14 @@
 package singularity;
 
+import arc.Core;
 import arc.files.Fi;
 import arc.files.ZipFi;
+import arc.graphics.g2d.PixmapRegion;
+import arc.util.Time;
+import mindustry.Vars;
+import mindustry.world.Block;
 import singularity.core.ModConfig;
+import singularity.core.ModsInteropAPI;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.ScreenSampler;
 import singularity.graphic.SglDrawConst;
@@ -10,6 +16,7 @@ import singularity.graphic.SglShaders;
 import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
 import singularity.world.blocks.BytePackAssign;
+import singularity.world.blocks.turrets.SglTurret;
 import singularity.world.distribution.DistSupportContainerTable;
 import singularity.world.unit.EMPHealthManager;
 import universecore.util.handler.ClassHandler;
@@ -76,6 +83,8 @@ public class Sgl{
   public static DistSupportContainerTable matrixContainers;
 
   public static EMPHealthManager empHealth;
+
+  public static ModsInteropAPI interopAPI;
   
   public static void init(){
     //注册所有打包数据类型id
@@ -98,9 +107,21 @@ public class Sgl{
 
     empHealth = new EMPHealthManager();
 
+    interopAPI = new ModsInteropAPI();
+
     matrixContainers.setDefaultSupports();
 
     empHealth.init();
     ui.init();
+
+    interopAPI.init();
+    Time.run(0, interopAPI::updateModels);
+
+    for (Block block : Vars.content.blocks()) {
+      if (block.minfo.mod != null && block.minfo.mod.name.equals(modName) && !(block instanceof SglTurret)){
+        PixmapRegion image = Core.atlas.getPixmap(block.region);
+        block.squareSprite = image.getA(0, 0) > 0.5f;
+      }
+    }
   }
 }

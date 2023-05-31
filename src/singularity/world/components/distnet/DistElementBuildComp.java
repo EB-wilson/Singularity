@@ -8,7 +8,6 @@ import mindustry.world.Tile;
 import singularity.world.distribution.DistributeNetwork;
 import singularity.world.modules.DistributeModule;
 import universecore.annotations.Annotations;
-import universecore.components.ExtraVariableComp;
 import universecore.components.blockcomp.BuildCompBase;
 
 public interface DistElementBuildComp extends BuildCompBase {
@@ -22,7 +21,7 @@ public interface DistElementBuildComp extends BuildCompBase {
   @Annotations.BindField("priority")
   default void priority(int priority){}
 
-  @Annotations.BindField("netLinked")
+  @Annotations.BindField(value = "netLinked", initialize = "new arc.struct.Seq<>()")
   default Seq<DistElementBuildComp> netLinked(){
     return null;
   }

@@ -1,6 +1,6 @@
 package singularity.world;
 
-import arc.func.Boolf;
+import arc.func.Boolf2;
 import mindustry.entities.UnitSorts;
 import mindustry.entities.Units;
 import mindustry.game.Team;
@@ -15,7 +15,7 @@ public class SglUnitSorts {
   public static Units.Sortf denser = (e, x, y) -> {
     temp = e.maxHealth;
     e.team.data().unitTree.intersect(e.x - 64, e.y - 64, 128, 128, u -> {
-      temp += u.maxHealth;
+      temp += u.maxHealth/u.dst(e);
     });
 
     return -temp;
@@ -50,6 +50,14 @@ public class SglUnitSorts {
     return findEnemies(targets, team.team(), team.x(), team.y(), range, null, sortf, true);
   }
 
+  public static Unit[] findEnemies(int targets, Teamc team, float range, Boolf2<Unit[], Unit> filter, Units.Sortf sortf){
+    return findEnemies(targets, team.team(), team.x(), team.y(), range, filter, sortf, true);
+  }
+
+  public static Unit[] findEnemies(int targets, Teamc team, float x, float y, float range, Boolf2<Unit[], Unit> filter, Units.Sortf sortf){
+    return findEnemies(targets, team.team(), x, y, range, filter, sortf, true);
+  }
+
   public static Unit[] findEnemies(int targets, Teamc team, float x, float y, float range, Units.Sortf sortf){
     return findEnemies(targets, team.team(), x, y, range, null, sortf, true);
   }
@@ -58,11 +66,11 @@ public class SglUnitSorts {
     return findEnemies(targets, team, x, y, range, null, sortf, true);
   }
 
-  public static Unit[] findEnemies(int targets, Team team, float x, float y, float range, Boolf<Unit> filter, Units.Sortf sortf){
+  public static Unit[] findEnemies(int targets, Team team, float x, float y, float range, Boolf2<Unit[], Unit> filter, Units.Sortf sortf){
     return findEnemies(targets, team, x, y, range, filter, sortf, true);
   }
 
-  public static Unit[] findEnemies(int targets, Team team, float x, float y, float range, Boolf<Unit> filter, Units.Sortf sortf, boolean ignoredNull){
+  public static Unit[] findEnemies(int targets, Team team, float x, float y, float range, Boolf2<Unit[], Unit> filter, Units.Sortf sortf, boolean ignoredNull){
     if (targets <= 0)
       throw new IllegalArgumentException("targets must bigger than 0");
 
@@ -77,10 +85,10 @@ public class SglUnitSorts {
 
     Arrays.fill(res, null);
     Arrays.fill(priority, Float.MIN_VALUE);
-    Arrays.fill(cost, Float.MIN_VALUE);
+    Arrays.fill(cost, Float.MAX_VALUE);
 
     Units.nearbyEnemies(team, x, y, range, u -> {
-      if (filter != null && !filter.get(u)) return;
+      if (filter != null && !filter.get(res, u)) return;
 
       for (int i = 0; i < targets; i++) {
         if (res[i] == null){

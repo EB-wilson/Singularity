@@ -9,6 +9,7 @@ import mindustry.content.Items;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
 import mindustry.gen.Teamc;
+import mindustry.graphics.Layer;
 import mindustry.type.Category;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
@@ -280,6 +281,7 @@ public class DistributeBlocks implements ContentList{
             spliceBits = e -> e.busLinked;
           }},
           new DrawEdgeLinkBits<ComponentInterfaceBuild>(){{
+            layer = Layer.blockOver;
             compLinked = e -> e.compLinked;
           }}
       );

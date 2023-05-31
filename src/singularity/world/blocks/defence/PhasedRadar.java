@@ -88,6 +88,8 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
   public class PhasedRadarBuild extends SglBuilding implements SpliceBuildComp {
     public ChainsModule chains;
     public int splice;
+    public int spliceDirBit;
+
     public Vec2 centerPos = new Vec2();
     ObjectSet<Unit> locking = new ObjectSet<>();
 
@@ -174,6 +176,10 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
     @Override
     public void splice(int arr){
       splice = arr;
+      spliceDirBit = 0;
+      for(int i = 0; i < 4; i++){
+        if ((splice & 1 << i*2) != 0) spliceDirBit |= 1 << i;
+      }
     }
 
     @Override

@@ -285,16 +285,12 @@ public class ProductBlocks implements ContentList {
           new DrawDirSpliceBlock<ExtendMinerBuild>(){{
             simpleSpliceRegion = true;
 
-            spliceBits = e -> {
-              int res = 0;
-              for(int i = 0; i < 4; i++){
-                if ((e.splice & 1 << i*2) != 0) res |= 1 << i;
-              }
-              return res;
-            };
+            spliceBits = e -> e.spliceDirBits;
 
             planSplicer = (plan, other) -> plan.block instanceof ExtendMiner self && other.block instanceof ExtendMiner oth
                 && self.chainable(oth) && oth.chainable(self);
+
+            layerRec = false;
           }},
           new DrawBlock(){
             @Override

@@ -20,10 +20,7 @@ import singularity.world.blocks.turrets.HeatBulletType;
 import universecore.world.particles.MultiParticleModel;
 import universecore.world.particles.Particle;
 import universecore.world.particles.ParticleModel;
-import universecore.world.particles.models.DrawDefaultTrailParticle;
-import universecore.world.particles.models.RandDeflectParticle;
-import universecore.world.particles.models.ShapeParticle;
-import universecore.world.particles.models.TrailFadeParticle;
+import universecore.world.particles.models.*;
 
 public class SglParticleModels{
   public static final String OWNER = "owner";
@@ -48,7 +45,8 @@ public class SglParticleModels{
     despawnEffect = Fx.none;
   }};
 
-  public static ParticleModel nuclearParticle = new MultiParticleModel(
+  public static ParticleModel floatParticle = new MultiParticleModel(
+      new SizeVelRelatedParticle(),
       new RandDeflectParticle(){{
         deflectAngle = 90;
         strength = 0.2f;
@@ -60,21 +58,11 @@ public class SglParticleModels{
       }},
       new ShapeParticle(),
       new DrawDefaultTrailParticle()
-  ){
-    {
-      color = Pal.reactorPurple;
-      trailColor = Pal.reactorPurple;
-    }
-  },
+  ),
 
   heatBulletTrail = new ParticleModel(){
     static final Particle.Cloud tmp1 = new Particle.Cloud();
     static final Particle.Cloud tmp2 = new Particle.Cloud();
-
-    {
-      color = Pal.lighterOrange;
-      trailColor = Pal.lighterOrange;
-    }
 
     @Override
     public void drawTrail(Particle c) {

@@ -10,6 +10,8 @@ public class EMPModel {
   public float empRepair;
   public float empContinuousDamage;
 
+  public boolean disabled;
+
   public EMPHealth generate(Unit unit){
     EMPHealth res = Pools.obtain(EMPHealth.class, EMPHealth::new);
     res.model = this;

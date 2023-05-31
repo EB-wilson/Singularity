@@ -1,6 +1,7 @@
 package singularity.contents;
 
 import arc.Core;
+import arc.audio.Sound;
 import arc.func.Func2;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
@@ -21,6 +22,7 @@ import arc.util.Tmp;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.content.Fx;
+import mindustry.content.Liquids;
 import mindustry.entities.Damage;
 import mindustry.entities.Effect;
 import mindustry.entities.UnitSorts;
@@ -43,6 +45,7 @@ import mindustry.type.ItemStack;
 import mindustry.type.UnitType;
 import mindustry.type.Weapon;
 import mindustry.type.weapons.PointDefenseWeapon;
+import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.blocks.environment.Floor;
 import mindustry.world.meta.BlockFlag;
@@ -54,7 +57,7 @@ import singularity.ui.StatUtils;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.SglUnitSorts;
-import singularity.world.blocks.product.PayloadCrafter;
+import singularity.world.blocks.product.SglUnitFactory;
 import singularity.world.blocks.turrets.EmpBulletType;
 import singularity.world.blocks.turrets.EmpLightningBulletType;
 import singularity.world.blocks.turrets.EmpMultiTrailBulletType;
@@ -66,8 +69,6 @@ import universecore.util.handler.ObjectHandler;
 import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.RandomGenerator;
 import universecore.world.lightnings.generator.VectorLightningGenerator;
-import universecore.world.particles.MultiParticleModel;
-import universecore.world.particles.ParticleModel;
 
 import java.util.Iterator;
 
@@ -1551,8 +1552,8 @@ public class SglUnits implements ContentList{
                 alternativeBullet = new BulletType(){
                   {
                     pierceArmor = true;
-                    damage = 280;
-                    pierceCap = 4;
+                    damage = 380;
+                    pierceCap = 5;
                     absorbable = false;
                     hittable = true;
                     speed = 10;
@@ -1573,15 +1574,14 @@ public class SglUnits implements ContentList{
 
                   @Override
                   public void updateHoming(Bullet b) {
-                    if (b.time < homingDelay) {
-                      b.vel.lerpDelta(0, 0, 0.06f);
-                    }
-
                     if (Mathf.chanceDelta(0.3f*b.vel.len()/speed)){
                       Fx.colorSpark.at(b.x, b.y, b.rotation(), b.type.hitColor);
                     }
 
-                    if(homingPower > 0.0001f && b.time >= homingDelay){
+                    if (b.time < homingDelay) {
+                      b.vel.lerpDelta(0, 0, 0.06f);
+                    }
+                    else if(homingPower > 0.0001f && b.time >= homingDelay){
                       float realAimX = b.aimX < 0 ? b.x : b.aimX;
                       float realAimY = b.aimY < 0 ? b.y : b.aimY;
 
@@ -1799,6 +1799,8 @@ public class SglUnits implements ContentList{
             linearWarmup = false;
             minWarmup = 0.9f;
 
+            shootSound = Sounds.lasershoot;
+
             bullet = new BulletType(){
               {
                 damage = 320;
@@ -1894,13 +1896,19 @@ public class SglUnits implements ContentList{
           @Override
           public void addStats(UnitType u, Table t) {
             super.addStats(u, t);
+
             Table ic = new Table();
-            ic.add(Core.bundle.format("infos.shots", 2));
             StatUtils.buildAmmo(ic, subBullet);
             Collapser coll = new Collapser(ic, true);
             coll.setDuration(0.1f);
+
+            t.table(ft -> {
+              ft.left().defaults().left();
+              ft.add(Core.bundle.format("infos.shots", 2));
+              ft.button(Icon.downOpen, Styles.emptyi, () -> coll.toggle(false)).update(i -> i.getStyle().imageUp = (!coll.isCollapsed() ? Icon.upOpen : Icon.downOpen)).size(8).padLeft(16f).expandX();
+            });
             t.row();
-            t.add(coll).padLeft(15);
+            t.add(coll).padLeft(16);
           }
 
           @Override
@@ -2093,6 +2101,8 @@ public class SglUnits implements ContentList{
             trailChance = 1;
             trailRotation = true;
 
+            hitSound = Sounds.spark;
+
             hitEffect = Fx.circleColorSpark;
             hitColor = SglDrawConst.matrixNet;
 
@@ -2151,6 +2161,7 @@ public class SglUnits implements ContentList{
                 shake = 4;
 
                 reload = 30;
+                shootSound = Sounds.spark;
 
                 bullet = turretBullet;
               }
@@ -2168,6 +2179,7 @@ public class SglUnits implements ContentList{
                 shake = 4;
 
                 reload = 30;
+                shootSound = Sounds.spark;
 
                 bullet = turretBullet;
               }
@@ -2181,6 +2193,8 @@ public class SglUnits implements ContentList{
                 rotateSpeed = 3.5f;
                 recoilTime = 60;
                 recoil = 6;
+
+                shootSound = Sounds.plasmaboom;
 
                 shake = 5;
 
@@ -2202,6 +2216,7 @@ public class SglUnits implements ContentList{
                     despawnEffect = SglFx.explodeImpWaveSmall;
 
                     hitShake = 6;
+                    hitSound = Sounds.spark;
 
                     speed = 10;
                     lifetime = 60;
@@ -2259,6 +2274,10 @@ public class SglUnits implements ContentList{
                 mirror = false;
                 recoil = 0;
 
+                targetSwitchInterval = 80;
+
+                shootSound = Sounds.laserblast;
+
                 reload = 750;
                 cooldownTime = 30;
 
@@ -2271,6 +2290,7 @@ public class SglUnits implements ContentList{
                   float damageInterval = 5;
                   float laserShake = 5, damageShake = 12;
                   Effect laserEffect = Fx.none;
+                  Sound laserSound = Sounds.laserbig;
                   boolean blackZone = true;
 
                   {
@@ -2301,16 +2321,10 @@ public class SglUnits implements ContentList{
                   public void update(Bullet b) {
                     super.update(b);
 
+                    Effect.shake(laserShake, laserShake, b);
                     if (b.timer(1, damageInterval)){
-                      Damage.collideLaser(b, range*b.time/blastDelay, true, false, -1);
+                      Damage.collideLaser(b, Mathf.len(b.aimX - b.x, b.aimY - b.y)*Mathf.clamp(b.time/blastDelay), true, false, -1);
                     }
-                  }
-
-                  @Override
-                  public void update(Bullet bullet, LightningContainer container) {
-                    super.update(bullet, container);
-
-                    Effect.shake(laserShake, laserShake, bullet);
                   }
 
                   @Override
@@ -2346,6 +2360,7 @@ public class SglUnits implements ContentList{
                     Time.run(blastDelay, () -> {
                       Effect.shake(damageShake, damageShake, b);
                       createSplashDamage(b, ax, ay);
+                      laserSound.at(ax, ay);
                       laserEffect.at(ax, ay, b.rotation(), hitColor);
                       createFrags(b, b.aimX, b.aimY);
                     });
@@ -2354,7 +2369,17 @@ public class SglUnits implements ContentList{
                   @Override
                   public void createFrags(Bullet b, float x, float y) {
                     if (fragBullet != null && fragBullets > 0) {
-                      Unit[] arr = SglUnitSorts.findEnemies(fragBullets, b, fragBullet.range, UnitSorts.farthest);
+                      Unit[] arr = SglUnitSorts.findEnemies(fragBullets, b, fragBullet.range, (us, u) -> {
+                        if (b.dst(u) < fragBullet.splashDamageRadius) return false;
+
+                        for (Unit e : us) {
+                          if (e == null) break;
+
+                          if (e.dst(u) < fragBullet.splashDamageRadius) return false;
+                        }
+
+                        return true;
+                      }, UnitSorts.farthest);
                       for (int i = 0; i < arr.length; i++) {
                         if (arr[i] != null) {
                           Tmp.v1.set(arr[i].x - x, arr[i].y - y);
@@ -2367,7 +2392,7 @@ public class SglUnits implements ContentList{
                         else {
                           float a = b.rotation() + Mathf.range(fragRandomSpread/2) + fragAngle + ((i - fragBullets/2f)*fragSpread);
 
-                          Tmp.v1.set(fragBullet.range*Mathf.random(0.5f, 1f), 0).setAngle(a);
+                          Tmp.v1.set(fragBullet.range*Mathf.random(0.6f, 1f), 0).setAngle(a);
                           fragBullet.create(b.owner, b.team, x, y, a,
                               fragBullet.damage, 1, 1, null, null,
                               x + Tmp.v1.x, y + Tmp.v1.y
@@ -2390,6 +2415,9 @@ public class SglUnits implements ContentList{
                     Fill.circle(dx, dy, hitSize*1.6f*fout);
                     Lines.stroke(hitSize*(1 + in)*fout);
                     Lines.line(b.x, b.y, dx, dy);
+
+                    Lines.stroke(hitSize*0.1f*fout);
+                    Lines.circle(dx, dy, hitSize*1.9f*fout);
 
                     Draw.color(Color.white);
                     Fill.circle(dx, dy, hitSize*1.2f*fout);
@@ -2420,8 +2448,8 @@ public class SglUnits implements ContentList{
 
                     rangeOverride = 600;
                     splashDamage = 3280;
-                    splashDamageRadius = 100;
-                    lifetime = 190;
+                    splashDamageRadius = 120;
+                    lifetime = 240;
                     hitSize = 12;
 
                     laserEffect = new MultiEffect(
@@ -2431,6 +2459,7 @@ public class SglUnits implements ContentList{
                     );
                     shootEffect = new MultiEffect(
                         SglFx.shootCrossLightLarge,
+                        SglFx.explodeImpWaveBig,
                         SglFx.impactWaveBig,
                         SglFx.impactBubble
                     );
@@ -2438,6 +2467,8 @@ public class SglUnits implements ContentList{
                         Fx.colorSparkBig,
                         SglFx.diamondSparkLarge
                     );
+
+                    hitColor = SglDrawConst.matrixNet;
 
                     fragBullets = 3;
                     fragSpread = 120;
@@ -2447,10 +2478,10 @@ public class SglUnits implements ContentList{
                         damage = 120;
                         damageInterval = 5;
 
-                        rangeOverride = 320;
+                        rangeOverride = 360;
                         splashDamage = 1400;
-                        splashDamageRadius = 50;
-                        lifetime = 136;
+                        splashDamageRadius = 60;
+                        lifetime = 186;
                         hitSize = 9;
 
                         hitEffect = new MultiEffect(
@@ -2488,19 +2519,12 @@ public class SglUnits implements ContentList{
                     };
                   }
 
-                  final ParticleModel model = new MultiParticleModel(
-                      SglParticleModels.nuclearParticle
-                  ){{
-                    color = SglDrawConst.matrixNet;
-                    trailColor = SglDrawConst.matrixNet;
-                  }};
-
                   @Override
                   public void createSplashDamage(Bullet b, float x, float y) {
                     super.createSplashDamage(b, x, y);
 
-                    Angles.randLenVectors(System.nanoTime(), Mathf.random(7, 10), 4, 6.5f,
-                        (dx, dy) -> model.create(x, y, dx, dy, Mathf.random(5.25f, 7f)));
+                    Angles.randLenVectors(System.nanoTime(), Mathf.random(15, 22), 4, 6.5f,
+                        (dx, dy) -> SglParticleModels.floatParticle.create(x, y, hitColor, dx, dy, Mathf.random(5.25f, 7f)));
                   }
                 };
 
@@ -2534,6 +2558,11 @@ public class SglUnits implements ContentList{
                       };
                     }}
                 );
+              }
+
+              @Override
+              protected Teamc findTarget(Unit unit, float x, float y, float range, boolean air, boolean ground) {
+                return Units.bestTarget(unit.team, x, y, range, u -> unit.checkTarget(air, ground), t -> ground, SglUnitSorts.denser);
               }
 
               @Override
@@ -2584,9 +2613,23 @@ public class SglUnits implements ContentList{
       }
     };
 
-    machine_construct_dock = new PayloadCrafter("machine_construct_dock"){{
+    machine_construct_dock = new SglUnitFactory("machine_construct_dock"){{
       requirements(Category.units, ItemStack.with());
       size = 5;
+      liquidCapacity = 240;
+
+      consCustom = (u, c) -> {
+        c.power(Mathf.round(u.health/u.hitSize/5, 0.1f)).showIcon = true;
+      };
+
+      sizeLimit = 24;
+      healthLimit = 7200;
+      machineLevel = 4;
+
+      newBooster(1.5f);
+      consume.liquid(Liquids.cryofluid, 2.4f);
+      newBooster(1.8f);
+      consume.liquid(SglLiquids.FEX_liquid, 2f);
     }};
   }
 

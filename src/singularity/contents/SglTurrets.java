@@ -2884,7 +2884,7 @@ public class SglTurrets implements ContentList{
         @Override
         public void init(Bullet b) {
           super.init(b);
-          Particle p = SglParticleModels.heatBulletTrail.create(b.x, b.y, 0, 0, 5);
+          Particle p = SglParticleModels.heatBulletTrail.create(b.x, b.y, trailColor, 0, 0, 5);
           p.setVar(SglParticleModels.OWNER, b);
           p.setVar(SglParticleModels.BULLET, SglParticleModels.defHeatTrailHitter.create(b, b.x, b.y, b.rotation()));
 

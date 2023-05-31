@@ -91,7 +91,7 @@ public class SglConsumeFloor<T extends Building & ConsumerBuildComp & FloorCraft
   @Override
   public void display(Stats stats) {
     stats.add(Stat.tiles, st -> {
-      st.row().table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.5f)), t -> {
+      st.row().table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.7f)), t -> {
         t.clearChildren();
         t.defaults().pad(5).left();
 

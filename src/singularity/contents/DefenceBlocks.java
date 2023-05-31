@@ -4,11 +4,13 @@ import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
+import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.scene.style.TextureRegionDrawable;
 import arc.struct.ObjectSet;
+import arc.struct.Seq;
 import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.pooling.Pool;
@@ -72,17 +74,20 @@ public class DefenceBlocks implements ContentList{
           new DrawDefault(),
           new DrawDirSpliceBlock<PhasedRadarBuild>(){{
             simpleSpliceRegion = true;
-            spliceBits = e -> {
-              int res = 0;
-              for(int i = 0; i < 4; i++){
-                if ((e.splice & 1 << i*2) != 0) res |= 1 << i;
-              }
-              return res;
-            };
+            spliceBits = e -> e.spliceDirBit;
+            layerRec = false;
           }},
-          new DrawRegion("_rotator"){{
-            rotateSpeed = 0.4f;
-          }}
+          new DrawRegion("_rotator"){
+            {
+              layer = Layer.blockOver;
+              rotateSpeed = 0.4f;
+            }
+
+            @Override
+            public void getRegionsToOutline(Block block, Seq<TextureRegion> out) {
+              out.add(block.region);
+            }
+          }
       );
     }};
 

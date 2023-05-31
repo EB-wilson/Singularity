@@ -127,6 +127,7 @@ public class ExtendMiner extends SglBlock implements SpliceBlockComp {
   @Annotations.ImplEntries
   public class ExtendMinerBuild extends SglBuilding implements SpliceBuildComp {
     public int splice;
+    public int spliceDirBits;
     public ChainsModule chains;
     public ExtendableDrill.ExtendableDrillBuild masterDrill;
     public Seq<ItemStack> mines = new Seq<>();
@@ -150,7 +151,7 @@ public class ExtendMiner extends SglBlock implements SpliceBlockComp {
 
       if(updateSplice){
         updateSplice = false;
-        splice = getSplice();
+        splice(getSplice());
       }
     }
 
@@ -236,6 +237,10 @@ public class ExtendMiner extends SglBlock implements SpliceBlockComp {
     @Override
     public void splice(int arr){
       splice = arr;
+      spliceDirBits = 0;
+      for(int i = 0; i < 4; i++){
+        if ((splice & 1 << i*2) != 0) spliceDirBits |= 1 << i;
+      }
     }
 
     @Override

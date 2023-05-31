@@ -48,6 +48,8 @@ public class SglUI{
 
   public DistNetMonitorDialog bufferStat;
 
+  public UnitFactoryCfgDialog unitFactoryCfg;
+
   public ToolBarFrag toolBar;
 
   public DebugInfos debugInfos;
@@ -204,6 +206,7 @@ public class SglUI{
     contributors = new ContributorsDialog();
     config = new ModConfigDialog();
     bufferStat = new DistNetMonitorDialog();
+    unitFactoryCfg = new UnitFactoryCfgDialog();
 
     toolBar = new ToolBarFrag();
 
@@ -214,6 +217,7 @@ public class SglUI{
     mainMenu.build();
     aboutDialog.build();
     contributors.build();
+    unitFactoryCfg.build();
 
     toolBar.init();
 

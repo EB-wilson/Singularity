@@ -18,6 +18,8 @@ public class DrawEdgeLinkBits<T> extends DrawBlock{
   public static final byte[] EMP = new byte[]{0, 0, 0, 0};
   public Func<T, byte[]> compLinked = e -> EMP;
 
+  public float layer = -1;
+
   public TextureRegion linker;
   public String suffix = "_linker";
 
@@ -35,6 +37,8 @@ public class DrawEdgeLinkBits<T> extends DrawBlock{
   @SuppressWarnings("unchecked")
   @Override
   public void draw(Building build){
+    float z = Draw.z();
+    if (layer > 0) Draw.z(layer);
     for(int dir = 0; dir < 4; dir++){
       Point2[] arr = DirEdges.get(build.block.size, dir);
       byte[] linkBits = this.compLinked.get((T) build);
@@ -52,5 +56,7 @@ public class DrawEdgeLinkBits<T> extends DrawBlock{
         Draw.rect(linker, (build.tileX() + arr[i].x + dx)*tilesize, (build.tileY() + arr[i].y + dy)*tilesize, 90*dir);
       }
     }
+
+    Draw.z(z);
   }
 }

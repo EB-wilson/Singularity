@@ -126,6 +126,8 @@ public class TokamakOrbit extends SglBlock implements SpliceBlockComp {
           {
             suffix = "_corner_splicer";
             simpleSpliceRegion = true;
+            layerRec = false;
+
             spliceBits = e -> {
               int res = 0;
 

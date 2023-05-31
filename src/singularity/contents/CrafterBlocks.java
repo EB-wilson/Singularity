@@ -67,6 +67,8 @@ import static mindustry.Vars.*;
 import static singularity.graphic.SglDrawConst.transColor;
 
 public class CrafterBlocks implements ContentList{
+  public static final String HIGHLIGHT = "highlight";
+  public static final String ANIMATEDWATER = "animatedwater";
   /**裂变编织器*/
   public static Block fission_weaver,
   /**绿藻池*/
@@ -223,7 +225,7 @@ public class CrafterBlocks implements ContentList{
         loopSound = Sounds.none;
 
         structUpdated = e -> {
-          e.setVar("highlight",
+          e.setVar(HIGHLIGHT,
               (!(e.nearby(0) instanceof SpliceCrafterBuild right) || right.chains.container != e.chains.container)
               && (!(e.nearby(1) instanceof SpliceCrafterBuild top) || top.chains.container != e.chains.container)
               && (e.nearby(2) instanceof SpliceCrafterBuild left && left.chains.container == e.chains.container)
@@ -263,7 +265,7 @@ public class CrafterBlocks implements ContentList{
                   Draw.reset();
                 };
 
-                if (Core.settings.getBool("animatedwater") && Sgl.config.animateLevel >= 2) {
+                if (Core.settings.getBool(ANIMATEDWATER) && Sgl.config.animateLevel >= 2) {
                   if(Sgl.config.enableShaders){
                     SglDraw.drawTask(drawID, build, SglShaders.boundWater, e -> {
                       drawCell.get(e);
@@ -289,9 +291,10 @@ public class CrafterBlocks implements ContentList{
               planSplicer = (plan, other) -> plan.block instanceof SpliceCrafter self && other.block instanceof SpliceCrafter oth
                       && self.chainable(oth) && oth.chainable(self);
               splicer = SpliceCrafterBuild::splice;
+              layerRec = false;
             }},
             new DrawRegionDynamic<SpliceCrafterBuild>("_highlight"){{
-              alpha = e -> e.getVar("highlight", false)? 1: 0;
+              alpha = e -> e.getVar(HIGHLIGHT, false)? 1: 0;
             }}
         );
 
@@ -1026,8 +1029,6 @@ public class CrafterBlocks implements ContentList{
       size = 3;
       hasLiquids = true;
       liquidCapacity = 30;
-
-      squareSprite = false;
 
       newConsume();
       consume.time(60);
@@ -1940,7 +1941,7 @@ public class CrafterBlocks implements ContentList{
             if(Mathf.chance(0.25f)){
               SglFx.explodeImpWave.at(e.x + gen.vector.x, e.y + gen.vector.y, Pal.reactorPurple);
               Angles.randLenVectors(System.nanoTime(), Mathf.random(4, 7), 2, 3.5f,
-                  (x, y) -> SglParticleModels.nuclearParticle.create(e.x + gen.vector.x, e.y + gen.vector.y, x, y, Mathf.random(3.25f, 4f)));
+                  (x, y) -> SglParticleModels.floatParticle.create(e.x + gen.vector.x, e.y + gen.vector.y, Pal.reactorPurple, x, y, Mathf.random(3.25f, 4f)));
             }else{
               SglFx.spreadLightning.at(e.x + gen.vector.x, e.y + gen.vector.y, Pal.reactorPurple);
             }

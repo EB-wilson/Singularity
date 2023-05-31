@@ -1,17 +1,12 @@
 package singularity.world.blocks.product;
 
 import arc.Core;
-import arc.func.Floatf;
 import arc.math.Mathf;
-import arc.struct.Seq;
 import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
 import mindustry.world.meta.Stat;
-import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
-import universecore.world.producers.BaseProduce;
-import universecore.world.producers.BaseProducers;
 
 public class BoosterCrafter extends NormalCrafter{
   public BoosterCrafter(String name) {
@@ -34,32 +29,13 @@ public class BoosterCrafter extends NormalCrafter{
     return res;
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  @Override
-  public void init() {
-    super.init();
-    for (BaseConsumers cons : Seq.with(consumers()).add(optionalCons())) {
-      for (BaseConsume<? extends ConsumerBuildComp> c : cons.all()) {
-        final Floatf old = c.consMultiplier;
-        c.consMultiplier = old == null? e -> ((BoosterCrafterBuild)e).boostEff: e -> ((BoosterCrafterBuild)e).boostEff*old.get(e);
-      }
-    }
-
-    for (BaseProducers producer : producers()) {
-      for (BaseProduce<?> p : producer.all()) {
-        final Floatf old = p.prodMultiplier;
-        p.prodMultiplier = old == null? e -> ((BoosterCrafterBuild)e).boostEff: e -> ((BoosterCrafterBuild)e).boostEff*old.get(e);
-      }
-    }
-  }
-
   @Override
   public void setBars() {
     super.setBars();
     addBar("efficiency", (BoosterCrafterBuild e) -> new Bar(
-        () -> Core.bundle.get("misc.efficiency") + ": " + Mathf.round(e.boostEff*e.workEfficiency()*100) + "%",
+        () -> Core.bundle.get("misc.efficiency") + ": " + Mathf.round(e.workEfficiency()*100) + "%",
         () -> Pal.accent,
-        () -> e.boostEff*e.workEfficiency()
+        e::workEfficiency
     ));
   }
 
@@ -74,8 +50,11 @@ public class BoosterCrafter extends NormalCrafter{
         boostMarker = false;
       }
       else boostEff = Mathf.approachDelta(boostEff, 1, 0.04f);
+    }
 
-      totalProgress(totalProgress() + Mathf.maxZero(boostEff - 1)*consumer.consDelta());
+    @Override
+    public float workEfficiency() {
+      return super.workEfficiency()*boostEff;
     }
   }
 }

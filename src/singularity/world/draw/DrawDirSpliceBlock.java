@@ -23,6 +23,9 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
   public Intf<E> spliceBits = e -> 0;
   public Boolf2<BuildPlan, BuildPlan> planSplicer = (plan, other) -> false;
 
+  public float layerOffset = 0.0001f;
+  public boolean layerRec = true;
+
   public boolean simpleSpliceRegion = false;
   public String suffix = "_splice";
 
@@ -66,16 +69,21 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
     }
 
     Pixmaps.bleed(map, 2);
-    Texture tex = new Texture(map, true);
-    tex.setFilter(Texture.TextureFilter.nearest);
-    tex.setWrap(Texture.TextureWrap.clampToEdge);
+    Texture tex = new Texture(map);
+    tex.setFilter(Texture.TextureFilter.linear);
     return new TextureRegion(tex);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void draw(Building build){
+    float z = Draw.z();
+    Draw.z(z + layerOffset);
     Draw.rect(regions[spliceBits.get((E) build)], build.x, build.y);
+    if (layerRec){
+      Draw.z(z);
+    }
+    else Draw.z(z + 0.0001f);
   }
 
   @Override

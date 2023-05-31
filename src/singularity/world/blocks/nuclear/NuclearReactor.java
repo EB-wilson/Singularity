@@ -225,7 +225,7 @@ public class NuclearReactor extends NormalCrafter{
       explodeEffect.at(x, y, 0, (float) explosionRadius*tilesize);
       Angles.randLenVectors(System.nanoTime(), Mathf.random(28, 36), 3f, 7.5f, (x, y) -> {
         float len = Tmp.v1.set(x, y).len();
-        SglParticleModels.nuclearParticle.create(this.x, this.y, x, y, Mathf.random(5f, 7f)*((len - 3)/4.5f));
+        SglParticleModels.floatParticle.create(this.x, this.y, Pal.reactorPurple, x, y, Mathf.random(5f, 7f)*((len - 3)/4.5f));
       });
     }
     

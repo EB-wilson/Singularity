@@ -8,7 +8,6 @@ import arc.func.Floatp;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
-import arc.graphics.g2d.PixmapRegion;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
@@ -207,9 +206,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public void load(){
     super.load();
     draw.load(this);
-
-    PixmapRegion image = Core.atlas.getPixmap(region);
-    squareSprite = image.getA(0, 0) > 0.5f;
   }
 
   @Override

@@ -68,14 +68,7 @@ public class NetPluginComp extends DistNetBlock{
     draw = new DrawMulti(
         new DrawDefault(),
         new DrawDirSpliceBlock<NetPluginCompBuild>(){{
-          spliceBits = e -> {
-            int res = 0;
-            for(int i = 0; i < e.linked.length; i++){
-              if((0b0001 << Mathf.mod(i - e.rotation, 4) & connectReq) == 0) continue;
-              if(e.linked[i] != null) res |= 0b0001 << i;
-            }
-            return res;
-          };
+          spliceBits = e -> e.spliceBits;
         }}
     );
   }
@@ -170,6 +163,7 @@ public class NetPluginComp extends DistNetBlock{
   }
 
   public class NetPluginCompBuild extends DistNetBuild implements DistComponent{
+    public int spliceBits;
     DistributeNetwork[] linked = new DistributeNetwork[4];
 
     @Override
@@ -220,11 +214,14 @@ public class NetPluginComp extends DistNetBlock{
 
     @Override
     public boolean componentValid(){
+      spliceBits = 0;
       DistributeNetwork group = null;
       for(int i = 0; i < linked.length; i++){
         if((0b0001 << Mathf.mod(i - rotation, 4) & connectReq) == 0) continue;
 
         if(linked[i] == null) return false;
+
+        spliceBits |= 0b0001 << i;
         if(group == null){
           group = linked[i];
         }

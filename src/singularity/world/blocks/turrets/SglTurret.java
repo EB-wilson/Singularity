@@ -293,7 +293,7 @@ public class SglTurret extends SglBlock{
       table.defaults().padLeft(15);
       for(ObjectMap.Entry<BaseConsumers, AmmoDataEntry> entry: ammoTypes){
         table.row();
-        table.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.5f)), t -> {
+        table.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.7f)), t -> {
           t.left().defaults().left().growX();
           t.table(st -> {
             st.left().defaults().left();

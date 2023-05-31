@@ -25,6 +25,7 @@ public class DistNetBlock extends SglBlock implements DistElementBlockComp{
 
   public DistNetBlock(String name){
     super(name);
+    solid = true;
     update = true;
     unloadable = false;
     saveConfig = false;

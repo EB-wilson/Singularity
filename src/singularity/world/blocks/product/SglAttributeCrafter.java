@@ -159,7 +159,7 @@ public class SglAttributeCrafter extends NormalCrafter{
     
     stats.add(Stat.affinities, table -> {
       table.row();
-      table.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.5f)), t -> t.add(boost).grow());
+      table.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.7f)), t -> t.add(boost).grow());
     });
   }
 

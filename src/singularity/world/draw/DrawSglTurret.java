@@ -2,6 +2,7 @@ package singularity.world.draw;
 
 import arc.Core;
 import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.PixmapRegion;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Rand;
 import arc.struct.Seq;
@@ -127,6 +128,9 @@ public class DrawSglTurret extends DrawBlock{
     top = Core.atlas.find(block.name + "_top");
     heat = Core.atlas.find(block.name + "_heat");
     base = Core.atlas.find(block.name + "_base");
+
+    PixmapRegion image = Core.atlas.getPixmap(base);
+    block.squareSprite = image.getA(0, 0) > 0.5f;
 
     for(var part : parts){
       part.turretShading = true;

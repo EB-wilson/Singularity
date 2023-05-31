@@ -19,11 +19,14 @@ import universecore.world.DirEdges;
 public class DrawAntiSpliceBlock<E> extends DrawBlock{
   private final static String[] splices = {"right", "right_top", "top", "left_top", "left", "left_bot", "bot", "right_bot"};
 
-  public TextureRegion[] drawRegions = new TextureRegion[/*2^8=*/256];
+  public TextureRegion[] drawRegions = new TextureRegion[/*2^8=*/256];//空间换时间，不要太多的使用这个类型
   public Boolf2<BuildPlan, BuildPlan> planSplicer = (plan, other) -> false;
   public Intf<E> splicer = e -> 0;
 
   public TextureRegion icon;
+
+  public float layerOffset = 0.0001f;
+  public boolean layerRec = true;
 
   public boolean interConner;
 
@@ -68,16 +71,18 @@ public class DrawAntiSpliceBlock<E> extends DrawBlock{
     }
 
     Pixmaps.bleed(map, 2);
-    Texture tex = new Texture(map, true);
-    tex.setFilter(Texture.TextureFilter.nearest);
-    tex.setWrap(Texture.TextureWrap.clampToEdge);
+    Texture tex = new Texture(map);
+    tex.setFilter(Texture.TextureFilter.linear);
     return new TextureRegion(tex);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void draw(Building build) {
+    float z = Draw.z();
+    Draw.z(z + layerOffset);
     Draw.rect(drawRegions[splicer.get((E) build)], build.x, build.y);
+    if (layerRec) Draw.z(z);
   }
 
   @Override

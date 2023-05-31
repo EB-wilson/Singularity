@@ -158,7 +158,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     
     super.init();
   
-    if(producers().size > 1) configurable = canSelect;
+    if(producers().size > 1 && canSelect) configurable = true;
     if(shouldConfig) configurable = true;
   }
 
@@ -205,7 +205,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
         AtomicBoolean isSim = new AtomicBoolean(false);
         AtomicReference<Runnable> rebuild = new AtomicReference<>();
 
-        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.5f)),ta -> {
+        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.7f)), ta -> {
           rebuild.set(() -> {
             ta.clearChildren();
             ta.left().add(isSim.get()? details: simple);
@@ -401,7 +401,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     
     @Override
     public void buildConfiguration(Table table){
-      if(producers().size > 1){
+      if(producers().size > 1 && canSelect){
         table.table(Tex.buttonTrans, prescripts -> {
           prescripts.defaults().grow().marginTop(0).marginBottom(0).marginRight(5).marginRight(5);
 
@@ -418,7 +418,6 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
 
               buttons.left().button(t -> {
                 t.left().defaults().left();
-
                     buildRecipeSimple(c, p, t);
                   }, Styles.underlineb, () -> configure(s))
                   .touchable(() -> c.selectable.get().buttonValid)

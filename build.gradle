@@ -5,7 +5,7 @@ plugins {
   id 'java'
 }
 
-version 'alpha-0.8.6'
+version 'alpha-0.8.7'
 
 sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]
@@ -16,7 +16,7 @@ ext{
   //the build number that this mod is made for
   mindustryVersion = "v143.1"
   arcVersion = "v143.1"
-  uncVersion = "1.7.4"
+  uncVersion = "1.8.0"
   //version of SDK you will be using
   minSdkAPI = 30
 

@@ -26,7 +26,6 @@ import mindustry.world.Tile;
 import mindustry.world.meta.BlockStatus;
 import singularity.Sgl;
 import singularity.graphic.SglDraw;
-import singularity.graphic.SglDrawConst;
 import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.meta.SglBlockGroup;
 import universecore.annotations.Annotations;
@@ -243,9 +242,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
             SglDraw.drawBloomUnderBlock(p, super::drawTrail);
           }
         }
-    ){{
-      color = trailColor = SglDrawConst.matrixNet;
-    }};
+    );
 
     private static final Boolean FAL = false;
 
@@ -440,8 +437,8 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
       GlyphLayout layout = GlyphLayout.obtain();
       layout.setText(Fonts.outline, status);
 
-      float w = layout.width*0.1f;
-      float h = layout.height*0.1f;
+      float w = layout.width*0.15f;
+      float h = layout.height*0.15f;
 
       layout.free();
       Draw.color(Color.darkGray, 0.6f);
@@ -452,7 +449,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
           x + w/2 + 2, y + size*tilesize/2f + h + 2
       );
 
-      Fonts.outline.draw(status, x, y + size*tilesize/2f + h, Color.white, 0.1f, false, Align.center);
+      Fonts.outline.draw(status, x, y + size*tilesize/2f + h, Color.white, 0.15f, false, Align.center);
     }
 
     @Override
@@ -482,6 +479,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
         Tmp.v2.set(Mathf.random(4f, 8f), 0).setAngle(relativeTo(outLinked)*90);
         Particle p = model.create(
             Tmp.v1.x, Tmp.v1.y,
+            Pal.reactorPurple,
             Tmp.v2.x, Tmp.v2.y,
             Mathf.random(0.2f, 0.5f), Layer.block
         );

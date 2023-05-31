@@ -22,8 +22,12 @@ import universecore.world.producers.ProducePayload;
 import universecore.world.producers.ProduceType;
 
 @Annotations.ImplEntries
-public class PayloadCrafter extends NormalCrafter implements PayloadBlockComp{
+public class PayloadCrafter extends BoosterCrafter implements PayloadBlockComp{
   public float itemCapacityMulti = 2;
+  public int payloadCapacity = 1;
+  public float payloadSpeed = 0.7f;
+  public float payloadRotateSpeed = 5f;
+
 
   public PayloadCrafter(String name){
     super(name);
@@ -42,8 +46,9 @@ public class PayloadCrafter extends NormalCrafter implements PayloadBlockComp{
     envEnabled |= Env.space | Env.underwater;
   }
 
+
   @Annotations.ImplEntries
-  public class PayloadCrafterBuild extends NormalCrafterBuild implements PayloadBuildComp{
+  public class PayloadCrafterBuild extends BoosterCrafterBuild implements PayloadBuildComp{
     public boolean acceptUnitPayload(Unit unit){
       return inputting() == null && !consumer.hasConsume() || filter().filter(this, ConsumeType.payload, unit.type, true);
     }
@@ -56,6 +61,11 @@ public class PayloadCrafter extends NormalCrafter implements PayloadBlockComp{
     @Override
     public void onControlSelect(Unit player){
       handleUnitPayload(player, p -> payloads().add(p));
+    }
+
+    @Override
+    public boolean shouldConsume() {
+      return super.shouldConsume() && !outputLocking();
     }
 
     @Override

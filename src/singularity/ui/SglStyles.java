@@ -6,7 +6,10 @@ import arc.scene.ui.Button;
 import arc.scene.ui.Dialog;
 import arc.scene.ui.Slider;
 import mindustry.gen.Tex;
+import mindustry.graphics.Pal;
+import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
+import singularity.graphic.SglDrawConst;
 import singularity.ui.fragments.HealthBarStyle;
 
 import static mindustry.gen.Tex.*;
@@ -17,7 +20,7 @@ public class SglStyles{
 
   public static Slider.SliderStyle sliderLine;
   public static Button.ButtonStyle underline;
-  public static Dialog.DialogStyle blurBack;
+  public static Dialog.DialogStyle blurBack, transparentBack;
 
   public static void load(){
     HealthBarStyle.loadAll();
@@ -53,6 +56,16 @@ public class SglStyles{
 
     blurBack = new Dialog.DialogStyle(){{
       stageBackground = BLUR_BACK;
+      titleFont = Fonts.def;
+      background = windowEmpty;
+      titleFontColor = Pal.accent;
+    }};
+
+    transparentBack = new Dialog.DialogStyle(){{
+      stageBackground = SglDrawConst.transparent;
+      titleFont = Fonts.outline;
+      background = SglDrawConst.transparent;
+      titleFontColor = Pal.accent;
     }};
   }
 }
