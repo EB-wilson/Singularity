@@ -14,8 +14,8 @@ sourceSets.test.java.srcDirs = ["test"]
 
 ext{
   //the build number that this mod is made for
-  mindustryVersion = "v143.1"
-  arcVersion = "v143.1"
+  mindustryVersion = "v144"
+  arcVersion = "v144"
   uncVersion = "1.8.0"
   //version of SDK you will be using
   minSdkAPI = 30
@@ -27,18 +27,6 @@ tasks.withType(JavaCompile).configureEach {
   options.encoding = "UTF-8"
 
   options.compilerArgs.addAll(['--release', '8'])
-}
-
-configurations.configureEach {
-  resolutionStrategy {
-    force "com.github.Anuken.Arc:arc-core:$arcVersion"
-    force "com.github.Anuken.Arc:flabel:$arcVersion"
-    force "com.github.Anuken.Arc:fx:$arcVersion"
-    force "com.github.Anuken.Arc:arcnet:$arcVersion"
-    force "com.github.Anuken.Arc:freetype:$arcVersion"
-    force "com.github.Anuken.Arc:g3d:$arcVersion"
-    force "com.github.Anuken.Arc:arcnet:$arcVersion"
-  }
 }
 
 dependencies{
