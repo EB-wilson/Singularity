@@ -1,5 +1,6 @@
 package singularity.world.particles;
 
+import arc.func.Prov;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
@@ -28,22 +29,27 @@ public class SglParticleModels{
 
   public static final Rect rect = new Rect(), hitrect = new Rect();
 
-  public static BulletType defHeatTrailHitter = new HeatBulletType(){{
-    damage = 20;
-    melDamageScl = 0.8f;
-    meltDownTime = 6;
-    lifetime = 60;
-    speed = 0;
-    collidesAir = false;
-    collidesGround = true;
-    collides = false;
-    pierce = true;
-    hittable = false;
-    absorbable = false;
-    hitEffect = Fx.circleColorSpark;
-    hitColor = Pal.lighterOrange;
-    despawnEffect = Fx.none;
-  }};
+  public static BulletType defHeatTrailHitter = new HeatBulletType(){
+    {
+      damage = 20;
+      melDamageScl = 0.8f;
+      meltDownTime = 6;
+      lifetime = 60;
+      speed = 0;
+      collidesAir = false;
+      collidesGround = true;
+      collides = false;
+      pierce = true;
+      hittable = false;
+      absorbable = false;
+      hitEffect = Fx.circleColorSpark;
+      hitColor = Pal.lighterOrange;
+      despawnEffect = Fx.none;
+    }
+
+    @Override
+    public void draw(Bullet b) {}
+  };
 
   public static ParticleModel floatParticle = new MultiParticleModel(
       new SizeVelRelatedParticle(),
@@ -63,6 +69,7 @@ public class SglParticleModels{
   heatBulletTrail = new ParticleModel(){
     static final Particle.Cloud tmp1 = new Particle.Cloud();
     static final Particle.Cloud tmp2 = new Particle.Cloud();
+    static final String timer = "timer";
 
     @Override
     public void drawTrail(Particle c) {
@@ -118,7 +125,7 @@ public class SglParticleModels{
     public void updateTrail(Particle p, Particle.Cloud c) {
       c.size -= 0.03f*Time.delta;
 
-      if (p.getVar(BULLET) instanceof Bullet b && b.isAdded() && p.getVar("timer", Interval::new).get(5) && c.nextCloud != null) {
+      if (p.getVar(BULLET) instanceof Bullet b && b.isAdded() && p.getVar(timer, (Prov<Interval>) Interval::new).get(5) && c.nextCloud != null) {
         float dx = c.nextCloud.x - c.x;
         float dy = c.nextCloud.y - c.y;
 
@@ -141,6 +148,16 @@ public class SglParticleModels{
           }
         });
       }
+    }
+
+    @Override
+    public boolean isFaded(Particle p, Particle.Cloud cloud) {
+      return cloud.size <= 0.03f;
+    }
+
+    @Override
+    public Color trailColor(Particle p) {
+      return p.color;
     }
 
     @Override

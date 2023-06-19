@@ -336,14 +336,14 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
 
     @Override
     public void containerCreated(ChainsContainer old){
-      chains.container.putVar("consumer", new SpliceConsumeModule(this));
-      chains.container.putVar("curr", this);
-      chains.container.putVar("producer", new SpliceProduceModule(this));
+      chains.container.setVar("consumer", new SpliceConsumeModule(this));
+      chains.container.setVar("curr", this);
+      chains.container.setVar("producer", new SpliceProduceModule(this));
 
-      if(hasItems) chains.container.putVar("items", new SpliceItemModule(itemCapacity, firstInit));
-      if(hasLiquids) chains.container.putVar("liquids", new SpliceLiquidModule(tempLiquidCapacity, firstInit));
+      if(hasItems) chains.container.setVar("items", new SpliceItemModule(itemCapacity, firstInit));
+      if(hasLiquids) chains.container.setVar("liquids", new SpliceLiquidModule(tempLiquidCapacity, firstInit));
 
-      chains.container.putVar("build", this);
+      chains.container.setVar("build", this);
       if(firstInit) firstInit = false;
     }
 
@@ -355,7 +355,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
 
       SpliceCrafterBuild statDisplay;
       if((statDisplay = chains.container.getVar("build")) != this){
-        if(statDisplay.y >= getBuilding().y && statDisplay.x <= getBuilding().x) chains.container.putVar("build", this);
+        if(statDisplay.y >= getBuilding().y && statDisplay.x <= getBuilding().x) chains.container.setVar("build", this);
       }
 
       updateModule = true;
@@ -406,7 +406,7 @@ public class SpliceCrafter extends NormalCrafter implements SpliceBlockComp {
     public void chainsFlowed(ChainsContainer old){
       SpliceCrafterBuild statDisplay;
       if((statDisplay = chains.container.getVar("build")) != this){
-        if(statDisplay.y >= y && statDisplay.x <= getBuilding().x) chains.container.putVar("build", this);
+        if(statDisplay.y >= y && statDisplay.x <= getBuilding().x) chains.container.setVar("build", this);
       }
       updateModule = true;
     }

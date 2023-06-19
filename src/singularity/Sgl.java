@@ -1,11 +1,12 @@
 package singularity;
 
 import arc.Core;
+import arc.Events;
 import arc.files.Fi;
 import arc.files.ZipFi;
 import arc.graphics.g2d.PixmapRegion;
-import arc.util.Time;
 import mindustry.Vars;
+import mindustry.game.EventType;
 import mindustry.world.Block;
 import singularity.core.ModConfig;
 import singularity.core.ModsInteropAPI;
@@ -84,7 +85,7 @@ public class Sgl{
 
   public static EMPHealthManager empHealth;
 
-  public static ModsInteropAPI interopAPI;
+  public static ModsInteropAPI interopAPI = new ModsInteropAPI();
   
   public static void init(){
     //注册所有打包数据类型id
@@ -107,15 +108,14 @@ public class Sgl{
 
     empHealth = new EMPHealthManager();
 
-    interopAPI = new ModsInteropAPI();
-
     matrixContainers.setDefaultSupports();
 
     empHealth.init();
     ui.init();
 
     interopAPI.init();
-    Time.run(0, interopAPI::updateModels);
+
+    Events.on(EventType.ClientLoadEvent.class, e -> interopAPI.updateModels());
 
     for (Block block : Vars.content.blocks()) {
       if (block.minfo.mod != null && block.minfo.mod.name.equals(modName) && !(block instanceof SglTurret)){

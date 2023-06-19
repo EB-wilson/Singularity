@@ -2,14 +2,21 @@ package singularity.world.blocks.product;
 
 import arc.Core;
 import arc.func.Cons2;
+import arc.graphics.Color;
+import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.Fill;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
+import arc.scene.style.TextureRegionDrawable;
+import arc.scene.ui.Button;
+import arc.scene.ui.layout.Collapser;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
 import arc.struct.ObjectMap;
 import arc.struct.ObjectSet;
+import arc.util.Scaling;
+import arc.util.Strings;
 import arc.util.Structs;
-import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import arc.util.pooling.Pool;
@@ -23,16 +30,20 @@ import mindustry.entities.Units;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Icon;
+import mindustry.gen.Tex;
 import mindustry.gen.Unit;
+import mindustry.graphics.Pal;
 import mindustry.mod.Mods;
 import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.PayloadStack;
 import mindustry.type.UnitType;
+import mindustry.ui.Bar;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.blocks.payloads.UnitPayload;
 import mindustry.world.blocks.units.Reconstructor;
+import mindustry.world.meta.Stat;
 import singularity.Sgl;
 import singularity.core.ModsInteropAPI;
 import singularity.world.components.distnet.DistElementBlockComp;
@@ -44,11 +55,13 @@ import singularity.world.distribution.GridChildType;
 import singularity.world.distribution.MatrixGrid;
 import singularity.world.distribution.buffers.ItemsBuffer;
 import singularity.world.distribution.request.DistRequestBase;
+import singularity.world.meta.SglStat;
 import singularity.world.modules.DistributeModule;
 import singularity.world.products.Producers;
 import universecore.annotations.Annotations;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeType;
+import universecore.world.producers.BaseProducers;
 import universecore.world.producers.ProducePayload;
 import universecore.world.producers.ProduceType;
 
@@ -64,7 +77,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
   static ObjectMap<UnitType, UnitCostModel> costModels = new ObjectMap<>();
 
   static {
-    Time.run(0, () -> Sgl.interopAPI.addModel(new ModsInteropAPI.ConfigModel("unitFactoryCosts") {
+    Sgl.interopAPI.addModel(new ModsInteropAPI.ConfigModel("unitFactoryCosts") {
       @Override
       public void parse(Mods.LoadedMod mod, Jval declaring) {
         for (ObjectMap.Entry<String, Jval> entry : declaring.asObject()) {
@@ -122,19 +135,19 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
           }
         }
       }
-    }, false));
+    }, false);
   }
-
-  private final int swapDelayID = timers++;
 
   public int maxTasks = 16;
 
-  public float swapDelay;
   public float sizeLimit;
   public float healthLimit;
   public float timeMultiplier = 20;
-  public float baseTimeScl = 0.35f;
+  public float baseTimeScl = 0.3f;
   public int machineLevel;
+
+  /**是否只能通过矩阵网络分配建造材料*/
+  public boolean matrixDistributeOnly = false;
 
   public Cons2<UnitType, SglConsumers> consCustom;
   public Cons2<UnitType, Producers> byProduct;
@@ -171,8 +184,101 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
         case 6 -> u.removeTask(u.getTask(i.get(1)));
         case 7 -> u.riseTask(u.getTask(i.get(1)));
         case 8 -> u.downTask(u.getTask(i.get(1)));
+        case 9 -> {
+          SglUnitFactoryBuild.BuildTask t = u.getTask(i.get(1));
+          t.targetPos = new Vec2(i.get(2)/1000f, i.get(3)/1000f);
+
+          if (Vars.world.buildWorld(t.targetPos.x, t.targetPos.y) == u) {
+            t.targetPos = null;
+          }
+
+          t.command = UnitCommand.all.get(i.get(4));
+        }
         default -> throw new IllegalArgumentException("unknown operate code: " + handle);
       }
+    });
+  }
+
+  @Override
+  public void setStats() {
+    super.setStats();
+
+    stats.remove(Stat.itemCapacity);
+    stats.remove(SglStat.recipes);
+    stats.remove(SglStat.autoSelect);
+    stats.remove(SglStat.controllable);
+
+    stats.add(SglStat.sizeLimit, sizeLimit);
+    stats.add(SglStat.healthLimit, healthLimit);
+    stats.add(SglStat.buildLevel, machineLevel);
+
+    stats.add(SglStat.recipes, t -> {
+      t.left().defaults().left().growX();
+      if (matrixDistributeOnly){
+        t.row();
+        t.add(Core.bundle.get("infos.matrixDistOnly")).color(Color.darkGray);
+      }
+
+      Table table = new Table(((TextureRegionDrawable) Tex.whiteui).tint(Color.darkGray));
+      Collapser coll = new Collapser(table, true);
+
+      table.left().defaults().left().pad(3).size(185, 60);
+
+      int c = 0;
+      for (BaseProducers producer : producers()) {
+        if (producer.cons.selectable.get() == BaseConsumers.Visibility.hidden) continue;
+
+        ProducePayload<?> pd = producer.get(ProduceType.payload);
+
+        if (pd == null || pd.payloads.length != 1) continue;
+
+        Button button = new Button(){
+          {
+            left().defaults().left().padLeft(4);
+            image(pd.payloads[0].item.fullIcon).scaling(Scaling.fit).size(50);
+            add(pd.payloads[0].item.localizedName).growX();
+
+            clicked(() -> {
+              Vars.ui.content.show(pd.payloads[0].item);
+            });
+
+            setDisabled(() -> producer.cons.selectable.get() == BaseConsumers.Visibility.unusable);
+          }
+
+          @Override
+          public void draw() {
+            super.draw();
+
+            if (producer.cons.selectable.get() == BaseConsumers.Visibility.unusable) {
+              Draw.color(Pal.darkerGray);
+              Draw.alpha(0.8f*parentAlpha);
+
+              Fill.rect(x + width/2, y + height/2, width, height);
+
+              Draw.color(Color.lightGray, parentAlpha);
+              Icon.lock.draw(x + width/2, y + height/2, 28, 28);
+            }
+          }
+        };
+
+        table.add(button);
+
+        c++;
+        if (c % 4 == 0){
+          c = 0;
+          table.row();
+        }
+      }
+
+      t.row();
+      t.table(inf -> {
+        inf.left().defaults().left();
+
+        inf.add(Core.bundle.get("infos.buildableList") + ": ");
+        inf.button(Icon.downOpen, Styles.emptyi, () -> coll.toggle(false)).update(i -> i.getStyle().imageUp = (!coll.isCollapsed() ? Icon.upOpen : Icon.downOpen)).size(8).padLeft(16f).expandX();
+      });
+      t.row();
+      t.add(coll);
     });
   }
 
@@ -182,10 +288,20 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
     super.init();
   }
 
+  @Override
+  public void setBars() {
+    super.setBars();
+
+    addBar("progress", (SglUnitFactoryBuild entity) -> new Bar(
+        () -> Core.bundle.format("bar.progress", Strings.autoFixed(entity.progress()*100, 1)),
+        () -> Pal.ammo,
+        entity::progress)
+    );
+  }
+
   public void setupProducts(){
     for (UnitType unit : Vars.content.units()) {
       if (unit.hitSize < sizeLimit && unit.health < healthLimit){
-
         ItemStack[] req;
         float buildTime;
         int level = 1;
@@ -195,12 +311,12 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
           if (costModel.disabled) continue;
 
           req = costModel.requirements;
-          buildTime = costModel.baseBuildTime*timeMultiplier*(baseTimeScl + Mathf.sqrt((unit.hitSize/sizeLimit)*(unit.health/healthLimit)));
+          buildTime = costModel.baseBuildTime*timeMultiplier*(baseTimeScl + (1 - baseTimeScl)*Mathf.sqrt((unit.hitSize/sizeLimit)*(unit.health/healthLimit)));
           level = costModel.minLevel;
         }
         else {
           req = unit.getTotalRequirements();
-          buildTime = unit.getBuildTime()*timeMultiplier*(baseTimeScl + Mathf.sqrt((unit.hitSize/sizeLimit)*(unit.health/healthLimit)));
+          buildTime = unit.getBuildTime()*timeMultiplier*(baseTimeScl + (1 - baseTimeScl)*Mathf.sqrt((unit.hitSize/sizeLimit)*(unit.health/healthLimit)));
 
           UnitType[] tmp = new UnitType[]{unit};
           while (tmp[0] != null) {
@@ -263,6 +379,8 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
     private BuildTask taskQueueHead, taskQueueLast;
     private BuildTask currentTask;
 
+    protected float lastOutputProgress;
+
     public int priority;
     public DistributeModule distributor;
     public ItemsBuffer itemsBuffer;
@@ -316,7 +434,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
         taskQueueHead.pre = task;
 
         taskQueueHead.next = next;
-        next.pre = taskQueueHead;
+        if (next != null) next.pre = taskQueueHead;
 
         taskQueueHead = task;
         taskQueueHead.pre = null;
@@ -350,7 +468,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
         task.pre = taskQueueLast;
         taskQueueLast.next = task;
 
-        pre.next = taskQueueLast;
+        if (pre != null) pre.next = taskQueueLast;
         taskQueueLast.pre = pre;
 
         taskQueueLast = task;
@@ -486,16 +604,16 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
 
     @Override
     public void buildConfiguration(Table table) {
-      table.button(Icon.settings, Styles.clearNonei, 40, () -> Sgl.ui.unitFactoryCfg.show(this)).size(56);
+      table.button(Icon.settings, Styles.cleari, 40, () -> Sgl.ui.unitFactoryCfg.show(this)).size(56);
     }
 
     @Override
     public void updateTile() {
+      boostMarker |= outputLocking() && lastOutputProgress <= 0.999f;
+
       super.updateTile();
 
       if (pullItemsRequest != null) pullItemsRequest.update();
-
-      if (!timer(swapDelayID, swapDelay)) return;
 
       if (currentTask == null){
         recipeCurrent = -1;
@@ -537,8 +655,43 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
 
       Unit unit = ((UnitPayload) getPayload()).unit;
       if(unit.isCommandable()){
-        if (currentTask.targetPos != null) unit.command().commandPosition(currentTask.targetPos);
+        if (currentTask.targetPos != null){
+          unit.command().commandPosition(currentTask.targetPos);
+        }
         if (currentTask.command != null) unit.command().command(currentTask.command);
+      }
+    }
+
+    @Override
+    public float handleOutputPayload() {
+      return lastOutputProgress = super.handleOutputPayload();
+    }
+
+    @Override
+    public void updateFactory() {
+      if(recipeCurrent == -1 || producer.current == null){
+        warmup(Mathf.lerpDelta(warmup(), 0, stopSpeed()));
+        return;
+      }
+
+      if(shouldConsume() && consumeValid()){
+        progress(progress() + progressIncrease(consumer.current.craftTime));
+        warmup(Mathf.lerpDelta(warmup(), 1, warmupSpeed()));
+
+        onCraftingUpdate();
+      }
+      else if (!outputLocking() || lastOutputProgress >= 0.999f){
+        warmup(Mathf.lerpDelta(warmup(), 0, stopSpeed()));
+      }
+
+      totalProgress(totalProgress() + consumer.consDelta());
+
+      while(progress() >= 1){
+        progress(progress() - 1);
+        consumer().trigger();
+        producer().trigger();
+
+        craftTrigger();
       }
     }
 
@@ -546,7 +699,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
       if (!activity) return Core.bundle.get("infos.waiting");
       else if (currentTask == null) return Core.bundle.get("infos.noTask");
       else if (outputting() != null){
-        if (!Units.canCreate(team, (UnitType) outputting().content())) return Core.bundle.get("infos.cannotDump");
+        if (lastOutputProgress >= 0.999f) return Core.bundle.get("infos.cannotDump");
         else return "...";
       }
       else if (!consumeValid()) return Core.bundle.get("infos.leakMaterial");
@@ -599,6 +752,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
     public String serializeTasks(){
       StringBuilder builder = new StringBuilder();
 
+      if (taskQueueHead == null) return "empty";
       for (BuildTask task : taskQueueHead) {
         if (builder.length() != 0) builder.append(Sgl.NL);
         builder.append(task.buildUnit.name).append(";")
@@ -612,6 +766,8 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
     }
 
     public void deserializeTask(String str, boolean append){
+      if (str.equals("empty")) return;
+
       if (!append) clearTask();
 
       StringBuilder err = null;
@@ -653,6 +809,11 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
       }
 
       if (err != null) Vars.ui.showErrorMessage(err.toString());
+    }
+
+    @Override
+    public boolean acceptItem(Building source, Item item) {
+      return (!matrixDistributeOnly || source == distributor.network.getCore()) && super.acceptItem(source, item);
     }
 
     @Override
@@ -760,7 +921,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
       public UnitType buildUnit;
       public int factoryIndex;
       public Vec2 targetPos;
-      public UnitCommand command;
+      public UnitCommand command = UnitCommand.moveCommand;
       public int queueAmount;
 
       public BuildTask pre, next;
@@ -771,6 +932,8 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
         task.factoryIndex = factoryIndex;
         task.queueAmount = amount;
 
+        task.command = task.buildUnit.defaultCommand != null? task.buildUnit.defaultCommand: task.buildUnit.commands[0];
+
         return task;
       }
 
@@ -779,7 +942,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
         buildUnit = null;
         factoryIndex = -1;
         targetPos = null;
-        command = null;
+        command = UnitCommand.moveCommand;
         queueAmount = 0;
 
         pre = null;

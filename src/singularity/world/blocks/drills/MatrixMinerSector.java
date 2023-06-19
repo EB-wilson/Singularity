@@ -30,6 +30,7 @@ import singularity.Sgl;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
+import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.meta.SglStat;
 
@@ -299,7 +300,7 @@ public class MatrixMinerSector extends MatrixMinerPlugin{
 
     @Override
     public boolean angleValid(float angle){
-      return side >= 0 && Math.abs(angle - side*90) < 45 || (side == 0 && angle >= 315);
+      return side >= 0 && MathTransform.innerAngle(angle, side*90) < 45;
     }
 
     @Override

@@ -2,6 +2,7 @@ package singularity.world.blocks.product;
 
 import arc.Core;
 import arc.math.Mathf;
+import arc.util.Strings;
 import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
 import mindustry.world.meta.Stat;
@@ -9,6 +10,8 @@ import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
 
 public class BoosterCrafter extends NormalCrafter{
+  public boolean optionalBoost = false;
+
   public BoosterCrafter(String name) {
     super(name);
   }
@@ -20,10 +23,10 @@ public class BoosterCrafter extends NormalCrafter{
       for (BaseConsume cons : c.all()) {
         mul *= cons.efficiency(e);
       }
-      e.boostEff = Mathf.approachDelta(e.boostEff, boost*mul*Mathf.clamp(e.consEfficiency()), 0.04f);
+      e.boostEff = Mathf.approachDelta(e.boostEff, boost*mul*Mathf.clamp(e.consumer.consEfficiency)*e.consumer.getOptionalEff(c), 0.04f);
       e.boostMarker = true;
     }, (s, c) -> {
-      s.add(Stat.boostEffect, Core.bundle.get("misc.efficiency") + boost*100 + "%");
+      s.add(Stat.boostEffect, Core.bundle.get("misc.efficiency") + Strings.autoFixed(boost*100, 1) + "%");
     });
     consume.optionalAlwaysValid = false;
     return res;
@@ -53,8 +56,13 @@ public class BoosterCrafter extends NormalCrafter{
     }
 
     @Override
-    public float workEfficiency() {
-      return super.workEfficiency()*boostEff;
+    public float optionalConsEff(BaseConsumers consumers) {
+      return super.optionalConsEff(consumers)*(optionalBoost? boostEff: 1);
+    }
+
+    @Override
+    public float consEfficiency() {
+      return super.consEfficiency()*boostEff;
     }
   }
 }

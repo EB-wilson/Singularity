@@ -5,6 +5,7 @@ import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.util.Time;
+import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -90,17 +91,20 @@ public interface PayloadBuildComp extends BuildCompBase{
       outputting().set(
           Mathf.approachDelta(outputting().x(), getBuilding().x + outputVec.x, getPayloadBlock().payloadSpeed()),
           Mathf.approachDelta(outputting().y(), getBuilding().y + outputVec.y, getPayloadBlock().payloadSpeed()),
-          Angles.moveToward(outputting().rotation(), outputVec.angle(), getPayloadBlock().payloadRotateSpeed()*Time.delta)
+          Angles.moveToward(outputting().rotation(), Tmp.v1.set(outputVec).add(getBuilding()).sub(outputting()).angle(), getPayloadBlock().payloadRotateSpeed()*Time.delta)
       );
 
-      return Mathf.len(outputting().x() - getBuilding().x, outputting().y() - getBuilding().y)/(getBlock().size*tilesize/2f);
+      return 1 - Mathf.clamp(Mathf.len(getBuilding().x + outputVec.x - outputting().x(), getBuilding().y + outputVec.y - outputting().y())/outputVec.len());
     }
 
     return 0;
   }
 
   default Vec2 outputtingOffset(){
-    return tempVec.set(Angles.trnsx(getBuilding().rotation*90, getBlock().size*tilesize/2f), Angles.trnsy(getBuilding().rotation*90, getBlock().size*tilesize/2f));
+    return tempVec.set(
+        Angles.trnsx(getBuilding().rotation*90, getBlock().size*tilesize/2f),
+        Angles.trnsy(getBuilding().rotation*90, getBlock().size*tilesize/2f)
+    );
   }
 
   default boolean blends(int direction){
@@ -199,14 +203,16 @@ public interface PayloadBuildComp extends BuildCompBase{
     }
 
     Vec2 offset = outputtingOffset();
-    Building front;
+    Building targetTile;
+    boolean front = false;
     if (Math.max(Math.abs(offset.x), Math.abs(offset.y)) <= getBlock().size/2f*tilesize + 0.5f){
-      front = getBuilding().front();
+      targetTile = getBuilding().front();
+      front = true;
     }
-    else front = Vars.world.buildWorld(getBuilding().x + offset.x, getBuilding().y + offset.y);
+    else targetTile = Vars.world.buildWorld(getBuilding().x + offset.x, getBuilding().y + offset.y);
 
-    boolean canDump = front == null || !front.tile().solid();
-    boolean canMove = front != null && (front.block.outputsPayload || front.block.acceptsPayload);
+    boolean canDump = targetTile == null || !targetTile.tile().solid();
+    boolean canMove = targetTile != null && (targetTile.block.acceptsPayload || targetTile.block.outputsPayload) && targetTile.interactable(getBuilding().team);
 
     if (!outputLocking() && (canDump || canMove)) popPayload();
 
@@ -227,18 +233,31 @@ public interface PayloadBuildComp extends BuildCompBase{
 
     if(outputProgress >= 0.999f){
       if(canMove){
-        if(getBuilding().movePayload(outputting())){
+        if(targetTile.acceptPayload(getBuilding(), outputting())){
+          float rot = outputting().rotation();
+          targetTile.handlePayload(getBuilding(), outputting());
+
+          if (!front && targetTile instanceof PayloadBlock.PayloadBlockBuild<?> build){
+            build.payload.set(build.x, build.y, rot);
+            build.payVector.setZero();
+            build.payRotation = rot;
+          }
+
+          released(outputting());
           outputting(null);
           outputLocking(false);
         }
       }else if(canDump){
         if(outputting().dump()){
+          released(outputting());
           outputting(null);
           outputLocking(false);
         }
       }
     }
   }
+
+  default void released(Payload payload){}
 
   @Annotations.MethodEntry(
       entryMethod = "handlePayload",

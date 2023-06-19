@@ -63,6 +63,11 @@ public class SglStat{
       controllable = create("controllable", 47, StatCat.crafting),
       recipes = create("recipes", 48, StatCat.crafting),
       special = create("special", 51, StatCat.crafting),
+
+      sizeLimit = create("sizeLimit", StatCat.crafting),
+      healthLimit = create("healthLimit", StatCat.crafting),
+      buildLevel = create("buildLevel", StatCat.crafting),
+
       effect = create("effect", StatCat.function);
 
   private static Stat create(String name, StatCat cat){

@@ -19,6 +19,7 @@ import static singularity.contents.ProductBlocks.*;
 import static singularity.contents.SglItems.*;
 import static singularity.contents.SglLiquids.*;
 import static singularity.contents.SglTurrets.*;
+import static singularity.contents.SglUnits.*;
 import static universecore.util.TechTreeConstructor.*;
 
 public class SglTechThree implements ContentList{
@@ -112,6 +113,22 @@ public class SglTechThree implements ContentList{
 
       node(blastDrill, tidal_drill, tidDil -> {
         tidDil.node(force_field_extender, forExt -> {});
+      });
+
+      node(duo, phased_radar, phaRad -> {});
+
+      node(multiplicativeReconstructor, cstr_1, cstr1 -> {
+        cstr1.node(cstr_2, Seq.with(new Objectives.Research(tetrativeReconstructor)), cstr2 -> {
+          cstr2.node(cstr_3, cstr3 -> {});
+        });
+
+        cstr1.node(mornstar, morn -> {
+          morn.node(kaguya, kagu -> {});
+
+          morn.node(aurora, aur -> {
+            aur.node(emptiness, emp -> {});
+          });
+        });
       });
 
       node(blastDrill, matrix_miner, Seq.with(new Objectives.Research(matrix_core)), matDil -> {

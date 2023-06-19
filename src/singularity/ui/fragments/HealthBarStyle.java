@@ -2,8 +2,6 @@ package singularity.ui.fragments;
 
 import arc.Core;
 import arc.graphics.Color;
-import arc.graphics.Pixmap;
-import arc.graphics.Texture;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.GlyphLayout;
 import arc.graphics.g2d.ScissorStack;
@@ -25,7 +23,7 @@ import static arc.graphics.g2d.Draw.yscl;
 
 public enum HealthBarStyle {
   mindustry(9, 16, 153, 7, 14, 26, 9),
-  tech(31, 14, 165, 6, 38, 28, 10),
+  tech(31, 14, 165, 6, 38, 28, 9),
   shape(6, 15, 145, 4, 12, 28, 10);
 
   static final Rect scissor = new Rect();
@@ -128,17 +126,6 @@ public enum HealthBarStyle {
       Draw.rect(barRegion, origX + width /2 + offX, origY + height /2 + offY, width, height);
       ScissorStack.pop();
     }
-  }
-
-  static TextureRegion blank;
-  private static TextureRegion getBlank(){
-    if(blank == null){
-      Pixmap pix = new Pixmap(280*4, 34*4);
-      pix.fill(Color.white);
-      blank = new TextureRegion(new Texture(pix));
-    }
-
-    return blank;
   }
 
   public float getWidth(float scl) {

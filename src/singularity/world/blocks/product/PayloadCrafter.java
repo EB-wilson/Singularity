@@ -21,6 +21,8 @@ import universecore.world.consumers.ConsumeType;
 import universecore.world.producers.ProducePayload;
 import universecore.world.producers.ProduceType;
 
+import static mindustry.Vars.tilesize;
+
 @Annotations.ImplEntries
 public class PayloadCrafter extends BoosterCrafter implements PayloadBlockComp{
   public float itemCapacityMulti = 2;
@@ -65,7 +67,8 @@ public class PayloadCrafter extends BoosterCrafter implements PayloadBlockComp{
 
     @Override
     public boolean shouldConsume() {
-      return super.shouldConsume() && !outputLocking();
+      if (!super.shouldConsume()) return false;
+      return outputting() == null || Math.abs(outputting().x() - x) >= size*tilesize/2f + 1 || Math.abs(outputting().y() - y) >= size*tilesize/2f + 1;
     }
 
     @Override

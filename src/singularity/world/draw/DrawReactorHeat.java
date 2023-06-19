@@ -18,6 +18,7 @@ import singularity.world.blocks.nuclear.NuclearReactor;
 import static mindustry.Vars.tilesize;
 
 public class DrawReactorHeat extends DrawBlock{
+  public static final String FLASH = "flash";
   public Color lightColor = Color.valueOf("7f19ea");
   public Color coolColor = new Color(1, 1, 1, 0f);
   public Color hotColor = Color.valueOf("ff9575a3");
@@ -38,8 +39,8 @@ public class DrawReactorHeat extends DrawBlock{
     Fill.rect(e.x, e.y, e.block.size * tilesize, e.block.size * tilesize);
 
     if(e.heat > flashThreshold){
-      e.handleVar("flash", (Float f) -> f + (1f + ((e.heat - flashThreshold) / (e.block().maxHeat - flashThreshold)) * 5.4f) * Time.delta, 0f);
-      Draw.color(Color.red, Color.yellow, Mathf.absin(e.getVar("flash"), 9f, 1f));
+      float fa = e.handleVar(FLASH, (float f) -> f + (1f + ((e.heat - flashThreshold) / (e.block().maxHeat - flashThreshold)) * 5.4f) * Time.delta, 0f);
+      Draw.color(Color.red, Color.yellow, Mathf.absin(fa, 9f, 1f));
       Draw.alpha(0.3f);
       Draw.rect(lightsRegion, e.x, e.y);
     }

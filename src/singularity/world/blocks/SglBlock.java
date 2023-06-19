@@ -11,8 +11,10 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
+import arc.scene.Element;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
+import arc.struct.SnapshotSeq;
 import arc.util.Eachable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -349,10 +351,31 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   
     @Override
     public void displayConsumption(Table table){
-      if(consumer != null) table.update(() -> {
+      Runnable rebuild = () -> {
+        Table t = new Table();
+        consumer.build(t);
+
         table.clear();
         table.left();
-        consumer.build(table);
+
+        SnapshotSeq<Element> array = t.getChildren();
+        Element[] items = array.begin();
+        for (int i = 0, n = array.size; i < n; i++) {
+          Element child = items[i];
+
+          table.add(child);
+          if ((i + 1) % 6 == 0){
+            table.row();
+          }
+        }
+        array.end();
+      };
+      rebuild.run();
+
+      if(consumer != null) table.update(() -> {
+        if (updateRecipe) {
+          rebuild.run();
+        }
       });
     }
 

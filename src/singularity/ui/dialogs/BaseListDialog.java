@@ -10,10 +10,7 @@ import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import universecore.UncCore;
 import universecore.ui.table.ZoomableTable;
-import universecore.util.animate.CellAnimateGroup;
-import universecore.util.animate.CellChangeColorAction;
 
 public class BaseListDialog extends BaseDialog{
   public float width = 750, height = 520;
@@ -88,22 +85,6 @@ public class BaseListDialog extends BaseDialog{
           if(lastEntry != current || rebuild){
             lastEntry = current;
             rebuild = false;
-            UncCore.cellActions.add(new CellAnimateGroup(
-                new CellChangeColorAction(infoCell, infoTable,  infoTable.color.cpy().a(1), infoTable.color.cpy().a(0), 6f),
-                (Runnable) () -> {
-                  infoTable.clearChildren();
-                  infoTable.resetZoom();
-                  if(current == null){
-                    infoTable.setValid(false);
-                    defaultInfo.get(infoTable);
-                  }
-                  else{
-                    infoTable.setValid(true);
-                    current.infoDisplay.get(infoTable);
-                  }
-                },
-                new CellChangeColorAction(infoCell, infoTable,  infoTable.color.cpy().a(0), infoTable.color.cpy().a(1), 6f)
-            ));
           }
         });
       }).growX().margin(0).height(itemBoardHeight).pad(0);

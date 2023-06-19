@@ -23,7 +23,7 @@ public class DebugInfos {
   {
     addMonitor("monitors", () -> displays.size);
     addMonitor("particleCounts", Particle::count);
-    addMonitor("cloudCouts", () -> Pools.get(Particle.Cloud.class, Particle.Cloud::new).peak);
+    addMonitor("cloudCouts", () -> Pools.get(Particle.Cloud.class, Particle.Cloud::new, 65536).peak);
   }
 
   public void addMonitor(String name, Prov<?> value){

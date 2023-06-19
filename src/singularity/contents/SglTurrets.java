@@ -73,6 +73,7 @@ import static mindustry.entities.Damage.collideLine;
 import static mindustry.entities.Damage.findPierceLength;
 
 public class SglTurrets implements ContentList{
+  public static final String CONTAINER = "lightningContainer";
   /**碎冰*/
   public static BulletType crushedIce,
   /**极寒领域*/
@@ -977,7 +978,7 @@ public class SglTurrets implements ContentList{
       consume.time(180);
 
       initialed = e -> {
-        e.setVar("lightningContainer", new LightningContainer(){{
+        e.setVar(CONTAINER, new LightningContainer(){{
           generator = new CircleGenerator(){{
             radius = 8;
             maxSpread = 2.5f;
@@ -995,10 +996,10 @@ public class SglTurrets implements ContentList{
       updating = e -> {
         if(!Sgl.config.enableLightning || Sgl.config.animateLevel < 3) return;
 
-        e.<LightningContainer>getVar("lightningContainer").update();
+        e.<LightningContainer>getVar(CONTAINER).update();
         SglTurretBuild turret = (SglTurretBuild) e;
         if(turret.warmup > 0 && e.timer(timeId, 25/turret.warmup)){
-          e.<LightningContainer>getVar("lightningContainer").create();
+          e.<LightningContainer>getVar(CONTAINER).create();
         }
 
         if(Mathf.chanceDelta(0.03f*turret.warmup)){
@@ -1112,7 +1113,7 @@ public class SglTurrets implements ContentList{
               Draw.color(Pal.reactorPurple);
               Tmp.v1.set(1, 0).setAngle(turret.rotation);
               float sclX = Tmp.v1.x, sclY = Tmp.v1.y;
-              turret.<LightningContainer>getVar("lightningContainer").draw(turret.x + sclX*22, turret.y + sclY*22);
+              turret.<LightningContainer>getVar(CONTAINER).draw(turret.x + sclX*22, turret.y + sclY*22);
 
               float step = 45/16f;
               if(turret.warmup < 0.001f) return;
@@ -2884,7 +2885,7 @@ public class SglTurrets implements ContentList{
         @Override
         public void init(Bullet b) {
           super.init(b);
-          Particle p = SglParticleModels.heatBulletTrail.create(b.x, b.y, trailColor, 0, 0, 5);
+          Particle p = SglParticleModels.heatBulletTrail.create(b.x, b.y, Pal.lighterOrange, 0, 0, 5);
           p.setVar(SglParticleModels.OWNER, b);
           p.setVar(SglParticleModels.BULLET, SglParticleModels.defHeatTrailHitter.create(b, b.x, b.y, b.rotation()));
 

@@ -4,13 +4,11 @@ import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
-import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.scene.style.TextureRegionDrawable;
 import arc.struct.ObjectSet;
-import arc.struct.Seq;
 import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.pooling.Pool;
@@ -77,17 +75,10 @@ public class DefenceBlocks implements ContentList{
             spliceBits = e -> e.spliceDirBit;
             layerRec = false;
           }},
-          new DrawRegion("_rotator"){
-            {
-              layer = Layer.blockOver;
-              rotateSpeed = 0.4f;
-            }
-
-            @Override
-            public void getRegionsToOutline(Block block, Seq<TextureRegion> out) {
-              out.add(block.region);
-            }
-          }
+          new DrawRegion("_rotator"){{
+            layer = Layer.blockOver;
+            rotateSpeed = 0.4f;
+          }}
       );
     }};
 

@@ -37,6 +37,7 @@ import static mindustry.Vars.tilesize;
 
 @Annotations.ImplEntries
 public class PhasedRadar extends SglBlock implements SpliceBlockComp {
+  public static final String BUILD = "build";
   public int maxChainsWidth = 16;
   public int maxChainsHeight = 16;
 
@@ -115,13 +116,13 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
 
     @Override
     public void containerCreated(ChainsContainer old){
-      chains.container.putVar("build", this);
+      chains.container.setVar(BUILD, this);
     }
 
     @Override
     public void updateTile(){
       if(consumeValid()){
-        if(chains.container.getVar("build") != this) return;
+        if(chains.container.getVar(BUILD) != this) return;
 
         if(timer(timeId, scanTime)){
           for(Unit unit: Groups.unit){
@@ -158,9 +159,9 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
     @Override
     public void chainsFlowed(ChainsContainer old){
       PhasedRadarBuild statDisplay;
-      if((statDisplay = chains.container.getVar("build")) != this){
+      if((statDisplay = chains.container.getVar(BUILD)) != this){
         if(statDisplay.y >= y && statDisplay.x <= getBuilding().x){
-          chains.container.putVar("build", this);
+          chains.container.setVar(BUILD, this);
           centerPos.set(chains.container.minX(), chains.container.minY())
               .scl(tilesize)
               .add(chains.container.width()/2f*tilesize, chains.container.height()/2f*tilesize);
@@ -184,7 +185,7 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
 
     @Override
     public void drawStatus(){
-      if(this.block.enableDrawStatus && this.block().consumers().size > 0 && chains.getVar("build") == this){
+      if(this.block.enableDrawStatus && this.block().consumers().size > 0 && chains.getVar(BUILD) == this){
         float multiplier = block.size > 1 || chains.container.all.size > 1 ? 1.0F : 0.64F;
         float brcx = this.tile.drawx() + (float)(this.block.size * 8)/2.0F - 8*multiplier/2;
         float brcy = this.tile.drawy() - (float)(this.block.size * 8)/2.0F + 8*multiplier/2;
@@ -204,7 +205,7 @@ public class PhasedRadar extends SglBlock implements SpliceBlockComp {
       Draw.color(Pal.placing);
       Draw.alpha(0.4f);
 
-      PhasedRadarBuild b = chains.getVar("build");
+      PhasedRadarBuild b = chains.getVar(BUILD);
       float drawX = b.centerPos.x;
       float drawY = b.centerPos.y;
       Fill.circle(drawX, drawY, range*tilesize);

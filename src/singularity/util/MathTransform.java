@@ -62,4 +62,10 @@ public class MathTransform{
   public static float gradientRotateDeg(float deg, float fine, float off, int sides){
     return gradientRotate(deg*Mathf.degRad, fine*Mathf.degRad, off, sides)*Mathf.radDeg;
   }
+
+  public static float innerAngle(float a, float b) {
+    a %= 360;
+    b %= 360;
+    return b - a > 180? b - a - 360: b - a < -180? b - a + 360: b - a;
+  }
 }

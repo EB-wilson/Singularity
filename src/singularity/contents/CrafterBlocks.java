@@ -69,6 +69,7 @@ import static singularity.graphic.SglDrawConst.transColor;
 public class CrafterBlocks implements ContentList{
   public static final String HIGHLIGHT = "highlight";
   public static final String ANIMATEDWATER = "animatedwater";
+  public static final String STATUS = "status";
   /**裂变编织器*/
   public static Block fission_weaver,
   /**绿藻池*/
@@ -146,7 +147,7 @@ public class CrafterBlocks implements ContentList{
       consume.time(90);
       consume.power(2.5f);
       consume.items(ItemStack.with(Items.silicon, 4, SglItems.uranium_238, 1));
-      consume.consValidCondition((NormalCrafterBuild e) -> e.getVar("status", 0) > 0);
+      consume.consValidCondition((NormalCrafterBuild e) -> e.getVar(STATUS, 0) > 0);
       newProduce();
       produce.item(Items.phaseFabric, 6);
       
@@ -154,7 +155,7 @@ public class CrafterBlocks implements ContentList{
   
       Cons<Item> recipe = item -> {
         newOptionalConsume((NormalCrafterBuild e, BaseConsumers c) -> {
-          e.setVar("status", 2);
+          e.setVar(STATUS, 2);
         }, (s, c) -> {
           s.add(SglStat.effect, t -> t.add(Core.bundle.get("misc.doConsValid")));
         }).overdriveValid(false);
@@ -170,13 +171,13 @@ public class CrafterBlocks implements ContentList{
         @Override
         public void updateTile(){
           super.updateTile();
-          handleVar("status", (Integer i) -> i > 0? i - 1: 0, 0);
+          handleVar(STATUS, (int i) -> i > 0? i - 1: 0, 0);
         }
   
         @Override
         public BlockStatus status(){
           BlockStatus status = super.status();
-          if(status == BlockStatus.noInput && getVar("status", 0) > 0) return BlockStatus.noOutput;
+          if(status == BlockStatus.noInput && getVar(STATUS, 0) > 0) return BlockStatus.noOutput;
           return status;
         }
       };

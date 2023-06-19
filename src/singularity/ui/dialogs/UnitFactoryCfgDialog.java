@@ -3,24 +3,34 @@ package singularity.ui.dialogs;
 import arc.Core;
 import arc.func.Boolc;
 import arc.func.Cons;
+import arc.func.Prov;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.Lines;
+import arc.input.KeyCode;
 import arc.math.Interp;
 import arc.math.Mathf;
+import arc.math.geom.Vec2;
 import arc.scene.Element;
 import arc.scene.actions.Actions;
+import arc.scene.event.InputEvent;
+import arc.scene.event.InputListener;
+import arc.scene.event.Touchable;
+import arc.scene.style.Drawable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Button;
 import arc.scene.ui.Dialog;
 import arc.scene.ui.TextField;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Collapser;
+import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
 import arc.struct.Seq;
 import arc.util.*;
 import mindustry.Vars;
+import mindustry.ai.UnitCommand;
 import mindustry.core.UI;
 import mindustry.entities.Units;
 import mindustry.gen.Icon;
@@ -48,20 +58,52 @@ import universecore.world.consumers.*;
 import universecore.world.producers.BaseProducers;
 import universecore.world.producers.ProduceType;
 
+import java.text.Collator;
+import java.util.Comparator;
+
 import static mindustry.Vars.ui;
 
 public class UnitFactoryCfgDialog extends BaseDialog {
   SglUnitFactory.SglUnitFactoryBuild currConfig;
 
   Table taskQueue, status, sideButton;
-  SglUnitFactory.SglUnitFactoryBuild.BuildTask curr;
+  Table commandCfg, commandCfgTab;
+  boolean commandConfiguring;
+  Vec2 configuringPos = new Vec2();
+  SglUnitFactory.SglUnitFactoryBuild.BuildTask configCmdTask, curr;
 
   int pri;
   boolean fold;
 
   Dialog makeTask = new BaseDialog(Core.bundle.get("dialog.unitFactor.makeTask")) {
+    static class Sorter{
+      public final String name;
+      public final Comparator<UnitType> sort;
+      public final Prov<Drawable> icon;
+
+      Sorter(String name, Comparator<UnitType> sort, Prov<Drawable> icon) {
+        this.name = name;
+        this.sort = sort;
+        this.icon = icon;
+      }
+    }
+
+    private final static Collator compare = Collator.getInstance(Core.bundle.getLocale());
+    private final static Seq<Sorter> sorts = Seq.with(
+        new Sorter("default", (t1, t2) -> 0, () -> Icon.list),
+        new Sorter("name", (t1, t2) -> compare.compare(t2.localizedName, t1.localizedName), () -> Icon.edit),
+        new Sorter("size", (t1, t2) -> Float.compare(t1.hitSize, t2.hitSize), () -> Icon.resize),
+        new Sorter("health", (t1, t2) -> Float.compare(t1.health, t2.health), () -> Icon.add),
+        new Sorter( "cost", (t1, t2) -> Float.compare(t1.getBuildTime(), t2.getBuildTime()), () -> Icon.hammer),
+        new Sorter("strength", (t1, t2) -> Float.compare(t1.estimateDps(), t2.estimateDps()), () -> Icon.power)
+    );
+
+    private static final Seq<BaseProducers> tmpList = new Seq<>();
+
     String searching = "";
+    boolean showLocking, reverse;
     Runnable rebuild;
+    int sort = 0;
 
     {
       addCloseButton();
@@ -71,197 +113,224 @@ public class UnitFactoryCfgDialog extends BaseDialog {
           top.image(Icon.zoom).size(40);
           top.field("", tex -> {
             searching = tex;
-
             rebuild.run();
           }).growX();
+          top.button(b -> b.image().size(38).scaling(Scaling.fit).update(i -> i.setDrawable(showLocking? Icon.lock: Icon.lockOpen)), Styles.clearNonei, () -> {
+            showLocking = !showLocking;
+            rebuild.run();
+          }).size(50);
+          top.add("").update(l -> l.setText(Core.bundle.format("dialog.unitFactor.sort", Core.bundle.get("dialog.unitFactor.sort_" + sorts.get(sort).name))));
+          top.button(b -> b.image().size(38).scaling(Scaling.fit).update(i -> i.setDrawable(sorts.get(sort).icon.get())), Styles.clearNonei, () -> {
+            sort = (sort + 1)%sorts.size;
+            rebuild.run();
+          }).size(50);
+          top.button(b -> b.image().size(38).scaling(Scaling.fit).update(i -> i.setDrawable(reverse? Icon.up: Icon.down)), Styles.clearNonei, () -> {
+            reverse = !reverse;
+            rebuild.run();
+          }).size(50);
+          top.add("").update(l -> l.setText(Core.bundle.get(reverse? "dialog.unitFactor.reverse": "dialog.unitFactor.order"))).color(Pal.accent);
         }).growX().padLeft(120).padRight(120).fillY();
 
         t.row();
-        t.pane(list -> {
-          rebuild = () -> {
-            list.clearChildren();
-            list.defaults().growX().fillY().pad(4);
+        t.pane(list -> rebuild = () -> {
+          list.clearChildren();
+          list.defaults().growX().fillY().pad(4);
 
-            if (currConfig == null) return;
+          if (currConfig == null) return;
 
-            Seq<BaseProducers> seq = currConfig.block().producers();
-            for (int i = 0; i < seq.size; i++) {
-              BaseProducers prod = seq.get(i);
-              BaseConsumers cons = prod.cons;
+          tmpList.clear();
+          tmpList.add(currConfig.block().producers().select(e ->
+              e.cons.selectable.get() == BaseConsumers.Visibility.usable
+              || (showLocking && e.cons.selectable.get() == BaseConsumers.Visibility.unusable)
+          ));
 
-              if (cons.selectable.get() == BaseConsumers.Visibility.hidden) continue;
+          Comparator<UnitType> s = sorts.get(sort).sort;
+          Comparator<UnitType> fs = reverse? s: (a, b) -> s.compare(b, a);
+          tmpList.sort((a, b) -> {
+            PayloadStack payloadsA = a.get(ProduceType.payload) == null ? null : a.get(ProduceType.payload).payloads[0];
+            PayloadStack payloadsB = b.get(ProduceType.payload) == null ? null : b.get(ProduceType.payload).payloads[0];
 
-              PayloadStack[] payloads = prod.get(ProduceType.payload) == null ? null : prod.get(ProduceType.payload).payloads;
-              if (payloads != null && payloads.length == 1 && payloads[0].item instanceof UnitType unit) {
+            if (payloadsA == null || payloadsB == null) return 0;
 
-                if (searching.trim().length() != 0 && !(unit.name.contains(searching.trim()) || unit.localizedName.contains(searching.trim())))
-                  continue;
+            UnitType uA = (UnitType) payloadsA.item;
+            UnitType uB = (UnitType) payloadsB.item;
 
-                int fi = i;
-                Button button = new Button() {
-                  {
-                    setStyle(Styles.grayt);
+            return fs.compare(uA, uB);
+          });
 
-                    clicked(() -> {
-                      new BaseDialog("", SglStyles.transparentBack) {
-                        int amount = 1;
-                        Table tip;
+          for (int i = 0; i < tmpList.size; i++) {
+            BaseProducers prod = tmpList.get(i);
+            BaseConsumers cons = prod.cons;
 
-                        {
-                          addCloseButton();
+            PayloadStack[] payloads = prod.get(ProduceType.payload) == null ? null : prod.get(ProduceType.payload).payloads;
+            if (payloads != null && payloads.length == 1 && payloads[0].item instanceof UnitType unit) {
+              if (searching.trim().length() != 0 && !(unit.name.contains(searching.trim()) || unit.localizedName.contains(searching.trim())))
+                continue;
 
-                          Runnable rebuild = () -> {
-                            cont.clearChildren();
-                            cont.table(((TextureRegionDrawable) Tex.whiteui).tint(Color.darkGray), t -> {
-                              t.left().defaults().left().growX().pad(4);
+              int index = currConfig.block().consumers.indexOf(cons);
+              Button button = new Button() {
+                {
+                  setStyle(Styles.grayt);
 
-                              t.top().table(top -> {
-                                top.top().defaults().left();
-                                top.image(unit.fullIcon).size(325).scaling(Scaling.fit).pad(6);
+                  clicked(() -> {
+                    new BaseDialog("", SglStyles.transparentBack) {
+                      int amount = 1;
+                      Table tip;
 
-                                if (Core.graphics.isPortrait()) top.row();
+                      {
+                        addCloseButton();
 
-                                top.table(info -> {
-                                  info.top().defaults().left().growX().pad(4);
-                                  info.add(unit.localizedName).color(Pal.accent);
-                                  info.row();
-                                  info.add(unit.description).wrap().color(Pal.lightishGray);
-                                  info.row();
-                                  info.table(req -> {
-                                    req.left().defaults().left().fill().pad(4);
-                                    req.add(Stat.buildCost.localized() + ":");
-                                    ConsumeItems<?> ci = cons.get(ConsumeType.item);
-                                    ConsumePower<?> cp = cons.get(ConsumeType.power);
-                                    SglConsumeEnergy<?> cn = cons.get(SglConsumeType.energy);
+                        Runnable rebuild = () -> {
+                          cont.clearChildren();
+                          cont.table(((TextureRegionDrawable) Tex.whiteui).tint(Color.darkGray), t -> {
+                            t.left().defaults().left().growX().pad(4);
 
-                                    if (ci != null) {
-                                      req.row();
-                                      req.table(li -> {
-                                        li.left().defaults().left().size(84f, 48);
+                            t.top().table(top -> {
+                              top.top().defaults().left();
+                              top.image(unit.fullIcon).size(325).scaling(Scaling.fit).pad(6);
 
-                                        int i = 0;
-                                        for (ItemStack stack : ci.consItems) {
-                                          li.table(it -> {
-                                            it.left().defaults().left();
-                                            it.image(stack.item.fullIcon).scaling(Scaling.fit);
-                                            it.add(UI.formatAmount(stack.amount)).padLeft(3);
-                                          });
-                                          i++;
-                                          if (i%4 == 0) li.row();
-                                        }
-                                      });
-                                    }
+                              if (Core.graphics.isPortrait()) top.row();
 
-                                    for (BaseConsume<? extends ConsumerBuildComp> consume : cons.all()) {
-                                      if (consume == ci || consume == cp || consume == cn) continue;
-                                      req.row();
-                                      req.table(ln -> {
-                                        ln.left().defaults().left();
-                                        consume.buildIcons(ln);
-                                      });
-                                    }
+                              top.table(info -> {
+                                info.top().defaults().left().growX().pad(4);
+                                info.add(unit.localizedName).color(Pal.accent);
+                                info.row();
+                                info.add(unit.description).wrap().color(Pal.lightishGray);
+                                info.row();
+                                info.table(req -> {
+                                  req.left().defaults().left().fill().pad(4);
+                                  req.add(Stat.buildCost.localized() + ":");
+                                  ConsumeItems<?> ci = cons.get(ConsumeType.item);
+                                  ConsumePower<?> cp = cons.get(ConsumeType.power);
+                                  SglConsumeEnergy<?> cn = cons.get(SglConsumeType.energy);
 
-                                    if (cp != null) {
-                                      req.row();
-                                      req.add(Stat.powerUse.localized() + ": " + cp.usage*60 + StatUnit.perSecond.localized());
-                                    }
+                                  if (ci != null) {
+                                    req.row();
+                                    req.table(li -> {
+                                      li.left().defaults().left().size(84f, 48);
 
-                                    if (cn != null) {
-                                      req.row();
-                                      req.add(SglStat.consumeEnergy.localized() + ": " + cn.usage*60 + SglStatUnit.neutronFluxSecond.localized());
-                                    }
-                                  });
-                                  info.row();
-                                  info.add(Stat.buildTime.localized() + ": " + timeFormat(cons.craftTime)).color(Color.gray);
-                                }).grow().pad(4);
-                              });
-
-                              t.row();
-                              t.image().color(Color.lightGray).height(4).pad(0).padTop(4).padBottom(4).growX();
-                              t.row();
-                              t.table(am -> {
-                                am.defaults().padLeft(5).padRight(5);
-                                am.button(Icon.up, Styles.cleari, () -> amount++).size(48).disabled(i -> amount >= Units.getCap(currConfig.team));
-                                am.button(Icon.down, Styles.cleari, () -> amount--).size(48).disabled(i -> amount <= 1);
-                                am.add("").update(l -> l.setText(Core.bundle.format("dialog.unitFactor.createAmount", amount))).growX();
-                              });
-                              t.row();
-                              t.table(button -> {
-                                button.defaults().height(48).pad(5);
-                                button.button(Core.bundle.get("misc.details"), Icon.info, Styles.grayt, 32, () -> {
-                                  Vars.ui.content.show(unit);
-                                }).growX();
-                                button.button(Core.bundle.get("misc.add"), Icon.add, Styles.grayt, 32, () -> {
-                                  if (currConfig.taskCount() >= currConfig.block().maxTasks) {
-                                    tip.clearActions();
-                                    tip.actions(
-                                        Actions.alpha(1, 0.3f),
-                                        Actions.delay(1.5f),
-                                        Actions.alpha(0, 0.8f)
-                                    );
-                                  } else {
-                                    currConfig.configure(IntSeq.with(1, unit.id, amount, fi));
-                                    rebuild(currConfig);
-
-                                    hide();
+                                      int i = 0;
+                                      for (ItemStack stack : ci.consItems) {
+                                        li.table(it -> {
+                                          it.left().defaults().left();
+                                          it.image(stack.item.fullIcon).scaling(Scaling.fit);
+                                          it.add(UI.formatAmount(stack.amount)).padLeft(3);
+                                        });
+                                        i++;
+                                        if (i%4 == 0) li.row();
+                                      }
+                                    });
                                   }
-                                }).growX();
-                              });
-                            }).fill();
-                            cont.row();
-                            tip = cont.table(((TextureRegionDrawable) Tex.whiteui).tint(Color.darkGray), t -> t.add(Core.bundle.get("dialog.unitFactor.addFaid")).color(Color.red)).margin(6).fill().get();
-                            tip.color.a = 0;
-                          };
 
-                          resized(rebuild);
-                          shown(rebuild);
-                        }
-                      }.show();
+                                  for (BaseConsume<? extends ConsumerBuildComp> consume : cons.all()) {
+                                    if (consume == ci || consume == cp || consume == cn) continue;
+                                    req.row();
+                                    req.table(ln -> {
+                                      ln.left().defaults().left();
+                                      consume.buildIcons(ln);
+                                    });
+                                  }
+
+                                  if (cp != null) {
+                                    req.row();
+                                    req.add(Stat.powerUse.localized() + ": " + cp.usage*60 + StatUnit.perSecond.localized());
+                                  }
+
+                                  if (cn != null) {
+                                    req.row();
+                                    req.add(SglStat.consumeEnergy.localized() + ": " + cn.usage*60 + SglStatUnit.neutronFluxSecond.localized());
+                                  }
+                                });
+                                info.row();
+                                info.add(Stat.buildTime.localized() + ": " + timeFormat(cons.craftTime)).color(Color.gray);
+                              }).grow().pad(4);
+                            });
+
+                            t.row();
+                            t.image().color(Color.lightGray).height(4).pad(0).padTop(4).padBottom(4).growX();
+                            t.row();
+                            t.table(am -> {
+                              am.defaults().padLeft(5).padRight(5);
+                              am.button(Icon.up, Styles.cleari, () -> amount++).size(48).disabled(i -> amount >= Units.getCap(currConfig.team));
+                              am.button(Icon.down, Styles.cleari, () -> amount--).size(48).disabled(i -> amount <= 1);
+                              am.add("").update(l -> l.setText(Core.bundle.format("dialog.unitFactor.createAmount", amount))).growX();
+                            });
+                            t.row();
+                            t.table(button -> {
+                              button.defaults().height(48).pad(5);
+                              button.button(Core.bundle.get("misc.details"), Icon.info, Styles.grayt, 32, () -> {
+                                Vars.ui.content.show(unit);
+                              }).growX();
+                              button.button(Core.bundle.get("misc.add"), Icon.add, Styles.grayt, 32, () -> {
+                                if (currConfig.taskCount() >= currConfig.block().maxTasks) {
+                                  tip.clearActions();
+                                  tip.actions(
+                                      Actions.alpha(1, 0.3f),
+                                      Actions.delay(1.5f),
+                                      Actions.alpha(0, 0.8f)
+                                  );
+                                } else {
+                                  currConfig.configure(IntSeq.with(1, unit.id, amount, index));
+                                  rebuild(currConfig);
+
+                                  hide();
+                                }
+                              }).growX();
+                            });
+                          }).fill();
+                          cont.row();
+                          tip = cont.table(((TextureRegionDrawable) Tex.whiteui).tint(Color.darkGray), t -> t.add(Core.bundle.get("dialog.unitFactor.addFaid")).color(Color.red)).margin(6).fill().get();
+                          tip.color.a = 0;
+                        };
+
+                        resized(rebuild);
+                        shown(rebuild);
+                      }
+                    }.show();
+                  });
+
+                  left().defaults().left();
+                  image(unit.uiIcon).size(80).scaling(Scaling.fit).pad(5);
+                  table(inf -> {
+                    inf.defaults().fill().left().pad(4);
+                    inf.add(unit.localizedName).color(Pal.accent);
+                    inf.row();
+                    inf.table(req -> {
+                      req.left().defaults().left().padRight(2);
+                      req.add(Stat.buildCost.localized() + ":").padRight(4);
+                      for (BaseConsume<? extends ConsumerBuildComp> consume : cons.all()) {
+                        consume.buildIcons(req);
+                      }
                     });
+                    inf.row();
+                    inf.add(Stat.buildTime.localized() + ": " + timeFormat(cons.craftTime)).color(Color.gray);
+                  });
+                }
 
-                    left().defaults().left();
-                    image(unit.uiIcon).size(80).scaling(Scaling.fit).pad(5);
-                    table(inf -> {
-                      inf.defaults().fill().left().pad(4);
-                      inf.add(unit.localizedName).color(Pal.accent);
-                      inf.row();
-                      inf.table(req -> {
-                        req.left().defaults().left();
-                        req.add(Stat.buildCost.localized() + ":").padRight(4);
-                        for (BaseConsume<? extends ConsumerBuildComp> consume : cons.all()) {
-                          consume.buildIcons(req);
-                        }
-                      });
-                      inf.row();
-                      inf.add(Stat.buildTime.localized() + ": " + timeFormat(cons.craftTime)).color(Color.gray);
-                    });
+                @Override
+                public void draw() {
+                  super.draw();
+
+                  if (cons.selectable.get() == BaseConsumers.Visibility.unusable) {
+                    Draw.color(Pal.darkerGray);
+                    Draw.alpha(0.8f*parentAlpha);
+
+                    Fill.rect(x + width/2, y + height/2, width, height);
+
+                    Draw.color(Color.lightGray, parentAlpha);
+                    Icon.lock.draw(x + width/2 - 16, y + height/2 + 8, 32, 32);
+
+                    Draw.color(Color.gray, parentAlpha);
+
+                    Fonts.outline.draw(Core.bundle.get("dialog.unitFactor.unresearch"), x + width/2, y + height/2 - 8, Tmp.c1.set(Pal.lightishGray).a(parentAlpha), 1, false, Align.center);
                   }
+                }
+              };
+              list.add(button).disabled(b -> cons.selectable.get() != BaseConsumers.Visibility.usable);
 
-                  @Override
-                  public void draw() {
-                    super.draw();
-
-                    if (cons.selectable.get() == BaseConsumers.Visibility.unusable) {
-                      Draw.color(Pal.darkerGray);
-                      Draw.alpha(0.8f*parentAlpha);
-
-                      Fill.rect(x + width/2, y + height/2, width, height);
-
-                      Draw.color(Color.lightGray, parentAlpha);
-                      Icon.lock.draw(x + width/2 - 16, y + height/2 + 8, 32, 32);
-
-                      Draw.color(Color.gray, parentAlpha);
-
-                      Fonts.outline.draw(Core.bundle.get("dialog.unitFactor.unresearch"), x + width/2, y + height/2 - 8, Tmp.c1.set(Pal.lightishGray).a(parentAlpha), 1, false, Align.center);
-                    }
-                  }
-                };
-                list.add(button).disabled(b -> cons.selectable.get() != BaseConsumers.Visibility.usable);
-
-                if (Core.graphics.isPortrait() || i%2 == 1) list.row();
-              }
+              if (Core.graphics.isPortrait() || i%2 == 1) list.row();
             }
-          };
+          }
         }).padLeft(60).padRight(60).growX().fillY().top();
       }).grow();
 
@@ -305,7 +374,6 @@ public class UnitFactoryCfgDialog extends BaseDialog {
 
         @Override
         public void draw(float x, float y, float originX, float originY, float width, float height, float scaleX, float scaleY, float rotation) {
-          ;
           if (currConfig != null && currConfig.activity) {
             Icon.cancel.draw(x, y, originX, originY, width, height, scaleX, scaleY, rotation);
           } else super.draw(x, y, originX, originY, width, height, scaleX, scaleY, rotation);
@@ -360,16 +428,86 @@ public class UnitFactoryCfgDialog extends BaseDialog {
 
     resized(rebuildButtons);
     shown(rebuildButtons);
-
-    hidden(() -> {
-      currConfig = null;
-      curr = null;
-
-      taskQueue.clear();
-    });
   }
 
   public void build() {
+    ui.hudGroup.fill(t -> {
+      t.add(new Element(){
+        @Override
+        public void draw() {
+          if (!commandConfiguring) return;
+          Vec2 viewPos = Core.camera.project(configuringPos.x, configuringPos.y);
+          Draw.color(Pal.darkerGray);
+          Lines.stroke(12);
+          Lines.square(viewPos.x, viewPos.y, Scl.scl(28), 45);
+          Draw.color(Pal.accent);
+          Lines.stroke(6);
+          Lines.square(viewPos.x, viewPos.y, Scl.scl(28), 45);
+
+          float lerp = (Time.time%120f)/120f;
+          Lines.stroke(6*(1 - lerp));
+          Lines.square(viewPos.x, viewPos.y, Scl.scl(28 + 85*lerp), 45);
+          super.draw();
+        }
+      });
+
+      Table buttons = new Table(((TextureRegionDrawable) Tex.whiteui).tint(Tmp.c1.set(Color.gray).a(0.7f)), tab -> {
+        tab.table(cmds -> commandCfgTab = cmds).pad(5).fill();
+        tab.button(Icon.ok, Styles.clearNonei, () -> {
+          currConfig.configure(IntSeq.with(9, currConfig.indexOfTask(configCmdTask),
+              (int) (configuringPos.x*1000), (int) (configuringPos.y*1000),
+              UnitCommand.all.indexOf(configCmdTask.command)
+          ));
+          t.visible = false;
+          configCmdTask = null;
+          commandConfiguring = false;
+          configuringPos.set(Float.MIN_VALUE, Float.MIN_VALUE);
+          show();
+        }).size(50).pad(5);
+        tab.setTransform(true);
+      });
+
+      t.add(buttons);
+
+      commandCfg = t;
+
+      t.visible(() -> commandConfiguring && Vars.state.isGame());
+      t.touchable = Touchable.enabled;
+
+      Vec2 touchedPos = new Vec2();
+      float[] time = {0};
+      t.addListener(new InputListener(){
+        @Override
+        public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
+          Element hit = t.hit(x, y, true);
+          if (Core.input.useKeyboard() || hit != null && hit != t) return false;
+
+          float wx, wy;
+          Vec2 v = Core.camera.unproject(x, y);
+          wx = v.x;
+          wy = v.y;
+
+          touchedPos.set(wx, wy);
+          time[0] = Time.time;
+
+          return false;
+        }
+      });
+      t.update(() -> {
+        if (Core.input.useKeyboard()) return;
+
+        Vec2 viewPos = Core.camera.project(configuringPos.x, configuringPos.y);
+        buttons.setPosition(viewPos.x, viewPos.y - 38, Align.top);
+
+        if (configCmdTask != null && !Core.input.isTouched() && Time.time - time[0] <= 30){
+          configCmdTask.targetPos = new Vec2(touchedPos);
+          configuringPos.set(touchedPos);
+
+          time[0] = 0;
+        }
+      });
+    });
+
     Runnable rebuildLayout = () -> {
       cont.clearChildren();
       cont.table(root -> {
@@ -404,7 +542,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
         if (Core.graphics.isPortrait()) {
           cell.growX().fillY().padTop(6);
         } else cell.width(280).padLeft(6).growY();
-      }).grow().padLeft(Core.graphics.isPortrait() ? 40 : 80).padRight(Core.graphics.isPortrait() ? 40 : 80);
+      }).grow().padLeft(Core.graphics.isPortrait() ? 20 : 80).padRight(Core.graphics.isPortrait() ? 20 : 80);
 
       cont.row();
       cont.image().color(Color.darkGray).height(4).growX().pad(-1).padTop(3).padBottom(3);
@@ -418,10 +556,19 @@ public class UnitFactoryCfgDialog extends BaseDialog {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public void rebuild(SglUnitFactory.SglUnitFactoryBuild factory) {
+    taskQueue.clear();
+
     currConfig = factory;
     curr = factory.getCurrentTask();
 
-    taskQueue.clearChildren();
+    if (curr != null) {
+      commandCfgTab.clearChildren();
+      for (UnitCommand command : curr.buildUnit.commands) {
+        commandCfgTab.button(Icon.icons.get(command.icon, Icon.cancel), Styles.clearNoneTogglei, () -> {
+          curr.command = command;
+        }).checked(i -> curr.command == command).size(50f).tooltip(command.localized());
+      }
+    }
 
     taskQueue.defaults().growX().left().pad(4);
 
@@ -459,17 +606,19 @@ public class UnitFactoryCfgDialog extends BaseDialog {
         time += factory.getCurrentTask().queueAmount*cons.craftTime - (factory.progress() + factory.buildCount())*cons.craftTime;
 
         for (SglUnitFactory.SglUnitFactoryBuild.BuildTask task : factory.getCurrentTask()) {
+          if (task == factory.getCurrentTask()) continue;
+
           cons = (SglConsumers) factory.block().consumers.get(task.factoryIndex);
-          time += cons.craftTime;
+          time += cons.craftTime*task.queueAmount;
         }
       }
 
-      l.setText(Core.bundle.format("dialog.unitFactor.timeRemaining", factory.queueMode ? Core.bundle.get("misc.loop") : timeFormat(time)));
+      l.setText(Core.bundle.format("dialog.unitFactor.timeRemaining", factory.queueMode ? Core.bundle.get("misc.loop") : timeFormat(time/Math.max(factory.workEfficiency(), 0.00001f))));
     });
     status.row();
     status.add("").update(l -> l.setText(Core.bundle.format("dialog.unitFactor.matrixNetLinking", Core.bundle.get(
         factory.distributor.network.getCore() == null ? "infos.offline" :
-            factory.distributor.network.netValid() ? "infos.connected" : "infos.netInvalid"
+        factory.distributor.network.netValid() ? "infos.connected" : "infos.netInvalid"
     ))));
     status.row();
     pri = factory.priority;
@@ -511,7 +660,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
       status.row();
       status.add("").update(l -> {
         SglConsumeEnergy cons = factory.consumer.current == null ? null : factory.consumer.current.get(SglConsumeType.energy);
-        l.setText(Core.bundle.format("dialog.unitFactor.energy", cons == null ? 0 : cons.usage*cons.multiple(factory)));
+        l.setText(Core.bundle.format("dialog.unitFactor.energy", cons == null ? "0": Strings.autoFixed(cons.usage*cons.multiple(factory)*60, 1)));
       });
       status.row();
       status.add(new Bar(
@@ -556,7 +705,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
     sideButton.left().defaults().left().growX().pad(4);
     sideButton.button(Core.bundle.get("misc.clear"), Icon.trash, Styles.grayt, () -> {
       float delays = 0;
-      for (Element child : taskQueue.getChildren()) {
+      for (Element child: taskQueue.getChildren()) {
         if (child instanceof Table) {
           child.clearActions();
           child.actions(
@@ -599,7 +748,11 @@ public class UnitFactoryCfgDialog extends BaseDialog {
       ta.image(task.buildUnit.uiIcon).size(80).scaling(Scaling.fit);
       ta.table(tab -> {
         tab.table(inf -> {
-          inf.add(task.buildUnit.localizedName).color(Pal.accent).left().growX();
+          inf.add(task.buildUnit.localizedName).color(Pal.accent).left();
+          inf.add("").update(t -> t.setText(Core.bundle.format("dialog.unitFactor.movePos",
+              task.targetPos == null? "--": Mathf.round(task.targetPos.x),
+              task.targetPos == null? "--": Mathf.round(task.targetPos.y)
+          ))).color(Color.gray).left().growX().padLeft(4);
           inf.table(top -> {
             if (executing) {
               top.add("").left().update(l -> l.setText(Core.bundle.format("dialog.unitFactor.executed", currConfig.buildCount(), task.queueAmount)));
@@ -616,7 +769,11 @@ public class UnitFactoryCfgDialog extends BaseDialog {
                 rebuild(currConfig);
               }).disabled(b -> task.next == null || (currConfig.activity && task == currConfig.getCurrentTask()));
               button.button(Icon.settings, Styles.clearNonei, 28, () -> {
-
+                hide();
+                configuringPos.set(currConfig.x, currConfig.y);
+                configCmdTask = task;
+                commandConfiguring = true;
+                commandCfg.visible = true;
               });
               button.button(Icon.cancel, Styles.clearNonei, 28, () -> {
                 if (executing) {
@@ -650,8 +807,12 @@ public class UnitFactoryCfgDialog extends BaseDialog {
             }
           }).left().growX();
 
+          req.add(Core.bundle.get("misc.command") + ":");
+          req.image().update(i -> i.setDrawable(Icon.icons.get(task.command.icon, Icon.cancel))).scaling(Scaling.fit).size(38);
+          req.add("").update(l -> l.setText(task.command.localized())).color(Color.gray).padRight(4);
+
           if (executing) {
-            req.add("").right().update(l -> l.setText(timeFormat(task.queueAmount*cons.craftTime - cons.craftTime*(currConfig.buildCount() + currConfig.progress()))));
+            req.add("").right().update(l -> l.setText(timeFormat((task.queueAmount*cons.craftTime - cons.craftTime*(currConfig.buildCount() + currConfig.progress()))/Math.max(currConfig.workEfficiency(), 0.00001f))));
           } else req.add(timeFormat(cons.craftTime*task.queueAmount)).right();
         }).left().growX();
 
@@ -686,6 +847,8 @@ public class UnitFactoryCfgDialog extends BaseDialog {
 
   public static String timeFormat(float ticks) {
     int hor = (int) (ticks/216000);
+    if (hor > 99) return "xx:xx:xx";
+
     ticks %= 216000;
     int min = (int) (ticks/3600);
     ticks %= 3600;

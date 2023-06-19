@@ -22,6 +22,7 @@ import arc.util.Tmp;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.content.Fx;
+import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.entities.Damage;
 import mindustry.entities.Effect;
@@ -48,6 +49,9 @@ import mindustry.type.weapons.PointDefenseWeapon;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.blocks.environment.Floor;
+import mindustry.world.draw.DrawBlock;
+import mindustry.world.draw.DrawDefault;
+import mindustry.world.draw.DrawMulti;
 import mindustry.world.meta.BlockFlag;
 import singularity.Sgl;
 import singularity.graphic.MathRenderer;
@@ -57,6 +61,7 @@ import singularity.ui.StatUtils;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.SglUnitSorts;
+import singularity.world.blocks.product.HoveringUnitFactory;
 import singularity.world.blocks.product.SglUnitFactory;
 import singularity.world.blocks.turrets.EmpBulletType;
 import singularity.world.blocks.turrets.EmpLightningBulletType;
@@ -72,8 +77,7 @@ import universecore.world.lightnings.generator.VectorLightningGenerator;
 
 import java.util.Iterator;
 
-import static mindustry.Vars.headless;
-import static mindustry.Vars.world;
+import static mindustry.Vars.*;
 
 public class SglUnits implements ContentList{
   public static final String EPHEMERAS = "ephemeras";
@@ -149,6 +153,7 @@ public class SglUnits implements ContentList{
       Drawf.tri(dx, dy, 8*out2, len*(1 + 2f*fin2), b.rotation());
     }
   };
+  public static final String SHOOTERS = "shooters";
 
   /**棱镜*/
   public static UnitType prism,
@@ -170,13 +175,27 @@ public class SglUnits implements ContentList{
   aurora;
 
   /**机械构造坞*/
-  public static Block machine_construct_dock;
+  public static Block cstr_1,
+  cstr_2,
+  cstr_3;
 
   @Override
   public void load() {
     UnitTypeRegister.registerAll();
 
     mornstar = new AirSeaAmphibiousUnit("mornstar"){{
+      requirements(
+          Items.silicon, 420,
+          Items.phaseFabric, 360,
+          Items.surgeAlloy, 320,
+          SglItems.aluminium, 380,
+          SglItems.aerogel, 320,
+          SglItems.crystal_FEX_power, 220,
+          SglItems.strengthening_alloy, 280,
+          SglItems.iridium, 200,
+          SglItems.matrix_alloy, 220
+      );
+
       speed = 0.84f;
       accel = 0.065f;
       drag = 0.03f;
@@ -826,8 +845,20 @@ public class SglUnits implements ContentList{
       );
     }};
 
-    kaguya = new UnitType("kaguya"){
+    kaguya = new SglUnitType("kaguya"){
       {
+        requirements(
+            Items.silicon, 460,
+            Items.phaseFabric, 480,
+            Items.surgeAlloy, 450,
+            SglItems.aluminium, 520,
+            SglItems.aerogel, 480,
+            SglItems.crystal_FEX_power, 280,
+            SglItems.strengthening_alloy, 340,
+            SglItems.iridium, 140,
+            SglItems.matrix_alloy, 220
+        );
+
         speed = 1.1f;
         accel = 0.06f;
         drag = 0.04f;
@@ -1103,12 +1134,12 @@ public class SglUnits implements ContentList{
                 for(int i = 0; i < shooters.length; i++){
                   shooters[i] = new Shooter();
                 }
-                mount.setVar("shooters", shooters);
+                mount.setVar(SHOOTERS, shooters);
               }
 
               @Override
               public void update(Unit unit, DataWeaponMount mount){
-                Shooter[] shooters = mount.getVar("shooters");
+                Shooter[] shooters = mount.getVar(SHOOTERS);
                 for(Shooter shooter: shooters){
                   Vec2 v = MathTransform.fourierTransform(Time.time, shooter.param).scl(mount.warmup);
                   Tmp.v1.set(mount.weapon.x, mount.weapon.y).rotate(unit.rotation - 90);
@@ -1128,7 +1159,7 @@ public class SglUnits implements ContentList{
 
                 SglFx.impactWave.at(mountX, mountY, SglDrawConst.matrixNet);
                 SglFx.crossLight.at(mountX, mountY, SglDrawConst.matrixNet);
-                Shooter[] shooters = mount.getVar("shooters");
+                Shooter[] shooters = mount.getVar(SHOOTERS);
                 for(Shooter shooter: shooters){
                   SglFx.impactWaveSmall.at(mountX + shooter.x, mountY + shooter.y);
                 }
@@ -1136,7 +1167,7 @@ public class SglUnits implements ContentList{
 
               @Override
               public void draw(Unit unit, DataWeaponMount mount){
-                Shooter[] shooters = mount.getVar("shooters");
+                Shooter[] shooters = mount.getVar(SHOOTERS);
                 Draw.z(Layer.effect);
 
                 float mountX = unit.x + Angles.trnsx(unit.rotation - 90, x, y),
@@ -1192,6 +1223,20 @@ public class SglUnits implements ContentList{
 
     aurora = new AirSeaAmphibiousUnit("aurora"){
       {
+        requirements(
+            Items.silicon, 360,
+            Items.phaseFabric, 380,
+            Items.surgeAlloy, 390,
+            SglItems.aluminium, 400,
+            SglItems.aerogel, 430,
+            SglItems.crystal_FEX, 280,
+            SglItems.crystal_FEX_power, 280,
+            SglItems.strengthening_alloy, 340,
+            SglItems.iridium, 320,
+            SglItems.matrix_alloy, 380,
+            SglItems.degenerate_neutron_polymer, 200
+        );
+
         speed = 0.65f;
         accel = 0.06f;
         drag = 0.04f;
@@ -1704,8 +1749,20 @@ public class SglUnits implements ContentList{
       }
     };
 
-    emptiness = new UnitType("emptiness"){
+    emptiness = new SglUnitType("emptiness"){
       {
+        requirements(
+            Items.phaseFabric, 200,
+            Items.surgeAlloy, 280,
+            SglItems.aerogel, 400,
+            SglItems.crystal_FEX_power, 300,
+            SglItems.strengthening_alloy, 560,
+            SglItems.iridium, 380,
+            SglItems.matrix_alloy, 420,
+            SglItems.degenerate_neutron_polymer, 420,
+            SglItems.anti_metter, 280
+        );
+
         speed = 0.8f;
         accel = 0.065f;
         drag = 0.05f;
@@ -2008,7 +2065,7 @@ public class SglUnits implements ContentList{
               rot.lerpDelta(Tmp.v1, 0.05f);
               float speed = 2*(dst/24);
 
-              vel.lerpDelta(Tmp.v1.set(dx, dy).setLength(speed).add(Tmp.v2.set(0.12f, 0).setAngle(Time.time*(mount.weapon.x > 0? 1: -1) + mount.<Float>getVar(PHASE))), 0.075f);
+              vel.lerpDelta(Tmp.v1.set(dx, dy).setLength(speed).add(Tmp.v2.set(0.12f, 0).setAngle(Time.time*(mount.weapon.x > 0? 1: -1) + mount.getVar(PHASE, 0f))), 0.075f);
 
               x += vel.x*Time.delta;
               y += vel.y*Time.delta;
@@ -2573,8 +2630,7 @@ public class SglUnits implements ContentList{
                 float angle = Mathf.angle(mount.aimX - x, mount.aimY - y);
                 float dst = Mathf.dst(mount.aimX - x, mount.aimY - y);
 
-                float angDiff = angle - unit.rotation()%360;
-                angDiff = angDiff > 180? angDiff - 360: angDiff < -180? angDiff + 360: angDiff;
+                float angDiff = MathTransform.innerAngle(angle, unit.rotation());
 
                 float lerp = Mathf.clamp((18 - Math.abs(angDiff))/18f)*Mathf.clamp(mount.warmup - 0.05f);
                 float stLerp = lerp*(1f - Mathf.clamp((dst - 500f)/100f));
@@ -2613,13 +2669,19 @@ public class SglUnits implements ContentList{
       }
     };
 
-    machine_construct_dock = new SglUnitFactory("machine_construct_dock"){{
-      requirements(Category.units, ItemStack.with());
+    cstr_1 = new SglUnitFactory("cstr_1"){{
+      requirements(Category.units, ItemStack.with(
+          Items.silicon, 120,
+          Items.graphite, 160,
+          Items.thorium, 90,
+          SglItems.aluminium, 120,
+          SglItems.strengthening_alloy, 135
+      ));
       size = 5;
       liquidCapacity = 240;
 
       consCustom = (u, c) -> {
-        c.power(Mathf.round(u.health/u.hitSize/5, 0.1f)).showIcon = true;
+        c.power(Mathf.round(u.health/u.hitSize)*0.02f).showIcon = true;
       };
 
       sizeLimit = 24;
@@ -2630,6 +2692,178 @@ public class SglUnits implements ContentList{
       consume.liquid(Liquids.cryofluid, 2.4f);
       newBooster(1.8f);
       consume.liquid(SglLiquids.FEX_liquid, 2f);
+    }};
+
+    cstr_2 = new HoveringUnitFactory("cstr_2"){{
+      requirements(Category.units, ItemStack.with(
+          Items.silicon, 180,
+          Items.surgeAlloy, 160,
+          Items.phaseFabric, 190,
+          SglItems.aluminium, 200,
+          SglItems.aerogel, 120,
+          SglItems.strengthening_alloy, 215,
+          SglItems.matrix_alloy, 180,
+          SglItems.crystal_FEX, 140,
+          SglItems.iridium, 100
+      ));
+      size = 7;
+      liquidCapacity = 280;
+      energyCapacity = 1024;
+
+      payloadSpeed = 1;
+
+      consCustom = (u, c) -> {
+        c.power(Mathf.round(u.health/u.hitSize)*0.02f).showIcon = true;
+        if (u.hitSize >= 38) c.energy(u.hitSize/24);
+      };
+
+      matrixDistributeOnly = true;
+
+      sizeLimit = 68;
+      healthLimit = 43000;
+      machineLevel = 6;
+      timeMultiplier = 18;
+      baseTimeScl = 0.25f;
+
+      outputRange = 340;
+
+      hoverMoveMinRadius = 36;
+      hoverMoveMaxRadius = 72;
+      defHoverRadius = 23.5f;
+
+      laserOffY = 2;
+
+      newBooster(1.6f);
+      consume.liquid(Liquids.cryofluid, 3.2f);
+      newBooster(1.9f);
+      consume.liquid(SglLiquids.FEX_liquid, 2.6f);
+      newBooster(2.4f);
+      consume.liquid(SglLiquids.phase_FEX_liquid, 2.6f);
+
+      draw = new DrawMulti(
+          new DrawDefault(),
+          new DrawBlock() {
+            @Override
+            public void draw(Building build) {
+              HoveringUnitFactoryBuild b = (HoveringUnitFactoryBuild) build;
+              Draw.z(Layer.effect);
+              Draw.color(b.team.color);
+
+              Lines.stroke(2*b.warmup());
+
+              Lines.circle(b.x, b.y, 12*b.warmup());
+              Lines.square(b.x, b.y, size*tilesize, Time.time*1.25f);
+              Lines.square(b.x, b.y, 32, Time.time*3.25f);
+
+              Draw.color(Pal.reactorPurple);
+              Lines.square(b.x, b.y, 28, -MathTransform.gradientRotateDeg(Time.time, 0) + 45f);
+
+              for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 3; j++) {
+                  float lerp = b.warmup()*(1 - Mathf.clamp((Time.time + 30*j)%90/70));
+                  SglDraw.drawTransform(b.x, b.y, 40 + j*18, 0, i*90 + 45, (rx, ry, r) -> {
+                    Draw.rect(((TextureRegionDrawable) SglDrawConst.matrixArrow).getRegion(), rx, ry, 15*lerp, 15*lerp, r + 90);
+                  });
+                }
+              }
+            }
+          }
+      );
+    }};
+
+    cstr_3 = new HoveringUnitFactory("cstr_3"){{
+      requirements(Category.units, ItemStack.with(
+          Items.silicon, 240,
+          Items.surgeAlloy, 240,
+          Items.phaseFabric, 200,
+          SglItems.strengthening_alloy, 280,
+          SglItems.matrix_alloy, 280,
+          SglItems.crystal_FEX, 200,
+          SglItems.crystal_FEX_power, 160,
+          SglItems.iridium, 150,
+          SglItems.degenerate_neutron_polymer, 100
+      ));
+      size = 9;
+      liquidCapacity = 420;
+      energyCapacity = 4096;
+
+      payloadSpeed = 1.2f;
+
+      consCustom = (u, c) -> {
+        c.power(Mathf.round(u.health/u.hitSize)*0.02f).showIcon = true;
+        if (u.hitSize >= 38) c.energy(u.hitSize/24);
+      };
+
+      matrixDistributeOnly = true;
+
+      sizeLimit = 120;
+      healthLimit = 126000;
+      machineLevel = 8;
+      timeMultiplier = 16;
+      baseTimeScl = 0.22f;
+
+      beamWidth = 0.8f;
+      pulseRadius = 5f;
+      pulseStroke = 1.7f;
+
+      outputRange = 420;
+
+      hoverMoveMinRadius = 48;
+      hoverMoveMaxRadius = 98;
+      defHoverRadius = 29f;
+
+      laserOffY = 4;
+
+      newBooster(1.6f);
+      consume.liquid(Liquids.cryofluid, 4f);
+      newBooster(1.9f);
+      consume.liquid(SglLiquids.FEX_liquid, 3.8f);
+      newBooster(2.4f);
+      consume.liquid(SglLiquids.phase_FEX_liquid, 3.8f);
+
+      draw = new DrawMulti(
+          new DrawDefault(),
+          new DrawBlock() {
+            @Override
+            public void draw(Building build) {
+              HoveringUnitFactoryBuild b = (HoveringUnitFactoryBuild) build;
+              Draw.z(Layer.effect);
+              Draw.color(b.team.color);
+
+              Lines.stroke(2.2f*b.warmup());
+
+              Lines.circle(b.x, b.y, 18*b.warmup());
+              Lines.square(b.x, b.y, size*tilesize, Time.time*1.25f);
+              SglDraw.drawCornerTri(b.x, b.y, 58, 14, Time.time*3.5f, true);
+
+              Draw.color(Pal.reactorPurple);
+              Lines.square(b.x, b.y, 34, -Time.time*2.6f);
+              SglDraw.drawCornerTri(b.x, b.y, 36, 8, -MathTransform.gradientRotateDeg(Time.time, 0, 3) + 60, true);
+
+              for (int i = 0; i < 4; i++) {
+                Draw.color(Pal.reactorPurple);
+                for (int j = 0; j < 4; j++) {
+                  float lerp = b.warmup()*(1 - Mathf.clamp((Time.time + 30*j)%120/85f));
+                  SglDraw.drawTransform(b.x, b.y, 50 + j*20, 0, i*90 + 45, (rx, ry, r) -> {
+                    Draw.rect(((TextureRegionDrawable) SglDrawConst.matrixArrow).getRegion(), rx, ry, 16*lerp, 16*lerp, r + 90);
+                  });
+                }
+
+                Draw.color(b.team.color);
+                for (int j = 0; j < 3; j++) {
+                  float lerp = b.warmup()*(1 - Mathf.clamp((Time.time + 24*j)%72/60f));
+                  SglDraw.drawTransform(b.x, b.y, 40 + j*20, 0, i*90 + 45, (rx, ry, r) -> {
+                    Tmp.v1.set(18, 0).setAngle(r + 90);
+
+                    Lines.stroke(2*lerp);
+                    Lines.square(rx + Tmp.v1.x, ry + Tmp.v1.y, 6*lerp, r + 45);
+                    Lines.square(rx - Tmp.v1.x, ry - Tmp.v1.y, 6*lerp, r + 45);
+                  });
+                }
+              }
+            }
+          }
+      );
     }};
   }
 

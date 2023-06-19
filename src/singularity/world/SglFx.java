@@ -66,6 +66,25 @@ public class SglFx{
     Fill.circle(e.x + Tmp.v1.x*e.fin(), e.y + Tmp.v1.y*e.fin(), rad);
   });
 
+  public final static Effect moveDiamondParticle = new Effect(90, e -> {
+    Draw.color(e.color);
+
+    Tmp.v1.setZero();
+    if (e.data instanceof Number n){
+      Tmp.v1.set(n.floatValue(), 0).setAngle(e.rotation);
+    }
+
+    float rad = Mathf.randomSeed(e.id, 1.6f, 3.4f)*e.fout(Interp.pow2Out);
+
+    if (Mathf.randomSeed(e.id) > 0.5f){
+      Lines.stroke(rad/2f);
+      Lines.square(e.x + Tmp.v1.x*e.fin(), e.y + Tmp.v1.y*e.fin(), rad, e.fin()*Mathf.randomSeed(e.id, 180f, 480f));
+    }
+    else {
+      Fill.square(e.x + Tmp.v1.x*e.fin(), e.y + Tmp.v1.y*e.fin(), rad, e.fin()*Mathf.randomSeed(e.id, 180f, 480f));
+    }
+  });
+
   public final static Effect cloudGradient = new Effect(45, e -> {
     Draw.color(e.color, 0f);
 
@@ -537,6 +556,32 @@ public class SglFx{
     });
   });
 
+  public final static Effect circleSparkMini = new Effect(32, e -> {
+    color(Color.white, e.color, e.fin());
+    stroke(e.fout()*0.8f + 0.2f);
+
+    randLenVectors(e.id, 22, 4f*e.fin(), 12f, (x, y) -> {
+      lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), e.fslope()*2.2f);
+    });
+  });
+
+  public final static Effect constructSpark = new Effect(24, e -> {
+    Color c = e.color;
+    float fin = e.fin();
+    float fs = e.fslope();
+    float ex = e.x, ey = e.y;
+    int id = e.id;
+
+    SglDraw.drawBloomUponFlyUnit(() -> {
+      color(Color.white, c, fin);
+      stroke((1 - fin)*0.8f + 0.2f);
+
+      randLenVectors(id, 22, 4f*fin, 12f, (x, y) -> {
+        lineAngle(ex + x, ey + y, Mathf.angle(x, y), fs*2.2f);
+      });
+    });
+  });
+
   public final static Effect circleSparkLarge = new Effect(65, e -> {
     color(Color.white, e.color, e.fin());
     stroke(e.fout()*1.4f + 0.5f);
@@ -953,6 +998,13 @@ public class SglFx{
     if(e.data instanceof GameOfLife b){
       Fill.square(e.x, e.y, b.cellSize/2*e.fslope(), e.rotation);
     }
+  });
+
+  public final static Effect spreadSizedDiamond = new Effect(42, e -> {
+    Draw.color(e.color);
+
+    Lines.stroke(12f*e.fout());
+    Lines.square(e.x, e.y, e.rotation*e.fin(Interp.pow2Out), 45);
   });
 
   public final static Effect spreadDiamond = new Effect(35, e -> {

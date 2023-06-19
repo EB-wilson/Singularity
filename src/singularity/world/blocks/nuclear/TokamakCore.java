@@ -26,6 +26,8 @@ import mindustry.world.Tile;
 import mindustry.world.meta.BlockStatus;
 import singularity.Sgl;
 import singularity.graphic.SglDraw;
+import singularity.graphic.SglDrawConst;
+import singularity.util.MathTransform;
 import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.meta.SglBlockGroup;
 import universecore.annotations.Annotations;
@@ -158,7 +160,8 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
           private void corner(Particle p, boolean isCorner, Building b, float rot, boolean valid) {
             if (isCorner && valid){
               if (p.getVar(IN_CORNER) == null) {
-                int dir = Mathf.round(p.speed.angle()/90) % 4;
+                float angle = p.speed.angle();
+                int dir = Mathf.round(angle/90) % 4;
                 switch (dir) {
                   case 0 -> p.x = b.x - b.block.size * tilesize / 2f;
                   case 1 -> p.y = b.y - b.block.size * tilesize / 2f;
@@ -168,7 +171,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
                 Vec2 out = cursor < 0? new Vec2(): cacheVecs.get(cursor--);
                 out.set(p.x - b.x, p.y - b.y);
 
-                p.speed.setAngle(p.speed.angle() - rot <= 180? (p.speed.angle() + rot)/2f: (p.speed.angle() + rot + 360)/2f);
+                p.speed.setAngle(angle + MathTransform.innerAngle(angle, rot)/2);
 
                 out.setAngle(2*(p.speed.angle() + 90) - out.angle()).add(b.x, b.y);
 
@@ -244,7 +247,6 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
         }
     );
 
-    private static final Boolean FAL = false;
 
     public ChainsModule chains;
 
@@ -273,7 +275,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
     }
 
     public boolean structValid(){
-      return chains().container.getVar(VALID, FAL);
+      return chains().container.getVar(VALID, false);
     }
 
     @Override
@@ -319,7 +321,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
 
     @Override
     public void onChainsUpdated() {
-      chains().putVar(VALID, false);
+      chains().setVar(VALID, false);
 
       for (ChainsBuildComp comp : chains().container.all) {
         if (comp instanceof TokamakCoreBuild && comp != this){
@@ -386,23 +388,23 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
       }
 
       if (cornerCount == 4 && enclosed){
-        chains().putVar(VALID, true);
+        chains().setVar(VALID, true);
         scale = w*h;
         float area = scale*INV;
 
         fuelConsMulti = Mathf.sqrt(area)*outLinked.block().flueMulti;
         energyOutMulti = area*outLinked.block().efficiencyPow;
 
-        chains.putVar(TOTAL_ITEM_CAPACITY, itemCap);
-        chains.putVar(TOTAL_LIQUID_CAPACITY, liqCap);
+        chains.setVar(TOTAL_ITEM_CAPACITY, itemCap);
+        chains.setVar(TOTAL_LIQUID_CAPACITY, liqCap);
       }
       else{
-        chains().putVar(VALID, false);
+        chains().setVar(VALID, false);
         fuelConsMulti = energyOutMulti = 0;
         scale = 0;
 
-        chains.putVar(TOTAL_ITEM_CAPACITY, 0);
-        chains.putVar(TOTAL_LIQUID_CAPACITY, 0);
+        chains.setVar(TOTAL_ITEM_CAPACITY, 0);
+        chains.setVar(TOTAL_LIQUID_CAPACITY, 0);
       }
     }
 
@@ -479,7 +481,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
         Tmp.v2.set(Mathf.random(4f, 8f), 0).setAngle(relativeTo(outLinked)*90);
         Particle p = model.create(
             Tmp.v1.x, Tmp.v1.y,
-            Pal.reactorPurple,
+            SglDrawConst.matrixNet,
             Tmp.v2.x, Tmp.v2.y,
             Mathf.random(0.2f, 0.5f), Layer.block
         );

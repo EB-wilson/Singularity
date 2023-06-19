@@ -9,7 +9,7 @@ import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawDefault;
-import mindustry.world.draw.DrawLiquidRegion;
+import mindustry.world.draw.DrawLiquidTile;
 import mindustry.world.draw.DrawMulti;
 import mindustry.world.draw.DrawRegion;
 import singularity.contents.SglItems;
@@ -45,10 +45,7 @@ public class OverrideBlocks implements OverrideContentList{
           newProduce();
           produce.liquid(Liquids.slag, 0.2f);
 
-          draw = new DrawMulti(
-              new DrawDefault(),
-              new DrawLiquidRegion()
-          );
+          draw = new DrawMulti(new DrawRegion("-bottom"), new DrawLiquidTile(), new DrawDefault());
         }}
     );
     
