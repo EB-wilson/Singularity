@@ -23,12 +23,12 @@ public class SglUnitType extends UnitType {
 
     totalRequirements = requirements;
     buildTime = 0;
-    prevReturn[0] = null;
+    if (prevReturn != null) prevReturn[0] = null;
 
     for(ItemStack stack: requirements){
       buildTime += stack.item.cost * stack.amount;
     }
-    timeReturn[0] = buildTime;
+    if (timeReturn != null) timeReturn[0] = buildTime;
 
     return requirements;
   }
