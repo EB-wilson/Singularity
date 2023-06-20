@@ -12,7 +12,7 @@ import singularity.Singularity;
 import static singularity.graphic.SglDraw.*;
 
 public class Distortion implements Disposable {
-  static final FrameBuffer tmpBffer = new FrameBuffer();
+  static final FrameBuffer tmpBuffer = new FrameBuffer();
 
   Shader distortion;
   FrameBuffer buffer;
@@ -51,8 +51,9 @@ public class Distortion implements Disposable {
 
     buffer.end();
 
-    ScreenSampler.getToBuffer(tmpBffer, false);
-    tmpBffer.getTexture().bind(1);
+    tmpBuffer.resize(buffer.getWidth(), buffer.getHeight());
+    ScreenSampler.getToBuffer(tmpBuffer, false);
+    tmpBuffer.getTexture().bind(1);
     distortion.bind();
     distortion.setUniformf("width", buffer.getWidth());
     distortion.setUniformf("height", buffer.getHeight());

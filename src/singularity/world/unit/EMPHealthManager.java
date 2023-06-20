@@ -77,7 +77,7 @@ public class EMPHealthManager {
         Jval.JsonMap declares = declaring.asObject();
 
         for (ObjectMap.Entry<String, Jval> entry : declares) {
-          UnitType unit = ModsInteropAPI.selectContent(ContentType.unit, entry.key, mod);
+          UnitType unit = ModsInteropAPI.selectContent(ContentType.unit, entry.key, mod, true);
 
           EMPModel model = new EMPModel();
           model.disabled = entry.value.getBool("disabled", false);

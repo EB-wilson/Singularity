@@ -77,11 +77,41 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
   static ObjectMap<UnitType, UnitCostModel> costModels = new ObjectMap<>();
 
   static {
+    /*添加mod交互式API模型，用于其他mod定义单位在单位建造机上的建造成本
+    * 通常条目的格式：
+    * ...
+    * "unitFactoryCosts": {
+    *   "$unitTypeName": [//选中单位的内部名称，mod名称前缀可选，默认选择本mod中的content，一般不建议跨mod配置单位数据
+    *     {"$itemName": #},//键值对式声明，有且只能有一对键值对，键为物品名称，值为数量
+    *     ["$itemName", #],//数组式声明，第一个元素为物品名称，第二个元素为数量
+    *     "$itemName/#",//字符串声明模式，将物品名称和数量用‘/’进行连接
+    *     ...
+    *   ],
+    *   "$unitTypeName": [
+    *     {"$itemName": #},
+    *     ["$itemName", #],
+    *     "$itemName/#",
+    *     ...
+    *   ],
+    *   ...
+    * }
+    * ...
+    *
+    * 若要禁用某个单位的建造（默认情况下会自动分配单位的建造成本，可禁用），格式如下:
+    * ...
+    * "unitFactoryCosts": {
+    *   "$unitTypeName": {
+    *     "disabled": true
+    *   },
+    *   ...
+    * }
+    * ...
+    * */
     Sgl.interopAPI.addModel(new ModsInteropAPI.ConfigModel("unitFactoryCosts") {
       @Override
       public void parse(Mods.LoadedMod mod, Jval declaring) {
         for (ObjectMap.Entry<String, Jval> entry : declaring.asObject()) {
-          UnitType unit = ModsInteropAPI.selectContent(ContentType.unit, entry.key, mod);
+          UnitType unit = ModsInteropAPI.selectContent(ContentType.unit, entry.key, mod, true);
 
           UnitCostModel model = new UnitCostModel();
 
@@ -118,7 +148,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
               );
             }
           }
-          model.baseBuildTime = entry.value.get("baseBuildTime").asFloat();
+          model.baseBuildTime = entry.value.getFloat("baseBuildTime", 0);
           model.minLevel = entry.value.getInt("minLevel", 0);
 
           costModels.put(unit, model);

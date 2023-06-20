@@ -42,7 +42,6 @@ public class ScreenSampler {
    * @param target 用于转存屏幕纹理的目标缓冲区
    * @param clear 在转存之前是否清空帧缓冲区*/
   public static void getToBuffer(FrameBuffer target, boolean clear){
-    target.resize(samplerBuffer.getWidth(), samplerBuffer.getHeight());
     if (clear){
       target.begin(Color.clear);
     }
