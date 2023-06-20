@@ -232,7 +232,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
 
         if (pd == null || pd.payloads.length != 1) continue;
 
-        Button button = new Button(){
+        Button button = new Button(Styles.clearNonei){
           {
             left().defaults().left().padLeft(4);
             image(pd.payloads[0].item.fullIcon).scaling(Scaling.fit).size(50);

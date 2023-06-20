@@ -554,21 +554,23 @@ public class UnitFactoryCfgDialog extends BaseDialog {
     shown(rebuildLayout);
   }
 
+  private void rebuildCmds(SglUnitFactory.SglUnitFactoryBuild.BuildTask task){
+    if (task != null) {
+      commandCfgTab.clearChildren();
+      for (UnitCommand command : task.buildUnit.commands) {
+        commandCfgTab.button(Icon.icons.get(command.icon, Icon.cancel), Styles.clearNoneTogglei, () -> {
+          task.command = command;
+        }).checked(i -> task.command == command).size(50f).tooltip(command.localized());
+      }
+    }
+  }
+
   @SuppressWarnings({"unchecked", "rawtypes"})
   public void rebuild(SglUnitFactory.SglUnitFactoryBuild factory) {
     taskQueue.clear();
 
     currConfig = factory;
     curr = factory.getCurrentTask();
-
-    if (curr != null) {
-      commandCfgTab.clearChildren();
-      for (UnitCommand command : curr.buildUnit.commands) {
-        commandCfgTab.button(Icon.icons.get(command.icon, Icon.cancel), Styles.clearNoneTogglei, () -> {
-          curr.command = command;
-        }).checked(i -> curr.command == command).size(50f).tooltip(command.localized());
-      }
-    }
 
     taskQueue.defaults().growX().left().pad(4);
 
@@ -774,6 +776,8 @@ public class UnitFactoryCfgDialog extends BaseDialog {
                 configCmdTask = task;
                 commandConfiguring = true;
                 commandCfg.visible = true;
+
+                rebuildCmds(task);
               });
               button.button(Icon.cancel, Styles.clearNonei, 28, () -> {
                 if (executing) {
