@@ -25,6 +25,7 @@ import mindustry.world.blocks.environment.Floor;
 import mindustry.world.meta.Attribute;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
+import singularity.graphic.SglDrawConst;
 import universecore.math.Functions;
 
 import static mindustry.Vars.indexer;
@@ -159,7 +160,7 @@ public class SglAttributeCrafter extends NormalCrafter{
     
     stats.add(Stat.affinities, table -> {
       table.row();
-      table.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.7f)), t -> t.add(boost).grow());
+      table.table(SglDrawConst.grayUI, t -> t.add(boost).grow());
     });
   }
 

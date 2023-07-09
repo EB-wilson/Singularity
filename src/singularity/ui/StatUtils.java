@@ -10,6 +10,7 @@ import mindustry.entities.bullet.BulletType;
 import mindustry.gen.Icon;
 import mindustry.ui.Styles;
 import mindustry.world.meta.StatUnit;
+import mindustry.world.meta.StatValues;
 import singularity.contents.OtherContents;
 import singularity.world.blocks.turrets.EmpBulletType;
 import singularity.world.blocks.turrets.HeatBulletType;

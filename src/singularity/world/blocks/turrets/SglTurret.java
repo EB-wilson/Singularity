@@ -37,6 +37,7 @@ import mindustry.type.LiquidStack;
 import mindustry.ui.LiquidDisplay;
 import mindustry.world.blocks.ControlBlock;
 import mindustry.world.meta.*;
+import singularity.graphic.SglDrawConst;
 import singularity.ui.StatUtils;
 import singularity.world.blocks.SglBlock;
 import singularity.world.consumers.SglConsumers;
@@ -167,6 +168,11 @@ public class SglTurret extends SglBlock{
     if(shootY == Float.NEGATIVE_INFINITY) shootY = size * tilesize / 2f;
     if(elevation < 0) elevation = size / 2f;
 
+    for (BaseConsumers consumer : consumers) {
+      ConsumePower<?> cp = consumer.get(ConsumeType.power);
+      if (cp != null) cp.showIcon = true;
+    }
+
     super.init();
   }
 
@@ -215,9 +221,18 @@ public class SglTurret extends SglBlock{
     newOptionalConsume((SglTurretBuild e, BaseConsumers c) -> {
       e.applyCoolant(c, scl, duration);
     }, (s, c) -> {
-      s.add(Stat.booster, t -> t.add(Core.bundle.format("bullet.reload", Strings.autoFixed(scl, 2))));
+      s.add(Stat.booster, t -> {
+        t.table(req -> {
+          req.left().defaults().left().padLeft(3);
+          for (BaseConsume<? extends ConsumerBuildComp> co : c.all()) {
+            co.buildIcons(req);
+          }
+        }).left().padRight(40);
+        t.add(Core.bundle.format("bullet.reload", Strings.autoFixed(scl*100, 1))).growX().right();
+      });
     });
     BaseConsumers c = consume;
+    consume.customDisplayOnly = true;
     consume.optionalAlwaysValid = false;
     consume.consValidCondition((SglTurretBuild t) -> t.consumer.current != null && t.reloadCounter < t.consumer.current.craftTime
         && (t.currCoolant == null || t.currCoolant == c));
@@ -247,16 +262,16 @@ public class SglTurret extends SglBlock{
       }
     }, (s, c) -> {
       s.add(Stat.booster, t -> {
+        t.defaults().left().padTop(4);
         t.row();
         if (c.get(ConsumeType.liquid) instanceof ConsumeLiquidCond cons){
           for (LiquidStack stack : cons.getCons()) {
             Liquid liquid = stack.liquid;
 
-            t.add(new LiquidDisplay(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(10).left().top();
-            t.table(Tex.underline, bt -> {
-              bt.left().defaults().padRight(3).left();
-              bt.add(Core.bundle.format("bullet.reload", Strings.autoFixed(coolEff.get(liquid)*100, 2)));
-            }).left().padTop(-9);
+            t.add(new LiquidDisplay(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(40).left().top().height(50);
+            t.table(Tex.underline, tb -> {
+              tb.right().add(Core.bundle.format("bullet.reload", Strings.autoFixed(coolEff.get(liquid)*100, 1))).growX().right();
+            }).height(50).growX().right();
             t.row();
           }
         }
@@ -293,7 +308,7 @@ public class SglTurret extends SglBlock{
       table.defaults().padLeft(15);
       for(ObjectMap.Entry<BaseConsumers, AmmoDataEntry> entry: ammoTypes){
         table.row();
-        table.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.7f)), t -> {
+        table.table(SglDrawConst.grayUI, t -> {
           t.left().defaults().left().growX();
           t.table(st -> {
             st.left().defaults().left();
@@ -332,7 +347,7 @@ public class SglTurret extends SglBlock{
               value.get(bt, type);
             }
           }).left();
-        }).fill();
+        }).fillY().growX().margin(10).pad(5);
       }
     });
   }

@@ -25,7 +25,7 @@ import universecore.util.OverrideContentList;
 
 import static mindustry.game.EventType.*;
 
-@Annotations.ImportUNC(requireVersion = "1.8.1")
+@Annotations.ImportUNC(requireVersion = "1.8.2")
 public class Singularity extends Mod{
   private static final ContentList[] modContents = new ContentList[]{
       new OtherContents(),//其他内容
@@ -63,7 +63,7 @@ public class Singularity extends Mod{
        """
        [Singularity] Singularity mod is loading!
        Thanks for your play.
-       author: EBwilson
+       
        Visit the GitHub project about this mod:
        >\040""" + Sgl.githubProject + " <"
     );

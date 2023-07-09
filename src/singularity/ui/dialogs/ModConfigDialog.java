@@ -16,6 +16,7 @@ import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.OrderedMap;
 import arc.struct.Seq;
+import arc.util.Align;
 import arc.util.Strings;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
@@ -24,7 +25,11 @@ import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import singularity.Sgl;
+import singularity.graphic.SglDrawConst;
+import singularity.ui.SglStyles;
 import universecore.util.Empties;
+
+import static mindustry.Vars.ui;
 
 public class ModConfigDialog extends BaseDialog{
   Table settings;
@@ -33,8 +38,10 @@ public class ModConfigDialog extends BaseDialog{
   ObjectMap<String, Drawable> icons = new ObjectMap<>();
 
   String currCat;
-  Table catTable;
+  Table catTable, relaunchTip;
   int currIndex;
+
+  boolean requireRelaunch;
 
   static int cfgCount = 0;
 
@@ -43,7 +50,25 @@ public class ModConfigDialog extends BaseDialog{
     titleTable.clear();
 
     addCloseButton();
-    hidden(() -> Sgl.config.save());
+    hidden(() -> {
+      Sgl.config.save();
+
+      if (requireRelaunch){
+        new BaseDialog("") {{
+          setStyle(SglStyles.transparentBack);
+
+          cont.table(SglDrawConst.grayUI, t -> {
+            t.add(Core.bundle.get("infos.relaunchEnsure")).padBottom(12).center().labelAlign(Align.center).grow();
+            t.row();
+            t.table(bu -> {
+              bu.defaults().size(230, 54);
+              bu.button(Core.bundle.get("misc.later"), Icon.left, Styles.flatt, this::hide).margin(6);
+              bu.button(Core.bundle.get("misc.exitGame"), Icon.ok, Styles.flatt, () -> Core.app.exit()).margin(6);
+            }).fill();
+          }).fill().margin(16);
+        }}.show();
+      }
+    });
 
     resized(this::rebuild);
     shown(this::rebuild);
@@ -138,6 +163,9 @@ public class ModConfigDialog extends BaseDialog{
         pane.addChild(hover);
       }).growX().fillY().top().get().setScrollingDisabledX(true);
     }).grow().pad(4).padLeft(12).padRight(12);
+    cont.row();
+    relaunchTip = cont.table(SglDrawConst.grayUI, t -> t.add(Core.bundle.get("infos.requireRelaunch")).color(Color.red)).fill().center().margin(10).pad(4).get();
+    relaunchTip.color.a(0);
 
     rebuildSettings();
   }
@@ -158,6 +186,12 @@ public class ModConfigDialog extends BaseDialog{
       });
       settings.row();
     }
+  }
+
+  public void requireRelaunch(){
+    requireRelaunch = true;
+    relaunchTip.clearActions();
+    relaunchTip.actions(Actions.alpha(1, 0.5f));
   }
 
   public void addConfig(String category, ConfigLayout... config){

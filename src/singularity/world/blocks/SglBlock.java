@@ -12,10 +12,12 @@ import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.scene.Element;
+import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import arc.struct.SnapshotSeq;
 import arc.util.Eachable;
+import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -38,6 +40,7 @@ import mindustry.world.Tile;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.meta.*;
+import singularity.graphic.SglDrawConst;
 import singularity.world.blocks.nuclear.NuclearNode;
 import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
@@ -231,10 +234,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       stats.add(UncStat.optionalInputs, t -> {
         t.left().row();
         for (BaseConsumers con : optionalCons()) {
-          t.table(Tex.pane, ta -> {
+          t.table(SglDrawConst.grayUI, ta -> {
             ta.left().defaults().left();
             FactoryBlockComp.buildRecipe(ta, con, null);
-          }).growX().fillY().pad(4).left();
+          }).growX().fillY().pad(6).left().margin(10);
           t.row();
         }
       });

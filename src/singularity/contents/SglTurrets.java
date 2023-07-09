@@ -16,17 +16,12 @@ import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.pooling.Pools;
 import mindustry.audio.SoundLoop;
-import mindustry.content.Fx;
-import mindustry.content.Items;
-import mindustry.content.Liquids;
-import mindustry.content.StatusEffects;
+import mindustry.content.*;
 import mindustry.entities.Damage;
 import mindustry.entities.Effect;
 import mindustry.entities.UnitSorts;
 import mindustry.entities.Units;
-import mindustry.entities.bullet.BasicBulletType;
-import mindustry.entities.bullet.BulletType;
-import mindustry.entities.bullet.ContinuousLaserBulletType;
+import mindustry.entities.bullet.*;
 import mindustry.entities.bullet.LightningBulletType;
 import mindustry.entities.effect.MultiEffect;
 import mindustry.entities.effect.WaveEffect;
@@ -55,6 +50,7 @@ import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.SglUnitSorts;
 import singularity.world.blocks.turrets.*;
+import singularity.world.blocks.turrets.EmpBulletType;
 import singularity.world.draw.DrawSglTurret;
 import singularity.world.draw.part.CustomPart;
 import singularity.world.meta.SglStat;
@@ -65,6 +61,9 @@ import universecore.world.lightnings.generator.LightningGenerator;
 import universecore.world.lightnings.generator.RandomGenerator;
 import universecore.world.lightnings.generator.VectorLightningGenerator;
 import universecore.world.particles.Particle;
+
+import javax.imageio.spi.ImageOutputStreamSpi;
+import javax.imageio.stream.ImageOutputStream;
 
 import static arc.math.Angles.randLenVectors;
 import static mindustry.Vars.control;
@@ -81,10 +80,12 @@ public class SglTurrets implements ContentList{
   /**破碎FEX结晶*/
   crushCrystal;
 
-  /**遮幕*/
-  public static Block curtain,
   /**闪光*/
-  flash,
+  public static Block flash,
+  /**伦琴*/
+  roentgen,
+  /**遮幕*/
+  curtain,
   /**迷雾*/
   mist,
   /**阴霾*/
@@ -233,56 +234,6 @@ public class SglTurrets implements ContentList{
       }
     };
 
-    curtain = new SglTurret("curtain"){{
-      requirements(Category.turret, ItemStack.with(
-          Items.titanium, 20,
-          Items.graphite, 20,
-          Items.lead, 12
-      ));
-      itemCapacity = 20;
-      range = 144;
-      targetGround = false;
-
-      newAmmo(new BasicBulletType(1.6f, 30, "missile"){
-        {
-          frontColor = Items.graphite.color.cpy().lerp(Color.white, 0.7f);
-          backColor = Items.graphite.color;
-          width = 7f;
-          height = 12f;
-          lifetime = 90f;
-          ammoMultiplier = 1;
-          hitShake = 0.35f;
-          scaleLife = true;
-          splashDamageRadius = 32;
-          splashDamage = 12;
-          collidesGround = false;
-          collidesTiles = false;
-          hitEffect = Fx.explosion;
-          trailEffect = Fx.smoke;
-          trailChance = 0.12f;
-          trailColor = Items.graphite.color;
-
-          hitSound = Sounds.explosion;
-
-          fragOnHit = true;
-          fragBullets = 1;
-          fragVelocityMin = 0;
-          fragVelocityMax = 0;
-          fragBullet = graphiteCloud(360, 36, true, false, 0.2f);
-        }
-      }, true, (bt, ammo) -> {
-        bt.add(Core.bundle.format("bullet.damage", ammo.damage));
-        bt.row();
-        bt.add(Core.bundle.format("bullet.splashdamage", (int)ammo.splashDamage, Strings.fixed(ammo.splashDamageRadius/tilesize, 1)));
-        bt.row();
-        bt.add(Core.bundle.get("infos.curtainAmmo"));
-        bt.row();
-        bt.add(OtherContents.electric_disturb.emoji() + "[stat]" + OtherContents.electric_disturb.localizedName + "[lightgray] ~ [stat]2[lightgray] " + Core.bundle.get("unit.seconds"));
-      });
-      consume.item(Items.graphite, 1);
-      consume.time(90);
-    }};
-
     flash = new SglTurret("flash"){{
       requirements(Category.turret, ItemStack.with(
           SglItems.strengthening_alloy, 35,
@@ -358,11 +309,127 @@ public class SglTurrets implements ContentList{
         bulletInterval = 3f;
       }});
       consume.item(Items.surgeAlloy, 1);
-      consume.power(1.8f);
+      consume.power(2.4f);
       consume.time(45);
       setReloadAmount(3);
 
       newCoolant(1f, 0.4f, l -> l.heatCapacity >= 0.4f && l.temperature <= 0.5f, 0.25f, 20);
+    }};
+
+    roentgen = new ProjectileTurret("roentgen"){{
+      requirements(Category.turret, ItemStack.with());
+      size = 4;
+      range = 240;
+      shootY = 12;
+      cooldownTime = 60;
+
+      shootSound = Sounds.laser;
+
+      newAmmo(new LightLaserBulletType(){{
+        length = 240;
+        damage = 225;
+        empDamage = 180;
+        status = StatusEffects.electrified;
+        statusDuration = 12;
+        hitColor = Pal.reactorPurple;
+        shootEffect = new MultiEffect(
+            SglFx.crossLightMini,
+            Fx.circleColorSpark
+        );
+
+        colors = new Color[]{
+            Pal.reactorPurple.cpy().mul(1f, 1f, 1f, 0.4f),
+            Pal.reactorPurple,
+            Color.white
+        };
+
+        generator.maxSpread = 6;
+      }});
+      consume.time(30);
+      consume.power(8.4f);
+
+      newAmmoCoating(Core.bundle.get("coating.crystal_fex"), SglDrawConst.fexCrystal, b -> {
+        LightLaserBulletType res = (LightLaserBulletType) b.copy();
+        res.damage *= 1.25f;
+        res.colors = new Color[]{
+            SglDrawConst.fexCrystal.cpy().mul(1f, 1f, 1f, 0.4f),
+            SglDrawConst.fexCrystal,
+            Color.white
+        };
+        res.empDamage *= 0.8f;
+        res.status = OtherContents.crystallize;
+        res.statusDuration = 15f;
+
+        return res;
+      }, t -> {
+        t.add(SglStat.exDamageMultiplier.localized() + 125 + "%");
+        t.row();
+        t.add(Core.bundle.get("bullet.empDamageMulti") + 80 + "%");
+        t.row();
+        t.add(OtherContents.crystallize.localizedName + "[lightgray] ~ [stat]0.25[lightgray] " + Core.bundle.get("unit.seconds"));
+      });
+      consume.time(30);
+      consume.liquid(SglLiquids.FEX_liquid, 0.1f);
+
+      newCoolant(1.5f, 20);
+      consume.liquid(SglLiquids.phase_FEX_liquid, 0.1f);
+
+      draw = new DrawSglTurret(){
+        @Override
+        public void drawTurret(SglTurret block, SglTurretBuild build) {
+          super.drawTurret(block, build);
+        }
+      };
+    }};
+
+    curtain = new SglTurret("curtain"){{
+      requirements(Category.turret, ItemStack.with(
+          Items.titanium, 20,
+          Items.graphite, 20,
+          Items.lead, 12
+      ));
+      itemCapacity = 20;
+      range = 144;
+      targetGround = false;
+
+      newAmmo(new BasicBulletType(1.6f, 30, "missile"){
+        {
+          frontColor = Items.graphite.color.cpy().lerp(Color.white, 0.7f);
+          backColor = Items.graphite.color;
+          width = 7f;
+          height = 12f;
+          lifetime = 90f;
+          ammoMultiplier = 1;
+          hitShake = 0.35f;
+          scaleLife = true;
+          splashDamageRadius = 32;
+          splashDamage = 12;
+          collidesGround = false;
+          collidesTiles = false;
+          hitEffect = Fx.explosion;
+          trailEffect = Fx.smoke;
+          trailChance = 0.12f;
+          trailColor = Items.graphite.color;
+
+          hitSound = Sounds.explosion;
+
+          fragOnHit = true;
+          fragBullets = 1;
+          fragVelocityMin = 0;
+          fragVelocityMax = 0;
+          fragBullet = graphiteCloud(360, 36, true, false, 0.2f);
+        }
+      }, true, (bt, ammo) -> {
+        bt.add(Core.bundle.format("bullet.damage", ammo.damage));
+        bt.row();
+        bt.add(Core.bundle.format("bullet.splashdamage", (int)ammo.splashDamage, Strings.fixed(ammo.splashDamageRadius/tilesize, 1)));
+        bt.row();
+        bt.add(Core.bundle.get("infos.curtainAmmo"));
+        bt.row();
+        bt.add(OtherContents.electric_disturb.emoji() + "[stat]" + OtherContents.electric_disturb.localizedName + "[lightgray] ~ [stat]2[lightgray] " + Core.bundle.get("unit.seconds"));
+      });
+      consume.item(Items.graphite, 1);
+      consume.time(90);
     }};
 
     mist = new SglTurret("mist"){{
@@ -1204,10 +1271,10 @@ public class SglTurrets implements ContentList{
           }
         }
       });
-      consume.item(Items.thorium, 3);
+      consume.item(Items.thorium, 1);
       consume.time(10);
 
-      newAmmoCoating(Core.bundle.get("coating.depletedUranium"), b -> new WarpedBulletType(b){
+      newAmmoCoating(Core.bundle.get("coating.depletedUranium"), Pal.accent, b -> new WarpedBulletType(b){
         {
           damage = b.damage*1.15f;
           pierceArmor = true;
@@ -1217,7 +1284,7 @@ public class SglTurrets implements ContentList{
         public void hitEntity(Bullet b, Hitboxc entity, float health){
           if(entity instanceof Unit unit){
             if(unit.shield > 0){
-              float damageShield = Math.min(Math.max(unit.shield, 0), b.type.damage*0.85f);
+              float damageShield = Math.min(Math.max(unit.shield, 0), damage*0.85f);
               unit.shield -= damageShield;
               Fx.colorSparkBig.at(b.x, b.y, b.rotation(), Pal.bulletYellowBack);
             }
@@ -1244,6 +1311,34 @@ public class SglTurrets implements ContentList{
       });
       consume.time(10);
       consume.item(SglItems.uranium_238, 1);
+
+      newAmmoCoating(Core.bundle.get("coating.crystal_fex"), SglDrawConst.fexCrystal, b -> new WarpedBulletType(b){
+        {
+          damage = b.damage*1.25f;
+          hitColor = SglDrawConst.fexCrystal;
+          trailEffect = SglFx.movingCrystalFrag;
+          trailInterval = 6;
+          trailColor = SglDrawConst.fexCrystal;
+
+          status = OtherContents.crystallize;
+          statusDuration = 15;
+        }
+
+        @Override
+        public void draw(Bullet b){
+          SglDraw.drawDiamond(b.x, b.y, 24, 6, b.rotation(), hitColor);
+          Draw.color(SglDrawConst.matrixNet);
+          for(int i : Mathf.signs){
+            Drawf.tri(b.x, b.y, 6f*b.fin(), 30f*b.fin(), b.rotation() + 162f*i);
+          }
+        }
+      }, t -> {
+        t.add(SglStat.exDamageMultiplier.localized() + 125 + "%");
+        t.row();
+        t.add(OtherContents.crystallize.localizedName + "[lightgray] ~ [stat]0.25[lightgray] " + Core.bundle.get("unit.seconds"));
+      }, 2);
+      consume.time(20);
+      consume.item(SglItems.crystal_FEX, 1);
 
       draw = new DrawSglTurret(
           new RegionPart("_blade"){{
@@ -1476,7 +1571,7 @@ public class SglTurrets implements ContentList{
           lifetime = 80;
           speed = 5f;
           drawSize = 24;
-          pierce = true;
+          pierceCap = 4;
           pierceBuilding = true;
           collidesTeam = true;
           smokeEffect = Fx.none;
@@ -1485,7 +1580,7 @@ public class SglTurrets implements ContentList{
           healEffect = SglFx.impactBubble;
           shootEffect = Fx.none;
           healAmount = 24;
-          healPercent = 1f;
+          healPercent = 0.1f;
           hitSize = 8;
           trailColor = Pal.heal;
           trailRotation = true;
@@ -1526,7 +1621,7 @@ public class SglTurrets implements ContentList{
         );
       });
       consume.energy(2.6f);
-      consume.time(20);
+      consume.time(60);
 
       draw = new DrawSglTurret(
           new RegionPart("_side"){{
@@ -2819,7 +2914,9 @@ public class SglTurrets implements ContentList{
           speed = 4;
           lifetime = 90;
 
-          damage = 90;
+          damage = 0;
+          splashDamage = 90;
+          splashDamageRadius = 8;
 
           meltDownTime = 30;
           melDamageScl = 0.5f;
@@ -2831,7 +2928,17 @@ public class SglTurrets implements ContentList{
           trailChance = 0.1f;
           trailRotation = true;
 
-          hitEffect = Fx.circleColorSpark;
+          hitEffect = new MultiEffect(
+              new WaveEffect(){{
+                colorFrom = Pal.lighterOrange;
+                colorTo = Color.white;
+                lifetime = 12f;
+                sizeTo = 28f;
+                strokeFrom = 6f;
+                strokeTo = 0.3f;
+              }},
+              Fx.circleColorSpark
+          );
           despawnEffect = Fx.absorb;
           despawnHit = true;
 

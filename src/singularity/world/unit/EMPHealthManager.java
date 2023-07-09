@@ -71,44 +71,46 @@ public class EMPHealthManager {
     * }
     * ...
     * */
-    Sgl.interopAPI.addModel(new ModsInteropAPI.ConfigModel("empHealthModels") {
-      @Override
-      public void parse(Mods.LoadedMod mod, Jval declaring) {
-        Jval.JsonMap declares = declaring.asObject();
+    if (Sgl.config.interopAssignEmpModels){
+      Sgl.interopAPI.addModel(new ModsInteropAPI.ConfigModel("empHealthModels") {
+        @Override
+        public void parse(Mods.LoadedMod mod, Jval declaring) {
+          Jval.JsonMap declares = declaring.asObject();
 
-        for (ObjectMap.Entry<String, Jval> entry : declares) {
-          UnitType unit = ModsInteropAPI.selectContent(ContentType.unit, entry.key, mod, true);
+          for (ObjectMap.Entry<String, Jval> entry : declares) {
+            UnitType unit = ModsInteropAPI.selectContent(ContentType.unit, entry.key, mod, true);
 
-          EMPModel model = new EMPModel();
-          model.disabled = entry.value.getBool("disabled", false);
-
-          if (!model.disabled) {
-            model.maxEmpHealth = entry.value.getFloat("maxEmpHealth", unit.health/Mathf.pow(unit.hitSize - unit.armor, 2)*200);
-            model.empArmor = entry.value.getFloat("empArmor", Mathf.clamp(unit.armor/100));
-            model.empRepair = entry.value.getFloat("empRepair", unit.hitSize/60);
-            model.empContinuousDamage = entry.value.getFloat("empContinuousDamage", unit.hitSize/30);
-
-            unit.stats.add(SglStat.empHealth, model.maxEmpHealth);
-            unit.stats.add(SglStat.empArmor, model.empArmor*100, StatUnit.percent);
-            unit.stats.add(SglStat.empRepair, model.empRepair*60, StatUnit.perSecond);
-          }
-
-          unitDefaultHealthMap.put(unit, model);
-        }
-      }
-
-      @Override
-      public void disable(Mods.LoadedMod mod) {
-        for (UnitType unit : Vars.content.units()) {
-          if (unit.minfo.mod == mod){
             EMPModel model = new EMPModel();
-            model.disabled = true;
+            model.disabled = entry.value.getBool("disabled", false);
+
+            if (!model.disabled) {
+              model.maxEmpHealth = entry.value.getFloat("maxEmpHealth", unit.health/Mathf.pow(unit.hitSize - unit.armor, 2)*200);
+              model.empArmor = entry.value.getFloat("empArmor", Mathf.clamp(unit.armor/100));
+              model.empRepair = entry.value.getFloat("empRepair", unit.hitSize/60);
+              model.empContinuousDamage = entry.value.getFloat("empContinuousDamage", unit.hitSize/30);
+
+              unit.stats.add(SglStat.empHealth, model.maxEmpHealth);
+              unit.stats.add(SglStat.empArmor, model.empArmor*100, StatUnit.percent);
+              unit.stats.add(SglStat.empRepair, model.empRepair*60, StatUnit.perSecond);
+            }
 
             unitDefaultHealthMap.put(unit, model);
           }
         }
-      }
-    }, false);
+
+        @Override
+        public void disable(Mods.LoadedMod mod) {
+          for (UnitType unit : Vars.content.units()) {
+            if (unit.minfo.mod == mod){
+              EMPModel model = new EMPModel();
+              model.disabled = true;
+
+              unitDefaultHealthMap.put(unit, model);
+            }
+          }
+        }
+      }, false);
+    }
 
     UncCore.aspects.addAspect(
         new EntityAspect<Unit>(EntityAspect.Group.unit, u -> true)

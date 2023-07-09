@@ -16,6 +16,7 @@ import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.gen.Tex;
 import mindustry.ui.Styles;
+import singularity.graphic.SglDrawConst;
 import universecore.util.handler.FieldHandler;
 
 public class ToolBarFrag {
@@ -27,7 +28,7 @@ public class ToolBarFrag {
     Events.on(EventType.WorldLoadEvent.class, e -> {
       Core.app.post(() -> {
         Table blockCatTable = FieldHandler.getValueDefault(Vars.ui.hudfrag.blockfrag, "blockCatTable");
-        blockCatTable.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Color.black).a(0.6f)),tools -> {
+        blockCatTable.table(SglDrawConst.grayUI, tools -> {
           tools.top().pane(Styles.noBarPane, this::buildTools).growY().width(50).left().get().setScrollingDisabledX(true);
         }).width(50).growY();
       });

@@ -205,7 +205,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
         AtomicBoolean isSim = new AtomicBoolean(false);
         AtomicReference<Runnable> rebuild = new AtomicReference<>();
 
-        t.table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.7f)), ta -> {
+        t.table(SglDrawConst.grayUI, ta -> {
           rebuild.set(() -> {
             ta.clearChildren();
             ta.left().add(isSim.get()? details: simple);
@@ -215,7 +215,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
           rebuild.get().run();
 
           ta.touchable = Touchable.enabled;
-        }).margin(5).left().growX().fillY().pad(3).get().clicked(() -> {
+        }).margin(8).left().growX().fillY().pad(3).get().clicked(() -> {
           rebuild.get().run();
         });
         t.row();

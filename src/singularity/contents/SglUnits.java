@@ -29,6 +29,7 @@ import mindustry.entities.Effect;
 import mindustry.entities.UnitSorts;
 import mindustry.entities.Units;
 import mindustry.entities.bullet.*;
+import mindustry.entities.bullet.LightningBulletType;
 import mindustry.entities.effect.MultiEffect;
 import mindustry.entities.part.DrawPart;
 import mindustry.entities.part.HaloPart;
@@ -63,10 +64,8 @@ import singularity.world.SglFx;
 import singularity.world.SglUnitSorts;
 import singularity.world.blocks.product.HoveringUnitFactory;
 import singularity.world.blocks.product.SglUnitFactory;
+import singularity.world.blocks.turrets.*;
 import singularity.world.blocks.turrets.EmpBulletType;
-import singularity.world.blocks.turrets.EmpLightningBulletType;
-import singularity.world.blocks.turrets.EmpMultiTrailBulletType;
-import singularity.world.blocks.turrets.MultiTrailBulletType;
 import singularity.world.draw.part.CustomPart;
 import singularity.world.particles.SglParticleModels;
 import singularity.world.unit.*;
@@ -84,75 +83,6 @@ public class SglUnits implements ContentList{
   public static final String TIMER = "timer";
   public static final String STATUS = "status";
   public static final String PHASE = "phase";
-
-  public static final EmpLightningBulletType lightningLaser = new EmpLightningBulletType() {
-    {
-      speed = 0;
-      lifetime = 30;
-      damage = 150;
-      empDamage = 20;
-      rangeOverride = 80;
-      collides = false;
-      absorbable = false;
-      hittable = false;
-
-      keepVelocity = false;
-
-      hitColor = SglDrawConst.matrixNet;
-
-      despawnEffect = Fx.none;
-
-      pierce = true;
-    }
-
-    final VectorLightningGenerator generator = new VectorLightningGenerator() {{
-      minInterval = 8;
-      maxInterval = 12;
-      maxSpread = 9;
-    }};
-
-    @Override
-    public void init(Bullet b, LightningContainer c) {
-      Sounds.spark.at(b.x, b.y, 1.2f);
-
-      Teamc target = Units.closestTarget(b.team, b.x, b.y, range,
-          e -> e != null && e.checkTarget(collidesAir, collidesGround) && !b.hasCollided(e.id),
-          t -> t != null && collidesGround && !b.hasCollided(t.id));
-
-      if (target != null) {
-        b.rotation(b.angleTo(target));
-      }
-
-      c.lifeTime = lifetime;
-      c.time = 5;
-      c.lerp = Interp.linear;
-      c.minWidth = 2f;
-      c.maxWidth = 3.25f;
-
-      Damage.collideLaser(b, range, false, true, -1);
-      generator.vector.set(b.fdata*1.3f, 0).setAngle(b.rotation());
-      c.generator = generator;
-      c.create();
-      c.create();
-    }
-
-    @Override
-    public void draw(Bullet b) {
-      super.draw(b);
-
-      float len = b.fdata/2;
-      Tmp.v1.set(len/2, 0).setAngle(b.rotation());
-
-      float fin2 = b.fin(Interp.pow2);
-      float out2 = 1 - fin2;
-      float dx = b.x + Tmp.v1.x*(1 + fin2);
-      float dy = b.y + Tmp.v1.y*(1 + fin2);
-
-      Draw.color(hitColor);
-      Drawf.tri(dx, dy, 8*out2, (len/2 - 6)*(1 + fin2), b.rotation() - 180);
-      Drawf.tri(dx, dy, 8*out2, len*(1 + 2f*fin2), b.rotation());
-    }
-  };
   public static final String SHOOTERS = "shooters";
 
   /**棱镜*/
@@ -610,7 +540,25 @@ public class SglUnits implements ContentList{
                   };
                   fragBullets = 5;
 
-                  intervalBullet = lightningLaser;
+                  intervalBullet = new LightLaserBulletType(){
+                    {
+                      damage = 150;
+                      empDamage = 20;
+                    }
+
+                    @Override
+                    public void init(Bullet b, LightningContainer c) {
+                      Teamc target = Units.closestTarget(b.team, b.x, b.y, range,
+                          e -> e != null && e.checkTarget(collidesAir, collidesGround) && !b.hasCollided(e.id),
+                          t -> t != null && collidesGround && !b.hasCollided(t.id));
+
+                      if (target != null) {
+                        b.rotation(b.angleTo(target));
+                      }
+
+                      super.init(b, c);
+                    }
+                  };
                   bulletInterval = 15f;
                 }
 
@@ -1868,7 +1816,26 @@ public class SglUnits implements ContentList{
                 fragBullets = 1;
                 fragRandomSpread = 0;
                 fragAngle = 0;
-                fragBullet = lightningLaser.copy();
+                fragBullet = new LightLaserBulletType(){
+                  {
+                    length = 140;
+                    damage = 160;
+                    empDamage = 41;
+                  }
+
+                  @Override
+                  public void init(Bullet b, LightningContainer c) {
+                    Teamc target = Units.closestTarget(b.team, b.x, b.y, range,
+                        e -> e != null && e.checkTarget(collidesAir, collidesGround) && !b.hasCollided(e.id),
+                        t -> t != null && collidesGround && !b.hasCollided(t.id));
+
+                    if (target != null) {
+                      b.rotation(b.angleTo(target));
+                    }
+
+                    super.init(b, c);
+                  }
+                };
 
                 hitShake = 4;
 
@@ -2372,6 +2339,12 @@ public class SglUnits implements ContentList{
                   @Override
                   public float continuousDamage() {
                     return damage*(60/damageInterval);
+                  }
+
+                  @Override
+                  public void init() {
+                    super.init();
+                    drawSize = range;
                   }
 
                   @Override

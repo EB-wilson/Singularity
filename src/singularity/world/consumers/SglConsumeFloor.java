@@ -22,6 +22,7 @@ import mindustry.world.blocks.environment.Floor;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 import mindustry.world.meta.Stats;
+import singularity.graphic.SglDrawConst;
 import singularity.world.components.FloorCrafterBuildComp;
 import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.world.consumers.BaseConsume;
@@ -91,7 +92,7 @@ public class SglConsumeFloor<T extends Building & ConsumerBuildComp & FloorCraft
   @Override
   public void display(Stats stats) {
     stats.add(Stat.tiles, st -> {
-      st.row().table(((TextureRegionDrawable)Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.7f)), t -> {
+      st.row().table(SglDrawConst.grayUI, t -> {
         t.clearChildren();
         t.defaults().pad(5).left();
 

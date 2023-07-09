@@ -3,6 +3,10 @@ package singularity.graphic;
 import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.style.Drawable;
+import arc.scene.style.TextureRegionDrawable;
+import arc.util.Tmp;
+import mindustry.gen.Tex;
+import mindustry.graphics.Pal;
 import singularity.Singularity;
 
 public class SglDrawConst{
@@ -28,7 +32,8 @@ public class SglDrawConst{
       startIcon, databaseIcon, publicInfoIcon, aboutIcon, configureIcon, contributeIcon, debuggingIcon, nuclearIcon, matrixIcon,
 
       qqIcon, telegramIcon,
-      showInfos, unShowInfos, showRange, hold, defaultShow;
+      showInfos, unShowInfos, showRange, hold, defaultShow,
+      grayUI;
 
   public static void load(){
     transparent = Singularity.getModDrawable("transparent");
@@ -57,5 +62,7 @@ public class SglDrawConst{
     showRange = Singularity.getModDrawable("show_range");
     hold = Singularity.getModDrawable("hold");
     defaultShow = Singularity.getModDrawable("default_show");
+
+    grayUI = ((TextureRegionDrawable) Tex.whiteui).tint(Tmp.c1.set(Pal.darkerGray).a(0.7f));
   }
 }

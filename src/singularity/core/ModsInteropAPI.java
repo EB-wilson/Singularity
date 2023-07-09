@@ -35,7 +35,7 @@ public class ModsInteropAPI {
   private final OrderedSet<ConfigModel> models = new OrderedSet<>();
 
   public void addModel(ConfigModel model, boolean init){
-    if (models.add(model) && init){
+    if (Sgl.config.enableModsInterops && models.add(model) && init){
       for (ObjectMap.Entry<Mods.LoadedMod, Jval> entry : declares) {
         try {
           if (entry.value.getBool("disable_api", false)) {
@@ -50,7 +50,15 @@ public class ModsInteropAPI {
   }
 
   public void init(){
-    if (Sgl.config.loadInfo) Log.info("[Singularity API] loading mod interop api");
+    if (Sgl.config.loadInfo) {
+      if (Sgl.config.enableModsInterops) {
+        Log.info("[Singularity API] loading mod interop api");
+      }
+      else Log.info("[Singularity API] interop API was disabled");
+    }
+
+    if (!Sgl.config.enableModsInterops) return;
+
     for (Mods.LoadedMod mod : Vars.mods.list()) {
       if (mod.name.equals(Sgl.modName)) continue;
 
@@ -75,6 +83,8 @@ public class ModsInteropAPI {
   }
 
   public void updateModels(){
+    if (!Sgl.config.enableModsInterops) return;
+
     for (ObjectMap.Entry<Mods.LoadedMod, Jval> entry : declares) {
       boolean dis = entry.value.getBool("disable_api", false);
       for (ConfigModel model : models) {

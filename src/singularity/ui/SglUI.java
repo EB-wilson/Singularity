@@ -380,14 +380,37 @@ public class SglUI{
         new ConfigCheck("enableLightning", b -> Sgl.config.enableLightning = b, () -> Sgl.config.enableLightning)
     );
     config.addConfig("advance", SglDrawConst.configureIcon,
+        new ConfigSepLine("interops", Core.bundle.get("infos.modInterop")),
+        new ConfigCheck("enableModsInterops", b -> {
+          Sgl.config.enableModsInterops = b;
+          Sgl.ui.config.requireRelaunch();
+        }, () -> Sgl.config.enableModsInterops),
+        new ConfigCheck("interopAssignUnitCosts", b -> {
+          Sgl.config.interopAssignUnitCosts = b;
+          Sgl.ui.config.requireRelaunch();
+        }, () -> Sgl.config.interopAssignUnitCosts){{
+          disabled = () -> !Sgl.config.enableModsInterops;
+        }},
+        new ConfigCheck("interopAssignEmpModels", b -> {
+          Sgl.config.interopAssignEmpModels = b;
+          Sgl.ui.config.requireRelaunch();
+        }, () -> Sgl.config.interopAssignEmpModels){{
+          disabled = () -> !Sgl.config.enableModsInterops;
+        }},
         new ConfigSepLine("reciprocal", Core.bundle.get("infos.override")),
-        new ConfigCheck("modReciprocal", b -> Sgl.config.modReciprocal = b, () -> Sgl.config.modReciprocal){{
+        new ConfigCheck("modReciprocal", b -> {
+          Sgl.config.modReciprocal = b;
+          Sgl.ui.config.requireRelaunch();
+        }, () -> Sgl.config.modReciprocal){{
           str = () -> Sgl.config.modReciprocal? "": Core.bundle.get("infos.reciprocalWarn");
         }},
-        new ConfigCheck("modReciprocalContent", b -> Sgl.config.modReciprocalContent = b, () -> Sgl.config.modReciprocalContent){{
+        new ConfigCheck("modReciprocalContent", b -> {
+          Sgl.config.modReciprocalContent = b;
+          Sgl.ui.config.requireRelaunch();
+        }, () -> Sgl.config.modReciprocalContent){{
           str = () -> Sgl.config.modReciprocalContent? "": Core.bundle.get("infos.reciprocalWarn");
         }},
-        new ConfigSepLine("reciprocal", Core.bundle.get("infos.debug")),
+        new ConfigSepLine("debugs", Core.bundle.get("infos.debug")),
         new ConfigCheck("loadInfo", b -> Sgl.config.loadInfo = b, () -> Sgl.config.loadInfo),
         new ConfigCheck("debugMode", b -> Sgl.config.debugMode = b, () -> Sgl.config.debugMode){{
           str = () -> Core.bundle.get("infos.unusableDebugButton");

@@ -6,6 +6,7 @@ import arc.util.Strings;
 import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
 import mindustry.world.meta.Stat;
+import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
 
@@ -26,8 +27,17 @@ public class BoosterCrafter extends NormalCrafter{
       e.boostEff = Mathf.approachDelta(e.boostEff, boost*mul*Mathf.clamp(e.consumer.consEfficiency)*e.consumer.getOptionalEff(c), 0.04f);
       e.boostMarker = true;
     }, (s, c) -> {
-      s.add(Stat.boostEffect, Core.bundle.get("misc.efficiency") + Strings.autoFixed(boost*100, 1) + "%");
+      s.add(Stat.boostEffect, t -> {
+        t.table(req -> {
+          req.left().defaults().left().padLeft(3);
+          for (BaseConsume<? extends ConsumerBuildComp> co : c.all()) {
+            co.buildIcons(req);
+          }
+        }).left().padRight(40);
+        t.add(Core.bundle.get("misc.efficiency") + Strings.autoFixed(boost*100, 1) + "%").growX().right();
+      });
     });
+    consume.customDisplayOnly = true;
     consume.optionalAlwaysValid = false;
     return res;
   }

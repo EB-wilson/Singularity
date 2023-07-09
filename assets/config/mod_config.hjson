@@ -4,7 +4,7 @@
 //This is the configuration file of the singularity mod. You can see most of the configuration items in the configuration UI page.
 //Configurations that are not usually used, such as debugging options, need to be adjusted in this file.
 {
-  "configVersion": 7,
+  "configVersion": 8,
 
   //=====Basic/基础设置=====//
   //--main menu/主菜单设置--
@@ -72,6 +72,12 @@
   "enableLightning": true,
 
   //===Adavanced/高级设置===//
+  //启用mod交互API
+  "enableModsInterops": true,
+  //交互API：启用单位建造成本模型注册
+  "interopAssignUnitCosts": true,
+  //交互API：启用单位EMP生命模型注册
+  "interopAssignEmpModels": true,
   //是否覆盖游戏本身的程序性机制
   "modReciprocal": true,//警告：若禁用此选项会造成各种问题，您将不能获得完整的游戏流程
   //是否使用mod覆盖原版的部分特定内容，如方块/单位数据，功能，以及方块造价等

@@ -17,6 +17,7 @@ import arc.struct.ObjectSet;
 import arc.util.Scaling;
 import arc.util.Strings;
 import arc.util.Structs;
+import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import arc.util.pooling.Pool;
@@ -46,6 +47,7 @@ import mindustry.world.blocks.units.Reconstructor;
 import mindustry.world.meta.Stat;
 import singularity.Sgl;
 import singularity.core.ModsInteropAPI;
+import singularity.graphic.SglDrawConst;
 import singularity.world.components.distnet.DistElementBlockComp;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.consumers.SglConsumers;
@@ -107,65 +109,67 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
     * }
     * ...
     * */
-    Sgl.interopAPI.addModel(new ModsInteropAPI.ConfigModel("unitFactoryCosts") {
-      @Override
-      public void parse(Mods.LoadedMod mod, Jval declaring) {
-        for (ObjectMap.Entry<String, Jval> entry : declaring.asObject()) {
-          UnitType unit = ModsInteropAPI.selectContent(ContentType.unit, entry.key, mod, true);
+    if (Sgl.config.interopAssignUnitCosts){
+      Sgl.interopAPI.addModel(new ModsInteropAPI.ConfigModel("unitFactoryCosts") {
+        @Override
+        public void parse(Mods.LoadedMod mod, Jval declaring) {
+          for (ObjectMap.Entry<String, Jval> entry : declaring.asObject()) {
+            UnitType unit = ModsInteropAPI.selectContent(ContentType.unit, entry.key, mod, true);
 
-          UnitCostModel model = new UnitCostModel();
-
-          if (entry.value.getBool("disabled", false)){
-            model.disabled = true;
-            costModels.put(unit, model);
-            continue;
-          }
-
-          Jval.JsonArray arr = entry.value.get("requirements").asArray();
-
-          model.requirements = new ItemStack[arr.size];
-          for (int i = 0; i < arr.size; i++) {
-            Jval stack = arr.get(i);
-            if (stack.isObject()){
-              Jval.JsonMap ent = stack.asObject();
-              model.requirements[i] = new ItemStack(
-                  ModsInteropAPI.selectContent(ContentType.item, ent.firstKey(), mod),
-                  ent.firstValue().asInt()
-              );
-            }
-            else if (stack.isArray()){
-              Jval.JsonArray ar = stack.asArray();
-              model.requirements[i] = new ItemStack(
-                  ModsInteropAPI.selectContent(ContentType.item, ar.get(0).asString(), mod),
-                  ar.get(1).asInt()
-              );
-            }
-            else{
-              String[] str = stack.asString().split("/");
-              model.requirements[i] = new ItemStack(
-                  ModsInteropAPI.selectContent(ContentType.item, str[0], mod),
-                  Integer.parseInt(str[1])
-              );
-            }
-          }
-          model.baseBuildTime = entry.value.getFloat("baseBuildTime", 0);
-          model.minLevel = entry.value.getInt("minLevel", 0);
-
-          costModels.put(unit, model);
-        }
-      }
-
-      @Override
-      public void disable(Mods.LoadedMod mod) {
-        for (UnitType unit : Vars.content.units()) {
-          if (unit.minfo.mod == mod){
             UnitCostModel model = new UnitCostModel();
-            model.disabled = true;
+
+            if (entry.value.getBool("disabled", false)){
+              model.disabled = true;
+              costModels.put(unit, model);
+              continue;
+            }
+
+            Jval.JsonArray arr = entry.value.get("requirements").asArray();
+
+            model.requirements = new ItemStack[arr.size];
+            for (int i = 0; i < arr.size; i++) {
+              Jval stack = arr.get(i);
+              if (stack.isObject()){
+                Jval.JsonMap ent = stack.asObject();
+                model.requirements[i] = new ItemStack(
+                    ModsInteropAPI.selectContent(ContentType.item, ent.firstKey(), mod),
+                    ent.firstValue().asInt()
+                );
+              }
+              else if (stack.isArray()){
+                Jval.JsonArray ar = stack.asArray();
+                model.requirements[i] = new ItemStack(
+                    ModsInteropAPI.selectContent(ContentType.item, ar.get(0).asString(), mod),
+                    ar.get(1).asInt()
+                );
+              }
+              else{
+                String[] str = stack.asString().split("/");
+                model.requirements[i] = new ItemStack(
+                    ModsInteropAPI.selectContent(ContentType.item, str[0], mod),
+                    Integer.parseInt(str[1])
+                );
+              }
+            }
+            model.baseBuildTime = entry.value.getFloat("baseBuildTime", 0);
+            model.minLevel = entry.value.getInt("minLevel", 0);
+
             costModels.put(unit, model);
           }
         }
-      }
-    }, false);
+
+        @Override
+        public void disable(Mods.LoadedMod mod) {
+          for (UnitType unit : Vars.content.units()) {
+            if (unit.minfo.mod == mod){
+              UnitCostModel model = new UnitCostModel();
+              model.disabled = true;
+              costModels.put(unit, model);
+            }
+          }
+        }
+      }, false);
+    }
   }
 
   public int maxTasks = 16;
@@ -249,7 +253,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
         t.add(Core.bundle.get("infos.matrixDistOnly")).color(Color.darkGray);
       }
 
-      Table table = new Table(((TextureRegionDrawable) Tex.whiteui).tint(Color.darkGray));
+      Table table = new Table(SglDrawConst.grayUI);
       Collapser coll = new Collapser(table, true);
 
       table.left().defaults().left().pad(3).size(185, 60);

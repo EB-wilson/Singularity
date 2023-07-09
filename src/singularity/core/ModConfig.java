@@ -15,7 +15,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 
 public class ModConfig{
-  private static final int configVersion = 7;
+  private static final int configVersion = 8;
   private static final Field[] configs = ModConfig.class.getFields();
 
   //basic/基础设置
@@ -78,6 +78,12 @@ public class ModConfig{
   public boolean enableLightning;
 
   //Advanced/高级设置
+  @Order(12.5f)
+  public boolean enableModsInterops;
+  @Order(12.6f)
+  public boolean interopAssignUnitCosts;
+  @Order(12.7f)
+  public boolean interopAssignEmpModels;
   @Order(13f)
   public boolean modReciprocal;
   @Order(13.1f)

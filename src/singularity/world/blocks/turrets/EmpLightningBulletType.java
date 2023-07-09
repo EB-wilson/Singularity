@@ -50,7 +50,7 @@ public class EmpLightningBulletType extends EmpBulletType{
   }
 
   public void draw(Bullet b, LightningContainer c){
-    Draw.color(b.type.hitColor);
+    Draw.color(hitColor);
     Draw.z(Layer.bullet);
     c.draw(b.x, b.y);
   }
@@ -64,7 +64,7 @@ public class EmpLightningBulletType extends EmpBulletType{
     super.removed(b);
 
     if(b.data instanceof LightningContainer c){
-      SglFx.lightningCont.at(b.x, b.y, 0, b.type.hitColor, c);
+      SglFx.lightningCont.at(b.x, b.y, 0, hitColor, c);
       Time.run(210, () -> Pools.free(c));
     }
   }

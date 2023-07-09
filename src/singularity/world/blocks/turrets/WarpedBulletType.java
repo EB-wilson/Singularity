@@ -23,7 +23,7 @@ public class WarpedBulletType extends BulletType{
   private final BulletType inst;
 
   public WarpedBulletType(@Annotations.EntrustInst BulletType inst){
-    this.inst = inst;
+    this.inst = ($Type)inst.copy();
 
     ObjectHandler.copyField(inst, this);
   }
@@ -31,6 +31,8 @@ public class WarpedBulletType extends BulletType{
   @Override
   public void init(){
     super.init();
+
+    ObjectHandler.copyFieldAsBlack(this, inst, "inst");
   }
 
   @Override
