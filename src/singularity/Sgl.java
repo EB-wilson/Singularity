@@ -5,11 +5,15 @@ import arc.Events;
 import arc.files.Fi;
 import arc.files.ZipFi;
 import arc.graphics.g2d.PixmapRegion;
+import arc.scene.ui.layout.Table;
+import arc.util.Log;
 import mindustry.Vars;
 import mindustry.game.EventType;
+import mindustry.ui.Styles;
 import mindustry.world.Block;
 import singularity.core.ModConfig;
 import singularity.core.ModsInteropAPI;
+import singularity.game.SglHint;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.ScreenSampler;
 import singularity.graphic.SglDrawConst;
@@ -21,6 +25,7 @@ import singularity.world.blocks.turrets.SglTurret;
 import singularity.world.distribution.DistSupportContainerTable;
 import singularity.world.unit.EMPHealthManager;
 import universecore.util.handler.ClassHandler;
+import universecore.util.handler.FieldHandler;
 import universecore.util.mods.ModGetter;
 import universecore.util.mods.ModInfo;
 
@@ -91,29 +96,44 @@ public class Sgl{
     //注册所有打包数据类型id
     BytePackAssign.assignAll();
 
-    ScreenSampler.setup();
-    //载入着色器
-    SglShaders.load();
-    //载入数学着色器
-    MathRenderer.load();
-    //加载绘制资源
-    SglDrawConst.load();
-    //载入风格
-    SglStyles.load();
-
-    ui = new SglUI();
     contributors = new Contributors();
-
     matrixContainers = new DistSupportContainerTable();
-
     empHealth = new EMPHealthManager();
 
+    if (!Core.app.isHeadless()) {
+      //设置屏幕采样器
+      ScreenSampler.setup();
+      //载入着色器
+      SglShaders.load();
+      //载入数学着色器
+      MathRenderer.load();
+      //加载绘制资源
+      SglDrawConst.load();
+      //载入风格
+      SglStyles.load();
+
+      ui = new SglUI();
+      ui.init();
+
+      int count = SglHint.all.size;
+      if (Sgl.config.loadInfo) Log.info("[Singularity][INFO] loading sgl hints, hints count: " + count);
+    }
+
     matrixContainers.setDefaultSupports();
-
-    empHealth.init();
-    ui.init();
-
     interopAPI.init();
+    empHealth.init();
+
+    //添加设置项入口
+    Vars.ui.settings.shown(() -> {
+      Table table = FieldHandler.getValueDefault(Vars.ui.settings, "menu");
+      table.button(
+          Core.bundle.get("settings.singularity"),
+          SglDrawConst.sglIcon,
+          Styles.flatt,
+          32,
+          () -> Sgl.ui.config.show()
+      ).marginLeft(8).row();
+    });
 
     Events.on(EventType.ClientLoadEvent.class, e -> interopAPI.updateModels());
 

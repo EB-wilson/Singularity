@@ -13,6 +13,7 @@ import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.math.geom.Vec2;
+import arc.scene.ui.layout.Table;
 import arc.util.Nullable;
 import arc.util.Time;
 import arc.util.Tmp;
@@ -26,6 +27,7 @@ import mindustry.gen.Icon;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
+import mindustry.ui.Styles;
 import mindustry.world.Tile;
 import mindustry.world.blocks.payloads.Payload;
 import mindustry.world.blocks.payloads.UnitPayload;
@@ -89,6 +91,8 @@ public class HoveringUnitFactory extends SglUnitFactory{
 
     @Nullable public Building currentOutputTarget;
 
+    private boolean configOutputting;
+
     @Override
     public Building init(Tile tile, Team team, boolean shouldAdd, int rotation) {
       super.init(tile, team, shouldAdd, rotation);
@@ -110,9 +114,21 @@ public class HoveringUnitFactory extends SglUnitFactory{
     }
 
     @Override
+    public void buildConfiguration(Table table) {
+      super.buildConfiguration(table);
+      table.button(Icon.upload, Styles.clearTogglei, 40, () -> configOutputting = !configOutputting)
+          .update(u -> u.setChecked(configOutputting)).size(56);
+    }
+
+    @Override
     public boolean onConfigureTapped(float x, float y) {
+      if (!configOutputting) return false;
+
       float dst = dst(x, y);
-      if (dst > outputRange) return false;
+      if (dst > outputRange){
+        configOutputting = false;
+        return false;
+      }
       else if (dst < size*tilesize/2f){
         payloadReleasePos.setZero();
         return true;
@@ -131,6 +147,8 @@ public class HoveringUnitFactory extends SglUnitFactory{
     @Override
     public void drawConfigure() {
       super.drawConfigure();
+      if (!configOutputting) return;
+
       if (outputRange > size*tilesize) Drawf.circles(x, y, outputRange, Pal.accent);
 
       if (Math.abs(payloadReleasePos.x) > size*tilesize/2f || Math.abs(payloadReleasePos.y) > size*tilesize/2f){

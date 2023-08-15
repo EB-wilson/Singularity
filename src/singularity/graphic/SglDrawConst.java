@@ -1,5 +1,6 @@
 package singularity.graphic;
 
+import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.style.Drawable;
@@ -35,6 +36,8 @@ public class SglDrawConst{
       showInfos, unShowInfos, showRange, hold, defaultShow,
       grayUI;
 
+  public static TextureRegion cursor;
+
   public static void load(){
     transparent = Singularity.getModDrawable("transparent");
     sglLaunchLogo = Singularity.getModDrawable("launch_logo");
@@ -62,6 +65,8 @@ public class SglDrawConst{
     showRange = Singularity.getModDrawable("show_range");
     hold = Singularity.getModDrawable("hold");
     defaultShow = Singularity.getModDrawable("default_show");
+
+    cursor = Singularity.getModAtlas("cursor");
 
     grayUI = ((TextureRegionDrawable) Tex.whiteui).tint(Tmp.c1.set(Pal.darkerGray).a(0.7f));
   }

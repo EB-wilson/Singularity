@@ -939,12 +939,12 @@ public class SglTurrets implements ContentList{
             };
           }};
 
-          fragBullet = lightning(60, 42, 4.8f, Pal.reactorPurple, true, b -> {
+          fragBullet = lightning(82, 25, 42, 4.8f, Pal.reactorPurple, b -> {
             Unit u = Units.closest(b.team, b.x, b.y, 80, e -> true);
             g.originAngle = u == null? b.rotation(): b.angleTo(u);
             return g;
           });
-          fragSpread = 0;
+          fragSpread = 25;
           fragOnHit = false;
         }
 

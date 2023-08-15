@@ -14,8 +14,10 @@ import arc.util.pooling.Pools;
 import mindustry.ctype.ContentType;
 import mindustry.game.Team;
 import mindustry.gen.Building;
+import mindustry.gen.Icon;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
+import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import singularity.Sgl;
@@ -150,7 +152,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   public class MatrixGridBuild extends DistNetBuild implements DistMatrixUnitBuildComp, SecondableConfigBuildComp{
     protected IntMap<TargetConfigure> configMap = new IntMap<>();
 
-    public boolean configIOPoint = false, shouldUpdateTask = true;
+    public boolean shouldUpdateTask = true;
 
     private boolean added;
     
@@ -190,6 +192,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           point.configTypes():
           new GridChildType[]{GridChildType.container};
       int off = Point2.pack(target.tileX() - tileX(), target.tileY() - tileY());
+      table.add().width(45);
       table.add(new DistTargetConfigTable(
           off,
           configMap.get(off),
@@ -200,6 +203,9 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           c -> configure(c.pack()),
           UncCore.secConfig::hideConfig
       ));
+      table.top().button(Icon.info, Styles.grayi, 32, () -> {
+
+      }).size(45).top();
     }
 
     private ContentType[] getAcceptType(Block block){
@@ -310,20 +316,13 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
   
     @Override
     public boolean onConfigureBuildTapped(Building other){
-      if(other == this){
-        configIOPoint = !configIOPoint;
-        return false;
-      }
-      else if(tileValid(other.tile) && gridValid()){
+      if(tileValid(other.tile) && gridValid()){
         if(configValid(other)){
           UncCore.secConfig.showOn(other);
         }
         return false;
       }
-      else{
-        configIOPoint = false;
-        return true;
-      }
+      else return true;
     }
   
     @Override

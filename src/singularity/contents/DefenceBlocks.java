@@ -265,13 +265,13 @@ public class DefenceBlocks implements ContentList{
         }
       }, new ShootPattern(){
         {
-          shots = 8;
+          shots = 4;
         }
 
         @Override
         public void shoot(int totalShots, BulletHandler handler){
           for(int i = 0; i < shots; i++){
-            handler.shoot(0, 0, i*45, 0);
+            handler.shoot(0, 0, i*90, 0);
           }
         }
       }));
@@ -401,7 +401,7 @@ public class DefenceBlocks implements ContentList{
           return damage*10;
         }
 
-        class Data implements Pool.Poolable{
+        static class Data implements Pool.Poolable{
           final LightningContainer container = new LightningContainer(){{
             maxWidth = 6;
             minWidth = 4;

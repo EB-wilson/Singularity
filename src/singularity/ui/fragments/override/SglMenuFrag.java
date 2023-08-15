@@ -245,7 +245,8 @@ public class SglMenuFrag extends MenuFragment{
 
     group.fill(c -> {
       c.visibility = () -> shown;
-      FieldHandler.setValueTemp(ui.menufrag, "container", c);
+      FieldHandler.setValueDefault(ui.menufrag, "container", c);
+      FieldHandler.decache(ui.menufrag.getClass());
       c.name = "menu container";
       MethodHandler.invokeTemp(this, mobile? "buildMobile": "buildDesktop");
       arc.Events.on(mindustry.game.EventType.ResizeEvent.class, event -> MethodHandler.invokeTemp(this, mobile? "buildMobile": "buildDesktop"));

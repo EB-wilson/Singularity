@@ -153,7 +153,6 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
     
     protected int nextPos = -1;
     protected boolean loaded;
-    protected float alpha;
 
     protected IntMap<float[]> childLinkWarmup = new IntMap<>();
 
@@ -175,8 +174,6 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
       for(float[] a: childLinkWarmup.values()){
         a[0] = Mathf.lerpDelta(a[0], 1, 0.02f);
       }
-      
-      alpha = Mathf.lerpDelta(alpha, configIOPoint? 1: 0, 0.02f);
 
       super.updateTile();
     }
@@ -323,15 +320,7 @@ public class MatrixGridCore extends MatrixGridBlock implements EdgeLinkerComp{
   
     @Override
     public void drawValidRange(){
-      if(edges.isClosure() && alpha > 0.001f){
-        Color color = gridValid()? Pal.accent: Pal.redderDust;
-        Lines.stroke(1.2f, color);
-        Draw.alpha(alpha);
-        Lines.poly(vertices, 0f, 0f, 1f);
-        Draw.color(color);
-        Draw.alpha(alpha*(0.2f + 0.25f*Mathf.absin(6f, 1)));
-        Fill.poly(verticesSeq);
-      }
+      //TODO: draw it
     }
   
     @Override

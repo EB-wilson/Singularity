@@ -34,7 +34,6 @@ import mindustry.ai.UnitCommand;
 import mindustry.core.UI;
 import mindustry.entities.Units;
 import mindustry.gen.Icon;
-import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.type.ItemStack;
 import mindustry.type.PayloadStack;
@@ -823,7 +822,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
         tab.row();
 
         tab.add(new Bar(
-            executing ? () -> Core.bundle.format("bar.progress", Strings.autoFixed(currConfig.progress()*100, 2)) : () -> Core.bundle.get("infos.waiting"),
+            executing ? () -> Core.bundle.format("bar.numprogress", Strings.autoFixed(currConfig.progress()*100, 2)) : () -> Core.bundle.get("infos.waiting"),
             () -> Pal.powerBar,
             executing ? currConfig::progress : () -> 0
         )).height(25).growX();

@@ -7,7 +7,6 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
-import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Button;
 import arc.scene.ui.layout.Collapser;
 import arc.scene.ui.layout.Table;
@@ -17,7 +16,6 @@ import arc.struct.ObjectSet;
 import arc.util.Scaling;
 import arc.util.Strings;
 import arc.util.Structs;
-import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import arc.util.pooling.Pool;
@@ -31,7 +29,6 @@ import mindustry.entities.Units;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Icon;
-import mindustry.gen.Tex;
 import mindustry.gen.Unit;
 import mindustry.graphics.Pal;
 import mindustry.mod.Mods;
@@ -83,18 +80,18 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
     * 通常条目的格式：
     * ...
     * "unitFactoryCosts": {
-    *   "$unitTypeName": [//选中单位的内部名称，mod名称前缀可选，默认选择本mod中的content，一般不建议跨mod配置单位数据
-    *     {"$itemName": #},//键值对式声明，有且只能有一对键值对，键为物品名称，值为数量
-    *     ["$itemName", #],//数组式声明，第一个元素为物品名称，第二个元素为数量
-    *     "$itemName/#",//字符串声明模式，将物品名称和数量用‘/’进行连接
-    *     ...
-    *   ],
-    *   "$unitTypeName": [
-    *     {"$itemName": #},
-    *     ["$itemName", #],
-    *     "$itemName/#",
-    *     ...
-    *   ],
+    *   "$unitTypeName": {//选中单位的内部名称，mod名称前缀可选，默认选择本mod中的content，一般不建议跨mod配置单位数据
+    *     "requirements": {"$itemName": #, "$itemName": #, ...},//键值对式声明，键为物品名称，值为数量
+    *     //或者 "requirements": ["$itemName", #, "$itemName", #, ...],//数组式声明，第一个元素为物品名称，第二个元素为数量，以此类推
+    *     //亦或者 ": ["$itemName/#", "$itemName/#", ...],//字符串声明模式，将物品名称和数量用‘/’进行连接
+    *     "minLevel": #, //需要的工厂制造等级
+    *     "baseBuildTime": # //基础建造时间
+    *   },
+    *   "$unitTypeName": {
+    *     "requirements": {"$itemName": #, ...},
+    *     "minLevel": #,
+    *     "baseBuildTime": #
+    *   },
     *   ...
     * }
     * ...
@@ -327,7 +324,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
     super.setBars();
 
     addBar("progress", (SglUnitFactoryBuild entity) -> new Bar(
-        () -> Core.bundle.format("bar.progress", Strings.autoFixed(entity.progress()*100, 1)),
+        () -> Core.bundle.format("bar.numprogress", Strings.autoFixed(entity.progress()*100, 1)),
         () -> Pal.ammo,
         entity::progress)
     );

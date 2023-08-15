@@ -386,6 +386,7 @@ public class SglFx{
     Drawf.light(e.x, e.y, e.fin() * 16f, Pal.heal, 0.7f);
   }).rotWithParent(true).followParent(true);
 
+  public final static Effect explodeImpWaveMini = impactExplode(16, 36f);
   public final static Effect explodeImpWaveSmall = impactExplode(22, 40f);
 
   public final static Effect explodeImpWave = impactExplode(32, 50f);
@@ -470,6 +471,11 @@ public class SglFx{
       });
     });
   }));
+
+  public final static Effect weaveTrail = new Effect(12, e -> {
+    Draw.color(e.color, Color.white, e.fin());
+    SglDraw.drawDiamond(e.x, e.y, 15 + 45*e.fin(), 8*e.fout(), e.rotation + 90);
+  });
 
   public final static Effect steam = new Effect(90, e -> {
     Vec2 motion = e.data() instanceof Vec2 ? e.data() : new Vec2(0, 0);
@@ -957,6 +963,36 @@ public class SglFx{
     randLenVectors(e.id, randomSeed(e.id, 15, 20), 92, (x, y) -> {
       float size = randomSeed((int) (e.id + x), 18, 26);
       SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, size, size*0.23f*e.fout(), Mathf.angle(x, y));
+    });
+
+    e.scaled(45, ef -> {
+      Angles.randLenVectors(e.id, 6, 25, 94, (x, y) -> {
+        float le = ef.fin(Interp.pow3Out);
+        float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.6f, 0.8f);
+        SglDraw.drawDiamond(e.x + x*le, e.y + y*le, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
+      });
+    });
+
+    e.scaled(56, ef -> {
+      Angles.randLenVectors(e.id*2L, 7, 20, 82, (x, y) -> {
+        float le = ef.fin(Interp.pow3Out);
+        float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.7f, 0.9f);
+        SglDraw.drawDiamond(e.x + x*le, e.y + y*le, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
+      });
+    });
+
+    e.scaled(75, ef -> {
+      Angles.randLenVectors(e.id*3L, 8, 14, 69, (x, y) -> {
+        float le = ef.fin(Interp.pow3Out);
+        float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.9f, 1f);
+        SglDraw.drawDiamond(e.x + x*le, e.y + y*le, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
+      });
+
+      Lines.stroke(3*ef.fout());
+      randLenVectors(e.id*4L, ef.finpow() + 0.001f, 48, 102, (dx, dy, in, out) -> {
+        lineAngle(e.x + dx, e.y + dy, Mathf.angle(dx, dy), 4 + out*34f);
+        Drawf.light(e.x + dx, e.y + dy, out*96, Draw.getColor(), 0.8f);
+      });
     });
   });
 

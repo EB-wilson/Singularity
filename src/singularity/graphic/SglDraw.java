@@ -14,6 +14,7 @@ import arc.math.geom.Vec3;
 import arc.util.Nullable;
 import arc.util.Time;
 import arc.util.Tmp;
+import mindustry.core.Renderer;
 import mindustry.game.EventType;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
@@ -220,7 +221,7 @@ public class SglDraw{
    * @param obj 传递给绘制任务的数据对象
    * @param draw 绘制任务*/
   public static <T> void drawBloom(int taskID, T obj, DrawAcceptor<T> draw){
-    if (!settings.getBool("bloom", false)){
+    if (!settings.getBool("bloom")){
       draw.draw(obj);
       return;
     }
@@ -235,7 +236,7 @@ public class SglDraw{
     }
     drawTask(taskID, obj, bloom, e -> {
       e.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-      e.setBloomIntesity(settings.getInt("bloomintensity", 6) / 4f + 1f);
+      e.setBloomIntensity(settings.getInt("bloomintensity", 6) / 4f + 1f);
       e.blurPasses = settings.getInt("bloomblur", 1);
       e.capture();
     }, Bloom::render, draw);
@@ -264,7 +265,7 @@ public class SglDraw{
 
     drawTask(taskID, bloom, e -> {
       e.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-      e.setBloomIntesity(settings.getInt("bloomintensity", 6) / 4f + 1f);
+      e.setBloomIntensity(settings.getInt("bloomintensity", 6) / 4f + 1f);
       e.blurPasses = settings.getInt("bloomblur", 1);
       e.capture();
     }, Bloom::render, draw);

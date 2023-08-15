@@ -6,7 +6,9 @@
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/UniverseCore/annotations/1.8.2/annotations-1.8.2.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/UniverseCore/annotations/1.8.5/annotations-1.8.5.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/JavaDynamilizer/apt/V1.8-A2/apt-V1.8-A2.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/JavaDynamilizer/annotations/V1.8-A2/annotations-V1.8-A2.jar" />
         </processorPath>
         <module name="Singularity.main" />
       </profile>

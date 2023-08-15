@@ -37,8 +37,6 @@ public class EnergySource extends NuclearNode {
     @Override
     public void updateTile(){
       energy.set(outputEnergy);
-      
-      dumpEnergy();
 
       super.updateTile();
     }

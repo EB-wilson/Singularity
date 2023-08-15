@@ -22,7 +22,7 @@ public class LightLaserBulletType extends EmpLightningBulletType{
   public Effect laserEffect = Fx.lancerLaserShootSmoke;
   public float length = 80;
   public float innerScl = 0.75f, edgeScl = 1.2f;
-  public float innerWidth = 3, width = 8, edgeWidth = 12;
+  public float innerWidth = 3, width = 6, edgeWidth = 10;
 
   public Color[] colors = {Pal.lancerLaser.cpy().mul(1f, 1f, 1f, 0.4f), Pal.lancerLaser, Color.white};
 
@@ -33,6 +33,8 @@ public class LightLaserBulletType extends EmpLightningBulletType{
     maxInterval = 12;
     maxSpread = 9;
   }};
+  public float lightningMinWidth = 1.8f;
+  public float lightningMaxWidth = 2.75f;
 
   public LightLaserBulletType(){
     speed = 0;
@@ -66,8 +68,8 @@ public class LightLaserBulletType extends EmpLightningBulletType{
     c.lifeTime = lifetime;
     c.time = lightningTime;
     c.lerp = Interp.linear;
-    c.minWidth = 1.8f;
-    c.maxWidth = 2.75f;
+    c.minWidth = lightningMinWidth;
+    c.maxWidth = lightningMaxWidth;
 
     Damage.collideLaser(b, range, false, true, -1);
     laserEffect.at(b.x, b.y, b.rotation(), b.fdata * 0.75f);

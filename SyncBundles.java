@@ -1,6 +1,7 @@
 import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import java.text.DateFormat;
 import java.util.Date;
@@ -28,7 +29,7 @@ public class SyncBundles{
     Properties sourceBundle = new Properties();
     sourceBundle.read(source);
 
-    handleSource(sourceBundle, args);
+    handleHeader(sourceBundle, sourceLocale, args);
 
     sourceBundle.write(source);
     for(int i = 0; i < locales.length; i += 2){
@@ -36,12 +37,13 @@ public class SyncBundles{
       File file = new File(bundlesDir, "bundle" + (locale.isBlank() ? "": "_" + locale) + ".properties");
       Properties bundle = new Properties(sourceBundle, mark);
       if(file.exists()) bundle.read(file);
+      handleHeader(bundle, locale, args);
       bundle.write(file);
     }
   }
 
-  public static void handleSource(Properties source, String... args){
-    source.put("mod.updateDate", DateFormat.getDateInstance().format(new Date()), 0);
+  public static void handleHeader(Properties source, String locTag, String... args){
+    source.put("mod.updateDate", DateFormat.getDateInstance(DateFormat.DEFAULT, Locale.forLanguageTag(locTag.replace("_", "-"))).format(new Date()), 0);
 
     source.put("mod.version", args[0], 0);
   }

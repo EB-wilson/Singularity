@@ -14,6 +14,7 @@ import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
+import mindustry.core.UI;
 import mindustry.gen.Icon;
 import mindustry.gen.Unit;
 import mindustry.graphics.g3d.PlanetParams;
@@ -23,6 +24,7 @@ import mindustry.ui.dialogs.BaseDialog;
 import mindustry.world.meta.StatUnit;
 import singularity.Sgl;
 import singularity.core.UpdatePool;
+import singularity.game.SglHint;
 import singularity.graphic.Blur;
 import singularity.graphic.SglDrawConst;
 import singularity.graphic.renders.SglPlanetRender;
@@ -318,7 +320,14 @@ public class SglUI{
             () -> Sgl.config.statusSize,
             10, 40, 1
         ),
-        new ConfigCheck("showStatusTime", b -> Sgl.config.showStatusTime = b, () -> Sgl.config.showStatusTime)
+        new ConfigCheck("showStatusTime", b -> Sgl.config.showStatusTime = b, () -> Sgl.config.showStatusTime),
+        new ConfigSepLine("data", Core.bundle.get("settings.data")),
+        new ConfigButton("resetModHint", () -> new TextButton(Core.bundle.get("settings.reset"), Styles.flatt){{
+          clicked(() -> Vars.ui.showConfirm(Core.bundle.get("settings.resetHintsConfirm"), SglHint::resetCompletedHints));
+        }}),
+        new ConfigButton("resetAllHint", () -> new TextButton(Core.bundle.get("settings.reset"), Styles.flatt){{
+          clicked(() -> Vars.ui.showConfirm(Core.bundle.get("settings.resetAllHintsConfirm"), SglHint::resetAllCompletedHints));
+        }})
     );
     config.addConfig("graphic", Icon.image,
         new ConfigSepLine("uiView", Core.bundle.get("misc.uiView")),

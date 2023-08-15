@@ -226,7 +226,7 @@ public class NuclearBlocks implements ContentList{
           new SizeVelRelatedParticle(),
           new TargetMoveParticle(){{
             dest = p -> p.getVar("dest");
-            deflection = p -> p.getVar("eff");
+            deflection = p -> p.getVar("eff", 0f);
           }},
           new RandDeflectParticle(){{
             deflectAngle = 0;

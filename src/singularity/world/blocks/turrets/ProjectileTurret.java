@@ -45,7 +45,7 @@ public class ProjectileTurret extends SglTurret{
   public void setBars(){
     super.setBars();
     addBar("coatings", (ProjectileTurretBuild e) -> new Bar(
-        () -> "< " + (e.coatCursor <= 0? "EMPTY" : coatings.get(e.currentAmmoCons[e.coatCursor - 1])) + " >",
+        () -> "< " + (e.coatCursor <= 0? "EMPTY" : coatings.get(e.currentAmmoCons[e.coatCursor - 1]).name) + " >",
         () -> e.coatCursor <= 0? Pal.bar: coatings.get(e.currentAmmoCons[e.coatCursor - 1]).color,
         () -> (float) e.coatCursor/maxBufferCoatings
     ));

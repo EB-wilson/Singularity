@@ -18,6 +18,7 @@ import arc.struct.OrderedMap;
 import arc.struct.Seq;
 import arc.util.Align;
 import arc.util.Strings;
+import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -50,6 +51,10 @@ public class ModConfigDialog extends BaseDialog{
     titleTable.clear();
 
     addCloseButton();
+    buttons.button(Core.bundle.get("misc.recDefault"), Icon.redo, () -> {
+      ui.showConfirm(Core.bundle.get("infos.confirmResetConfig"), () -> Sgl.config.reset());
+    });
+
     hidden(() -> {
       Sgl.config.save();
 

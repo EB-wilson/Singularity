@@ -23,6 +23,8 @@ import universecore.UncCore;
 import universecore.annotations.Annotations;
 import universecore.util.OverrideContentList;
 
+import java.util.Locale;
+
 import static mindustry.game.EventType.*;
 
 @Annotations.ImportUNC(requireVersion = "1.8.2")
@@ -85,11 +87,11 @@ public class Singularity extends Mod{
   
   @Override
   public void init(){
-    //加载全局变量
-    Sgl.init();
-
     //游戏本体更改初始化
     Init.init();
+
+    //加载全局变量
+    Sgl.init();
 
     initialized = true;
 

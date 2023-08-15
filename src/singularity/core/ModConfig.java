@@ -106,7 +106,7 @@ public class ModConfig{
     else{
       if(!load(Sgl.configFile)){
         Fi backup;
-        Sgl.configFile.copyTo(backup = Sgl.configDirectory.child("mod_config.hjson.backup"));
+        Sgl.configFile.copyTo(backup = Sgl.configDirectory.child("mod_config.hjson.bak"));
         Sgl.internalConfigDir.child("mod_config.hjson").copyTo(Sgl.configFile);
         Log.info("default configuration file version updated, eld config should be override(backup file for old file was created)");
         load(Sgl.configFile);
@@ -311,6 +311,14 @@ public class ModConfig{
   private static <T> T firstEnum(Class<T> type){
     if(!type.isEnum()) throw new RuntimeException("class " + type + " was not an enum");
     return MethodHandler.invokeDefault(type, "values");
+  }
+
+  public void reset() {
+    Sgl.configFile.copyTo(Sgl.configDirectory.child("mod_config.hjson.bak"));
+    Sgl.configFile.delete();
+
+    Log.info("[Singularity][INFO] mod config has been reset, old config file saved to file named \"mod_config.hjson.bak\"");
+    load();
   }
 
   @Retention(RetentionPolicy.RUNTIME)

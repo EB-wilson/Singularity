@@ -17,12 +17,17 @@ import singularity.world.distribution.request.DistRequestBase;
 import universecore.util.Empties;
 import universecore.util.colletion.TreeSeq;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 
 public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp> implements Iterable<DistElementBuildComp>{
+  public static final OrderedSet<DistributeNetwork> activityNetwork = new OrderedSet<>();
+
   private static final ObjectSet<DistElementBuildComp> tmp = new ObjectSet<>();
   public static final DistElementBuildComp[] EMP_ARR = new DistElementBuildComp[0];
 
+  public OrderedSet<DistElementBuildComp> allElem = new OrderedSet<>();
   public TreeSeq<DistElementBuildComp> elements = new TreeSeq<>((a, b) -> b instanceof DistNetworkCoreComp? 1: b.priority() - a.priority());
   public OrderedSet<DistElementBuildComp> energyBuffer = new OrderedSet<>();
   private DistElementBuildComp[] elementsIterateArr;
@@ -90,6 +95,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
     if(other == null || other.distributor().network == this) return;
 
     elements.add(other);
+    allElem.add(other);
     if(other.getDistBlock().matrixEnergyCapacity() > 0) energyBuffer.add(other);
     if(other instanceof DistComponent c) components.add(c);
     if(other instanceof DistNetworkCoreComp d) cores.add(d);
@@ -127,6 +133,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
       for(DistElementBuildComp element: elementsIterateArr){
         element.networkValided();
       }
+      activityNetwork.add(this);
     }
 
     if(structUpdated){
@@ -215,7 +222,9 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   }
 
   public void flow(DistElementBuildComp origin, ObjectSet<DistElementBuildComp> excl){
+    activityNetwork.remove(this);
     elements.clear();
+    allElem.clear();
     grids.clear();
     cores.clear();
     components.clear();
@@ -224,6 +233,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   }
 
   private void restruct(DistElementBuildComp origin, ObjectSet<DistElementBuildComp> excl){
+    activityNetwork.remove(this);
     excluded.clear();
     excluded.addAll(excl);
     lock = true;
@@ -234,6 +244,8 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   }
 
   public void remove(DistElementBuildComp remove){
+    activityNetwork.remove(this);
+
     for(DistElementBuildComp element: elementsIterateArr){
       element.networkRemoved(remove);
     }
@@ -251,7 +263,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   }
   
   public void priorityModified(DistElementBuildComp target){
-    if(elements.remove(target)){
+    if(allElem.contains(target) && elements.remove(target)){
       elements.add(target);
       elementsIterateArr = elements.toArray(EMP_ARR);
     }
