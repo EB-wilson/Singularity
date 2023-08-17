@@ -46,7 +46,6 @@ dependencies{
   compileOnly "com.github.EB-wilson.UniverseCore:dynamilizer:$uncVersion"
   compileOnly "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
 
-  implementation 'org.commonmark:commonmark:0.20.0'
   implementation "com.github.EB-wilson.JavaDynamilizer:annotations:V1.8-A2"
 
   annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"

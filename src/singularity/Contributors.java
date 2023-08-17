@@ -9,6 +9,8 @@ import arc.struct.Seq;
 import arc.util.Http;
 import arc.util.Log;
 import arc.util.serialization.Jval;
+import singularity.graphic.GraphicUtils;
+import universecore.util.UrlDownloader;
 
 public class Contributors{
   private final static Jval contList = Jval.read(Sgl.modFile.child("contributors.hjson").reader());
@@ -56,27 +58,7 @@ public class Contributors{
       this.name = name;
       this.contribute = contribute;
       
-      this.avatar = new TextureRegion(Core.atlas.find("nomap"));
-  
-      int[] counter = {0};
-      Runnable[] get = new Runnable[1];
-      get[0] = () -> Http.get(Sgl.githubUserAvatars + name, res -> {
-        Pixmap pix = new Pixmap(res.getResult());
-        Core.app.post(() -> {
-          try{
-            Texture tex = new Texture(pix);
-            tex.setFilter(Texture.TextureFilter.linear);
-            avatar.set(tex);
-            pix.dispose();
-          }catch(Exception e){
-            Log.err(e);
-          }
-        });
-      }, e -> {
-        if(counter[0]++ <= 6) get[0].run();
-      });
-      
-      get[0].run();
+      this.avatar = UrlDownloader.downloadImg(Sgl.githubUserAvatars + name, Core.atlas.find("nomap"));
     }
   }
 }

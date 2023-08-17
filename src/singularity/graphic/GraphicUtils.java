@@ -1,7 +1,14 @@
 package singularity.graphic;
 
+import arc.Core;
 import arc.graphics.Pixmap;
+import arc.graphics.Texture;
+import arc.graphics.g2d.TextureAtlas;
+import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
+import arc.util.Http;
+import arc.util.Log;
+import singularity.Sgl;
 
 /**包含了一些在图形绘制时会用到的实用方法*/
 public class GraphicUtils{
