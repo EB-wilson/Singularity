@@ -34,7 +34,7 @@ public class SglDrawConst{
 
       qqIcon, telegramIcon,
       showInfos, unShowInfos, showRange, hold, defaultShow,
-      grayUI;
+      grayUI, padGrayUI;
 
   public static TextureRegion cursor;
 
@@ -69,5 +69,10 @@ public class SglDrawConst{
     cursor = Singularity.getModAtlas("cursor");
 
     grayUI = ((TextureRegionDrawable) Tex.whiteui).tint(Tmp.c1.set(Pal.darkerGray).a(0.7f));
+    padGrayUI = ((TextureRegionDrawable) Tex.whiteui).tint(Tmp.c1.set(Pal.darkerGray).a(0.7f));
+    padGrayUI.setLeftWidth(8);
+    padGrayUI.setRightWidth(8);
+    padGrayUI.setTopHeight(8);
+    padGrayUI.setBottomHeight(8);
   }
 }

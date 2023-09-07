@@ -17,7 +17,6 @@ public class EnergySource extends NuclearNode {
     energyCapacity = 8192;
     outputEnergy = true;
     consumeEnergy = false;
-    energyBuffered = true;
     configurable = true;
     saveConfig = true;
     noUpdateDisabled = true;

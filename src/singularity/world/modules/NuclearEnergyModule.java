@@ -39,7 +39,6 @@ public class NuclearEnergyModule extends BlockModule {
   }
 
   public final NuclearEnergyBuildComp entity;
-  public final boolean buffered;
   
   private float added;
   private final WindowedMean moveMean = new WindowedMean(6);
@@ -50,9 +49,8 @@ public class NuclearEnergyModule extends BlockModule {
   
   public float displayMoving = 0f;
   
-  public NuclearEnergyModule(NuclearEnergyBuildComp entity, boolean buffered){
+  public NuclearEnergyModule(NuclearEnergyBuildComp entity){
     this.entity = entity;
-    this.buffered = buffered;
   }
 
   public void stopFlow() {

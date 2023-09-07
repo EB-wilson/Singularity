@@ -307,6 +307,7 @@ public class SglFx{
       Lines.circle(x, y, 55* fout);
 
       SglDraw.gradientCircle(x, y, size*lerp, -size*lerp*fout, 1);
+      Draw.reset();
     });
 
     Draw.z(Layer.flyingUnit + 1);
@@ -364,6 +365,7 @@ public class SglFx{
       SglDraw.drawBloomUponFlyUnit(b, bu -> {
         Lines.stroke(2.6f*bu.workEfficiency()*fout);
         Lines.circle(x, y, r*fout);
+        Draw.reset();
       });
     }
   });
@@ -585,6 +587,7 @@ public class SglFx{
       randLenVectors(id, 22, 4f*fin, 12f, (x, y) -> {
         lineAngle(ex + x, ey + y, Mathf.angle(x, y), fs*2.2f);
       });
+      Draw.reset();
     });
   });
 
@@ -675,6 +678,7 @@ public class SglFx{
 
         SglDraw.drawDiamond(x + dx*lerp, y + dy*lerp, size, size*(1 - pow(fin, 2))*0.35f, Mathf.angle(dx, dy));
       });
+      Draw.reset();
     });
   });
 
@@ -1104,6 +1108,7 @@ public class SglFx{
           float s = randomSeed((int) (id + dx), 4f, 8f);
           Fill.circle(x + dx* fin, y + dy* fin, s*fout);
         });
+        Draw.reset();
       };
 
       if(heightBloom){

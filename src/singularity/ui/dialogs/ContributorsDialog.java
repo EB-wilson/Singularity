@@ -2,8 +2,11 @@ package singularity.ui.dialogs;
 
 import arc.Core;
 import arc.scene.event.Touchable;
+import arc.scene.style.Drawable;
+import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
+import arc.util.Time;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.dialogs.BaseDialog;
@@ -15,7 +18,7 @@ import singularity.graphic.SglDrawConst;
 import universecore.ui.table.ZoomableTable;
 
 public class ContributorsDialog extends BaseDialog{
-  protected Table table = new ZoomableTable();
+  protected ZoomableTable table = new ZoomableTable();
   
   public ContributorsDialog(){
     super("");
@@ -30,16 +33,25 @@ public class ContributorsDialog extends BaseDialog{
     addCloseButton();
     
     touchable = Touchable.enabled;
-  
+
     table.table(table -> {
       table.defaults().pad(8);
-      
+
+      table.table(Tex.underline, t -> {
+        t.left().defaults().left().fill();
+        t.add(Core.bundle.get("dialog.contributors.info"));
+        t.row();
+        t.add(Core.bundle.get("dialog.contributors.special")).color(Pal.accent);
+      }).growX();
+      table.row();
       table.table(cons -> {
         cons.defaults().pad(8).padLeft(8).padRight(8);
         for(Contribute contribute: Contribute.values()){
+          if (contribute == Contribute.author) continue;
+
           cons.table(Tex.buttonTrans, t -> {
-            t.defaults().center().top().pad(16).padTop(12);
-            t.image(contribute == Contribute.author? SglDrawConst.sglIcon: Singularity.getModDrawable(contribute.name())).size(64);
+            t.top().defaults().center().top().pad(16).padTop(12);
+            t.image(Singularity.<Drawable>getModDrawable(contribute.name())).size(64);
             t.row();
             t.add(contribute.localize()).padTop(6);
             t.row();
@@ -51,18 +63,24 @@ public class ContributorsDialog extends BaseDialog{
           }).fillY();
         }
       });
-    }).get();
+      table.row();
+      table.left().add(Core.bundle.get("dialog.contributors.thanks")).fill().left();
+    });
   }
   
   protected static class ContributorTable extends Table{
+    static float tapTime;
+
     public ContributorTable(Contributors.Contributor contributor){
-      image(contributor.avatar).size(180);
+      image(contributor.avatar).size(180).get().addListener(new Tooltip(t -> t.table(Tex.paneLeft).get().add(Core.bundle.get("infos.clickToPage") + "\nhttps://github.com/" + contributor.name)));
       row();
       add(contributor.displayName).color(Pal.accent).fill();
 
       touchable = Touchable.enabled;
+
+      tapped(() -> tapTime = Time.time);
       clicked(() -> {
-        Core.app.openURI("https://github.com/" + contributor.name);
+        if (Time.time - tapTime < 30) Core.app.openURI("https://github.com/" + contributor.name);
       });
     }
   }

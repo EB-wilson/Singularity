@@ -285,6 +285,7 @@ public class CrafterBlocks implements ContentList{
                   drawCell.get(build);
                   Draw.alpha(0.75f*(build.liquids.get(Liquids.water)/cap));
                   Draw.rect(Blocks.water.region, build.x, build.y);
+                  Draw.reset();
                 }
               }
             },
@@ -1844,6 +1845,8 @@ public class CrafterBlocks implements ContentList{
                   Drawf.tri(b.x + Tmp.v2.x, b.y + Tmp.v2.y, 4*b.workEfficiency(), 4, Tmp.v2.angle());
                   Drawf.tri(b.x + Tmp.v2.x, b.y + Tmp.v2.y, 3*b.workEfficiency(), 3, Tmp.v2.angle() + 180);
                 }
+
+                Draw.reset();
               });
 
               if(e.timer(timeId, 15/e.workEfficiency())){
@@ -1911,7 +1914,7 @@ public class CrafterBlocks implements ContentList{
             lerp = Interp.pow2Out;
 
             maxSpread = 8f;
-            minInterval = 8f;
+            minInterval = 5f;
             maxInterval = 12f;
           }};
         }});

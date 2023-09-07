@@ -61,6 +61,7 @@ import java.text.Collator;
 import java.util.Comparator;
 
 import static mindustry.Vars.ui;
+import static singularity.world.blocks.product.SglUnitFactory.ConfigCmd.*;
 
 public class UnitFactoryCfgDialog extends BaseDialog {
   SglUnitFactory.SglUnitFactoryBuild currConfig;
@@ -163,7 +164,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
 
             PayloadStack[] payloads = prod.get(ProduceType.payload) == null ? null : prod.get(ProduceType.payload).payloads;
             if (payloads != null && payloads.length == 1 && payloads[0].item instanceof UnitType unit) {
-              if (searching.trim().length() != 0 && !(unit.name.contains(searching.trim()) || unit.localizedName.contains(searching.trim())))
+              if (!searching.trim().isEmpty() && !(unit.name.contains(searching.trim()) || unit.localizedName.contains(searching.trim())))
                 continue;
 
               int index = currConfig.block().consumers.indexOf(cons);
@@ -269,7 +270,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
                                       Actions.alpha(0, 0.8f)
                                   );
                                 } else {
-                                  currConfig.configure(IntSeq.with(1, unit.id, amount, index));
+                                  currConfig.configure(cfgArgs(ADD_TASK, unit.id, amount, index));
                                   rebuild(currConfig);
 
                                   hide();
@@ -379,7 +380,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
         }
       }, Styles.grayt, () -> {
         if (currConfig == null) return;
-        currConfig.configure(IntSeq.with(5, currConfig.activity ? -1 : 1));
+        currConfig.configure(cfgArgs(ACTIVITY, currConfig.activity ? -1 : 1));
       }).update(t -> {
         if (currConfig == null) return;
         t.setText(Core.bundle.get(currConfig.activity ? "misc.stop" : "misc.execute"));
@@ -453,7 +454,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
       Table buttons = new Table(SglDrawConst.grayUI, tab -> {
         tab.table(cmds -> commandCfgTab = cmds).pad(5).fill();
         tab.button(Icon.ok, Styles.clearNonei, () -> {
-          currConfig.configure(IntSeq.with(9, currConfig.indexOfTask(configCmdTask),
+          currConfig.configure(cfgArgs(COMMAND, currConfig.indexOfTask(configCmdTask),
               (int) (configuringPos.x*1000), (int) (configuringPos.y*1000),
               UnitCommand.all.indexOf(configCmdTask.command)
           ));
@@ -629,7 +630,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
       t.field(String.valueOf(pri), TextField.TextFieldFilter.digitsOnly, num -> pri = Integer.parseInt(num)).growX();
     });
     status.row();
-    status.button(Core.bundle.get("misc.sure"), Icon.ok, Styles.grayt, () -> factory.configure(IntSeq.with(2, pri))).height(38).growX()
+    status.button(Core.bundle.get("misc.sure"), Icon.ok, Styles.grayt, () -> factory.configure(cfgArgs(SET_PRIORITY, pri))).height(38).growX()
         .disabled(b -> pri == factory.priority).update(b -> {
           if (pri != factory.priority) {
             if (fold) {
@@ -720,15 +721,15 @@ public class UnitFactoryCfgDialog extends BaseDialog {
         }
       }
       Time.run(delays*60 + 36f, () -> {
-        factory.configure(IntSeq.with(0));
+        factory.configure(cfgArgs(CLEAR_TASK));
         rebuild(factory);
       });
     }).margin(6).disabled(b -> factory.getCurrentTask() == null);
     sideButton.row();
-    sideButton.check("", factory.queueMode, b -> factory.configure(IntSeq.with(3, b ? 1 : -1)))
+    sideButton.check("", factory.queueMode, b -> factory.configure(cfgArgs(QUEUE_MODE, b ? 1 : -1)))
         .update(l -> l.setText(Core.bundle.get(factory.queueMode ? "dialog.unitFactor.queueMode" : "dialog.unitFactor.stackMode"))).get().left();
     sideButton.row();
-    sideButton.check(Core.bundle.get("dialog.unitFactor.skipBlocked"), factory.skipBlockedTask, b -> factory.configure(IntSeq.with(4, b ? 1 : -1))).get().left();
+    sideButton.check(Core.bundle.get("dialog.unitFactor.skipBlocked"), factory.skipBlockedTask, b -> factory.configure(cfgArgs(SKIP_BLOCKED, b ? 1 : -1))).get().left();
   }
 
   public void show(SglUnitFactory.SglUnitFactoryBuild factory) {
@@ -762,11 +763,11 @@ public class UnitFactoryCfgDialog extends BaseDialog {
             top.table(button -> {
               button.defaults().size(42);
               button.button(Icon.upOpen, Styles.clearNonei, 28, () -> {
-                currConfig.configure(IntSeq.with(7, currConfig.indexOfTask(task)));
+                currConfig.configure(cfgArgs(RISE_TASK, currConfig.indexOfTask(task)));
                 rebuild(currConfig);
               }).disabled(b -> task.pre == null || (currConfig.activity && task.pre == currConfig.getCurrentTask()));
               button.button(Icon.downOpen, Styles.clearNonei, 28, () -> {
-                currConfig.configure(IntSeq.with(8, currConfig.indexOfTask(task)));
+                currConfig.configure(cfgArgs(DOWN_TASK, currConfig.indexOfTask(task)));
                 rebuild(currConfig);
               }).disabled(b -> task.next == null || (currConfig.activity && task == currConfig.getCurrentTask()));
               button.button(Icon.settings, Styles.clearNonei, 28, () -> {
@@ -780,7 +781,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
               });
               button.button(Icon.cancel, Styles.clearNonei, 28, () -> {
                 if (executing) {
-                  currConfig.configure(IntSeq.with(6, currConfig.indexOfTask(task)));
+                  currConfig.configure(cfgArgs(REMOVE_TASK, currConfig.indexOfTask(task)));
                 } else {
                   mark[0].clearActions();
                   mark[0].actions(
@@ -846,6 +847,12 @@ public class UnitFactoryCfgDialog extends BaseDialog {
         }
       });
     }
+  }
+
+  private static IntSeq cfgArgs(SglUnitFactory.ConfigCmd cmd, int... args){
+    IntSeq res = IntSeq.with(cmd.ordinal());
+    res.addAll(args);
+    return res;
   }
 
   public static String timeFormat(float ticks) {

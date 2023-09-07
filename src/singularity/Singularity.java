@@ -5,6 +5,7 @@ import arc.Events;
 import arc.files.Fi;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.style.Drawable;
+import arc.struct.ObjectMap;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.ctype.Content;
@@ -25,6 +26,8 @@ import universecore.UncCore;
 import universecore.annotations.Annotations;
 import universecore.ui.elements.markdown.Markdown;
 import universecore.util.OverrideContentList;
+
+import java.util.Locale;
 
 import static mindustry.game.EventType.*;
 
@@ -74,84 +77,6 @@ public class Singularity extends Mod{
     if(Sgl.config.showModMenuWenLaunch){
       Events.on(ClientLoadEvent.class, e -> {
         Sgl.ui.mainMenu.show();
-
-        new BaseDialog(""){{
-          addCloseButton();
-
-          cont.pane(t -> t.add(new Markdown("""
-              
-              ![image](singularity-logo)
-                            
-              ---
-              >mod目前尚处于开发阶段，内容不齐全，尽可能不要在发布前游玩此mod
-              ## Singularity
-              
-              对`mindustry`原有的 $内容感到乏味了么$ ？奇点mod为mindustry游戏本体提供 _了大量全新_ 的内容，从工业到防线，全新的工厂，全新的防御武器，以及全新的机械。
-              
-              mod的内容有很多，~~包括但不限于令~~人耳目一新的++新型工业架构和中子++能量系统，强大 _的矩阵物流网_ 络， _以及一些你从未听闻过的全新机制_ ，各种意义上这是一个十分庞大的mod，这能给你带来的游戏乐趣远不止增长游戏流程那么简单。
-              
-              > 本mod需要一个前置mod：[__Universe Core__](https://github.com/EB-wilson/UniverseCore)，当然你不必担心，若在你安装了本mod后启动游戏会检查前置mod是否存在，如果你当前并没有安装前置mod，那么弹窗会引导你进行下载和安装。
-              > > intest
-              > > > in intest
-              
-              | 左对齐   |     右对齐    | 居中对齐 | __长表头测试12345678901234567890__ |
-              |:------|-----------:|:----------------:|:----------------------:|
-              | a     |          s |        p         |           d            |
-              | a asd |          s |        p         |       $awdaswd d$        |
-              | a ad  |          s |      adwawp      |           d            |
-              | a     | adsa     s |        p         |           d            |
-              
-              ```
-              code block test
-              private static class DrawSUrl extends DrawStr implements ActivityDrawer{
-                TextButton openUrl;
-            
-                static DrawSUrl get(Markdown owner, String str, Font font, String openUrl, Color color, float ox, float oy, float scl, Drawable background){
-                  DrawSUrl res = Pools.obtain(DrawSUrl.class, DrawSUrl::new);
-                  res.parent = owner;
-                  res.text = str;//中文测试
-                  res.font = font;
-                  res.openUrl = new TextButton(str, new TextButton.TextButtonStyle(Styles.nonet){{ fontColor = color; }}){{
-                    clicked(() -> Core.app.openURI(openUrl));
-                    label.setScale(scl);
-                    label.setWrap(false);
-                  }};
-                  res.offsetX = ox;
-                  res.offsetY = oy;
-                  res.scl = scl;
-                  res.color = color;
-                  res.drawable = background;
-            
-                  return res;
-                }
-            
-                @Override
-                void draw() {}
-            
-                @Override
-                public Element getElem() {
-                  return openUrl;
-                }
-            
-                @Override
-                public float width() {
-                  return openUrl.getLabel().getPrefWidth();
-                }
-            
-                @Override
-                public float height() {
-                  return openUrl.getLabel().getPrefHeight();
-                }
-            
-                @Override
-                public void reset() {
-                  super.reset();
-                  openUrl = null;
-                }
-              }
-              ```
-              """, SglStyles.defaultMD, true)).growX()).scrollX(false).grow().padLeft(200).padRight(200);
-        }}.show();
       });
     }
 
@@ -222,5 +147,25 @@ public class Singularity extends Mod{
 
   public static Fi getInternalFile(String path){
     return Sgl.modFile.child(path);
+  }
+
+  public static Fi getDocumentFile(String name){
+    return getInternalFile("documents").child(Core.bundle.getLocale().toString()).child(name);
+  }
+
+  public static Fi getDocumentFile(Locale locale, String name){
+    return getInternalFile("documents").child(locale.toString()).child(name);
+  }
+
+  private static final ObjectMap<Fi, String> docCache = new ObjectMap<>();
+  public static String getDocument(String name){
+    return getDocument(name, true);
+  }
+  public static String getDocument(String name, boolean cache){
+    Fi fi = getDocumentFile(name);
+    return cache? docCache.get(fi, fi::readString): fi.readString();
+  }
+  public static String getDocument(Locale locale, String name){
+    return getDocumentFile(locale, name).readString();
   }
 }

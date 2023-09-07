@@ -1,6 +1,8 @@
 package singularity.world.blocks.product;
 
 import arc.Core;
+import arc.func.Floatf;
+import arc.func.Floatp;
 import arc.math.Mathf;
 import arc.util.Strings;
 import mindustry.graphics.Pal;
@@ -11,7 +13,6 @@ import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
 
 public class BoosterCrafter extends NormalCrafter{
-  public boolean optionalBoost = false;
 
   public BoosterCrafter(String name) {
     super(name);
@@ -19,13 +20,9 @@ public class BoosterCrafter extends NormalCrafter{
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public BaseConsumers newBooster(float boost){
+    Floatf<BoosterCrafterBuild>[] fun = new Floatf[1];
     BaseConsumers res = newOptionalConsume((BoosterCrafterBuild e, BaseConsumers c) -> {
-      float mul = 1;
-      for (BaseConsume cons : c.all()) {
-        mul *= cons.efficiency(e);
-      }
-      e.boostEff = Mathf.approachDelta(e.boostEff, boost*mul*Mathf.clamp(e.consumer.consEfficiency)*e.consumer.getOptionalEff(c), 0.04f);
-      e.boostMarker = true;
+      e.currBoost = fun[0];
     }, (s, c) -> {
       s.add(Stat.boostEffect, t -> {
         t.table(req -> {
@@ -37,8 +34,18 @@ public class BoosterCrafter extends NormalCrafter{
         t.add(Core.bundle.get("misc.efficiency") + Strings.autoFixed(boost*100, 1) + "%").growX().right();
       });
     });
+
+    fun[0] = e -> {
+      float mul = 1;
+      for (BaseConsume cons : res.all()) {
+        mul *= cons.efficiency(e);
+      }
+      return boost*mul*Mathf.clamp(e.consumer.consEfficiency)*e.consumer.getOptionalEff(res);
+    };
+
     consume.customDisplayOnly = true;
     consume.optionalAlwaysValid = false;
+
     return res;
   }
 
@@ -53,26 +60,12 @@ public class BoosterCrafter extends NormalCrafter{
   }
 
   public class BoosterCrafterBuild extends NormalCrafterBuild{
-    public float boostEff = 1;
-    public boolean boostMarker;
-
-    @Override
-    public void updateTile() {
-      super.updateTile();
-      if(boostMarker){
-        boostMarker = false;
-      }
-      else boostEff = Mathf.approachDelta(boostEff, 1, 0.04f);
-    }
-
-    @Override
-    public float optionalConsEff(BaseConsumers consumers) {
-      return super.optionalConsEff(consumers)*(optionalBoost? boostEff: 1);
-    }
+    public Floatf<BoosterCrafterBuild> currBoost = e -> 1;
 
     @Override
     public float consEfficiency() {
-      return super.consEfficiency()*boostEff;
+      float eff = super.consEfficiency();
+      return eff*currBoost.get(this);
     }
   }
 }

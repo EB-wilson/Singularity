@@ -1,66 +1,119 @@
 package singularity.ui.tables;
 
 import arc.Core;
+import arc.Events;
+import arc.Graphics;
+import arc.KeyBinds;
 import arc.func.Cons;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
+import arc.input.InputDevice;
 import arc.input.KeyCode;
+import arc.math.Interp;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
+import arc.math.geom.Point2;
+import arc.scene.Action;
 import arc.scene.Element;
-import arc.scene.event.ElementGestureListener;
-import arc.scene.event.InputEvent;
-import arc.scene.event.Touchable;
-import arc.scene.style.TextureRegionDrawable;
-import arc.scene.ui.ImageButton;
+import arc.scene.actions.Actions;
+import arc.scene.event.*;
+import arc.scene.ui.*;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
+import arc.scene.utils.Elem;
 import arc.struct.ObjectSet;
-import arc.struct.Seq;
-import arc.util.Time;
+import arc.struct.SnapshotSeq;
+import arc.util.*;
 import mindustry.Vars;
+import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
+import mindustry.input.Binding;
+import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
+import mindustry.world.blocks.logic.LogicBlock;
+import singularity.graphic.SglDraw;
+import singularity.graphic.SglDrawConst;
 import singularity.world.blocks.distribute.TargetConfigure;
 import singularity.world.distribution.GridChildType;
+import universecore.util.handler.FieldHandler;
+import universecore.world.lightnings.generator.VectorLightningGenerator;
+
+import java.util.Arrays;
 
 public class DistTargetConfigTable extends Table{
   private static final ObjectSet<Character> numbers = ObjectSet.with('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-');
  
   TargetConfigure config = new TargetConfigure();
   ContentType currType;
+  GridChildType currIOType;
+  UnlockableContent current;
   byte[] currDireBit;
-  ObjectSet<UnlockableContent> currConfig;
+
+  Button enter;
   
   Runnable rebuildItems;
-  int index;
   
   public DistTargetConfigTable(int positionOffset, TargetConfigure defaultCfg, GridChildType[] IOTypes,
-                               ContentType[] types, boolean flip, Cons<TargetConfigure> cons, Runnable close){
-    super(Tex.pane);
+                               ContentType[] types, boolean directionConfig, Cons<TargetConfigure> cons, Runnable close){
     if(defaultCfg != null){
       config.read(defaultCfg.pack());
     }
     else{
       config.offsetPos = positionOffset;
     }
+
+    currIOType = IOTypes[0];
     
     class Flip extends Element{
+      int holdCount;
+
       float deltaX, deltaY;
-      float alpha;
+      float alpha, texAlpha;
       float pressTime;
       boolean pressing, valid = true, hovering, hold;
+
+      static final KeyCode[] code = {
+          ((KeyBinds.Axis) Binding.move_x.defaultValue(InputDevice.DeviceType.keyboard)).max,
+          ((KeyBinds.Axis) Binding.move_y.defaultValue(InputDevice.DeviceType.keyboard)).max,
+          ((KeyBinds.Axis) Binding.move_x.defaultValue(InputDevice.DeviceType.keyboard)).min,
+          ((KeyBinds.Axis) Binding.move_y.defaultValue(InputDevice.DeviceType.keyboard)).min,
+      };
   
       public Flip(){
-        setSize(90);
         touchable(() -> currDireBit != null? Touchable.enabled: Touchable.disabled);
         update(() -> {
+          if (current == null) hold = false;
+
+          if (hold){
+            holdCount = 2;
+
+            if (Core.input.axisTap(Binding.move_x) > 0) setDireBit((byte) 1);
+            if (Core.input.axisTap(Binding.move_y) > 0) setDireBit((byte) 2);
+            if (Core.input.axisTap(Binding.move_x) < 0) setDireBit((byte) 4);
+            if (Core.input.axisTap(Binding.move_y) < 0) setDireBit((byte) 8);
+
+            if (Core.input.keyTap(Binding.block_select_up)){
+              currIOType = IOTypes[Mathf.mod(Structs.indexOf(IOTypes, currIOType) - 1, IOTypes.length)];
+              currDireBit = config.getDirectBit(currIOType, current);
+            }
+            else if (Core.input.keyTap(Binding.block_select_down)){
+              currIOType = IOTypes[Mathf.mod(Structs.indexOf(IOTypes, currIOType) + 1, IOTypes.length)];
+              currDireBit = config.getDirectBit(currIOType, current);
+            }
+
+            if (Core.input.keyTap(Binding.menu)){
+              Vars.ui.paused.hide(null);
+              hold = false;
+            }
+          }
+
+          texAlpha = Mathf.lerpDelta(texAlpha, hold? 1: 0, 0.05f);
           alpha = Mathf.lerpDelta(alpha, pressing || hovering || hold? 1: 0, 0.045f);
 
           if(!pressing || !valid){
@@ -70,12 +123,16 @@ public class DistTargetConfigTable extends Table{
         });
 
         if(Core.app.isDesktop() || Core.settings.getBool("keyboard")) {
+          Vars.control.input.addLock(() -> holdCount-- > 0);
+
           hovered(() -> {
             hovering = true;
+            Core.graphics.cursor(Graphics.Cursor.SystemCursor.hand);
           });
 
           exited(() -> {
             hovering = false;
+            Core.graphics.restoreCursor();
           });
         }
 
@@ -91,9 +148,7 @@ public class DistTargetConfigTable extends Table{
           @Override
           public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
             super.touchUp(event, x, y, pointer, button);
-            if(Time.globalTime - pressTime <= 20){
-              hold = !hold && valid;
-            }
+            if(Time.globalTime - pressTime <= 20) hold = !hold && valid;
             pressing = false;
             valid = true;
           }
@@ -103,16 +158,16 @@ public class DistTargetConfigTable extends Table{
             if(valid){
               deltaX += dx;
               deltaY += dy;
-              if(deltaX > 90){
+              if(deltaX > width){
                 setDireBit((byte) 1);
               }
-              else if(deltaX < -90){
+              else if(deltaX < -width){
                 setDireBit((byte) 4);
               }
-              else if(deltaY > 90){
+              else if(deltaY > width){
                 setDireBit((byte) 2);
               }
-              else if(deltaY < -90){
+              else if(deltaY < -width){
                 setDireBit((byte) 8);
               }
             }
@@ -126,9 +181,8 @@ public class DistTargetConfigTable extends Table{
         validate();
 
         Draw.color(currDireBit == null? Pal.gray: Color.lightGray);
-        Draw.alpha(0.5f + 0.5f*alpha);
         Lines.stroke(4.5f);
-        Lines.circle(x + deltaX + this.width/2f, y + deltaY + this.height/2f,  Scl.scl(45));
+        Lines.square(this.x + deltaX + width/2f, this.y + deltaY + height/2f,  width/2 + 4.5f/2f*Mathf.sqrt2, 45);
     
         if(currDireBit != null){
           byte bit = 1;
@@ -137,12 +191,16 @@ public class DistTargetConfigTable extends Table{
             int dy = Geometry.d4y(i);
 
             Draw.color(Pal.gray);
-            Draw.alpha(alpha);
-            Fill.square(x + deltaX + this.width/2f + Scl.scl(dx*72)*alpha, y + deltaY + this.height/2f + Scl.scl(dy*72)*alpha, Scl.scl(24), 45);
-            if((currDireBit[0] & bit) != 0){
-              Draw.color(Pal.accent);
-              Draw.alpha(alpha);
-              Fill.square(x + deltaX + this.width/2f + Scl.scl(dx*72)*alpha, y + deltaY + this.height/2f + Scl.scl(dy*72)*alpha,  Scl.scl(20), 45);
+            Fill.square(x + deltaX + width/2f + dx*width/4*(1 + alpha), y + deltaY + height/2f + dy*height/4*(1 + alpha), width/4/Mathf.sqrt2, 45);
+            Draw.color((currDireBit[0] & bit) != 0? Pal.accent: Pal.darkerGray);
+            Fill.square(x + deltaX + width/2f + dx*width/4*(1 + alpha), y + deltaY + height/2f + dy*height/4*(1 + alpha),  width/4/Mathf.sqrt2 - 4, 45);
+
+            if(Core.app.isDesktop() || Core.settings.getBool("keyboard")) {
+              Fonts.outline.draw(code[i].toString(),
+                  x + deltaX + width/2f + dx*width/4*(1 + alpha), y + deltaY + height/2f + dy*height/4*(1 + alpha),
+                  Tmp.c1.set((currDireBit[0] & bit) != 0? Pal.accent: Color.white).a(0.7f*texAlpha),
+                  1, true, Align.center
+              );
             }
 
             bit *= 2;
@@ -154,22 +212,26 @@ public class DistTargetConfigTable extends Table{
         if(currDireBit != null){
           currDireBit[0] ^= bit;
         }
+        updateCfg();
         valid = false;
       }
     }
     
     table(topBar -> {
-      topBar.image(Icon.settings).size(50).left().padLeft(4);
+      topBar.image(Icon.settings).size(40).left().padLeft(6);
       topBar.add(Core.bundle.get("fragments.configs.nodeConfig")).left().padLeft(4);
-      topBar.button(
-          t -> t.add("").update(l -> l.setText(Core.bundle.format("misc.mode", IOTypes[index].locale()))),
-          Styles.cleart,
-          () -> {
-            index = (index + 1)%IOTypes.length;
-            currConfig = config.getOrNew(IOTypes[index], currType);
-            rebuildItems.run();
-          }
-      ).width(85).padLeft(4).padRight(4).growY().left().touchable(IOTypes.length > 1? Touchable.enabled: Touchable.disabled);
+
+      if (!directionConfig) {
+        topBar.button(
+            t -> t.add("").update(l -> l.setText(Core.bundle.format("misc.mode", currIOType.locale()))),
+            Styles.cleart,
+            () -> {
+              currIOType = IOTypes[Mathf.mod(Structs.indexOf(IOTypes, currIOType) + 1, IOTypes.length)];
+              rebuildItems.run();
+            }
+        ).width(85).padLeft(4).padRight(4).grow().touchable(IOTypes.length > 1 ? Touchable.enabled : Touchable.disabled);
+      }
+      else topBar.add().grow();
 
       topBar.add(Core.bundle.get("misc.priority")).right().padRight(4);
       topBar.field(Integer.toString(config.priority),
@@ -182,37 +244,102 @@ public class DistTargetConfigTable extends Table{
               config.priority = 0;
             }
           }).right().width(75).padRight(4);
-    }).fillY().expandX();
+    }).fillY().growX();
 
     row();
     image().color(Pal.gray).growX().height(4).colspan(2).pad(0).margin(0);
     row();
     table(main -> {
       main.pane(items -> {
-        rebuildItems = () -> {
-          currDireBit = null;
-          items.clearChildren();
-          Seq<UnlockableContent> itemSeq = Vars.content.getBy(currType);
-          int counter = 0;
-          for(UnlockableContent item: itemSeq){
-            if(item.unlockedNow()){
-              ImageButton button = items.button(Tex.whiteui, Styles.selecti, 30, () -> {
-                if(!config.remove(IOTypes[index], item)){
-                  config.set(IOTypes[index], item, currDireBit = new byte[1]);
-                }
-                else currDireBit = null;
-              }).size(40).get();
-              button.getStyle().imageUp = new TextureRegionDrawable(item.uiIcon);
-              button.update(() -> button.setChecked(currConfig.contains(item)));
+        items.defaults().size(45);
 
-              if(counter++ != 0 && counter%5 == 0) items.row();
+        rebuildItems = () -> {
+          items.clearChildren();
+
+          if (currType == null) currType = types[0];
+
+          int count = 0;
+          for (Content content : Vars.content.getBy(currType)) {
+            if (content instanceof UnlockableContent item && item.unlockedNow()){
+              Image button = new Image(item.uiIcon){
+                boolean hovering;
+
+                {
+                  hovered(() -> hovering = true);
+                  exited(() -> hovering = false);
+
+                  addListener(new HandCursorListener());
+
+                  addListener(new Tooltip(t -> t.table(Tex.paneLeft).get().add(item.localizedName)));
+                }
+
+                @Override
+                public void draw() {
+                  float ox = this.x + width/2;
+                  float oy = this.y + height/2;
+
+                  if (hovering){
+                    Draw.color(Color.gray);
+                    Draw.alpha(0.7f);
+
+                    Draw.rect(Core.atlas.white(), ox, oy, width + 8, height + 8);
+                  }
+
+                  super.draw();
+
+                  byte[] out = config.getDirectBit(GridChildType.output, item);
+                  byte[] in = config.getDirectBit(GridChildType.input, item);
+                  byte[] acc = config.getDirectBit(GridChildType.acceptor, item);
+                  byte[] cont = config.getDirectBit(GridChildType.container, item);
+                  for (int i = 0; i < 4; i++) {
+                    if (current == item) {
+                      Draw.color(Pal.accent);
+                      Draw.alpha(parentAlpha * color.a);
+                      Lines.stroke(4);
+                      Lines.square(ox, oy, width*0.6f, 45);
+                    }
+
+                    if (dirValid(out, i) && (dirValid(in, i) || dirValid(acc, i))) Draw.color(Pal.reactorPurple);
+                    else if (dirValid(cont, i)) Draw.color(Pal.accent);
+                    else if (dirValid(out, i)) Draw.color(Pal.lightOrange);
+                    else if (dirValid(in, i)) Draw.color(Pal.heal);
+                    else if (dirValid(acc, i)) Draw.color(Pal.logicControl);
+                    else continue;
+
+                    Draw.alpha(parentAlpha * color.a);
+                    Point2 po1 = Geometry.d8(i*2 - 1);
+                    Point2 po2 = Geometry.d8((i + 1)*2 - 1);
+                    Fill.quad(
+                        ox + width*po1.x/2 + po1.x*4, oy + height*po1.y/2 + po1.y*4,
+                        ox + width*po1.x/2, oy + height*po1.y/2,
+                        ox + width*po2.x/2, oy + height*po2.y/2,
+                        ox + width*po2.x/2 + po2.x*4, oy + height*po2.y/2 + po2.y*4
+                    );
+                  }
+                }
+              };
+              button.clicked(() -> {
+                if (directionConfig){
+                  current = current == item? null: item;
+                  currDireBit = current == null? null: config.getDirectBit(currIOType, current);
+                }
+                else {
+                  currDireBit = new byte[]{(byte) (config.get(currIOType, item)? 0: 15)};
+                  current = item;
+                  updateCfg();
+                  current = null;
+                }
+              });
+
+              items.table(t -> t.add(button).size(32).scaling(Scaling.fit));
+
+              if (count++ != 0 && count%5 == 0) items.row();
             }
           }
         };
-        currType = types[0];
-        currConfig = config.getOrNew(IOTypes[index], currType);
+
         rebuildItems.run();
-      }).size(225, 160);
+      }).height(180).fillX();
       
       main.image().color(Pal.gray).growY().width(4).colspan(2).padLeft(3).padRight(3).margin(0);
       
@@ -220,7 +347,6 @@ public class DistTargetConfigTable extends Table{
         sideBar.pane(typesTable -> {
           for(ContentType type : types){
             typesTable.button(t -> t.add(Core.bundle.get("content." + type.name() + ".name")), Styles.underlineb, () -> {
-              currConfig = config.getOrNew(IOTypes[index], type);
               currType = type;
               rebuildItems.run();
             }).growX().height(35).update(b -> b.setChecked(currType == type))
@@ -229,26 +355,114 @@ public class DistTargetConfigTable extends Table{
           }
         }).size(120, 80);
         sideBar.row();
-        sideBar.button(Core.bundle.get("misc.sure"), Icon.ok, Styles.cleart, () -> {
+        enter = sideBar.button(Core.bundle.get("misc.sure"), Icon.ok, Styles.cleart, () -> {
           cons.get(config);
           close.run();
-        }).size(120, 40);
+        }).size(120, 40).update(t -> {
+          if(Core.input.keyTap(KeyCode.enter)) t.fireClick();
+        }).get();
         sideBar.row();
         sideBar.button(Core.bundle.get("misc.reset"), Icon.cancel, Styles.cleart, () -> {
           config.clear();
           cons.get(config);
-          close.run();
-        }).size(120, 40);
+          rebuildItems.run();
+        }).size(120, 40).update(t -> {
+          if(Core.input.keyTap(KeyCode.del)) t.fireClick();
+        });
       }).fillX();
     });
-    
-    Element ele;
-    if(flip){
-      addChild(ele = new Flip());
-      update(() -> {
-        ele.setPosition(width/2, height + ele.getHeight(), 2);
-      });
+    if(directionConfig){
+      row();
+      image().color(Pal.gray).growX().height(4).colspan(2).padTop(3).padBottom(3).margin(0);
+      row();
+      table(dirCfg -> {
+        dirCfg.table(SglDrawConst.padGrayUI, infos -> {
+          infos.top().defaults().top().left().growX();
+          infos.add("").update(l -> l.setText(current == null? Core.bundle.get("infos.selectAItem"): Core.bundle.get("infos.flipCfg")));
+          infos.row();
+          infos.add().growY();
+          infos.row();
+          infos.table(buttons -> {
+            buttons.left().defaults().left().size(40);
+            buttons.button(SglDrawConst.matrixIcon, Styles.clearNonei, 24, () ->  {
+              currDireBit = new byte[]{15};
+              updateCfg();
+            }).disabled(b -> current == null).get().addListener(new Tooltip(t -> t.table(Tex.paneLeft).get().add(Core.bundle.get("misc.allDir"))));
+            buttons.button(Icon.cancel, Styles.clearNonei, 24, () ->  {
+              currDireBit = new byte[]{0};
+              updateCfg();
+            }).disabled(b -> current == null || currDireBit[0] <= 0).get().addListener(new Tooltip(t -> t.table(Tex.paneLeft).get().add(Core.bundle.get("misc.clearDir"))));
+            buttons.button(Icon.trash, Styles.clearNonei, 24, () ->  {
+              GridChildType orig = currIOType;
+              for (GridChildType type : IOTypes) {
+                currDireBit = new byte[]{0};
+                currIOType = type;
+                updateCfg();
+              }
+              currIOType = orig;
+            }).disabled(b -> current == null).get().addListener(new Tooltip(t -> t.table(Tex.paneLeft).get().add(Core.bundle.get("misc.clearAllDir"))));
+          });
+        }).growY().width(150);
+        dirCfg.table(SglDrawConst.padGrayUI, fliper -> {
+          fliper.add(new Flip()).size(75);
+        });
+        dirCfg.table(IOty -> {
+          IOty.top().defaults().top();
+
+          TextButton[] currSelecting = new TextButton[]{null, null};
+
+          Table bot = new Table(SglDrawConst.grayUI){{
+            update(() -> {
+              if (currSelecting[0] != currSelecting[1]){
+                currSelecting[1] = currSelecting[0];
+
+                clearActions();
+                actions(Actions.parallel(
+                    Actions.sizeTo(currSelecting[0].getWidth(), currSelecting[0].getHeight(), 0.3f),
+                    Actions.moveToAligned(currSelecting[0].x, currSelecting[0].y, Align.bottomLeft, 0.3f, Interp.pow2Out)
+                ));
+              }
+            });
+
+            left().add(">", Styles.outlineLabel).left().padLeft(8);
+          }};
+          IOty.addChild(bot);
+          for (GridChildType type : IOTypes) {
+            TextButton button = new TextButton(type.locale(), new TextButton.TextButtonStyle(Styles.nonet){{
+              fontColor = Color.white;
+              checkedFontColor = Pal.accent;
+            }}){{
+              clicked(() -> {
+                currIOType = type;
+                currDireBit = config.getDirectBit(currIOType, current);
+              });
+
+              update(() -> {
+                setChecked(currIOType == type);
+                if (currIOType == type) currSelecting[0] = this;
+              });
+
+              setDisabled(() -> current == null);
+            }};
+
+            IOty.add(button).left().growX().height(30);
+            IOty.row();
+          }
+        }).grow().update(e -> {
+          if(Core.input.keyTap(KeyCode.enter)) enter.fireClick();
+        });
+       SnapshotSeq<Element> seq = dirCfg.getChildren();
+       seq.insert(seq.size - 2, seq.pop());
+      }).growX();
     }
   }
 
+  private void updateCfg() {
+    if (currDireBit[0] > 0) config.set(currIOType, current, currDireBit);
+    else config.remove(currIOType, current);
+  }
+
+  boolean dirValid(byte[] bits, int dir){
+    return bits[0] > 0 && (bits[0] & (1 << dir)) != 0;
+  }
 }

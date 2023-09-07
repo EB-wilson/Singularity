@@ -103,7 +103,7 @@ public class AboutModDialog extends BaseDialog {
       t.row();
       t.add(Core.bundle.get("misc.author")).color(Pal.accent);
       t.add(Core.bundle.get("mod.author"));
-      t.button(b -> b.add(Core.bundle.get("mod.contributor")), Styles.underlineb, () -> Sgl.ui.contributors.show()).update(b -> b.setChecked(false)).width(230);
+      t.button(Core.bundle.get("mod.contributor"), SglDrawConst.contributeIcon, Styles.nonet, 28, () -> Sgl.ui.contributors.show()).update(b -> b.setChecked(false)).width(230);
       t.row();
       t.add(Core.bundle.get("misc.version")).color(Pal.accent);
       t.add(Core.bundle.get("mod.version"));
@@ -122,7 +122,7 @@ public class AboutModDialog extends BaseDialog {
       t.row();
       t.add(Core.bundle.get("infos.releaseDate")).color(Pal.accent);
       t.add(Core.bundle.get("mod.updateDate"));
-      t.button(Core.bundle.get("infos.checkUpdate"), () -> {}).width(230);
+      t.button(Core.bundle.get("infos.checkUpdate"), Icon.upload, Styles.nonet, 16, () -> {}).width(230);
     }).width(580).fillY().padTop(40);
     
     cont.row();

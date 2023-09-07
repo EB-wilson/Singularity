@@ -687,6 +687,10 @@ public class SglDraw{
     }
   }
 
+  public static void arc(float x, float y, float radius, float innerAngel, float rotate){
+    dashCircle(x, y, radius, 1, innerAngel, rotate);
+  }
+
   public static void dashCircle(float x, float y, float radius){
     dashCircle(x, y, radius, 0);
   }
@@ -704,14 +708,15 @@ public class SglDraw{
     if(sides % 2 == 1) sides++;
 
     v1.set(0, 0);
-    float per = 360f / sides;
+    float per = totalDashDeg < 0? -360f/sides: 360f/sides;
+    totalDashDeg = Math.min(Math.abs(totalDashDeg), 360);
 
     float rem = 360 - totalDashDeg;
     float dashDeg = totalDashDeg/dashes;
     float empDeg = rem/dashes;
 
     for(int i = 0; i < sides; i++){
-      if(i*per%(dashDeg+empDeg) > dashDeg) continue;
+      if(i*Math.abs(per)%(dashDeg+empDeg) > dashDeg) continue;
 
       v1.set(radius, 0).setAngle(rotate + per * i + 90);
       float x1 = v1.x;

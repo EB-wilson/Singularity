@@ -3,7 +3,11 @@ package singularity.ui;
 import arc.Core;
 import arc.freetype.FreeTypeFontGenerator;
 import arc.graphics.Color;
+import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Font;
+import arc.graphics.g2d.Lines;
+import arc.scene.style.BaseDrawable;
+import arc.scene.style.Drawable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Button;
 import arc.scene.ui.Dialog;
@@ -18,6 +22,8 @@ import singularity.graphic.SglDrawConst;
 import singularity.ui.fragments.HealthBarStyle;
 import universecore.ui.elements.markdown.Markdown;
 import universecore.util.handler.ObjectHandler;
+
+import javax.sound.sampled.Line;
 
 import static mindustry.gen.Tex.*;
 import static singularity.ui.SglUI.uiBlur;
@@ -139,6 +145,28 @@ public class SglStyles{
       tableBack2 = ((TextureRegionDrawable) whiteui).tint(Tmp.c1.set(Color.gray).a(0.7f));
 
       curtain = ((TextureRegionDrawable) whiteui).tint(Pal.darkerGray);
+
+      listMarks = new Drawable[]{
+          new BaseDrawable(){
+            @Override
+            public void draw(float x, float y, float width, float height) {
+              Fill.square(x + width/2, y + height/2, width*0.25f, 45f);
+            }
+          },
+          new BaseDrawable(){
+            @Override
+            public void draw(float x, float y, float width, float height) {
+              Fill.circle(x + width/2, y + height/2, width*0.3f);
+            }
+          },
+          new BaseDrawable(){
+            @Override
+            public void draw(float x, float y, float width, float height) {
+              Lines.stroke(1);
+              Lines.circle(x + width/2, y + height/2, width*0.3f);
+            }
+          }
+      };
     }};
   }
 }

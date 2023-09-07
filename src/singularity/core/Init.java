@@ -44,7 +44,7 @@ public class Init{
   /**内容重载，对已加载的内容做出变更(或者覆盖)*/
   public static void reloadContent(){
     //设置方块及地板属性
-    Blocks.stone.attributes.set(SglAttribute.bitumen, 0.5f);
+    Blocks.stone.attributes.set(SglAttribute.bitumen, 0.12f);
 
     for(Block target: Vars.content.blocks()){
       //为液体装卸器保证不从(常规)导管中提取液体

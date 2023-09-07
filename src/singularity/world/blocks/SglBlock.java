@@ -1,23 +1,21 @@
 package singularity.world.blocks;
 
 import arc.Core;
-import arc.func.Boolp;
 import arc.func.Cons;
 import arc.func.Cons2;
-import arc.func.Floatp;
 import arc.graphics.Color;
-import arc.graphics.g2d.Draw;
-import arc.graphics.g2d.Fill;
-import arc.graphics.g2d.TextureRegion;
+import arc.graphics.g2d.*;
+import arc.math.Angles;
+import arc.math.Interp;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.scene.Element;
-import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import arc.struct.SnapshotSeq;
+import arc.util.Align;
 import arc.util.Eachable;
-import arc.util.Tmp;
+import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
@@ -26,22 +24,26 @@ import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Iconc;
-import mindustry.gen.Tex;
 import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;
+import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import mindustry.ui.Bar;
+import mindustry.ui.Fonts;
 import mindustry.ui.fragments.PlacementFragment;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.meta.*;
+import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
+import singularity.world.SglFx;
 import singularity.world.blocks.nuclear.NuclearNode;
+import singularity.world.blocks.nuclear.TokamakCore;
 import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.consumers.SglConsumeType;
@@ -49,6 +51,7 @@ import singularity.world.consumers.SglConsumers;
 import singularity.world.modules.NuclearEnergyModule;
 import singularity.world.modules.SglConsumeModule;
 import singularity.world.modules.SglLiquidModule;
+import singularity.world.particles.SglParticleModels;
 import universecore.annotations.Annotations;
 import universecore.components.ExtraVariableComp;
 import universecore.components.blockcomp.ConsumerBlockComp;
@@ -57,7 +60,6 @@ import universecore.components.blockcomp.FactoryBlockComp;
 import universecore.util.DataPackable;
 import universecore.util.handler.FieldHandler;
 import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.ConsumeLiquidBase;
 import universecore.world.consumers.ConsumeType;
 import universecore.world.meta.UncStat;
 
@@ -99,8 +101,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
   public boolean outputEnergy = false;
   /**方块是否需求核能量*/
   public boolean consumeEnergy = false;
-  /**是否为核能缓冲器，为真时该方块的核势能将固定为基准势能*/
-  public boolean energyBuffered = false;
   /**基准核势能，当能压小于此值时不接受核能传入*/
   public float basicPotentialEnergy = 0f;
   /**核能容量。此变量将决定方块的最大核势能*/
@@ -179,6 +179,10 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       hasLiquids |= cons.get(SglConsumeType.liquid) != null;
       hasPower |= consumesPower |= cons.get(SglConsumeType.power) != null;
       hasEnergy |= consumeEnergy |= cons.get(SglConsumeType.energy) != null;
+    }
+
+    if (hasEnergy && maxEnergyPressure == -1){
+      maxEnergyPressure = energyCapacity*4;
     }
 
     for (BaseConsumers consumer : consumers()) {
@@ -287,6 +291,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     
     public int select;
 
+    public float activation;
+    public float activateRecover;
+
     @Override
     public Building create(Block block, Team team) {
       super.create(block, team);
@@ -297,7 +304,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       
       consumer = new SglConsumeModule(this);
       
-      if(hasEnergy) energy = new NuclearEnergyModule(this, energyBuffered);
+      if(hasEnergy) energy = new NuclearEnergyModule(this);
       return this;
     }
 
@@ -359,6 +366,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         consumer.build(t);
 
         table.clear();
+        table.defaults().padTop(3).padBottom(3);
         table.left();
 
         SnapshotSeq<Element> array = t.getChildren();
@@ -395,6 +403,36 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
         Fill.square(brcx, brcy, 1.5F*multiplier, 45.0F);
         Draw.color();
       }
+    }
+
+    public void drawActivation() {
+      if (activation <= 0.001f) return;
+
+      float lerp = Interp.pow2.apply(activation);
+      Draw.color(SglDrawConst.fexCrystal);
+      Draw.alpha(0.6f*lerp);
+      Fill.circle(x, y, Mathf.lerp(size/2f, size, lerp)*tilesize);
+
+      GlyphLayout layout = GlyphLayout.obtain();
+      layout.setText(Fonts.outline, Core.bundle.get("infos.overloadWarn"));
+
+      float w = layout.width*0.185f;
+      float h = layout.height*0.185f;
+
+      layout.free();
+      Draw.color(Color.darkGray, 0.6f);
+      Fill.quad(
+          x - w/2 - 2, y + size*tilesize/2f + h + 2,
+          x - w/2 - 2, y + size*tilesize/2f - 2,
+          x + w/2 + 2, y + size*tilesize/2f - 2,
+          x + w/2 + 2, y + size*tilesize/2f + h + 2
+      );
+
+      Fonts.outline.draw(Core.bundle.get("infos.overloadWarn"), x, y + size*tilesize/2f + h, Color.crimson, 0.185f, false, Align.center);
+
+      Draw.z(Layer.effect);
+      Lines.stroke(1.5f*lerp, SglDrawConst.fexCrystal);
+      SglDraw.arc(x, y, Mathf.lerp(size/2f, size, lerp)*tilesize, 360*activation, Time.time*1.5f);
     }
 
     @Override
@@ -448,6 +486,23 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       super.update();
 
       if(updating != null) updating.get(this);
+
+      activateRecover = Mathf.approachDelta(activateRecover, 0.005f, 0.0001f);
+      activation = Mathf.approachDelta(activation, 0, activateRecover);
+
+      if (Mathf.chanceDelta(0.1f*activation)){
+        SglFx.neutronWeaveMicro.at(x + Mathf.range(size * 4f), y + Mathf.range(size * 4), SglDrawConst.fexCrystal);
+      }
+
+      if (activation >= 0.5f){
+        damageContinuousPierce(maxHealth*Math.min(activation - 0.5f, 0.5f)/60);
+
+        if (Mathf.chanceDelta(0.1f*Mathf.maxZero(activation - 0.5f))){
+          Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f,
+              (x, y) -> SglParticleModels.floatParticle.create(this.x, this.y, SglDrawConst.fexCrystal, x, y, 2.6f).setVar(SglParticleModels.STRENGTH, 0.4f)
+          );
+        }
+      }
     }
   
     public void updateDisplayLiquid(){
@@ -499,38 +554,17 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
       if(recipeCurrent == -1 || consumer.current == null) return;
 
-      if(hasPower && consPower != null){
-        Boolp buffered = () -> consPower.buffered;
-        Floatp capacity = () -> consPower.capacity;
-        bars.add(new Bar(
-            () -> buffered.get() ? Core.bundle.format("bar.poweramount", Float.isNaN(power.status*capacity.get())?
-                "<ERROR>": (int)(power.status*capacity.get())): Core.bundle.get("bar.power"),
-            () -> Pal.powerBar,
-            () -> Mathf.zero(consPower.requestedPower(this)) && power.graph.getPowerProduced() + power.graph.getBatteryStored() > 0f? 1f: power.status)).growX();
-        bars.row();
-      }
-
-      ConsumeLiquidBase<?> cl = consumer.current.get(SglConsumeType.liquid);
-      if(cl != null){
-        bars.defaults().grow().margin(0);
-        bars.add(Iconc.download + Core.bundle.get("fragment.bars.consume")).left().padBottom(0);
-        bars.row();
-        for(LiquidStack stack: cl.consLiquids){
-          bars.add(new Bar(
-              () -> stack.liquid.localizedName,
-              () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
-              () -> Math.min(liquids.get(stack.liquid) / block().liquidCapacity, 1f)
-          ));
-          bars.row();
-        }
-      }
-
+      bars.defaults().grow().margin(0).padTop(3).padBottom(3);
+      bars.add(Iconc.download + Core.bundle.get("fragment.bars.consume")).left().padBottom(0);
       bars.row();
+
+      buildConsumerBars(bars);
     }
   
     @Override
     public void onOverpressure(float potentialEnergy){
-      //TODO:把默认爆炸写了
+      activateRecover = 0f;
+      activation = Mathf.clamp(activation + Math.min((potentialEnergy - maxEnergyPressure)/maxEnergyPressure*0.01f, 0.008f)*Time.delta);
     }
     
     /**具有输出物品的方块返回可能输出的物品，没有则返回null*/
@@ -579,8 +613,9 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     public void draw(){
       draw.draw(this);
       drawStatus();
+      drawActivation();
     }
-  
+
     @Override
     public void drawLight(){
       draw.drawLight(this);

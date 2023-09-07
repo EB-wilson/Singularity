@@ -7,12 +7,15 @@ import arc.func.Cons2;
 import arc.func.Floatp;
 import arc.graphics.Color;
 import arc.math.Mathf;
+import arc.scene.Element;
 import arc.scene.event.Touchable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Image;
+import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
 import arc.struct.EnumSet;
 import arc.struct.Seq;
+import arc.struct.SnapshotSeq;
 import arc.util.Scaling;
 import arc.util.Strings;
 import arc.util.Tmp;
@@ -37,6 +40,7 @@ import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.meta.*;
 import singularity.graphic.SglDrawConst;
+import singularity.ui.StatUtils;
 import singularity.world.blocks.SglBlock;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.meta.SglStat;
@@ -305,39 +309,29 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       });
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void displayBars(Table bars){
-      if(recipeCurrent != -1 && producer.current != null && block.hasPower && block.outputsPower && producer.current.get(SglProduceType.power) != null){
-        Floatp prod = () -> powerProdEfficiency*producer.current.get(SglProduceType.power).powerProduction;
-        Floatp cons = () -> {
-          ConsumePower<NormalCrafterBuild> cp;
-          return consumesPower && consumer.current != null && (cp =
-              (ConsumePower<NormalCrafterBuild>) consumer.current.get(SglConsumeType.power)) != null?
-              cp.usage*cp.multiple(this): 0;
-        };
-        bars.add(new Bar(
-            () -> Core.bundle.format("bar.poweroutput", Strings.fixed(Math.max(prod.get() - cons.get(), 0)*60*timeScale(), 1)),
-            () -> Pal.powerBar,
-            () -> powerProdEfficiency
-        )).growX();
-        bars.row();
-      }
       super.displayBars(bars);
+
       if(recipeCurrent == -1 || producer.current == null || consumer.current == null) return;
 
-      ProduceLiquids<?> pl = producer.current.get(SglProduceType.liquid);
-      if(pl != null){
-        bars.add(Iconc.upload + Core.bundle.get("fragment.bars.product")).left().padBottom(0);
+      Table tab = new Table();
+      buildProducerBars(tab);
+
+      if (tab.hasChildren()) {
         bars.row();
-        for(LiquidStack stack: pl.liquids){
-          bars.add(new Bar(
-              () -> stack.liquid.localizedName,
-              () -> stack.liquid.barColor != null? stack.liquid.barColor: stack.liquid.color,
-              () -> Math.min(liquids.get(stack.liquid) / block.liquidCapacity, 1f)
-          ));
+        bars.add(Iconc.upload + Core.bundle.get("fragment.bars.product")).left().padBottom(0);
+
+        SnapshotSeq<Element> el = tab.getChildren();
+        Element[] items = el.begin();
+        for (int i = 0, b = el.size; i < b; i++) {
           bars.row();
+          bars.add(items[i]);
         }
+        el.end();
+
+        bars.row();
+        bars.image().color(Color.darkGray).growX().colspan(2).height(4).padTop(3).padBottom(3).padLeft(-14).padRight(-14);
       }
     }
 
@@ -389,15 +383,6 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
         dumpLiquid(liquid);
       }
     }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public float getPowerProduction(){
-      if(!outputsPower || producer.current == null || producer.current.get(SglProduceType.power) == null) return 0;
-      powerProdEfficiency = Mathf.num(shouldConsume() && consumeValid())*consEfficiency()
-          *((BaseProduce<NormalCrafterBuild>)producer.current.get(SglProduceType.power)).multiple(this);
-      return producer.getPowerProduct()*consEfficiency();
-    }
     
     @Override
     public void buildConfiguration(Table table){
@@ -422,7 +407,8 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
                   }, Styles.underlineb, () -> configure(s))
                   .touchable(() -> c.selectable.get().buttonValid)
                   .update(b -> b.setChecked(recipeCurrent == s))
-                  .fillY().growX().left().margin(5).marginTop(8).marginBottom(8).pad(4);
+                  .fillY().growX().left().margin(5).marginTop(8).marginBottom(8).pad(4)
+                  .get().addListener(new Tooltip(t -> t.table(Tex.paneLeft, detail -> FactoryBlockComp.buildRecipe(detail, c, p))));
 
               buttons.row();
             }

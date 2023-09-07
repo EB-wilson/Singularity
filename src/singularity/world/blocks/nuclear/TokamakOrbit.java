@@ -75,12 +75,12 @@ public class TokamakOrbit extends SglBlock implements SpliceBlockComp {
                     Draw.scl(1, -1);
                     Draw.rect(cornerLight, b.x, b.y, b.rotation*90);
                   }
-                  Draw.reset();
                 }
               }
               else{
                 Draw.rect(light, b.x, b.y, b.rotation*90);
               }
+              Draw.reset();
             });
           }
         },

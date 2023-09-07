@@ -2,6 +2,7 @@ package singularity.contents;
 
 import arc.Application;
 import arc.Core;
+import arc.Events;
 import arc.audio.Sound;
 import arc.func.Func2;
 import arc.graphics.Color;
@@ -39,6 +40,7 @@ import mindustry.entities.part.RegionPart;
 import mindustry.entities.pattern.ShootBarrel;
 import mindustry.entities.pattern.ShootPattern;
 import mindustry.entities.units.WeaponMount;
+import mindustry.game.EventType;
 import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
@@ -1381,7 +1383,7 @@ public class SglUnits implements ContentList{
                 hitColor = colors[0];
 
                 generator.maxSpread = 11.25f;
-                generator.minInterval = 9;
+                generator.minInterval = 6;
                 generator.maxInterval = 15;
 
                 lightningMinWidth = 2.2f;
@@ -2115,6 +2117,18 @@ public class SglUnits implements ContentList{
             }
 
             public void update(Unit unit, DataWeaponMount mount){
+              float movX = Angles.trnsx(mount.rotation, 0, 14)*mount.warmup;
+              float movY = Angles.trnsy(mount.rotation, 0, 14)*mount.warmup;
+
+              float targetX = unit.x + Angles.trnsx(unit.rotation() - 90, mount.weapon.x + movX, mount.weapon.y + movY);
+              float targetY = unit.y + Angles.trnsy(unit.rotation() - 90, mount.weapon.x + movX, mount.weapon.y + movY);
+
+              if (Sgl.config.animateLevel < 2){
+                x = targetX;
+                y = targetY;
+                return;
+              }
+
               if (Mathf.chanceDelta(0.03f*mount.warmup)){
                 float dx = unit.x + Angles.trnsx(unit.rotation, -28, 0) - x;
                 float dy = unit.y + Angles.trnsy(unit.rotation, -28, 0) - y;
@@ -2125,12 +2139,6 @@ public class SglUnits implements ContentList{
                 Tmp.v1.rnd(3);
                 SglFx.moveParticle.at(x + Tmp.v1.x, y + Tmp.v1.y, ang, SglDrawConst.matrixNet, dst);
               }
-
-              float movX = Angles.trnsx(mount.rotation, 0, 14)*mount.warmup;
-              float movY = Angles.trnsy(mount.rotation, 0, 14)*mount.warmup;
-
-              float targetX = unit.x + Angles.trnsx(unit.rotation() - 90, mount.weapon.x + movX, mount.weapon.y + movY);
-              float targetY = unit.y + Angles.trnsy(unit.rotation() - 90, mount.weapon.x + movX, mount.weapon.y + movY);
 
               float dx = targetX - x;
               float dy = targetY - y;
@@ -2162,6 +2170,7 @@ public class SglUnits implements ContentList{
                 trail.draw(SglDrawConst.matrixNet, 4);
                 Draw.color(Color.black);
                 Fill.circle(x, y, 4);
+                Draw.reset();
               });
 
               float z = Draw.z();
@@ -2477,7 +2486,7 @@ public class SglUnits implements ContentList{
                   @Override
                   public void init(Bullet b, LightningContainer cont) {
                     gen.maxSpread = hitSize*2.3f;
-                    gen.minInterval = 2.6f*hitSize;
+                    gen.minInterval = 2f*hitSize;
                     gen.maxInterval = 3.8f*hitSize;
 
                     gen.vector.set(b.aimX - b.x, b.aimY - b.y).limit(range);
@@ -2725,7 +2734,7 @@ public class SglUnits implements ContentList{
 
                 float l = Math.max(Mathf.clamp(mount.warmup/mount.weapon.minWarmup)*Mathf.clamp(1 - mount.reload/mount.weapon.reload), mount.heat);
                 Lines.stroke(4f*l*stLerp);
-                SglDraw.dashCircle(mount.aimX, mount.aimY, 62, 1, 360*l, -Time.time*1.2f);
+                SglDraw.arc(mount.aimX, mount.aimY, 62, 360*l, -Time.time*1.2f);
 
                 Lines.stroke(4f*Mathf.clamp(mount.warmup/mount.weapon.minWarmup), SglDrawConst.matrixNet);
                 SglDraw.drawCornerTri(mount.aimX, mount.aimY, 46, 8, MathTransform.gradientRotateDeg(Time.time*0.85f, 38, 1/3f, 3), true);

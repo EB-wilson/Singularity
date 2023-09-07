@@ -11,6 +11,7 @@ import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
 import arc.util.Interval;
 import arc.util.Time;
+import arc.util.Tmp;
 import mindustry.content.Fx;
 import mindustry.entities.Units;
 import mindustry.entities.bullet.BulletType;
@@ -51,12 +52,23 @@ public class SglParticleModels{
     public void draw(Bullet b) {}
   };
 
+  public static final String DEFLECT_ANGLE = "deflectAngle";
+  public static final String STRENGTH = "strength";
   public static ParticleModel floatParticle = new MultiParticleModel(
       new SizeVelRelatedParticle(),
-      new RandDeflectParticle(){{
-        deflectAngle = 90;
-        strength = 0.2f;
-      }},
+      new RandDeflectParticle(){
+        {
+          deflectAngle = 90;
+          strength = 0.2f;
+        }
+
+        public void deflect(Particle p) {
+          float angle = Tmp.v1.set(p.speed).scl(-1.0F).angle();
+          float scl = Mathf.clamp(p.speed.len() / p.defSpeed*Time.delta*p.getVar(STRENGTH, strength));
+          Tmp.v2.set(p.speed).setAngle(angle + Mathf.range(p.getVar(DEFLECT_ANGLE, this.deflectAngle))).scl(scl);
+          p.speed.add(Tmp.v2);
+        }
+      },
       new TrailFadeParticle(){{
         trailFade = 0.04f;
         fadeColor = Pal.lightishGray;

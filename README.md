@@ -1,4 +1,4 @@
-![image](assets/sprites/ui/logo.png)
+![logo](assets/sprites/ui/logo.png)
 
 ---
 

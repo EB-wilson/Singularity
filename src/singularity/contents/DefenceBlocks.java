@@ -311,7 +311,7 @@ public class DefenceBlocks implements ContentList{
         }
 
         static final VectorLightningGenerator gen = new VectorLightningGenerator(){{
-          minInterval = 18;
+          minInterval = 12;
           maxInterval = 26;
           maxSpread = 14;
         }};

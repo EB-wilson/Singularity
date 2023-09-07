@@ -14,7 +14,6 @@ import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
-import mindustry.core.UI;
 import mindustry.gen.Icon;
 import mindustry.gen.Unit;
 import mindustry.graphics.g3d.PlanetParams;
@@ -46,6 +45,7 @@ public class SglUI{
   public AboutModDialog aboutDialog;
   public PublicInfoDialog publicInfo;
   public ContributorsDialog contributors;
+  public DocumentDialog document;
   public ModConfigDialog config;
 
   public DistNetMonitorDialog bufferStat;
@@ -208,6 +208,7 @@ public class SglUI{
     contributors = new ContributorsDialog();
     config = new ModConfigDialog();
     bufferStat = new DistNetMonitorDialog();
+    document = new DocumentDialog();
     unitFactoryCfg = new UnitFactoryCfgDialog();
 
     toolBar = new ToolBarFrag();

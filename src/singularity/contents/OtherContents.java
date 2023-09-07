@@ -393,6 +393,7 @@ public class OtherContents implements ContentList{
               SglDraw.drawDiamond(x, y, len, len*0.135f, r);
             });
           }
+          Draw.reset();
         });
       }
     };

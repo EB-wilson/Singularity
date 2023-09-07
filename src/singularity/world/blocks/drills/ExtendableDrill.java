@@ -13,8 +13,8 @@ import universecore.world.blocks.modules.ChainsModule;
 
 @Annotations.ImplEntries
 public class ExtendableDrill extends BaseDrill implements ChainsBlockComp {
-  public int maxChainsHeight = 30;
-  public int maxChainsWidth = 30;
+  public int maxChainsHeight = 10;
+  public int maxChainsWidth = 10;
 
   public ObjectSet<ExtendMiner> validChildType = new ObjectSet<>();
 

@@ -10,7 +10,6 @@ public class EnergyVoid extends NuclearBlock {
     energyCapacity = 1024;
     outputEnergy = false;
     consumeEnergy = true;
-    energyBuffered = true;
     noUpdateDisabled = true;
     envEnabled = Env.any;
   }

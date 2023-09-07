@@ -950,7 +950,7 @@ public class SglTurrets implements ContentList{
 
         final VectorLightningGenerator generator = new VectorLightningGenerator(){{
           maxSpread = 14;
-          minInterval = 12;
+          minInterval = 8;
           maxInterval = 20;
 
           branchChance = 0.1f;
@@ -1832,6 +1832,7 @@ public class SglTurrets implements ContentList{
                       Drawf.tri(x, y, 2.5f, 6f, r + 180);
                     });
                   }
+                  Draw.reset();
                 });
               }
 
@@ -2270,6 +2271,7 @@ public class SglTurrets implements ContentList{
 
                 Draw.alpha(1);
                 Fill.circle(e.x, e.y, 18*e.fin(Interp.pow3In));
+                Draw.reset();
               });
             }
 
@@ -2568,7 +2570,7 @@ public class SglTurrets implements ContentList{
             minBranchStrength = 0.8f;
             maxBranchStrength = 1;
 
-            minInterval = 8;
+            minInterval = 5;
             maxInterval = 15;
 
             branchMaker = (vert, strength) -> {
@@ -2658,7 +2660,7 @@ public class SglTurrets implements ContentList{
             }
 
             final VectorLightningGenerator gen = new VectorLightningGenerator(){{
-              minInterval = 8;
+              minInterval = 6;
               maxInterval = 16;
             }};
             final singularity.world.blocks.turrets.LightningBulletType s = this;
@@ -2760,7 +2762,7 @@ public class SglTurrets implements ContentList{
             minBranchStrength = 0.8f;
             maxBranchStrength = 1;
 
-            minInterval = 8;
+            minInterval = 5;
             maxInterval = 15;
 
             branchMaker = (vert, strength) -> {

@@ -7,6 +7,7 @@ import arc.math.geom.Point2;
 import arc.scene.event.Touchable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.ImageButton;
+import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
 import arc.struct.*;
 import arc.util.io.Reads;
@@ -150,6 +151,8 @@ public class AutoRecyclerComp extends NetPluginComp{
                     () -> configure(IntSeq.with(item.getContentType().ordinal(), item.id))).size(40).get();
                 button.getStyle().imageUp = new TextureRegionDrawable(item.uiIcon);
                 button.update(() -> button.setChecked(list.get(currType, Empties.nilSetO()).contains(item)));
+
+                button.addListener(new Tooltip(t -> t.table(Tex.paneLeft).get().add(item.localizedName)));
 
                 if(counter++ != 0 && counter%5 == 0) items.row();
               }

@@ -300,7 +300,7 @@ public class MatrixMinerSector extends MatrixMinerPlugin{
 
     @Override
     public boolean angleValid(float angle){
-      return side >= 0 && MathTransform.innerAngle(angle, side*90) < 45;
+      return side >= 0 && Math.abs(MathTransform.innerAngle(angle, side*90)) < 45;
     }
 
     @Override

@@ -93,7 +93,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
     super.init();
     for (BaseConsumers consumer : consumers) {
       for (BaseConsume<? extends ConsumerBuildComp> cons : consumer.all()) {
-        cons.setMultiple((TokamakCoreBuild e) -> e.fuelConsMulti*e.delta()*e.consEfficiency());
+        cons.setMultiple((TokamakCoreBuild e) -> e.fuelConsMulti);
       }
     }
   }
@@ -323,6 +323,8 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
     public void onChainsUpdated() {
       chains().setVar(VALID, false);
 
+      if (inLinked == null) return;
+
       for (ChainsBuildComp comp : chains().container.all) {
         if (comp instanceof TokamakCoreBuild && comp != this){
           return;
@@ -352,35 +354,34 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
 
             if (curr.rotation == 0 || curr.rotation == 2){
               w = Math.max(w, count*outLinked.block.size);
-              count = 0;
             }
             else {
               h = Math.max(h, count*outLinked.block.size);
-              count = 0;
             }
+            count = 0;
           }
           else count++;
 
           curr = n;
         }
-        else if (next instanceof TokamakCoreBuild b && b == this){
-          if (curr.relativeTo(this) != relativeTo(outLinked)){
-            cornerCount++;
+        else {
+          if (next instanceof TokamakCoreBuild b && b == this){
+            if (curr.relativeTo(this) != relativeTo(outLinked)){
+              cornerCount++;
 
-            if (curr.rotation == 0 || curr.rotation == 2){
-              w = Math.max(w, count*outLinked.block.size);
+              if (curr.rotation == 0 || curr.rotation == 2){
+                w = Math.max(w, count*outLinked.block.size);
+              }
+              else {
+                h = Math.max(h, count*outLinked.block.size);
+              }
               count = 0;
             }
-            else {
-              h = Math.max(h, count*outLinked.block.size);
-              count = 0;
-            }
+
+            enclosed = true;
           }
-
-          enclosed = true;
           curr = null;
         }
-        else curr = null;
 
         if (cornerCount > 4){
           break;
@@ -404,18 +405,18 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
         scale = 0;
 
         chains.setVar(TOTAL_ITEM_CAPACITY, 0);
-        chains.setVar(TOTAL_LIQUID_CAPACITY, 0);
+        chains.setVar(TOTAL_LIQUID_CAPACITY, 0f);
       }
     }
 
     @Override
     public int getMaximumAccepted(Item item) {
-      return structValid()? chains.container.getVar(TOTAL_ITEM_CAPACITY): 0;
+      return structValid()? chains.container.getVar(TOTAL_ITEM_CAPACITY, 0): 0;
     }
 
     @Override
     public float getMaximumAccepted(Liquid liquid) {
-      return structValid()? chains.container.getVar(TOTAL_LIQUID_CAPACITY): 0;
+      return structValid()? chains.container.getVar(TOTAL_LIQUID_CAPACITY, 0f): 0;
     }
 
     @Override
@@ -439,8 +440,8 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
       GlyphLayout layout = GlyphLayout.obtain();
       layout.setText(Fonts.outline, status);
 
-      float w = layout.width*0.15f;
-      float h = layout.height*0.15f;
+      float w = layout.width*0.185f;
+      float h = layout.height*0.185f;
 
       layout.free();
       Draw.color(Color.darkGray, 0.6f);
@@ -451,7 +452,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
           x + w/2 + 2, y + size*tilesize/2f + h + 2
       );
 
-      Fonts.outline.draw(status, x, y + size*tilesize/2f + h, Color.white, 0.15f, false, Align.center);
+      Fonts.outline.draw(status, x, y + size*tilesize/2f + h, Color.white, 0.185f, false, Align.center);
     }
 
     @Override

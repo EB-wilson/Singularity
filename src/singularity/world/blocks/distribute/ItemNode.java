@@ -28,6 +28,8 @@ import mindustry.ctype.UnlockableContent;
 import mindustry.entities.TargetPriority;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
+import mindustry.gen.Icon;
+import mindustry.gen.Tex;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
@@ -35,11 +37,16 @@ import mindustry.input.Placement;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.ui.Bar;
+import mindustry.ui.Styles;
 import mindustry.world.Edges;
 import mindustry.world.Tile;
 import mindustry.world.meta.BlockGroup;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
+import singularity.Sgl;
+import singularity.Singularity;
+import singularity.graphic.SglDrawConst;
+import singularity.ui.SglStyles;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.world.blocks.SglBlock;
 import singularity.world.distribution.GridChildType;
@@ -527,7 +534,7 @@ public class ItemNode extends SglBlock {
 
     @Override
     public byte version(){
-      return 1;
+      return 2;
     }
 
     @Override
@@ -536,7 +543,9 @@ public class ItemNode extends SglBlock {
       table.table(t -> {
         t.visible = false;
         t.setOrigin(Align.center);
-        t.center().add(new DistTargetConfigTable(
+
+        t.add().width(45);
+        t.center().table(Tex.pane).get().add(new DistTargetConfigTable(
             0,
             config,
             siphon ?
@@ -550,17 +559,25 @@ public class ItemNode extends SglBlock {
             },
             () -> Vars.control.input.config.hideConfig()
         )).fill().center();
+        t.top().button(Icon.info, Styles.grayi, 32, () -> Sgl.ui.document.showDocument("", SglStyles.defaultMD, Singularity.getDocument("matrix_grid_config_help.md"))).size(45).top();
 
         show = () -> {
           t.visible = true;
           t.pack();
           t.setTransform(true);
-          t.actions(Actions.scaleTo(0f, 1f), Actions.visible(true),
-              Actions.scaleTo(1f, 1f, 0.07f, Interp.pow3Out));
+          t.actions(
+              Actions.scaleTo(0f, 1f),
+              Actions.visible(true),
+              Actions.scaleTo(1f, 1f, 0.07f, Interp.pow3Out)
+          );
         };
 
         close = () -> {
-          t.actions(Actions.scaleTo(1f, 1f), Actions.scaleTo(0f, 1f, 0.07f, Interp.pow3Out), Actions.visible(false));
+          t.actions(
+              Actions.scaleTo(1f, 1f),
+              Actions.scaleTo(0f, 1f, 0.07f, Interp.pow3Out),
+              Actions.visible(false)
+          );
         };
       }).fillY();
     }

@@ -70,9 +70,23 @@ import java.io.StringReader;
 import java.util.Iterator;
 
 import static mindustry.Vars.state;
+import static singularity.world.blocks.product.SglUnitFactory.ConfigCmd.*;
 
 @Annotations.ImplEntries
 public class SglUnitFactory extends PayloadCrafter implements DistElementBlockComp {
+  public enum ConfigCmd{
+    CLEAR_TASK,
+    ADD_TASK,
+    SET_PRIORITY,
+    QUEUE_MODE,
+    SKIP_BLOCKED,
+    ACTIVITY,
+    REMOVE_TASK,
+    RISE_TASK,
+    DOWN_TASK,
+    COMMAND
+  }
+
   static ObjectMap<UnitType, UnitCostModel> costModels = new ObjectMap<>();
 
   static {
@@ -205,17 +219,17 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
     config(IntSeq.class, (SglUnitFactoryBuild u, IntSeq i) -> {
       int handle = i.get(0);
 
-      switch (handle){
-        case 0 -> u.clearTask();
-        case 1 -> u.appendTask(Vars.content.unit(i.get(1)), i.get(2), i.get(3));
-        case 2 -> u.priority(i.get(1));
-        case 3 -> u.queueMode = i.get(1) > 0;
-        case 4 -> u.skipBlockedTask = i.get(1) > 0;
-        case 5 -> u.activity = i.get(1) > 0;
-        case 6 -> u.removeTask(u.getTask(i.get(1)));
-        case 7 -> u.riseTask(u.getTask(i.get(1)));
-        case 8 -> u.downTask(u.getTask(i.get(1)));
-        case 9 -> {
+      switch (ConfigCmd.values()[handle]){
+        case CLEAR_TASK -> u.clearTask();
+        case ADD_TASK -> u.appendTask(Vars.content.unit(i.get(1)), i.get(2), i.get(3));
+        case SET_PRIORITY -> u.priority(i.get(1));
+        case QUEUE_MODE -> u.queueMode = i.get(1) > 0;
+        case SKIP_BLOCKED -> u.skipBlockedTask = i.get(1) > 0;
+        case ACTIVITY -> u.activity = i.get(1) > 0;
+        case REMOVE_TASK -> u.removeTask(u.getTask(i.get(1)));
+        case RISE_TASK -> u.riseTask(u.getTask(i.get(1)));
+        case DOWN_TASK -> u.downTask(u.getTask(i.get(1)));
+        case COMMAND -> {
           SglUnitFactoryBuild.BuildTask t = u.getTask(i.get(1));
           t.targetPos = new Vec2(i.get(2)/1000f, i.get(3)/1000f);
 
@@ -640,8 +654,6 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
 
     @Override
     public void updateTile() {
-      boostMarker |= outputLocking() && lastOutputProgress <= 0.999f;
-
       super.updateTile();
 
       if (pullItemsRequest != null) pullItemsRequest.update();
@@ -785,7 +797,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
 
       if (taskQueueHead == null) return "empty";
       for (BuildTask task : taskQueueHead) {
-        if (builder.length() != 0) builder.append(Sgl.NL);
+        if (builder.length() > 0) builder.append(Sgl.NL);
         builder.append(task.buildUnit.name).append(";")
             .append(task.queueAmount).append(";")
             .append(task.targetPos == null? "none": task.targetPos.x).append(";")
@@ -808,7 +820,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
           try {
             String[] args = line.split(";");
 
-            if (args.length != 5 && !(args.length == 6 && args[5].trim().length() == 0))
+            if (args.length != 5 && !(args.length == 6 && args[5].trim().isEmpty()))
               throw new IllegalArgumentException("illegal build task args length, must be 5");
 
             UnitType unit = Vars.content.unit(args[0]);

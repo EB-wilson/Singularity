@@ -14,6 +14,7 @@ import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.math.geom.Vec2;
 import arc.struct.ObjectMap;
+import arc.struct.OrderedMap;
 import arc.struct.Seq;
 import arc.util.Structs;
 import arc.util.Time;
@@ -34,6 +35,7 @@ import singularity.world.blocks.distribute.matrixGrid.MatrixGridBlock;
 import singularity.world.blocks.distribute.matrixGrid.MatrixGridCore;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.distribution.DistributeNetwork;
+import universecore.components.blockcomp.SpliceBlockComp;
 
 import java.util.ArrayList;
 
@@ -42,7 +44,7 @@ import static mindustry.Vars.tilesize;
 import static singularity.contents.DistributeBlocks.*;
 
 public class SglHint implements HintsFragment.Hint {
-  public static final ObjectMap<Block, Point2> retentionBlocks = new ObjectMap<>();
+  public static final OrderedMap<Block, Point2> retentionBlocks = new OrderedMap<>();
 
   public static final Seq<SglHint> all = new Seq<>();
 
@@ -61,9 +63,14 @@ public class SglHint implements HintsFragment.Hint {
   }
 
   //matrix distribute network
-  public static final SglHint matrixCorePlaced = new SglHint("matrixCorePlaced", 2,
-      () -> retentionBlocks.containsKey(matrix_core) && matrix_bridge.unlockedNow() && matrix_energy_manager.unlockedNow() && matrix_power_interface.unlockedNow(),
-      () -> DistributeNetwork.activityNetwork.orderedItems().contains(DistributeNetwork::netValid)){
+  public static final SglHint
+      spliceStructure = new SglHint("spliceStructure", 2,
+        () -> retentionBlocks.orderedKeys().contains(e -> e instanceof SpliceBlockComp),
+        () -> false),
+
+      matrixCorePlaced = new SglHint("matrixCorePlaced", 2,
+        () -> retentionBlocks.containsKey(matrix_core) && matrix_bridge.unlockedNow() && matrix_energy_manager.unlockedNow() && matrix_power_interface.unlockedNow(),
+        () -> DistributeNetwork.activityNetwork.orderedItems().contains(DistributeNetwork::netValid)){
         @Override
         public void draw(int page, Color color) {
           Point2 pos = retentionBlocks.get(matrix_core);
@@ -113,7 +120,7 @@ public class SglHint implements HintsFragment.Hint {
 
           if (page >= 1){
             Draw.color();
-            Draw.alpha(color.a*0.7f*(0.5f + Mathf.absin(5, 0.5f)));
+            Draw.alpha(color.a*0.7f*(0.5f + Mathf.absin(7, 0.5f)));
             drawBlock(matrix_topology_container, pos.x + 5, (pos.y + 2));
             drawBlock(matrix_topology_container, pos.x + 5, (pos.y - 2));
             drawBlock(matrix_topology_container, pos.x - 5, (pos.y + 2));

@@ -6,17 +6,17 @@ plugins {
   id 'com.github.johnrengelman.shadow' version '2.0.4'
 }
 
-version 'alpha-0.8.8'
+version 'alpha-0.8.9'
 
 sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]
 
 "java SyncBundles.java ${version}".execute().waitForProcessOutput(System.out, System.err)
 
-ext{
+ext {
   //the build number that this mod is made for
-  mindustryVersion = "v145"
-  uncVersion = "1.8.5"
+  mindustryVersion = "v145.1"
+  uncVersion = "1.8.6"
   //version of SDK you will be using
   minSdkAPI = 30
 
@@ -29,11 +29,12 @@ tasks.withType(JavaCompile).configureEach {
   options.compilerArgs.addAll(['--release', '8'])
 }
 
-dependencies{
-  repositories{
+dependencies {
+  repositories {
     mavenLocal()
     mavenCentral()
-    maven{ url 'https://www.jitpack.io' }
+    maven { url 'https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository' }
+    maven { url 'https://www.jitpack.io' }
   }
 
   compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
@@ -46,10 +47,10 @@ dependencies{
   compileOnly "com.github.EB-wilson.UniverseCore:dynamilizer:$uncVersion"
   compileOnly "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
 
-  implementation "com.github.EB-wilson.JavaDynamilizer:annotations:V1.8-A2"
+  implementation "com.github.EB-wilson.JavaDynamilizer:annotations:V1.8-A3"
 
   annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
-  annotationProcessor "com.github.EB-wilson.JavaDynamilizer:apt:V1.8-A2"
+  annotationProcessor "com.github.EB-wilson.JavaDynamilizer:apt:V1.8-A3"
 }
 
 tasks.register('jarAndroid') {
@@ -69,7 +70,7 @@ tasks.register('jarAndroid') {
 
         //dex and desugar files - this requires d8 in your PATH
         "d8 $dependencies --min-api 14 --output ${rootProject.name}-android.jar ${project.archivesBaseName}-desktop.jar"
-                .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
+            .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
       }
       catch (Throwable ignored) {
         def d8 = new File("$sdkRoot/build-tools/").listFiles().find {
@@ -79,20 +80,20 @@ tasks.register('jarAndroid') {
         }.listFiles().find { it.name.contains("d8") }
 
         "$d8 $dependencies --min-api 14 --output ${rootProject.name}-android.jar ${project.archivesBaseName}-desktop.jar"
-                .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
+            .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
       }
     }
     catch (Throwable ignored) {
       System.out.println("[WARNING] d8 tool or platform tools was not found, if you was installed android SDK, please check your environment variable")
 
       delete(
-              files("${rootProject.buildDir}/libs/${rootProject.name}-android.jar")
+          files("${rootProject.buildDir}/libs/${rootProject.name}-android.jar")
       )
 
       def out = new JarOutputStream(new FileOutputStream("${rootProject.buildDir}/libs/${rootProject.name}-android.jar"))
       out.putNextEntry(new JarEntry("non-androidMod.txt"))
       StringReader reader = new StringReader(
-              "this mod is don't have classes.dex for android, please consider recompile with a SDK or run this mod on desktop only"
+          "this mod is don't have classes.dex for android, please consider recompile with a SDK or run this mod on desktop only"
       )
 
       int r
@@ -105,10 +106,10 @@ tasks.register('jarAndroid') {
   }
 }
 
-shadowJar{
+shadowJar {
   archiveFileName = "${project.archivesBaseName}-desktop.jar"
 
-  from(rootDir){
+  from(rootDir) {
     include "mod.hjson"
     include "icon.png"
     include "contributors.hjson"
@@ -126,8 +127,8 @@ tasks.register('deploy', Jar) {
 
   from {
     [
-            zipTree("$buildDir/libs/${project.archivesBaseName}-desktop.jar"),
-            zipTree("$buildDir/libs/${project.archivesBaseName}-android.jar")
+        zipTree("$buildDir/libs/${project.archivesBaseName}-desktop.jar"),
+        zipTree("$buildDir/libs/${project.archivesBaseName}-android.jar")
     ]
   }
 
@@ -165,7 +166,7 @@ tasks.register('debugMod', JavaExec) {
 
   main = "-jar"
   args = [
-          project.properties.get("debugGamePath"),
-          "-debug"
+      project.properties.get("debugGamePath"),
+      "-debug"
   ]
 }

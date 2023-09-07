@@ -3,6 +3,7 @@ package singularity.world.blocks.distribute.matrixGrid;
 import arc.Core;
 import arc.func.Cons;
 import arc.math.geom.Point2;
+import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntMap;
 import arc.struct.ObjectMap;
@@ -15,12 +16,16 @@ import mindustry.ctype.ContentType;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Icon;
+import mindustry.gen.Tex;
+import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.Tile;
 import singularity.Sgl;
+import singularity.Singularity;
+import singularity.ui.SglStyles;
 import singularity.ui.tables.DistTargetConfigTable;
 import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.blocks.distribute.GenericIOPoint;
@@ -193,7 +198,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           new GridChildType[]{GridChildType.container};
       int off = Point2.pack(target.tileX() - tileX(), target.tileY() - tileY());
       table.add().width(45);
-      table.add(new DistTargetConfigTable(
+      table.table(Tex.pane, t -> t.add(new DistTargetConfigTable(
           off,
           configMap.get(off),
           config,
@@ -202,10 +207,8 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           target instanceof GenericIOPoint.GenericIOPPointBuild,
           c -> configure(c.pack()),
           UncCore.secConfig::hideConfig
-      ));
-      table.top().button(Icon.info, Styles.grayi, 32, () -> {
-
-      }).size(45).top();
+      )));
+      table.top().button(Icon.info, Styles.grayi, 32, () -> Sgl.ui.document.showDocument("", SglStyles.defaultMD, Singularity.getDocument("matrix_grid_config_help.md"))).size(45).top();
     }
 
     private ContentType[] getAcceptType(Block block){

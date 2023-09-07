@@ -41,23 +41,27 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
   
   /**转运核能量到指定的块中，速度取决于势能差*/
   default float moveEnergy(NuclearEnergyBuildComp next){
-    if(!(next instanceof Building)) return 0;
     if(!next.getNuclearBlock().hasEnergy() || !next.acceptEnergy(this)) return 0;
     float rate = getEnergyMoveRate(next);
 
-    rate = Math.min(rate, next.getNuclearBlock().energyCapacity() - next.getEnergy());
-    rate = Math.min(rate, getEnergy());
+    if (rate > 0) {
+      float energyDiff = getEnergyPressure(next);
+      if (energyDiff > next.getNuclearBlock().maxEnergyPressure()) next.onOverpressure(energyDiff);
 
-    handleEnergy(-rate);
-    next.handleEnergy(rate);
+      rate = Math.min(rate, next.getNuclearBlock().energyCapacity() - next.getEnergy());
+      rate = Math.min(rate, getEnergy());
 
-    energyMoved(next, rate);
+      handleEnergy(-rate);
+      next.handleEnergy(rate);
+
+      energyMoved(next, rate);
+    }
     return rate;
   }
 
   default float getEnergyPressure(NuclearEnergyBuildComp other){
     if(!other.getNuclearBlock().hasEnergy()) return 0;
-    return getEnergy() - other.getEnergy();
+    return Mathf.maxZero(getOutputPotential() - other.getInputPotential() - other.getNuclearBlock().basicPotentialEnergy());
   }
 
   @Annotations.MethodEntry(entryMethod = "update", insert = Annotations.InsertPosition.HEAD)
@@ -67,9 +71,8 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
   
   /**获取该块对目标块的核能传输速度*/
   default float getEnergyMoveRate(NuclearEnergyBuildComp next){
-    if(!next.getNuclearBlock().hasEnergy() || !next.acceptEnergy(this) || getEnergy() < next.getEnergy()) return 0;
-    float energyDiff = Mathf.maxZero(getEnergyPressure(next));
-    if (!energy().buffered && energyDiff < next.getNuclearBlock().basicPotentialEnergy()) return 0;
+    if(!next.getNuclearBlock().hasEnergy() || !next.acceptEnergy(this) || getOutputPotential() < next.getInputPotential()) return 0;
+    float energyDiff = getEnergyPressure(next);
 
     float flowRate = (Math.min(energyDiff*energyDiff/60, energyDiff) - next.getResident())*getBuilding().delta();
     flowRate = Math.min(flowRate, next.getNuclearBlock().energyCapacity() - next.getEnergy());
@@ -89,8 +92,16 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
 
     return tmp;
   }
-  
+
   default float getEnergy(){
+    return energy().getEnergy();
+  }
+
+  default float getInputPotential(){
+    return energy().getEnergy();
+  }
+
+  default float getOutputPotential(){
     return energy().getEnergy();
   }
   

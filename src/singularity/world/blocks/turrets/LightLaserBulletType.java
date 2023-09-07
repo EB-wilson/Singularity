@@ -29,7 +29,7 @@ public class LightLaserBulletType extends EmpLightningBulletType{
   public int lightnings = 2;
   public float lightningTime = 5;
   public VectorLightningGenerator generator = new VectorLightningGenerator() {{
-    minInterval = 8;
+    minInterval = 4;
     maxInterval = 12;
     maxSpread = 9;
   }};

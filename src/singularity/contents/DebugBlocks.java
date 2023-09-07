@@ -122,6 +122,7 @@ public class DebugBlocks implements ContentList{
             Lines.circle(b.x + dx, b.y + dy, 16);
 
             SglDraw.drawDiamond(b.x + dx, b.y + dy, 180, 5, 0);
+            Draw.reset();
           });
         }
       };

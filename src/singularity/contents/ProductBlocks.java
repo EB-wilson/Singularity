@@ -143,7 +143,7 @@ public class ProductBlocks implements ContentList {
           Blocks.dacite, 0.8f/9f,
           Blocks.shale, 1f/9f,
           Blocks.salt, 1f/9f
-      ){{baseEfficiency = 0;}});
+      ){{ baseEfficiency = 0; }});
       consume.addSelfAccess(ConsumeType.item, SglItems.alkali_stone);
       newProduce();
       produce.item(Items.sand, 1);
@@ -159,7 +159,7 @@ public class ProductBlocks implements ContentList {
           Blocks.stone, 0.4f/9f,
           Blocks.craters, 0.5f/9f,
           Blocks.salt, 2f/9f
-      ){{baseEfficiency = 0;}});
+      ){{ baseEfficiency = 0; }});
       consume.optionalAlwaysValid = false;
 
       newBooster(1.8f);

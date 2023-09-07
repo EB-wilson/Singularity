@@ -55,9 +55,6 @@ public class FloorCrafter extends BoosterCrafter{
 
   @Annotations.ImplEntries
   public class FloorCrafterBuild extends BoosterCrafterBuild implements FloorCrafterBuildComp {
-    @Override
-    public float optionalConsEff(BaseConsumers consumers) {
-      return super.optionalConsEff(consumers)*boostEff;
-    }
+
   }
 }

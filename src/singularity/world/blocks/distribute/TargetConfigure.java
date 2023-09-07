@@ -63,18 +63,13 @@ public class TargetConfigure implements DataPackable {
   }
 
   public byte[] getDirectBit(GridChildType type, UnlockableContent content) {
-    return directBits.get(type, Empties.nilMapO()).get(content, new byte[]{-1});
+    return directBits.get(type, Empties.nilMapO()).get(content, new byte[1]);
   }
 
   public boolean directValid(GridChildType type, UnlockableContent content, byte match) {
     byte bit = getDirectBit(type, content)[0];
-    if (bit == -1 || match == -1) return false;
-    if (bit == 0) return true;
+    if (bit <= 0 || match <= 0) return false;
     return (bit & match) != 0;
-  }
-
-  public ObjectSet<UnlockableContent> getOrNew(GridChildType type, ContentType t) {
-    return data.get(type, ObjectMap::new).get(t, ObjectSet::new);
   }
 
   public ObjectSet<UnlockableContent> get(GridChildType type, ContentType t) {
@@ -227,6 +222,7 @@ public class TargetConfigure implements DataPackable {
   public void clear() {
     priority = 0;
     data.clear();
+    directBits.clear();
   }
 
   public boolean isClear() {

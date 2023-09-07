@@ -82,7 +82,7 @@ public class NuclearBlocks implements ContentList{
       ));
       size = 2;
 
-      energyCapacity = 512;
+      energyCapacity = 4096;
     }};
     
     phase_pipe_node = new NuclearNode("phase_pipe_node"){{
@@ -96,7 +96,7 @@ public class NuclearBlocks implements ContentList{
       maxLinks = 18;
       linkRange = 22;
 
-      energyCapacity = 2048;
+      energyCapacity = 16384;
     }};
     
     decay_bin = new NormalCrafter("decay_bin"){{
@@ -175,7 +175,9 @@ public class NuclearBlocks implements ContentList{
           SglItems.aerogel, 90
       ));
       size = 3;
-      
+
+      energyCapacity = 1024;
+      basicPotentialEnergy = 256;
       warmupSpeed = 0.0075f;
       
       newConsume();
@@ -298,7 +300,7 @@ public class NuclearBlocks implements ContentList{
       size = 4;
       itemCapacity = 35;
       liquidCapacity = 25;
-      energyCapacity = 2048;
+      energyCapacity = 4096;
 
       hasLiquids = true;
       
