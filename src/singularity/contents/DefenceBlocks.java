@@ -354,8 +354,7 @@ public class DefenceBlocks implements ContentList{
                   hitEffect.at(unit.x, unit.y, hitColor);
 
                   gen.vector.set(unit.x - b.x, unit.y - b.y);
-                  d.container.generator = gen;
-                  d.container.create();
+                  d.container.create(gen);
                 }
               }
             }

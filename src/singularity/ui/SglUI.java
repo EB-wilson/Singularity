@@ -377,7 +377,7 @@ public class SglUI{
             "mathShapePrecision",
             f -> Sgl.config.mathShapePrecision = (int)f,
             () -> Sgl.config.mathShapePrecision,
-            128, 2048, 8
+            32, 2048, 8
         ),
         new ConfigCheck("enableDistortion", b -> Sgl.config.enableDistortion = b, () -> Sgl.config.enableDistortion),
         new ConfigCheck("enableParticle", b -> Sgl.config.enableParticle = b, () -> Sgl.config.enableParticle),

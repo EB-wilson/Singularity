@@ -60,6 +60,7 @@ import universecore.world.consumers.ConsumeItems;
 import universecore.world.consumers.ConsumeType;
 import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.CircleGenerator;
+import universecore.world.lightnings.generator.LightningGenerator;
 import universecore.world.lightnings.generator.VectorLightningGenerator;
 import universecore.world.producers.ProduceType;
 
@@ -1896,35 +1897,32 @@ public class CrafterBlocks implements ContentList{
 
       clipSize = 150;
 
+      LightningGenerator generator = new CircleGenerator(){{
+        radius = 13.5f;
+        minInterval = 1.5f;
+        maxInterval = 3f;
+        maxSpread = 2.25f;
+      }};
       initialed = e -> {
         e.setVar("lightningDrawer", new LightningContainer(){{
-          generator = new CircleGenerator(){{
-            radius = 13.5f;
-            minInterval = 1.5f;
-            maxInterval = 3f;
-            maxSpread = 2.25f;
-          }};
           maxWidth = minWidth = 0.8f;
           lifeTime = 24;
         }});
 
-        LightningContainer con;
-        e.setVar("lightnings", con = new LightningContainer(){{
-          generator = new VectorLightningGenerator(){{
-            lerp = Interp.pow2Out;
-
-            maxSpread = 8f;
-            minInterval = 5f;
-            maxInterval = 12f;
-          }};
+        e.setVar("lightnings", new LightningContainer(){{
+          lerp = Interp.pow2Out;
         }});
-        e.setVar("lightningGenerator", con.generator);
+        e.setVar("lightningGenerator", new VectorLightningGenerator(){{
+          maxSpread = 8f;
+          minInterval = 5f;
+          maxInterval = 12f;
+        }});
       };
 
       crafting = (NormalCrafterBuild e) -> {
         if(!Sgl.config.enableLightning || Sgl.config.animateLevel < 3) return;
 
-        if(SglDraw.clipDrawable(e.x, e.y, clipSize) && Mathf.chanceDelta(e.workEfficiency()*0.1f)) e.<LightningContainer>getVar("lightningDrawer").create();
+        if(SglDraw.clipDrawable(e.x, e.y, clipSize) && Mathf.chanceDelta(e.workEfficiency()*0.1f)) e.<LightningContainer>getVar("lightningDrawer").create(generator);
         if(Mathf.chanceDelta(e.workEfficiency()*0.04f)) SglFx.randomLightning.at(e.x, e.y, 0, Pal.reactorPurple);
       };
 
@@ -1939,7 +1937,7 @@ public class CrafterBlocks implements ContentList{
 
             int amount = Mathf.random(3, 5);
             for(int i1 = 0; i1 < amount; i1++){
-              e.<LightningContainer>getVar("lightnings").create();
+              e.<LightningContainer>getVar("lightnings").create(gen);
             }
 
             if(Mathf.chance(0.25f)){

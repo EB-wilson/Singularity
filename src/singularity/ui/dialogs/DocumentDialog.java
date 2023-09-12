@@ -91,6 +91,7 @@ public class DocumentDialog extends BaseDialog {
         };
 
         Runnable build = () -> table.table(clip -> {
+          table.top().defaults().top();
           clip.setClip(true);
 
           rebuilder = i -> {
@@ -103,7 +104,7 @@ public class DocumentDialog extends BaseDialog {
                   Actions.run(() -> {
                     clip.removeChild(lastPane);
                     lastPane = clip.table(SglDrawConst.padGrayUI, page -> {
-                      page.table().get().pane(Styles.smallPane, documents[index[0]]).scrollX(false).get().setFillParent(true);
+                      page.top().table().get().pane(Styles.smallPane, documents[index[0]]).scrollX(false).get().setFillParent(true);
                     }).scrollX(false).grow().get();
                     lastPane.color.a = 0;
 
@@ -119,7 +120,7 @@ public class DocumentDialog extends BaseDialog {
             }
             else {
               lastPane = clip.table(SglDrawConst.padGrayUI, page -> {
-                page.table().get().pane(Styles.smallPane, documents[index[0]]).scrollX(false).get().setFillParent(true);
+                page.top().table().get().pane(Styles.smallPane, documents[index[0]]).scrollX(false).get().setFillParent(true);
               }).grow().get();
             }
           };

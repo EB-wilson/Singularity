@@ -74,10 +74,9 @@ public class LightLaserBulletType extends EmpLightningBulletType{
     Damage.collideLaser(b, range, false, true, -1);
     laserEffect.at(b.x, b.y, b.rotation(), b.fdata * 0.75f);
     generator.vector.set(b.fdata, 0).setAngle(b.rotation());
-    c.generator = generator;
 
     for (int i = 0; i < lightnings; i++) {
-      c.create();
+      c.create(generator);
     }
   }
 

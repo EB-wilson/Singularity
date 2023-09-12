@@ -533,11 +533,6 @@ public class ItemNode extends SglBlock {
     }
 
     @Override
-    public byte version(){
-      return 2;
-    }
-
-    @Override
     public void buildConfiguration(Table table) {
       showing = false;
       table.table(t -> {

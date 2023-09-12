@@ -639,10 +639,9 @@ public class SglTurrets implements ContentList{
 
               if (b.data instanceof LightningContainer c){
                 if (b.timer(2, 15/Mathf.clamp((b.fout() - 0.15f)*4))){
-                  c.generator = generator;
-                  c.generator.setOffset(Mathf.random(-45f, 45f), Mathf.random(-45f, 45f));
+                  generator.setOffset(Mathf.random(-45f, 45f), Mathf.random(-45f, 45f));
                   generator.originAngle = Mathf.random(0, 360f);
-                  c.create();
+                  c.create(generator);
                 }
                 c.update();
               }
@@ -992,7 +991,6 @@ public class SglTurrets implements ContentList{
             shY = b.y + Tmp.v1.y;
           }
 
-          container.generator = generator;
           generator.vector.set(
               shX - b.originX,
               shY - b.originY
@@ -1000,7 +998,7 @@ public class SglTurrets implements ContentList{
 
           int amount = Mathf.random(5, 7);
           for(int i = 0; i < amount; i++){
-            container.create();
+            container.create(generator);
           }
 
           Time.run(6, () -> {
@@ -1044,14 +1042,15 @@ public class SglTurrets implements ContentList{
       consume.energy(2.2f);
       consume.time(180);
 
+      LightningGenerator generator = new CircleGenerator(){{
+        radius = 8;
+        maxSpread = 2.5f;
+        minInterval = 2;
+        maxInterval = 2.5f;
+      }};
+
       initialed = e -> {
         e.setVar(CONTAINER, new LightningContainer(){{
-          generator = new CircleGenerator(){{
-            radius = 8;
-            maxSpread = 2.5f;
-            minInterval = 2;
-            maxInterval = 2.5f;
-          }};
           lifeTime = 45f;
           maxWidth = 2f;
           lerp = Interp.linear;
@@ -1066,7 +1065,7 @@ public class SglTurrets implements ContentList{
         e.<LightningContainer>getVar(CONTAINER).update();
         SglTurretBuild turret = (SglTurretBuild) e;
         if(turret.warmup > 0 && e.timer(timeId, 25/turret.warmup)){
-          e.<LightningContainer>getVar(CONTAINER).create();
+          e.<LightningContainer>getVar(CONTAINER).create(generator);
         }
 
         if(Mathf.chanceDelta(0.03f*turret.warmup)){
@@ -2720,9 +2719,8 @@ public class SglTurrets implements ContentList{
                 if(tar == null) return;
 
                 gen.vector.set(tar.x() - b.x, tar.y() - b.y);
-                container.generator = gen;
 
-                container.create();
+                container.create(gen);
 
                 Damage.collideLine(b, b.team, Fx.hitLancer, b.x, b.y, gen.vector.angle(), gen.vector.len(), false, false);
               }
@@ -3547,7 +3545,6 @@ public class SglTurrets implements ContentList{
       public void init(Bullet b, LightningContainer container){
         container.time = time;
         container.lifeTime = lifeTime;
-        container.generator = generator.get(b);
         container.maxWidth = size;
         container.minWidth = size*0.85f;
         container.lerp = Interp.linear;
@@ -3562,13 +3559,14 @@ public class SglTurrets implements ContentList{
           b.fdata = resultLength;
         };
 
-        container.generator.blockNow = (last, vertex) -> {
+        LightningGenerator gen = generator.get(b);
+        gen.blockNow = (last, vertex) -> {
           Building abs = Damage.findAbsorber(b.team, b.x + last.x, b.y + last.y, b.x + vertex.x, b.y + vertex.y);
           if(abs == null) return -1;
           float ox = b.x + last.x, oy = b.y + last.y;
           return Mathf.len(abs.x - ox, abs.y - oy);
         };
-        container.create();
+        container.create(gen);
       }
     };
   }

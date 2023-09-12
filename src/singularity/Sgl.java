@@ -4,11 +4,13 @@ import arc.Core;
 import arc.Events;
 import arc.files.Fi;
 import arc.files.ZipFi;
+import arc.graphics.Color;
 import arc.graphics.g2d.PixmapRegion;
 import arc.scene.ui.layout.Table;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.game.EventType;
+import mindustry.game.Team;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import singularity.core.ModConfig;
@@ -76,6 +78,8 @@ public class Sgl{
   
   public static final String modAddress = "";
   public static final String libAddress = "";
+
+  public static final Team none = Team.get(255);
   
   /**模组配置存储器*/
   public static ModConfig config = new ModConfig();

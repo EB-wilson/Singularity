@@ -122,11 +122,6 @@ public abstract class IOPoint extends SglBlock implements IOPointBlockComp{
     }
 
     @Override
-    public byte version(){
-      return 3;
-    }
-
-    @Override
     public void write(Writes write){
       super.write(write);
 

@@ -23,6 +23,7 @@ import mindustry.core.Renderer;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
+import mindustry.gen.Groups;
 import mindustry.gen.Iconc;
 import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;
@@ -39,11 +40,12 @@ import mindustry.world.Tile;
 import mindustry.world.draw.DrawBlock;
 import mindustry.world.draw.DrawDefault;
 import mindustry.world.meta.*;
+import singularity.Sgl;
+import singularity.contents.SglUnits;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.SglFx;
 import singularity.world.blocks.nuclear.NuclearNode;
-import singularity.world.blocks.nuclear.TokamakCore;
 import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.consumers.SglConsumeType;
@@ -52,6 +54,7 @@ import singularity.world.modules.NuclearEnergyModule;
 import singularity.world.modules.SglConsumeModule;
 import singularity.world.modules.SglLiquidModule;
 import singularity.world.particles.SglParticleModels;
+import singularity.world.unit.SglUnitEntity;
 import universecore.annotations.Annotations;
 import universecore.components.ExtraVariableComp;
 import universecore.components.blockcomp.ConsumerBlockComp;
@@ -62,12 +65,14 @@ import universecore.util.handler.FieldHandler;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeType;
 import universecore.world.meta.UncStat;
+import universecore.world.particles.models.RandDeflectParticle;
 
 import static mindustry.Vars.*;
 
 /**此mod的基础方块类型，对block添加了完善的consume系统，并拥有中子能的基础模块*/
 @Annotations.ImplEntries
 public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyBlockComp{
+  public static final int BASE_EXBLOSIVE_ENERGY = 128;
   public boolean autoSelect = false;
   public boolean canSelect = true;
 
@@ -499,7 +504,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
         if (Mathf.chanceDelta(0.1f*Mathf.maxZero(activation - 0.5f))){
           Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f,
-              (x, y) -> SglParticleModels.floatParticle.create(this.x, this.y, SglDrawConst.fexCrystal, x, y, 2.6f).setVar(SglParticleModels.STRENGTH, 0.4f)
+              (x, y) -> SglParticleModels.floatParticle.create(this.x, this.y, SglDrawConst.fexCrystal, x, y, 2.6f).setVar(RandDeflectParticle.STRENGTH, 0.4f)
           );
         }
       }
@@ -566,7 +571,26 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
       activateRecover = 0f;
       activation = Mathf.clamp(activation + Math.min((potentialEnergy - maxEnergyPressure)/maxEnergyPressure*0.01f, 0.008f)*Time.delta);
     }
-    
+
+    @Override
+    public void onDestroyed() {
+      super.onDestroyed();
+
+      if (hasEnergy && getEnergy() >= BASE_EXBLOSIVE_ENERGY){
+        SglUnitEntity u = (SglUnitEntity) SglUnits.unstable_energy_body.create(Sgl.none);
+        u.health = 10*getEnergy();
+
+        u.x = x;
+        u.y = y;
+
+        u.add();
+
+        if (activation >= 0.5f){
+          u.setVar("controlTime", 0f);
+        }
+      }
+    }
+
     /**具有输出物品的方块返回可能输出的物品，没有则返回null*/
     public Seq<Item> outputItems(){
       return null;
@@ -638,13 +662,15 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
     @Override
     public byte version(){
-      return 2;
+      return 3;
     }
 
     @Override
     public void write(Writes write) {
       super.write(write);
       write.i(select);
+      write.f(activation);
+
       write.i(recipeCurrent);
       if(consumer != null) consumer.write(write);
       if(energy != null) energy.write(write);
@@ -653,10 +679,12 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     @Override
     public void read(Reads read, byte revision){
       super.read(read, revision);
-      if(revision >= 2) select = read.i();
+      if (revision >= 2) select = read.i();
+      if (revision >= 3) activation = read.f();
+
       recipeCurrent = read.i();
-      if(consumer != null) consumer.read(read, revision < version());
-      if(energy != null) energy.read(read, revision < version());
+      if(consumer != null) consumer.read(read, revision <= 2);
+      if(energy != null) energy.read(read, revision <= 2);
     }
   }
 }

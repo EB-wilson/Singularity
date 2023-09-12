@@ -56,7 +56,6 @@ public class SglDraw{
   static {
     Events.run(EventType.Trigger.draw, () -> {
       Particle.maxAmount = Sgl.config.enableParticle? Sgl.config.maxParticleCount: 0;
-      MathRenderer.precision = Sgl.config.mathShapePrecision;
     });
 
     Time.run(0, () -> Sgl.ui.debugInfos.addMonitor("drawTaskCount", () -> idCount));

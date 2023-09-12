@@ -62,12 +62,12 @@ public class SglHint implements HintsFragment.Hint {
     });
   }
 
-  //matrix distribute network
   public static final SglHint
       spliceStructure = new SglHint("spliceStructure", 2,
         () -> retentionBlocks.orderedKeys().contains(e -> e instanceof SpliceBlockComp),
         () -> false),
 
+      //matrix distribute network
       matrixCorePlaced = new SglHint("matrixCorePlaced", 2,
         () -> retentionBlocks.containsKey(matrix_core) && matrix_bridge.unlockedNow() && matrix_energy_manager.unlockedNow() && matrix_power_interface.unlockedNow(),
         () -> DistributeNetwork.activityNetwork.orderedItems().contains(DistributeNetwork::netValid)){

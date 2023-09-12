@@ -854,12 +854,12 @@ public class SglFx{
       if(!Sgl.config.enableLightning) return null;
 
       if(!(data instanceof Float)) data = 90f;
-      LightningContainer.PoolLightningContainer lightning = LightningContainer.PoolLightningContainer.create(generator, lifetime, 1.4f, 2.5f);
+      LightningContainer.PoolLightningContainer lightning = LightningContainer.PoolLightningContainer.create(lifetime, 1.4f, 2.5f);
 
       lightning.lerp = Interp.pow2Out;
       lightning.time = lifetime/2;
       generator.maxLength = random(((float)data)/2, (float)data);
-      lightning.create();
+      lightning.create(generator);
 
       Time.run(lifetime + 5, () -> Pools.free(lightning));
       return lightning;
@@ -902,14 +902,14 @@ public class SglFx{
     public LightningContainer createLightning(float x, float y){
       if(!Sgl.config.enableLightning) return null;
 
-      LightningContainer.PoolLightningContainer lightning = LightningContainer.PoolLightningContainer.create(generator, lifetime, 1.5f,2.6f);
+      LightningContainer.PoolLightningContainer lightning = LightningContainer.PoolLightningContainer.create(lifetime, 1.5f,2.6f);
 
       lightning.lerp = Interp.pow2Out;
       lightning.time = lifetime/2;
       int amount = random(4, 6);
       for(int i = 0; i < amount; i++){
         generator.maxLength = random(50, 75);
-        lightning.create();
+        lightning.create(generator);
       }
 
       Time.run(lifetime + 5, () -> Pools.free(lightning));

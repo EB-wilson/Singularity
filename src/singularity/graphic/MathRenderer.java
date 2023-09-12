@@ -21,6 +21,8 @@ public class MathRenderer{
 
   public static MathShader ovalShader;
 
+  public static MathShader curveCircle;
+
   static float dispersion = 0.02f;
   static float minThreshold = 0.01f;
   static float maxThreshold = 1;
@@ -29,10 +31,7 @@ public class MathRenderer{
 
   static TextureRegion blank;
 
-  public static int precision = 1024;
-  static int lastPrecision;
-
-  static class MathShader extends Shader{
+  public static class MathShader extends Shader{
     private static final String vert = """
         uniform mat4 u_projTrans;
         
@@ -74,6 +73,8 @@ public class MathRenderer{
             vec4 c = texture2D(u_texture, v_texCoords);
             vec4 mixed = v_color*c;
                 
+            %perVar%
+            
             float gradMod = %gradMod%;
             float alpha = dispersion*gradMod/(abs(%fx%) + dispersion*gradMod);
                 
@@ -91,13 +92,18 @@ public class MathRenderer{
     }
 
     public MathShader(float widthScl, float heightScl, String function, String gradMod, String... argTypes){
-      super(vert, genFrag(widthScl, heightScl, function, gradMod, argTypes));
+      this("", widthScl, heightScl, function, gradMod, argTypes);
+    }
+
+    public MathShader(String perVar, float widthScl, float heightScl, String function, String gradMod, String... argTypes){
+      super(vert, genFrag(perVar, widthScl, heightScl, function, gradMod, argTypes));
       this.function = function;
       argsArr = new Object[argTypes.length];
     }
 
-    public static String genFrag(float widthScl, float heightScl, String function, String gradMod, String... argTypes){
+    public static String genFrag(String perVar, float widthScl, float heightScl, String function, String gradMod, String... argTypes){
       String res = frag.replace("%fx%", function)
+          .replace("%perVar%", perVar)
           .replace("%gradMod%", gradMod)
           .replace("%args%", genArgList(argTypes))
           .replace("%wScl%", Float.toString(widthScl*2f))
@@ -167,16 +173,11 @@ public class MathRenderer{
     }
   }
 
-  public static void setPrecision(int precision){
-    MathRenderer.precision = precision;
-  }
-
   private static TextureRegion getBlank(){
-    if(blank == null || lastPrecision != precision){
-      Pixmap pix = new Pixmap(precision, precision);
+    if(blank == null || blank.width != Sgl.config.mathShapePrecision){
+      Pixmap pix = new Pixmap(Sgl.config.mathShapePrecision, Sgl.config.mathShapePrecision);
       pix.fill(Color.white);
       blank = new TextureRegion(new Texture(pix));
-      lastPrecision = precision;
     }
 
     return blank;
@@ -192,6 +193,13 @@ public class MathRenderer{
     ovalShader = new MathShader(
         "x*x*arg0 + y*y*arg1 - arg2",
         "sqrt(4.0*pow(arg0*x, 2.0) + 4.0*pow(arg1*y, 2.0))",
+        "float", "float", "float"
+    );
+
+    curveCircle = new MathShader(
+        "float arctan = arg2*atan(y/x);\nfloat costan = cos(arctan);", 2, 2,
+        "x*x + y*y - arg0 - arg1*sin(arctan)",
+        "sqrt(pow((x*costan + 2.0*y*y*y + 2.0*x*x*y)/(x*x + y*y), 2.0) + pow((2.0*x*x*x + 2.0*x*y*y + arg1*arg2*y*costan)/(x*x + y*y), 2.0))",
         "float", "float", "float"
     );
   }
@@ -264,6 +272,17 @@ public class MathRenderer{
     Draw.shader(ovalShader);
     float r = max*4;
     Draw.rect(getBlank(), x, y, r, r, rotation);
+    Draw.shader();
+  }
+
+  public static void drawCurveCircle(float x, float y, float radius, int sinMulti, float scl, float rotate){
+    curveCircle.setScl(radius, radius);
+    curveCircle.setArg(0, radius*radius);
+    curveCircle.setArg(1, scl);
+    curveCircle.setArg(2, sinMulti*2f);
+
+    Draw.shader(curveCircle);
+    Draw.rect(getBlank(), x, y, radius*4, radius*4, rotate);
     Draw.shader();
   }
 }

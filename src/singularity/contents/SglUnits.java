@@ -1,8 +1,6 @@
 package singularity.contents;
 
-import arc.Application;
 import arc.Core;
-import arc.Events;
 import arc.audio.Sound;
 import arc.func.Func2;
 import arc.graphics.Color;
@@ -21,9 +19,10 @@ import arc.struct.Seq;
 import arc.util.Interval;
 import arc.util.Time;
 import arc.util.Tmp;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
-import mindustry.ClientLauncher;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
@@ -31,16 +30,17 @@ import mindustry.entities.Damage;
 import mindustry.entities.Effect;
 import mindustry.entities.UnitSorts;
 import mindustry.entities.Units;
+import mindustry.entities.abilities.Ability;
 import mindustry.entities.bullet.*;
 import mindustry.entities.bullet.LightningBulletType;
 import mindustry.entities.effect.MultiEffect;
-import mindustry.entities.part.DrawPart;
 import mindustry.entities.part.HaloPart;
 import mindustry.entities.part.RegionPart;
 import mindustry.entities.pattern.ShootBarrel;
 import mindustry.entities.pattern.ShootPattern;
+import mindustry.entities.units.UnitController;
 import mindustry.entities.units.WeaponMount;
-import mindustry.game.EventType;
+import mindustry.game.Team;
 import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
@@ -73,13 +73,14 @@ import singularity.world.blocks.turrets.EmpBulletType;
 import singularity.world.draw.part.CustomPart;
 import singularity.world.particles.SglParticleModels;
 import singularity.world.unit.*;
-import universecore.util.handler.ObjectHandler;
 import universecore.world.lightnings.LightningContainer;
+import universecore.world.lightnings.generator.CircleGenerator;
 import universecore.world.lightnings.generator.RandomGenerator;
+import universecore.world.lightnings.generator.ShrinkGenerator;
 import universecore.world.lightnings.generator.VectorLightningGenerator;
+import universecore.world.particles.models.RandDeflectParticle;
 
 import java.util.Iterator;
-import java.util.regex.Pattern;
 
 import static mindustry.Vars.*;
 
@@ -108,6 +109,9 @@ public class SglUnits implements ContentList{
   public static UnitType mornstar,
   /**极光*/
   aurora;
+
+  @UnitEntityType(SglUnitEntity.class)
+  public static UnitType unstable_energy_body;
 
   /**机械构造坞*/
   public static Block cstr_1,
@@ -2492,8 +2496,6 @@ public class SglUnits implements ContentList{
                     gen.vector.set(b.aimX - b.x, b.aimY - b.y).limit(range);
                     b.aimX = b.x + gen.vector.x;
                     b.aimY = b.y + gen.vector.y;
-
-                    cont.generator = gen;
                     cont.lerp = Interp.pow4Out;
                     cont.lifeTime = lifetime;
                     cont.time = blastDelay;
@@ -2503,7 +2505,7 @@ public class SglUnits implements ContentList{
                     float ax = b.aimX, ay = b.aimY;
 
                     for (int i = 0; i < 4; i++) {
-                      cont.create();
+                      cont.create(gen);
                     }
                     Time.run(blastDelay, () -> {
                       Effect.shake(damageShake, damageShake, b);
@@ -2757,6 +2759,234 @@ public class SglUnits implements ContentList{
       public void load() {
         super.load();
         shadowRegion = region;
+      }
+    };
+
+    unstable_energy_body = new SglUnitType("unstable_energy_body"){
+      public static final float FULL_SIZE_ENERGY = 3680;
+
+      {
+        isEnemy = false;
+
+        health = 10;
+        hidden = true;
+        hitSize = 32;
+        playerControllable = false;
+        createWreck = false;
+        createScorch = false;
+        logicControllable = false;
+        useUnitCap = false;
+
+        aiController = () -> new UnitController(){
+          @Override
+          public void unit(Unit unit) {
+            //no ai
+          }
+
+          @Override
+          public Unit unit() {
+            // no ai
+            return null;
+          }
+        };
+      }
+
+      final CircleGenerator generator = new CircleGenerator();
+
+      final ShrinkGenerator linGen = new ShrinkGenerator(){{
+        minInterval = 2.8f;
+        maxInterval = 4f;
+        maxSpread = 4f;
+      }};
+
+      final BulletType frag = new BulletType(){
+        {
+          collides = false;
+          absorbable = false;
+
+          splashDamage = 120;
+          splashDamageRadius = 24;
+          speed = 2.4f;
+          lifetime = 64;
+
+          hitShake = 4;
+          hitSize = 3;
+
+          despawnHit = true;
+          hitEffect = new MultiEffect(
+              SglFx.explodeImpWaveSmall,
+              SglFx.diamondSpark
+          );
+          hitColor = SglDrawConst.matrixNet;
+
+          trailColor = SglDrawConst.matrixNet;
+          trailEffect = SglFx.glowParticle;
+          trailRotation = true;
+          trailInterval = 15f;
+
+          fragBullet = new LightningBulletType(){{
+            lightningLength = 14;
+            lightningLengthRand = 4;
+            damage = 24;
+          }};
+          fragBullets = 1;
+        }
+
+        @Override
+        public void draw(Bullet b) {
+          Draw.color(hitColor);
+          float fout = b.fout(Interp.pow3Out);
+          Fill.circle(b.x, b.y, 5f*fout);
+          Draw.color(Color.black);
+          Fill.circle(b.x, b.y, 2.6f*fout);
+        }
+      };
+
+      @Override
+      public Unit create(Team team) {
+        SglUnitEntity res = (SglUnitEntity) super.create(team);
+
+        res.setVar("controlTime", Time.time);
+
+        return res;
+      }
+
+      @Override
+      public void init(SglUnitEntity unit) {
+        LightningContainer cont = new LightningContainer();
+        cont.time = 0;
+        cont.lifeTime = 18;
+        cont.minWidth = 0.8f;
+        cont.maxWidth = 1.8f;
+        unit.setVar("lightnings", cont);
+
+        LightningContainer lin = new LightningContainer();
+        lin.headClose = true;
+        lin.endClose = true;
+        lin.time = 12;
+        lin.lifeTime = 22;
+        lin.minWidth = 1.2f;
+        lin.maxWidth = 2.4f;
+        unit.setVar("lin", lin);
+      }
+
+      @Override
+      public void update(Unit u) {
+        SglUnitEntity unit = (SglUnitEntity) u;
+
+        super.update(unit);
+
+        LightningContainer lightnings = unit.getVar("lightnings");
+        LightningContainer lin = unit.getVar("lin");
+        if (Mathf.chanceDelta(0.08f)){
+          generator.radius = hitSize*Math.min(unit.health/FULL_SIZE_ENERGY, 2);
+          generator.minInterval = 4.5f;
+          generator.maxInterval = 6.5f;
+          generator.maxSpread = 5f;
+          lightnings.create(generator);
+
+          Angles.randLenVectors(System.nanoTime(), 1, 1.8f, 2.75f,
+              (x, y) -> SglParticleModels.floatParticle.create(u.x, u.y, Pal.reactorPurple, x, y, Mathf.random(3.55f, 4.25f))
+                  .setVar(RandDeflectParticle.STRENGTH, 0.22f));
+        }
+
+        if (Mathf.chanceDelta(0.1f)){
+          linGen.minRange = linGen.maxRange = hitSize*Math.min(unit.health/FULL_SIZE_ENERGY, 2);
+          int n = Mathf.random(1, 3);
+          for (int i = 0; i < n; i++) {
+            lin.create(linGen);
+          }
+        }
+
+        if (unit.handleVar("timer", (float t) -> t - Time.delta, 15f) <= 0){
+          unit.setVar("timer", 12f);
+          generator.minInterval = 3.5f;
+          generator.maxInterval = 4.5f;
+          generator.maxSpread = 4f;
+          generator.radius = hitSize*Math.min(unit.health/FULL_SIZE_ENERGY, 2)/2;
+          lightnings.create(generator);
+        }
+
+        lightnings.update();
+        lin.update();
+
+        unit.hitSize = hitSize*Math.min(unit.health/FULL_SIZE_ENERGY, 2);
+        float controlTime = 900 - Time.time + unit.getVar("controlTime", 0f);
+        if (controlTime <= 0){
+          if (unit.health >= 1280){
+            Effect.shake(8f, 120f, u.x, u.y);
+            Damage.damage(u.x, u.y, unit.hitSize*5, unit.health/FULL_SIZE_ENERGY*4680);
+
+            Sounds.largeExplosion.at(u.x, u.y, 0.8f, 3.5f);
+
+            SglFx.reactorExplode.at(u.x, u.y, 0, unit.hitSize*5);
+            Angles.randLenVectors(System.nanoTime(), Mathf.random(20, 34), 2.8f, 6.5f, (x, y) -> {
+              float len = Tmp.v1.set(x, y).len();
+              SglParticleModels.floatParticle.create(u.x, u.y, Pal.reactorPurple, x, y, Mathf.random(5f, 7f)*((len - 3)/4.5f));
+            });
+          }
+
+          unit.kill();
+        }
+        else if (controlTime <= 300){
+          float bullTime = unit.handleVar("bullTime", (float f) -> f - Time.delta, 0f);
+          if (bullTime <= 0){
+            frag.create(u, u.team, u.x, u.y, Mathf.random(0, 360f), Mathf.random(0.5f, 1));
+            unit.health -= 180;
+            unit.setVar("bullTime", Math.max(controlTime/10, 2));
+          }
+          
+          if (Mathf.chanceDelta(1 - controlTime/300)) {
+            float lerp = (900 - Time.time + unit.getVar("controlTime", 0f))/900;
+            Tmp.v1.rnd(Mathf.random(u.hitSize/(3 - lerp), Math.max(u.hitSize/(2.5f - lerp), 15)));
+            SglFx.impWave.at(u.x + Tmp.v1.x, u.y + Tmp.v1.y);
+          }
+        }
+      }
+
+      @Override
+      public void draw(Unit u) {
+        SglUnitEntity unit = (SglUnitEntity) u;
+
+        Draw.z(Layer.effect);
+
+        float radius = u.hitSize;
+        float lerp = (900 - Time.time + unit.getVar("controlTime", 0f))/900;
+        float lerpStart = Mathf.clamp((1 - lerp)/0.1f);
+        float lerpEnd = Interp.pow3Out.apply(Mathf.clamp(lerp/0.2f));
+
+        Lines.stroke(radius*0.055f*lerpStart, Pal.reactorPurple);
+        Lines.circle(u.x, u.y, radius*lerpEnd + radius*Interp.pow2In.apply(1 - lerpStart));
+
+        Draw.draw(Draw.z(), () -> {
+          MathRenderer.setThreshold(0.4f, 0.7f);
+          MathRenderer.setDispersion(lerpStart*1.2f);
+          Draw.color(Pal.reactorPurple);
+          MathRenderer.drawCurveCircle(u.x, u.y, radius*0.7f + radius*Interp.pow2In.apply(1 - lerpStart), 3, radius*0.6f, Time.time*1.2f);
+          MathRenderer.setDispersion(lerpStart);
+          Draw.color(SglDrawConst.matrixNet);
+          MathRenderer.drawCurveCircle(u.x, u.y, radius*0.72f + radius*Interp.pow2In.apply(1 - lerpStart), 4, radius*0.67f, Time.time*1.6f);
+        });
+
+        Draw.color(SglDrawConst.matrixNet);
+        Fill.circle(u.x, u.y, radius/(2.4f - lerp)*Interp.pow2Out.apply(lerpStart)*lerpEnd);
+        Lines.stroke(lerp);
+        Lines.circle(u.x, u.y, radius*1.2f*lerpEnd);
+        unit.<LightningContainer>getVar("lightnings").draw(u.x, u.y);
+        unit.<LightningContainer>getVar("lin").draw(u.x, u.y);
+
+        Draw.color(Color.white);
+        Fill.circle(u.x, u.y, Mathf.maxZero(radius/(2.6f - lerp))*Interp.pow2Out.apply(lerpStart)*lerpEnd);
+      }
+
+      @Override
+      public void read(SglUnitEntity sglUnitEntity, Reads read, int revision) {
+        sglUnitEntity.getVar("controlTime", Time.time + read.f());
+      }
+
+      @Override
+      public void write(SglUnitEntity sglUnitEntity, Writes write) {
+        write.f(Time.time - sglUnitEntity.getVar("controlTime", 0f));
       }
     };
 

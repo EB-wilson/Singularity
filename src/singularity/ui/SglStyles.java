@@ -133,6 +133,7 @@ public class SglStyles{
       maxCodeBoxHeight = 400;
       tablePadHor = 14;
       tablePadVert = 10;
+      paragraphPadding = 14;
 
       board = paneLeft;
       codeBack = ((TextureRegionDrawable) SglDrawConst.grayUI).tint(Tmp.c1.set(Pal.darkerGray).a(0.7f));

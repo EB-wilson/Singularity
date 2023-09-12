@@ -25,6 +25,7 @@ import mindustry.world.draw.DrawBlock;
 import singularity.Sgl;
 import singularity.graphic.Blur;
 import singularity.graphic.Distortion;
+import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.type.SglCategory;
 import singularity.ui.SglStyles;
@@ -46,10 +47,12 @@ public class DebugBlocks implements ContentList{
       hasShadow = false;
 
       buildType = () -> new TestBlockBuild(){
-        float alp = 1;
+        float alpha = 1f;
+        float alp = 20;
+        float a = 20;
+        int n = 2;
 
         static final Blur blur = new Blur(Blur.DEf_B);
-        static final int id = SglDraw.nextTaskID();
 
         static {
           blur.blurSpace = 1f;
@@ -57,26 +60,33 @@ public class DebugBlocks implements ContentList{
 
         @Override
         public void draw() {
-          Draw.z(Layer.flyingUnit + 1);
-
-          SglDraw.drawBlur(id, this, blur, e -> {
-            Draw.color();
-            Draw.alpha(alp);
-            Fill.circle(e.x, e.y, 32);
-            SglDraw.gradientCircle(e.x, e.y, 32, 4, 0);
+          Draw.draw(Draw.z(), () -> {
+            MathRenderer.setDispersion(alpha);
+            MathRenderer.setThreshold(0.4f, 0.7f);
+            MathRenderer.drawCurveCircle(x, y, alp, n, a, Time.time);
           });
-
-          Draw.color(Color.darkGray, 0.7f);
-          SglDraw.gradientCircle(this.x, this.y, 32, 4, 0);
-          Draw.color(Color.gray, 0.45f);
-          SglDraw.gradientCircle(this.x, this.y, 32, 0.45f);
         }
 
         @Override
         public void buildConfiguration(Table table) {
           table.table(t -> {
-            t.slider(0, 1, 0.01f, alp, f -> alp = f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
-            t.add("0").size(50).update(lable -> lable.setText(Mathf.round(alp*100f) + "%"));
+            t.slider(0.1f, 10, 0.01f, alpha, f -> alpha = f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+            t.add("0").size(50).update(lable -> lable.setText("" + alpha));
+          });
+          table.row();
+          table.table(t -> {
+            t.slider(20, 120, 0.1f, alp, f -> alp = f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+            t.add("0").size(50).update(lable -> lable.setText("" + alp));
+          });
+          table.row();
+          table.table(t -> {
+            t.slider(20, 120, 0.1f, a, f -> a = f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+            t.add("0").size(50).update(lable -> lable.setText("" + a));
+          });
+          table.row();
+          table.table(t -> {
+            t.slider(2, 20, 1f, n, f -> n = (int) f).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+            t.add("0").size(50).update(lable -> lable.setText("" + n));
           });
         }
       };
