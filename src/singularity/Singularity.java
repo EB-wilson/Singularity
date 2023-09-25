@@ -77,7 +77,6 @@ public class Singularity extends Mod{
     if(Sgl.config.showModMenuWenLaunch){
       Events.on(ClientLoadEvent.class, e -> {
         Sgl.ui.mainMenu.show();
-        Sgl.ui.document.showDocument("", SglStyles.defaultMD, getDocument("nuclear_energy_blocks.md"));
       });
     }
 

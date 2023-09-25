@@ -147,7 +147,7 @@ public class EMPHealthManager {
       }
 
       @Override
-      public void read(DataInput stream) throws IOException {
+      public void read(DataInput stream) {
         try(Reads read = new Reads(stream)){
           byte revision = read.b();
           int len = read.i();
@@ -190,6 +190,21 @@ public class EMPHealthManager {
 
   public byte version(){
     return 0;
+  }
+
+  public void setEmpModel(UnitType type, float maxHealth, float armor, float repair, float empContDam){
+    unitDefaultHealthMap.put(type, new EMPModel(){{
+      this.maxEmpHealth = maxHealth;
+      this.empArmor = armor;
+      this.empRepair = repair;
+      this.empContinuousDamage = empContDam;
+    }});
+  }
+
+  public void setEmpDisabled(UnitType type){
+    unitDefaultHealthMap.put(type, new EMPModel(){{
+      disabled = true;
+    }});
   }
 
   public EMPModel getModel(UnitType type){

@@ -16,6 +16,8 @@ public class SglStat{
       energyResident = create("energyResident", SglStatCat.neutron),
       basicPotentialEnergy = create("basicPotentialEnergy", SglStatCat.neutron),
       maxEnergyPressure = create("maxEnergyPressure", SglStatCat.neutron),
+      minEnergyPotential = create("minEnergyPotential", SglStatCat.neutron),
+      maxEnergyPotential = create("maxEnergyPotential", SglStatCat.neutron),
       consumeEnergy = create("consumeEnergy", SglStatCat.neutron),
       productEnergy = create("productEnergy", SglStatCat.neutron),
 

@@ -1,6 +1,7 @@
 package singularity.contents;
 
 import arc.Core;
+import arc.Events;
 import arc.audio.Sound;
 import arc.func.Func2;
 import arc.graphics.Color;
@@ -23,6 +24,7 @@ import arc.util.io.Reads;
 import arc.util.io.Writes;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
+import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
@@ -40,6 +42,7 @@ import mindustry.entities.pattern.ShootBarrel;
 import mindustry.entities.pattern.ShootPattern;
 import mindustry.entities.units.UnitController;
 import mindustry.entities.units.WeaponMount;
+import mindustry.game.EventType;
 import mindustry.game.Team;
 import mindustry.gen.*;
 import mindustry.graphics.Drawf;
@@ -85,6 +88,8 @@ import java.util.Iterator;
 import static mindustry.Vars.*;
 
 public class SglUnits implements ContentList{
+  private static final Rand rand = Mathf.rand;
+
   public static final String EPHEMERAS = "ephemeras";
   public static final String TIMER = "timer";
   public static final String STATUS = "status";
@@ -571,7 +576,6 @@ public class SglUnits implements ContentList{
                   bulletInterval = 15f;
                 }
 
-                final Rand rnd = new Rand();
                 @Override
                 public void draw(Bullet b) {
                   super.draw(b);
@@ -588,12 +592,12 @@ public class SglUnits implements ContentList{
                   Fill.circle(b.x, b.y, 3.75f*lerp);
                   Draw.color(SglDrawConst.matrixNet);
 
-                  rnd.setSeed(b.id);
+                  rand.setSeed(b.id);
                   for (int i = 0; i < 7; i++) {
-                    float w = rnd.random(1f, 2.5f)*(rnd.nextFloat() > 0.5? 1: -1);
-                    float f = rnd.random(360f);
-                    float r = rnd.random(12f, 28f);
-                    float size = rnd.random(18f, 26f)*lerp;
+                    float w = rand.random(1f, 2.5f)*(rand.nextFloat() > 0.5? 1: -1);
+                    float f = rand.random(360f);
+                    float r = rand.random(12f, 28f);
+                    float size = rand.random(18f, 26f)*lerp;
 
                     float a = f + Time.time * w;
                     Tmp.v1.set(r, 0).setAngle(a);
@@ -1056,8 +1060,15 @@ public class SglUnits implements ContentList{
                         Fill.circle(x, y, 8);
                         Lines.stroke(1.4f);
                         SglDraw.dashCircle(x, y, 12, Time.time);
-                        Lines.stroke(1f);
-                        Lines.circle(x, y, 14);
+
+                        Draw.draw(Draw.z(), () -> {
+                          MathRenderer.setThreshold(0.65f, 0.8f);
+                          MathRenderer.setDispersion(1f);
+                          MathRenderer.drawCurveCircle(x, y, 15, 2, 6, Time.time);
+                          MathRenderer.setDispersion(0.6f);
+                          MathRenderer.drawCurveCircle(x, y, 16, 3, 6, -Time.time);
+                        });
+
                         Draw.alpha(0.65f);
                         SglDraw.gradientCircle(x, y, 20, 12, 0);
 
@@ -1121,6 +1132,7 @@ public class SglUnits implements ContentList{
                 Fill.circle(bulletX, bulletY, 6*mount.recoil);
                 Draw.color(Color.white);
                 Fill.circle(bulletX, bulletY, 3*mount.recoil);
+
                 for(Shooter shooter: shooters){
                   Draw.color(SglDrawConst.matrixNet);
                   shooter.trail.draw(SglDrawConst.matrixNet, 3*mount.warmup);
@@ -1209,7 +1221,8 @@ public class SglUnits implements ContentList{
         );
 
         weapons.addAll(
-            new SglWeapon(Sgl.modName + "-aurora_lightcone"){{
+            new SglWeapon(Sgl.modName + "-aurora_lightcone"){
+              {
                 shake = 5f;
                 shootSound = Sounds.pulseBlast;
                 x = 29;
@@ -1312,10 +1325,9 @@ public class SglUnits implements ContentList{
                     if(b.timer.get(2, bulletInterval)){
                       Bullet bull = intervalBullet.create(b, b.x, b.y, b.rotation());
                       bull.vel.scl(b.fout());
-                      Rand r = Mathf.rand;
-                      r.setSeed(bull.id);
-                      float scl = r.random(3.65f, 5.25f)*(r.nextBoolean()? 1: -1);
-                      float mag = r.random(2.8f, 5.6f)*b.fout();
+                      rand.setSeed(bull.id);
+                      float scl = rand.random(3.65f, 5.25f)*(rand.nextBoolean()? 1: -1);
+                      float mag = rand.random(2.8f, 5.6f)*b.fout();
                       bull.mover = e -> {
                         e.moveRelative(0f, Mathf.cos(e.time, scl, mag));
                       };
@@ -2766,6 +2778,11 @@ public class SglUnits implements ContentList{
       public static final float FULL_SIZE_ENERGY = 3680;
 
       {
+        Events.on(EventType.ClientLoadEvent.class, e -> {
+          immunities.addAll(content.statusEffects());
+          Sgl.empHealth.setEmpDisabled(this);
+        });
+
         isEnemy = false;
 
         health = 10;
@@ -3001,6 +3018,9 @@ public class SglUnits implements ContentList{
       size = 5;
       liquidCapacity = 240;
 
+      energyCapacity = 256;
+      basicPotentialEnergy = 256;
+
       consCustom = (u, c) -> {
         c.power(Mathf.round(u.health/u.hitSize)*0.02f).showIcon = true;
       };
@@ -3030,6 +3050,7 @@ public class SglUnits implements ContentList{
       size = 7;
       liquidCapacity = 280;
       energyCapacity = 1024;
+      basicPotentialEnergy = 1024;
 
       payloadSpeed = 1;
 
@@ -3107,6 +3128,7 @@ public class SglUnits implements ContentList{
       size = 9;
       liquidCapacity = 420;
       energyCapacity = 4096;
+      basicPotentialEnergy = 4096;
 
       payloadSpeed = 1.2f;
 

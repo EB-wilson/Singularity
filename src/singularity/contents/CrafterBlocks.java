@@ -1443,6 +1443,7 @@ public class CrafterBlocks implements ContentList{
       size = 3;
 
       itemCapacity = 20;
+      basicPotentialEnergy = 128;
       
       newConsume();
       consume.time(120);
@@ -1538,6 +1539,7 @@ public class CrafterBlocks implements ContentList{
       size = 3;
 
       itemCapacity = 15;
+      basicPotentialEnergy = 128;
       
       newConsume();
       consume.time(90f);
@@ -1598,6 +1600,7 @@ public class CrafterBlocks implements ContentList{
       size = 4;
 
       itemCapacity = 20;
+      basicPotentialEnergy = 256;
 
       loopSound = Sounds.cutter;
       loopSoundVolume = 0.5f;
@@ -1674,6 +1677,8 @@ public class CrafterBlocks implements ContentList{
       ));
       size = 4;
       itemCapacity = 20;
+      energyCapacity = 1024;
+      basicPotentialEnergy = 256;
 
       warmupSpeed = 0.005f;
 
@@ -1772,13 +1777,16 @@ public class CrafterBlocks implements ContentList{
       size = 5;
       itemCapacity = 20;
 
+      energyCapacity = 4096;
+      basicPotentialEnergy = 1024;
+
       warmupSpeed = 0.0075f;
 
       loopSound = Sounds.spellLoop;
       loopSoundVolume = 0.4f;
       
       newConsume();
-      consume.energy(5f);
+      consume.energy(10f);
       consume.items(ItemStack.with(
           SglItems.crystal_FEX_power, 1,
           SglItems.matrix_alloy, 2,
@@ -1862,7 +1870,7 @@ public class CrafterBlocks implements ContentList{
       requirements(Category.crafting, ItemStack.with());
       size = 4;
 
-      energyCapacity = 8192;
+      energyCapacity = 16384;
       mediumCapacity = 32;
 
       newConsume();

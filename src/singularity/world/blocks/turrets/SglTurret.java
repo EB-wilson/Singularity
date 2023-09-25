@@ -23,12 +23,14 @@ import mindustry.content.Fx;
 import mindustry.content.UnitTypes;
 import mindustry.core.World;
 import mindustry.entities.*;
+import mindustry.entities.abilities.ShieldArcAbility;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.pattern.ShootPattern;
 import mindustry.game.Team;
 import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
+import mindustry.graphics.Shaders;
 import mindustry.logic.LAccess;
 import mindustry.logic.Ranged;
 import mindustry.type.ItemStack;
@@ -370,13 +372,13 @@ public class SglTurret extends SglBlock{
     public float rotation = 90;
     public Vec2 targetPos = new Vec2();
     public BlockUnitc unit = (BlockUnitc) UnitTypes.block.create(team);
-    public AmmoDataEntry currentAmmo;
     public float curRecoil;
     public float heat;
 
     public boolean wasShooting;
     public boolean logicShooting;
 
+    AmmoDataEntry currentAmmo;
     int shotStack;
     int totalShots;
     int queuedBullets;

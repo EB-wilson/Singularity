@@ -12,7 +12,6 @@ import mindustry.type.ItemStack;
 import mindustry.world.blocks.payloads.Payload;
 import mindustry.world.meta.BlockGroup;
 import mindustry.world.meta.Env;
-import singularity.world.components.PayloadBlockComp;
 import singularity.world.components.PayloadBuildComp;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.draw.DrawPayloadFactory;
@@ -24,7 +23,7 @@ import universecore.world.producers.ProduceType;
 import static mindustry.Vars.tilesize;
 
 @Annotations.ImplEntries
-public class PayloadCrafter extends BoosterCrafter implements PayloadBlockComp{
+public class PayloadCrafter extends BoosterCrafter {
   public float itemCapacityMulti = 2;
   public int payloadCapacity = 1;
   public float payloadSpeed = 0.7f;

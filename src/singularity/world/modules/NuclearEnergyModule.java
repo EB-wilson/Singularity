@@ -27,7 +27,7 @@ public class NuclearEnergyModule extends BlockModule {
     UpdatePool.receive("updateEnergyFlow", () -> {
       Building nextFlowBuild = FieldHandler.getValueDefault(Vars.ui.hudfrag.blockfrag, "nextFlowBuild");
 
-      if(nextFlowBuild instanceof NuclearEnergyBuildComp nuclearBuild && nuclearBuild.getNuclearBlock().hasEnergy()){
+      if(nextFlowBuild instanceof NuclearEnergyBuildComp nuclearBuild && nuclearBuild.hasEnergy()){
         if (lastShowFlow != nuclearBuild){
           nuclearBuild.energy().stopFlow();
           lastShowFlow = nuclearBuild;

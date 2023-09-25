@@ -15,7 +15,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 
 public class ModConfig{
-  private static final int configVersion = 8;
+  private static final int configVersion = 9;
   private static final Field[] configs = ModConfig.class.getFields();
 
   //basic/基础设置
@@ -36,6 +36,8 @@ public class ModConfig{
   //游戏目标内信息显示
   @Order(5.1f)
   public boolean showInfos;
+  @Order(5.2f)
+  public float statusInfoAlpha;
   @Order(6f)
   public float flushInterval;
   @Order(7f)
@@ -67,7 +69,7 @@ public class ModConfig{
   @Order(12.1f)
   public boolean enableShaders;
   @Order(12.15f)
-  public int mathShapePrecision;
+  public float mathShapePrecision;
   @Order(12.2f)
   public boolean enableDistortion;
   @Order(12.3f)

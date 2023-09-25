@@ -7,6 +7,7 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.math.WindowedMean;
 import arc.math.geom.Geometry;
 import arc.math.geom.Intersector;
@@ -36,7 +37,6 @@ import mindustry.world.meta.StatUnit;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
-import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
 
 import static mindustry.Vars.*;
@@ -44,6 +44,7 @@ import static mindustry.core.Renderer.laserOpacity;
 
 public class NuclearNode extends NuclearBlock{
   protected static final Seq<NuclearEnergyBuildComp> tempNuclearEntity = new Seq<>();
+  protected static final Rand rand = new Rand();
   protected BuildPlan otherReq;
 
   public float lightRadius = 3.5f;
@@ -81,7 +82,7 @@ public class NuclearNode extends NuclearBlock{
     super.appliedConfig();
     config(Point2.class, (NuclearNodeBuild entity, Point2 value) -> {
       Tile tile = Vars.world.tile(value.x, value.y);
-      if(tile == null || !(tile.build instanceof NuclearEnergyBuildComp other) || !((NuclearEnergyBuildComp)tile.build).getNuclearBlock().hasEnergy()) return;
+      if(tile == null || !(tile.build instanceof NuclearEnergyBuildComp other) || !((NuclearEnergyBuildComp)tile.build).hasEnergy()) return;
 
       value.x = tile.x;
       value.y = tile.y;
@@ -213,7 +214,7 @@ public class NuclearNode extends NuclearBlock{
 
   public void getPotentialLink(Tile tile, Team team, Cons<NuclearEnergyBuildComp> cons){
     Boolf<NuclearEnergyBuildComp> valid = other -> other != null && other.getBuilding().tile() != tile && other.energy() != null
-        && other.getNuclearBlock().consumeEnergy() && inRange(tile, other.getBuilding().tile(), linkRange * tilesize)
+        && other.consumeEnergy() && inRange(tile, other.getBuilding().tile(), linkRange * tilesize)
         && other.getBuilding().team == team
         && !Structs.contains(Edges.getEdges(size), p -> { //do not link to adjacent buildings
           Tile t = world.tile(tile.x + p.x, tile.y + p.y);
@@ -240,12 +241,12 @@ public class NuclearNode extends NuclearBlock{
     });
   }
   
-  public static Seq<NuclearEnergyBuildComp> getNodeLinks(Tile tile, NuclearEnergyBlockComp block, Team team){
+  public static Seq<NuclearEnergyBuildComp> getNodeLinks(Tile tile, Block block, Team team){
     Boolf<NuclearEnergyBuildComp> valid = other -> other != null && other.getBuilding().tile() != tile
         && other instanceof NuclearNodeBuild n && n.linksCount() < other.getBlock(NuclearNode.class).maxLinks
         && other.getBlock(NuclearNode.class).inRange(other.getBuilding().tile, tile, other.getBlock(NuclearNode.class).linkRange*tilesize)
         && other.getBuilding().team == team
-        && !Structs.contains(Edges.getEdges(((Block) block).size), p -> {
+        && !Structs.contains(Edges.getEdges(block.size), p -> {
           Tile t = world.tile(tile.x + p.x, tile.y + p.y);
           return t != null && t.build == other;
         });
@@ -288,7 +289,7 @@ public class NuclearNode extends NuclearBlock{
   
   /**判断从一个点到另一个点是否可以进行核能连接*/
   public boolean canLink(NuclearEnergyBuildComp from, NuclearEnergyBuildComp to){
-    if(from.getBuilding().team != to.getBuilding().team || from == to || !from.getNuclearBlock().hasEnergy() || !to.getNuclearBlock().hasEnergy()) return false;
+    if(from.getBuilding().team != to.getBuilding().team || from == to || !from.hasEnergy() || !to.hasEnergy()) return false;
     return inRange(from, to, linkRange*tilesize) || (to instanceof NuclearNodeBuild && inRange(to, from, ((NuclearNodeBuild) to).block().linkRange*tilesize));
   }
   
@@ -377,7 +378,7 @@ public class NuclearNode extends NuclearBlock{
     }
 
     public Seq<NuclearEnergyBuildComp> getNodeDumps(){
-      Seq<NuclearEnergyBuildComp> res = proximityNuclearBuilds().filter(e -> e.getNuclearBlock().consumeEnergy());
+      Seq<NuclearEnergyBuildComp> res = proximityNuclearBuilds().filter(e -> e.consumeEnergy());
 
       for (int i = 0; i < linked.size; i++) {
         int pos = linked.get(i);
@@ -442,22 +443,34 @@ public class NuclearNode extends NuclearBlock{
         float tx = Tmp.v1.x;
         float ty = Tmp.v1.y;
 
+        int fi = i + 1;
         Draw.draw(Draw.z(), () -> {
           float alpha = smoothAlpha.get(pos)*laserOpacity;
 
           setLaserColor();
           MathRenderer.setThreshold(0.5f, 0.8f);
 
+          rand.setSeed((long) id*fi);
           for (int ig = 0; ig < 3; ig++) {
-            MathRenderer.setDispersion(Mathf.randomSeed(id +  ig+ 3, 0.22f, 0.34f)*alpha);
+            Draw.color(linkColor, linkColor2, Mathf.absin(rand.random(linkGradientScl/2, linkGradientScl*2), 1));
+
+            MathRenderer.setDispersion(rand.random(0.22f, 0.34f)*alpha);
             MathRenderer.drawSin(
                 x, y, tx, ty,
-                Mathf.randomSeed(id + ig, linkLeaserStroke*1.2f, linkLeaserStroke*1.8f)*alpha,
-                Mathf.randomSeed(id + 1 + ig, 360f, 720f),
-                -Mathf.randomSeed(id + 2 + ig, 5f, 8f)*Time.time
+                rand.random(linkLeaserStroke*1.2f, linkLeaserStroke*1.8f)*alpha*(0.9f + 0.1f*Mathf.sin(Time.time/rand.random(10f, 15f))),
+                rand.random(360f, 720f),
+                -rand.random(5f, 8f)*Time.time
             );
           }
+
+          Draw.reset();
         });
+
+        if (!(entity instanceof NuclearNodeBuild)) {
+          Fill.circle(tx, ty, lightRadius*smoothAlpha.get(pos));
+          Lines.stroke(0.3f);
+          SglDraw.dashCircle(tx, ty, lightRadius*1.5f*smoothAlpha.get(pos), Time.time*2);
+        }
       }
       Draw.reset();
     }

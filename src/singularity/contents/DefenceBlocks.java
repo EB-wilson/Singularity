@@ -118,10 +118,15 @@ public class DefenceBlocks implements ContentList{
       hasItems = true;
       itemCapacity = 64;
 
+      energyCapacity = 16384;
+      basicPotentialEnergy = 8192;
+
       newConsume();
       consume.power(160);
+      consume.energy(20);
 
       launchCons.time(600);
+      launchCons.energy(12);
       launchCons.item(SglItems.anti_metter, 1);
       launchCons.display = (s, c) -> {
         s.add(SglStat.multiple, 4 + "*cells");

@@ -11,7 +11,9 @@ import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.math.geom.Vec2;
+import arc.scene.event.Touchable;
 import arc.scene.style.TextureRegionDrawable;
+import arc.scene.ui.Image;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
 import arc.struct.Seq;
@@ -60,6 +62,10 @@ import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeItems;
 import universecore.world.consumers.ConsumeLiquids;
+import universecore.world.producers.BaseProducers;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static mindustry.Vars.tilesize;
 
@@ -83,8 +89,8 @@ public class GameOfLife extends SglBlock{
   public Seq<CellCaller> deathTriggers = new Seq<>();
   public TextureRegion[] cellRegion;
 
-  public Floatf<GameOfLifeBuild> launchConsMulti = e -> Mathf.ceil(e.lifeCells/4f);
-  public SglConsumers launchCons = new SglConsumers(false){
+  public Floatf<GameOfLifeBuild> launchConsMulti = e -> e.lifeCells/4f;
+  public final SglConsumers launchCons = new SglConsumers(false){
     {
       setConsDelta((GameOfLifeBuild e) -> e.launchEff*Time.delta);
     }
@@ -164,8 +170,11 @@ public class GameOfLife extends SglBlock{
   public void init(){
     for(BaseConsumers consumer: consumers){
       for(BaseConsume<? extends ConsumerBuildComp> cons: launchCons.all()){
-        for(Content content: cons.filter()){
-          consumer.addToFilter(cons.type(), content);
+        Seq<Content> filter = cons.filter();
+        if (filter != null){
+          for(Content content: filter){
+            consumer.addToFilter(cons.type(), content);
+          }
         }
       }
     }
@@ -209,6 +218,19 @@ public class GameOfLife extends SglBlock{
   @Override
   public void setStats(){
     super.setStats();
+
+    stats.add(SglStat.recipes, t -> {
+      t.left().row();
+      for (int i = 0; i < consumers.size; i++) {
+        BaseConsumers cons = consumers.get(i);
+
+        Table details = new Table();
+        FactoryBlockComp.buildRecipe(details, cons, null);
+
+        t.table(SglDrawConst.grayUI, ta -> ta.add(details).pad(4));
+        t.row();
+      }
+    });
 
     stats.remove(Stat.productionTime);
     stats.add(SglStat.flushTime, gridFlushInterval/60f, StatUnit.seconds);

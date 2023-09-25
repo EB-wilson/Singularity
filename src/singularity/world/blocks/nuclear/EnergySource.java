@@ -1,5 +1,6 @@
 package singularity.world.blocks.nuclear;
 
+import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.util.Strings;
 import arc.util.io.Reads;
@@ -14,7 +15,7 @@ import singularity.world.components.NuclearEnergyBuildComp;
 public class EnergySource extends NuclearNode {
   public EnergySource(String name){
     super(name);
-    energyCapacity = 8192;
+    energyCapacity = 65536;
     outputEnergy = true;
     consumeEnergy = false;
     configurable = true;
@@ -35,7 +36,7 @@ public class EnergySource extends NuclearNode {
   
     @Override
     public void updateTile(){
-      energy.set(outputEnergy);
+      energy.set(Mathf.pow(2, outputEnergy));
 
       super.updateTile();
     }
@@ -55,8 +56,8 @@ public class EnergySource extends NuclearNode {
       table.table(Styles.black6, t -> {
         t.defaults().pad(0).margin(0);
         t.table(Tex.buttonTrans, i -> i.image(Singularity.getModAtlas("nuclear")).size(40)).size(50);
-        t.slider(0, energyCapacity, 0.01f, outputEnergy, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
-        t.add("0").size(50).update(lable -> lable.setText(Strings.autoFixed(outputEnergy, 2) + "NF"));
+        t.slider(0, 16, 0.01f, outputEnergy, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
+        t.add("0").size(50).update(lable -> lable.setText(Mathf.round(Mathf.pow(2, outputEnergy)) + "NF"));
       });
     }
   

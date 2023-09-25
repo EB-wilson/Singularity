@@ -49,6 +49,14 @@ public class NuclearBlocks implements ContentList{
   public static Block nuclear_pipe_node,
   /**相位核能塔*/
   phase_pipe_node,
+  /**中子缓冲器*/
+  energy_buffer,
+  /**晶簇缓冲器*/
+  crystal_buffer,
+  /**高压缓冲器*/
+  high_voltage_buffer,
+  /**中子缓冲矩阵*/
+  neutron_matrix_buffer,
   /**衰变仓*/
   decay_bin,
   /**中子能发电机*/
@@ -97,6 +105,65 @@ public class NuclearBlocks implements ContentList{
       linkRange = 22;
 
       energyCapacity = 16384;
+    }};
+
+    energy_buffer = new EnergyBuffer("energy_buffer"){{
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.strengthening_alloy, 40,
+          SglItems.crystal_FEX, 50,
+          SglItems.aerogel, 40,
+          Items.silicon, 60
+      ));
+      size = 2;
+      energyCapacity = 1024;
+      minPotential = 128;
+      maxPotential = 1024;
+    }};
+
+    crystal_buffer = new EnergyBuffer("crystal_buffer"){{
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.strengthening_alloy, 60,
+          SglItems.crystal_FEX, 75,
+          SglItems.aerogel, 50,
+          Items.silicon, 75,
+          Items.phaseFabric, 80
+      ));
+      size = 3;
+      energyCapacity = 4096;
+      minPotential = 512;
+      maxPotential = 4096;
+    }};
+
+    high_voltage_buffer = new EnergyBuffer("high_voltage_buffer"){{
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.strengthening_alloy, 90,
+          SglItems.crystal_FEX, 120,
+          SglItems.crystal_FEX_power, 80,
+          SglItems.iridium, 50,
+          Items.silicon, 125,
+          Items.phaseFabric, 90,
+          Items.surgeAlloy, 80
+      ));
+      size = 4;
+      energyCapacity = 16384;
+      minPotential = 2048;
+      maxPotential = 16384;
+    }};
+
+    neutron_matrix_buffer = new EnergyBuffer("neutron_matrix_buffer"){{
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.strengthening_alloy, 120,
+          SglItems.crystal_FEX, 140,
+          SglItems.crystal_FEX_power, 100,
+          SglItems.iridium, 75,
+          SglItems.matrix_alloy, 80,
+          Items.phaseFabric, 100,
+          Items.surgeAlloy, 80
+      ));
+      size = 5;
+      energyCapacity = 65536;
+      minPotential = 1;
+      maxPotential = 65536;
     }};
     
     decay_bin = new NormalCrafter("decay_bin"){{
@@ -392,7 +459,7 @@ public class NuclearBlocks implements ContentList{
       hasLiquids = true;
       itemCapacity = 50;
       liquidCapacity = 50;
-      energyCapacity = 8192;
+      energyCapacity = 16384;
       
       explosionDamageBase = 580;
       explosionRadius = 32;
@@ -505,7 +572,7 @@ public class NuclearBlocks implements ContentList{
 
       itemCapacity = 60;
       liquidCapacity = 65;
-      energyCapacity = 131072;
+      energyCapacity = 65536;
 
       warmupSpeed = 0.0005f;
       stopSpeed = 0.001f;

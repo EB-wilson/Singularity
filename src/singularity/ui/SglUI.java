@@ -2,6 +2,7 @@ package singularity.ui;
 
 import arc.Core;
 import arc.input.KeyCode;
+import arc.math.Interp;
 import arc.math.Mathf;
 import arc.math.WindowedMean;
 import arc.math.geom.Vec3;
@@ -14,8 +15,7 @@ import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
-import mindustry.gen.Icon;
-import mindustry.gen.Unit;
+import mindustry.gen.*;
 import mindustry.graphics.g3d.PlanetParams;
 import mindustry.graphics.g3d.PlanetRenderer;
 import mindustry.ui.Styles;
@@ -69,11 +69,11 @@ public class SglUI{
   }
 
   private static final Object[][] grapPreset = {
-      {1, false, 128, false, false, 64, false},
-      {2, true, 256, false, true, 256, false},
-      {2, true, 512, false, true, 512, true},
-      {3, true, 1024, true, true, 1024, true},
-      {3, true, 2048, true, true, 4096, true},
+      {1, false, 0.25f, false, false, 64, false},
+      {2, true, 0.5f, false, true, 256, false},
+      {2, true, 0.75f, false, true, 512, true},
+      {3, true, 1f, true, true, 1024, true},
+      {3, true, 1f, true, true, 4096, true},
   };
 
   public BaseDialog setPosDialog = new BaseDialog(Core.bundle.get("settings.setCamPos")){
@@ -199,7 +199,7 @@ public class SglUI{
 
   public void init(){
     entityInfoFrag = new EntityInfoFrag();
-    entityInfoFrag.displayMatcher.put(new UnitHealthDisplay<>(), e -> e instanceof Unit);
+    entityInfoFrag.displayMatcher.put(new EntityHealthDisplay<>(), e -> e instanceof Teamc && e instanceof Healthc);
     entityInfoFrag.displayMatcher.put(new UnitStatusDisplay<>(), e -> e instanceof Unit);
 
     mainMenu = new MainMenu();
@@ -252,6 +252,13 @@ public class SglUI{
         new ConfigSepLine("infoDisplay", Core.bundle.get("infos.infoDisplay")),
         new ConfigCheck("showInfos", b -> Sgl.config.showInfos = b, () -> Sgl.config.showInfos),
         new ConfigSlider(
+            "statusInfoAlpha",
+            f -> Mathf.round(f*1000)/10f + "%",
+            f -> Sgl.config.statusInfoAlpha = f,
+            () -> Sgl.config.statusInfoAlpha,
+            0.3f, 1, 0.001f
+        ),
+        new ConfigSlider(
             "flushInterval",
             f -> Sgl.config.flushInterval = f,
             () -> Sgl.config.flushInterval,
@@ -261,9 +268,10 @@ public class SglUI{
         }},
         new ConfigSlider(
             "maxDisplay",
+            f -> f <= 64? Integer.toString(f.intValue()): Core.bundle.get("misc.unlimited"),
             f -> Sgl.config.maxDisplay = (int) f,
             () -> Sgl.config.maxDisplay,
-            4, 64, 1
+            4, EntityInfoFrag.MAX_LIMITED + 1, 1
         ),
         new ConfigSlider(
             "showInfoScl",
@@ -319,15 +327,21 @@ public class SglUI{
             "statusSize",
             f -> Sgl.config.statusSize = f,
             () -> Sgl.config.statusSize,
-            10, 40, 1
+            4, 16, 1
         ),
         new ConfigCheck("showStatusTime", b -> Sgl.config.showStatusTime = b, () -> Sgl.config.showStatusTime),
         new ConfigSepLine("data", Core.bundle.get("settings.data")),
         new ConfigButton("resetModHint", () -> new TextButton(Core.bundle.get("settings.reset"), Styles.flatt){{
-          clicked(() -> Vars.ui.showConfirm(Core.bundle.get("settings.resetHintsConfirm"), SglHint::resetCompletedHints));
+          clicked(() -> Vars.ui.showConfirm(Core.bundle.get("settings.resetHintsConfirm"), () -> {
+            SglHint.resetCompletedHints();
+            Sgl.ui.config.requireRelaunch();
+          }));
         }}),
         new ConfigButton("resetAllHint", () -> new TextButton(Core.bundle.get("settings.reset"), Styles.flatt){{
-          clicked(() -> Vars.ui.showConfirm(Core.bundle.get("settings.resetAllHintsConfirm"), SglHint::resetAllCompletedHints));
+          clicked(() -> Vars.ui.showConfirm(Core.bundle.get("settings.resetAllHintsConfirm"), () -> {
+            SglHint.resetAllCompletedHints();
+            Sgl.ui.config.requireRelaunch();
+          }));
         }})
     );
     config.addConfig("graphic", Icon.image,
@@ -375,9 +389,10 @@ public class SglUI{
         new ConfigCheck("enableShaders", b -> Sgl.config.enableShaders = b, () -> Sgl.config.enableShaders),
         new ConfigSlider(
             "mathShapePrecision",
-            f -> Sgl.config.mathShapePrecision = (int)f,
+            f -> Mathf.round(f*1000f)/10f + "%",
+            f -> Sgl.config.mathShapePrecision = f,
             () -> Sgl.config.mathShapePrecision,
-            32, 2048, 8
+            0.1f, 1f, 0.001f
         ),
         new ConfigCheck("enableDistortion", b -> Sgl.config.enableDistortion = b, () -> Sgl.config.enableDistortion),
         new ConfigCheck("enableParticle", b -> Sgl.config.enableParticle = b, () -> Sgl.config.enableParticle),

@@ -25,6 +25,21 @@ public interface PayloadBuildComp extends BuildCompBase{
   PayloadSeq temp = new PayloadSeq();
   Vec2 tempVec = new Vec2();
 
+  @Annotations.BindField("payloadCapacity")
+  default int payloadCapacity(){
+    return 0;
+  }
+
+  @Annotations.BindField("payloadSpeed")
+  default float payloadSpeed(){
+    return 0;
+  }
+
+  @Annotations.BindField("payloadRotateSpeed")
+  default float payloadRotateSpeed(){
+    return 0;
+  }
+
   @Annotations.BindField("inputting")
   default Payload inputting(){
     return null;
@@ -81,17 +96,13 @@ public interface PayloadBuildComp extends BuildCompBase{
   @Annotations.BindField(value = "payloads", initialize = "new singularity.world.modules.PayloadModule()")
   default void payloads(PayloadModule module){}
 
-  default PayloadBlockComp getPayloadBlock(){
-    return getBlock(PayloadBlockComp.class);
-  }
-
   default float handleOutputPayload() {
     if (outputting() != null){
       Vec2 outputVec = outputtingOffset();
       outputting().set(
-          Mathf.approachDelta(outputting().x(), getBuilding().x + outputVec.x, getPayloadBlock().payloadSpeed()),
-          Mathf.approachDelta(outputting().y(), getBuilding().y + outputVec.y, getPayloadBlock().payloadSpeed()),
-          Angles.moveToward(outputting().rotation(), Tmp.v1.set(outputVec).add(getBuilding()).sub(outputting()).angle(), getPayloadBlock().payloadRotateSpeed()*Time.delta)
+          Mathf.approachDelta(outputting().x(), getBuilding().x + outputVec.x, payloadSpeed()),
+          Mathf.approachDelta(outputting().y(), getBuilding().y + outputVec.y, payloadSpeed()),
+          Angles.moveToward(outputting().rotation(), Tmp.v1.set(outputVec).add(getBuilding()).sub(outputting()).angle(), payloadRotateSpeed()*Time.delta)
       );
 
       return 1 - Mathf.clamp(Mathf.len(getBuilding().x + outputVec.x - outputting().x(), getBuilding().y + outputVec.y - outputting().y())/outputVec.len());
@@ -114,9 +125,9 @@ public interface PayloadBuildComp extends BuildCompBase{
   default float handleInputPayload() {
     if (inputting() != null){
       inputting().set(
-          Mathf.approachDelta(inputting().x(), getBuilding().x, getPayloadBlock().payloadSpeed()),
-          Mathf.approachDelta(inputting().y(), getBuilding().y, getPayloadBlock().payloadSpeed()),
-          Mathf.approachDelta(inputting().rotation(), getBuilding().rotation*90, getPayloadBlock().payloadRotateSpeed())
+          Mathf.approachDelta(inputting().x(), getBuilding().x, payloadSpeed()),
+          Mathf.approachDelta(inputting().y(), getBuilding().y, payloadSpeed()),
+          Mathf.approachDelta(inputting().rotation(), getBuilding().rotation*90, payloadRotateSpeed())
       );
 
       return 1 - Mathf.len(inputting().x() - getBuilding().x, inputting().y() - getBuilding().y)/(getBlock().size*tilesize/2f);
@@ -178,7 +189,7 @@ public interface PayloadBuildComp extends BuildCompBase{
       override = true
   )
   default boolean acceptPayload(Building source, Payload payload){
-    return payloads().total() < getPayloadBlock().payloadCapacity();
+    return payloads().total() < payloadCapacity();
   }
 
   default void popPayload(){
@@ -195,7 +206,7 @@ public interface PayloadBuildComp extends BuildCompBase{
   @Annotations.MethodEntry(entryMethod = "updateTile")
   default void updatePayloads(){
     if (!outputLocking()){
-      stackAlpha(Mathf.approachDelta(stackAlpha(), inputting() != null && outputting() == null? 0: 1, getPayloadBlock().payloadSpeed()/(getBlock().size*tilesize/2f)));
+      stackAlpha(Mathf.approachDelta(stackAlpha(), inputting() != null && outputting() == null? 0: 1, payloadSpeed()/(getBlock().size*tilesize/2f)));
     }
 
     for (Payload payload : payloads().iterate()) {
@@ -220,7 +231,7 @@ public interface PayloadBuildComp extends BuildCompBase{
     float outputProgress = handleOutputPayload();
 
     if (inputProgress >= 0.999f){
-      if (payloads().total() < getPayloadBlock().payloadCapacity()){
+      if (payloads().total() < payloadCapacity()){
         payloads().add(inputting());
         stackAlpha(1);
         inputting(null);

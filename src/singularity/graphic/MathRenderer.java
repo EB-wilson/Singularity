@@ -1,5 +1,6 @@
 package singularity.graphic;
 
+import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.Pixmap;
 import arc.graphics.Texture;
@@ -7,6 +8,7 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
+import arc.graphics.gl.FrameBuffer;
 import arc.graphics.gl.Shader;
 import arc.math.Mat;
 import arc.math.Mathf;
@@ -17,6 +19,9 @@ import arc.util.Tmp;
 import singularity.Sgl;
 
 public class MathRenderer{
+
+  public static final FrameBuffer buffer = new FrameBuffer();
+
   public static MathShader sinShader;
 
   public static MathShader ovalShader;
@@ -174,8 +179,8 @@ public class MathRenderer{
   }
 
   private static TextureRegion getBlank(){
-    if(blank == null || blank.width != Sgl.config.mathShapePrecision){
-      Pixmap pix = new Pixmap(Sgl.config.mathShapePrecision, Sgl.config.mathShapePrecision);
+    if(blank == null){
+      Pixmap pix = new Pixmap(128, 128);
       pix.fill(Color.white);
       blank = new TextureRegion(new Texture(pix));
     }

@@ -45,7 +45,7 @@ public class ProduceEnergy<T extends Building & NuclearEnergyBuildComp & Produce
   @Override
   public void update(T entity){
     entity.handleEnergy(product*parent.cons.delta(entity)*multiple(entity));
-    if(entity.getEnergy() > entity.getNuclearBlock().energyCapacity()) entity.energy().set(entity.getNuclearBlock().energyCapacity());
+    if(entity.getEnergy() > entity.energyCapacity()) entity.energy().set(entity.energyCapacity());
   }
   
   @Override

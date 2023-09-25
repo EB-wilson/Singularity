@@ -5,13 +5,9 @@ import arc.func.Floatc2;
 import arc.util.Tmp;
 import mindustry.game.Team;
 import mindustry.gen.Entityc;
+import mindustry.gen.Posc;
 
-public abstract class EntityInfoDisplay<T extends Entityc>{
-  public static void trnsPos(float worldX, float worldY, Floatc2 posCons){
-    Core.camera.project(Tmp.v1.set(worldX, worldY));
-    posCons.get(Tmp.v1.x, Tmp.v1.y);
-  }
-
+public abstract class EntityInfoDisplay<T extends Entityc & Posc>{
   public abstract float draw(EntityInfoFrag.EntityEntry<T> entry, Team team, float maxWight, float dy, float alpha, float scl);
 
   public abstract void updateVar(EntityInfoFrag.EntityEntry<T> entry, float delta);

@@ -41,6 +41,8 @@ import static arc.math.Angles.*;
 import static arc.math.Mathf.*;
 
 public class SglFx{
+  private static final Rand rand = new Rand();
+
   public final static Effect gasLeak = new Effect(90, e -> {
     if(!(e.data() instanceof Number)) return;
     float param = ((Number) e.data()).floatValue();
@@ -777,12 +779,11 @@ public class SglFx{
 
     SglDraw.drawLightEdge(e.x, e.y, h, w, h, w);
 
-    Rand r = rand;
-    r.setSeed(e.id);
+    rand.setSeed(e.id);
     for (int i = 0; i < 14; i++) {
-      float rot = r.random(0, 360f);
-      float wi = r.random(12, 18);
-      float le = r.random(wi*2f, wi*4f);
+      float rot = rand.random(0, 360f);
+      float wi = rand.random(12, 18);
+      float le = rand.random(wi*2f, wi*4f);
 
       SglDraw.drawTransform(e.x, e.y, radius, 0, rot, (x, y, ro) -> {
         Drawf.tri(x, y, wi*e.fout(), le, ro - 180);

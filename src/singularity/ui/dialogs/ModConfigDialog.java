@@ -346,9 +346,8 @@ public class ModConfigDialog extends BaseDialog{
   public static class ConfigSlider extends ConfigEntry{
     Floatc slided;
     Floatp curr;
+    Func<Float, String> show;
     float min, max, step;
-
-    int fix;
 
     public ConfigSlider(String name, Floatc slided, Floatp curr, float min, float max, float step){
       super(name);
@@ -358,6 +357,7 @@ public class ModConfigDialog extends BaseDialog{
       this.max = max;
       this.step = step;
 
+      int fix;
       step %= 1;
       for (int i = 0; ; i++) {
         if (Mathf.zero(step)){
@@ -367,13 +367,25 @@ public class ModConfigDialog extends BaseDialog{
         step *= 10;
         step %= 1;
       }
+
+      this.show = f -> Strings.autoFixed(f, fix);
+    }
+
+    public ConfigSlider(String name, Func<Float, String> show, Floatc slided, Floatp curr, float min, float max, float step){
+      super(name);
+      this.show = show;
+      this.slided = slided;
+      this.curr = curr;
+      this.min = min;
+      this.max = max;
+      this.step = step;
     }
 
     @Override
     public void buildCfg(Table table){
       if(str == null){
         table.add("").update(l -> {
-          l.setText(Strings.autoFixed(curr.get(), fix));
+          l.setText(show.get(curr.get()));
         }).padRight(0);
       }
       table.slider(min, max, step, curr.get(), slided).width(360).padLeft(4).update(s -> {

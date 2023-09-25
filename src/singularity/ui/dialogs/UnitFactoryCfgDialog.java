@@ -668,7 +668,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
       status.add(new Bar(
           () -> Core.bundle.format("fragment.bars.nuclearContain", factory.getEnergy()),
           () -> SglDrawConst.matrixNetDark,
-          () -> factory.getEnergy()/factory.block().energyCapacity()
+          () -> factory.getEnergy()/factory.energyCapacity()
       )).height(24);
     }
     status.row();

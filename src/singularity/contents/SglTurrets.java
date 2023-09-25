@@ -884,14 +884,15 @@ public class SglTurrets implements ContentList{
       size = 5;
       scaledHealth = 320;
       shootRan = range = 400;
-      warmupSpeed = 0.01f;
+      warmupSpeed = 0.016f;
       linearWarmup = false;
-      fireWarmupThreshold = 0.9f;
+      fireWarmupThreshold = 0.8f;
       rotateSpeed = 1.6f;
       cooldownTime = 90;
       recoil = 3.4f;
 
-      energyCapacity = 1024;
+      energyCapacity = 4096;
+      basicPotentialEnergy = 2048;
 
       shootY = 22;
 
@@ -1216,10 +1217,10 @@ public class SglTurrets implements ContentList{
       rotateSpeed = 2.5f;
       range = 350;
       shootY = 17.4f;
-      warmupSpeed = 0.03f;
+      warmupSpeed = 0.035f;
       linearWarmup = false;
       recoil = 0f;
-      fireWarmupThreshold = 0.85f;
+      fireWarmupThreshold = 0.75f;
       shootCone = 15;
       shake = 2.2f;
 
@@ -1535,9 +1536,9 @@ public class SglTurrets implements ContentList{
       scaledHealth = 450;
       recoil = 1.8f;
       rotateSpeed = 3;
-      warmupSpeed = 0.018f;
+      warmupSpeed = 0.022f;
       linearWarmup = false;
-      fireWarmupThreshold = 0.9f;
+      fireWarmupThreshold = 0.6f;
       range = 400;
       targetGround = true;
       targetHealUnit = true;
@@ -1545,6 +1546,9 @@ public class SglTurrets implements ContentList{
       targetHealing = true;
       shootY = 12;
       shootEffect = Fx.none;
+
+      energyCapacity = 4096;
+      basicPotentialEnergy = 1024;
 
       shootSound = Sounds.malignShoot;
 
@@ -1736,6 +1740,9 @@ public class SglTurrets implements ContentList{
       range = 300;
       targetGround = true;
       targetAir = true;
+
+      energyCapacity = 1024;
+      basicPotentialEnergy = 256;
 
       shootY = 12;
 
@@ -1979,6 +1986,9 @@ public class SglTurrets implements ContentList{
       targetAir = true;
       shootEffect = SglFx.railShootRecoil;
 
+      energyCapacity = 4096;
+      basicPotentialEnergy = 1024;
+
       shootSound = Sounds.laserbig;
       loopSound = Sounds.beam;
       loopSoundVolume = 2f;
@@ -2209,6 +2219,9 @@ public class SglTurrets implements ContentList{
       shootY = 4;
 
       unitSort = SglUnitSorts.denser;
+
+      energyCapacity = 4096;
+      basicPotentialEnergy = 4096;
 
       shoot.firstShotDelay = 120;
       chargeSound = Sounds.lasercharge;
@@ -2506,7 +2519,7 @@ public class SglTurrets implements ContentList{
       recoil = 2.8f;
       recoilTime = 120;
       rotateSpeed = 2;
-      warmupSpeed = 0.02f;
+      warmupSpeed = 0.023f;
       shake = 3.6f;
       fireWarmupThreshold = 0.92f;
       linearWarmup = false;
@@ -2896,12 +2909,15 @@ public class SglTurrets implements ContentList{
       recoilTime = 120;
       rotateSpeed = 1.5f;
       shootCone = 3;
-      warmupSpeed = 0.016f;
+      warmupSpeed = 0.018f;
       fireWarmupThreshold = 0.9f;
       linearWarmup = false;
       range = 360;
       shootY = 8;
       shake = 8;
+
+      energyCapacity = 4096;
+      basicPotentialEnergy = 2048;
 
       shootEffect = SglFx.shootRail;
       shootSound = Sounds.shootSmite;
@@ -3268,6 +3284,9 @@ public class SglTurrets implements ContentList{
       shootY = 12;
       shake = 2;
 
+      energyCapacity = 4096;
+      basicPotentialEnergy = 4096;
+
       unitSort = UnitSorts.strongest;
 
       shootSound = Sounds.release;
@@ -3328,10 +3347,23 @@ public class SglTurrets implements ContentList{
           super.draw(b);
           Draw.z(Layer.bullet);
           Draw.color(Pal.lighterOrange);
-          SglDraw.drawLightEdge(b.x, b.y, 35 + Mathf.absin(0.5f, 3.5f), 2, 14 + Mathf.absin(0.4f, 2.5f), 2, 30, Pal.lightishOrange);
-          SglDraw.drawDiamond(b.x, b.y, 16 + Mathf.absin(0.6f, 2f), 2, 90, Pal.lightishOrange);
-          Fill.circle(b.x, b.y, 2.2f);
+          float fout = b.fout(Interp.pow4Out);
+
+          float z = Draw.z();
+          Draw.z(z - 0.0001f);
+          b.trail.draw(trailColor, trailWidth*fout);
+          Draw.z(z);
+
+          SglDraw.drawLightEdge(b.x, b.y, 35*fout + Mathf.absin(0.5f, 3.5f), 2, 14*fout + Mathf.absin(0.4f, 2.5f), 2, 30, Pal.lightishOrange);
+          SglDraw.drawDiamond(b.x, b.y, 16*fout + Mathf.absin(0.6f, 2f), 2, 90, Pal.lightishOrange);
+          Fill.circle(b.x, b.y, 2.2f*fout);
         }
+
+        @Override
+        public void drawTrail(Bullet b) {}
+
+        @Override
+        public void removed(Bullet b) {}
       });
       consume.energy(5);
       consume.time(60);

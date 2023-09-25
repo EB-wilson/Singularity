@@ -1,14 +1,13 @@
 package singularity.world.blocks.distribute;
 
 import mindustry.ctype.Content;
-import singularity.world.components.PayloadBlockComp;
 import singularity.world.components.PayloadBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.distribution.GridChildType;
 import universecore.annotations.Annotations;
 
 @Annotations.ImplEntries
-public class PayloadIOPoint extends IOPoint implements PayloadBlockComp{
+public class PayloadIOPoint extends IOPoint {
   public PayloadIOPoint(String name){
     super(name);
 

@@ -5,8 +5,16 @@ import arc.func.Boolf;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
+import arc.graphics.g2d.TextureRegion;
+import arc.input.KeyCode;
+import arc.math.Mat;
 import arc.math.Mathf;
+import arc.math.geom.Geometry;
+import arc.math.geom.Point2;
+import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
+import arc.scene.Element;
+import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.WidgetGroup;
 import arc.struct.OrderedMap;
@@ -16,35 +24,63 @@ import arc.util.*;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
+import mindustry.core.Renderer;
 import mindustry.gen.*;
+import mindustry.gen.Icon;
+import mindustry.graphics.Drawf;
+import mindustry.graphics.Pal;
 import mindustry.input.Binding;
 import mindustry.ui.Fonts;
+import mindustry.world.Block;
 import singularity.Sgl;
+import singularity.core.UpdatePool;
+import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
+import singularity.util.MathTransform;
 import universecore.annotations.Annotations;
 import universecore.components.ExtraVariableComp;
 
+import javax.swing.*;
 import java.util.Iterator;
 import java.util.Objects;
 
+import static mindustry.Vars.tilesize;
+
 public class EntityInfoFrag{
+  public static final int MAX_LIMITED = 64;
+
   public OrderedMap<EntityInfoDisplay<?>, Boolf<Entityc>> displayMatcher = new OrderedMap<>();
 
   public OrderedSet<EntityEntry<?>> alphaQueue = new OrderedSet<>(){{
     orderedItems().ordered = false;
   }};
 
-  Entityc hold;
+  private static final Mat mat = new Mat();
+  private static final Rect tmp = new Rect();
+
+  EntityEntry<?> hold;
   float timer, delta;
 
-  boolean wasHold, showRange, mark;
+  boolean wasHold, showRange, mark, showAllUnits;
+  int currCfg = 0;
   float holdTime;
 
   String showModeTip = "";
   float modeTipAlpha;
 
-  boolean resizing;
+  boolean resizing, invalided;
   float sclAlpha, touchY = -1, lastScl = -1;
+
+  static {
+    Element cap = new Element();
+    UpdatePool.receive("lockScl", () -> {
+      if (Core.app.isDesktop() && (Sgl.ui.entityInfoFrag.resizing || Core.input.alt())){
+        Core.scene.setScrollFocus(cap);
+      }
+      else if (Core.scene.getScrollFocus() == cap) Core.scene.unfocus(cap);
+    });
+    Vars.control.input.addLock(() -> Core.app.isMobile() && Sgl.ui.entityInfoFrag.resizing);
+  }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   public void build(WidgetGroup parent){
@@ -57,26 +93,39 @@ public class EntityInfoFrag{
 
       update();
 
+      mat.set(Draw.proj());
+      Draw.proj(Core.camera.mat);
+
+      if (hold != null) {
+        float mv = 0.8f +  Mathf.absin(6, 0.2f);
+        TextureRegion region = ((TextureRegionDrawable) SglDrawConst.matrixArrow).getRegion();
+
+        Draw.color(Pal.accentBack);
+        Draw.rect(region, hold.x() + (hold.size()*2)*mv, hold.y(), hold.size()/1.75f + 4, hold.size()/1.75f + 4, 90);
+        Draw.rect(region, hold.x() - (hold.size()*2)*mv, hold.y(), hold.size()/1.75f + 4, hold.size()/1.75f + 4, -90);
+
+        Draw.color(Pal.accent);
+        Draw.rect(region, hold.x() + (hold.size()*2)*mv, hold.y(), hold.size()/1.75f, hold.size()/1.75f, 90);
+        Draw.rect(region, hold.x() - (hold.size()*2)*mv, hold.y(), hold.size()/1.75f, hold.size()/1.75f, -90);
+      }
+
       for (int i = alphaQueue.size - 1; i >= 0; i--) {
         EntityEntry<?> entry = alphaQueue.orderedItems().get(i);
         if(entry.alpha <= 0.001f) continue;
 
-        float size = entry.entity instanceof Hitboxc hit ? hit.hitSize()/2 : entry.entity instanceof Buildingc b ? b.block().size / 2f : 10;
-
-        Vec2 v = Core.input.mouse();
-        Core.camera.unproject(Tmp.v1.set(v));
-        Tmp.v1.y += size;
-        float heightOff = Core.camera.project(Tmp.v1).y - v.y + 8;
+        float heightOff = entry.size();
         float maxWight = 0;
 
+        float scl = Sgl.config.showInfoScl*Math.max(entry.size()/60f, 0.32f);
         for (EntityInfoDisplay<?> display : entry.display) {
-          maxWight = Math.max(maxWight, display.wight(Sgl.config.showInfoScl));
+          maxWight = Math.max(maxWight, display.wight(scl));
         }
 
         for (EntityInfoDisplay<?> display : entry.display) {
-          heightOff += ((EntityInfoDisplay)display).draw(entry, Vars.player.team(), maxWight, heightOff, entry.alpha, Sgl.config.showInfoScl);
+          heightOff += ((EntityInfoDisplay)display).draw(entry, Vars.player.team(), maxWight, heightOff, entry.alpha*Sgl.config.statusInfoAlpha, scl);
         }
       }
+      Draw.proj(mat);
 
       if (modeTipAlpha > 0.001) {
         float alpha = 1 - Mathf.pow(1 - modeTipAlpha, 4);
@@ -87,8 +136,11 @@ public class EntityInfoFrag{
       if (sclAlpha > 0.001) {
         float alpha = 1 - Mathf.pow(1 - sclAlpha, 4);
         String str = Strings.autoFixed(Sgl.config.showInfoScl, 2) + "x";
-        Fonts.def.draw(str, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.24f - 1f, Tmp.c1.set(Color.gray).a(alpha), Scl.scl(1.4f), true, Align.center);
-        Fonts.def.draw(str, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.24f, Tmp.c1.set(Color.white).a(alpha), Scl.scl(1.4f), true, Align.center);
+        String str1 = Core.bundle.get(Core.app.isMobile()? "infos.zoomMobile": "infos.zoomDesktop");
+        Fonts.def.draw(str1, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.24f - 1f, Tmp.c1.set(Color.gray).a(alpha), Scl.scl(1.4f), true, Align.center);
+        Fonts.def.draw(str1, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.24f, Tmp.c1.set(Color.white).a(alpha), Scl.scl(1.4f), true, Align.center);
+        Fonts.def.draw(str, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.2f - 1f, Tmp.c1.set(Color.gray).a(alpha), Scl.scl(1.3f), true, Align.center);
+        Fonts.def.draw(str, Core.graphics.getWidth()/2f, Core.graphics.getHeight()*0.2f, Tmp.c1.set(Color.white).a(alpha), Scl.scl(1.3f), true, Align.center);
       }
 
       if (showRange){
@@ -96,7 +148,7 @@ public class EntityInfoFrag{
 
         Lines.stroke(4, Color.lightGray);
         Draw.alpha(0.3f + Mathf.absin(Time.globalTime, 5, 0.3f));
-        Lines.dashCircle(v.x, v.y, Sgl.config.holdDisplayRange);
+        SglDraw.dashCircle(v.x, v.y, Sgl.config.holdDisplayRange, 40, 180, MathTransform.gradientRotateDeg(Time.globalTime/5, 45, 8));
       }
     });
 
@@ -125,7 +177,7 @@ public class EntityInfoFrag{
     Sgl.ui.toolBar.addTool(
         "changeMode",
         () -> Core.bundle.get("infos.changeMode"),
-        () -> showRange? SglDrawConst.showRange: wasHold? SglDrawConst.hold: Icon.zoom,
+        () -> showRange? SglDrawConst.showRange: wasHold? SglDrawConst.hold: showAllUnits? Icon.admin: Icon.zoom,
         this::changeMode,
         () -> false
     );
@@ -145,8 +197,8 @@ public class EntityInfoFrag{
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void update(){
-    if (resizing && Core.input.isTouched()){
-      sclAlpha = 1;
+    if (!invalided && Core.app.isMobile() && resizing && Core.input.isTouched()){
+      sclAlpha = Mathf.lerpDelta(sclAlpha, 1, 0.1f);
       if (touchY >= 0){
         Sgl.config.showInfoScl = Mathf.clamp(lastScl - (touchY - Core.input.mouseY())/Core.graphics.getHeight()*2, 0.5f, 4f);
       }
@@ -165,28 +217,38 @@ public class EntityInfoFrag{
       mark = true;
     }
     else{
-      if (mark && Time.globalTime - holdTime < 30){
+      if (!invalided && mark && Time.globalTime - holdTime < 30){
         changeMode();
       }
+      invalided = false;
 
       mark = false;
     }
 
-    boolean touched = Core.input.keyDown(Binding.select) && Core.input.alt();
+    if (!invalided && Core.app.isDesktop() && Time.globalTime - holdTime > 30 && (resizing || Core.input.alt())){
+      sclAlpha = Mathf.lerpDelta(sclAlpha, 1, 0.1f);
+      float scroll = Core.input.axis(KeyCode.scroll);
+      if (scroll != 0){
+        Sgl.config.showInfoScl += scroll/20;
+        Sgl.config.showInfoScl = Mathf.clamp(Sgl.config.showInfoScl, 0.5f, 4f);
+      }
+    }
+
+    boolean touched = Core.input.keyTap(Binding.select) && Core.input.alt();
     if (touched){
       hold = null;
       mark = false;
     }
 
     delta += Time.delta;
-    if (Time.globalTime - timer < Sgl.config.flushInterval) return;
+    if (!touched && Time.globalTime - timer < Sgl.config.flushInterval) return;
     timer = Time.globalTime;
 
     Vec2 v = Core.input.mouseWorld();
 
     float dist = 0;
     for (Entityc e : Groups.all) {
-      float size = showRange? 0: e instanceof Hitboxc h ? h.hitSize() / 2 : e instanceof Buildingc b ? b.block().size / 2f : 10;
+      float size = showRange? 0: e instanceof Hitboxc h ? h.hitSize() / 2 : e instanceof Buildingc b ? b.block().size*tilesize/2f : 10;
 
       if (showRange) {
         Core.camera.project(Tmp.v1.set(v));
@@ -195,8 +257,10 @@ public class EntityInfoFrag{
       float range = showRange? Math.abs(Core.camera.unproject(Tmp.v1).x - v.x): 0;
 
       if (e instanceof Posc ent
-          && ((!showRange && Math.abs(ent.x() - v.x) < size && Math.abs(ent.y() - v.y) < size)
-          || (showRange && ent.dst(v.x, v.y) < range))){
+          && ((showAllUnits && ent instanceof Hitboxc && tmp.set(0, 0, Core.graphics.getWidth(), Core.graphics.getHeight()).contains(Core.camera.project(Tmp.v1.set(ent))))
+          || (!showRange && Math.abs(ent.x() - v.x) < size && Math.abs(ent.y() - v.y) < size)
+          || (showRange && ent.dst(v.x, v.y) < range))
+      ){
         EntityEntry entry = Pools.obtain(EntityEntry.class, EntityEntry::new);
         entry.entity = e;
         entry.hovering = true;
@@ -221,33 +285,30 @@ public class EntityInfoFrag{
         if (touched) {
           float dis = ent.dst(v);
           if (dis < dist || hold == null) {
-            hold = e;
+            hold = existed;
             dist = dis;
+            invalided = true;
           }
         }
       }
     }
 
-    alphaQueue.orderedItems().sort((a, b) -> {
-      if (a.entity instanceof Posc pa && b.entity instanceof Posc pb) {
-        Vec2 pos = Core.input.mouseWorld();
-        return (int) (pa.dst(pos) - pb.dst(pos));
-      }
-
-      return 0;
+    if (!alphaQueue.isEmpty()) alphaQueue.orderedItems().sort((a, b) -> {
+      Vec2 pos = Core.input.mouseWorld();
+      return (int) (a.entity.dst(pos) - b.entity.dst(pos));
     });
 
     int count = 0;
     Iterator<EntityEntry<?>> itr = alphaQueue.iterator();
     while(itr.hasNext()){
       EntityEntry<?> entry = itr.next();
-      if (count >= Sgl.config.maxDisplay){
+      if (count <= MAX_LIMITED && count >= Sgl.config.maxDisplay){
         entry.hovering = false;
         entry.alpha = Mathf.approach(entry.alpha, 0, 0.025f*delta);
         continue;
       }
 
-      boolean isHovered = entry.entity.isAdded() && ((wasHold && !showRange) || entry.hovering || hold == entry.entity || Core.input.alt());
+      boolean isHovered = entry.entity.isAdded() && ((wasHold && !showRange) || entry.hovering || (hold != null && hold.entity == entry.entity) || Core.input.alt());
       entry.alpha = Mathf.approach(entry.alpha, isHovered ? 1: 0, (isHovered? 0.1f: 0.025f)*delta);
 
       entry.hovering = false;
@@ -265,40 +326,56 @@ public class EntityInfoFrag{
       count++;
     }
 
-    modeTipAlpha = Mathf.approach(modeTipAlpha, 0, 0.004f*delta);
-    sclAlpha = Mathf.approach(sclAlpha, 0, 0.004f*delta);
+    modeTipAlpha = Mathf.approach(modeTipAlpha, 0, 0.006f*delta);
+    sclAlpha = Mathf.approach(sclAlpha, 0, 0.006f*delta);
     delta = 0;
   }
 
   private void changeMode() {
     hold = null;
 
-    if (!wasHold){
-      wasHold = true;
+    showRange = wasHold = showAllUnits = false;
+    currCfg++;
+    currCfg%=4;
 
-      showModeTip = Core.bundle.get("infos.holdShowed");
-    }
-    else{
-      if (showRange){
-        wasHold = showRange = false;
-
+    switch(currCfg){
+      case 0:
         showModeTip = Core.bundle.get("infos.holdOff");
-      }
-      else{
+        break;
+      case 1:
+        wasHold = true;
+        showModeTip = Core.bundle.get("infos.holdShowed");
+        break;
+      case 2:
         showRange = true;
-
         showModeTip = Core.bundle.get("infos.holdShowRang");
-      }
+        break;
+      case 3:
+        showAllUnits = true;
+        showModeTip = Core.bundle.get("infos.holdShowAll");
     }
+
     modeTipAlpha = 1;
   }
 
   @Annotations.ImplEntries
-  public static class EntityEntry<T extends Entityc> implements Pool.Poolable, ExtraVariableComp{
+  public static class EntityEntry<T extends Entityc & Posc> implements Pool.Poolable, ExtraVariableComp{
     T entity;
     float alpha;
     boolean hovering;
     Seq<EntityInfoDisplay<T>> display = new Seq<>();
+
+    public float x(){
+      return entity.x();
+    }
+
+    public float y(){
+      return entity.y();
+    }
+
+    public float size(){
+      return entity instanceof Hitboxc h ? h.hitSize() / 2 : entity instanceof Buildingc b ? b.block().size*tilesize/2f : 10;
+    }
 
     @Override
     public void reset() {

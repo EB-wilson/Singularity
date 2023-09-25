@@ -208,6 +208,9 @@ public class ProductBlocks implements ContentList {
       ));
       size = 4;
 
+      energyCapacity = 1024;
+      basicPotentialEnergy = 1024;
+
       itemCapacity = 50;
       liquidCapacity = 30;
 

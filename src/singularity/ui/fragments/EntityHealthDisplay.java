@@ -3,10 +3,11 @@ package singularity.ui.fragments;
 import arc.graphics.g2d.Draw;
 import arc.math.Mathf;
 import mindustry.game.Team;
-import mindustry.gen.Unit;
+import mindustry.gen.Healthc;
+import mindustry.gen.Teamc;
 import singularity.Sgl;
 
-public class UnitHealthDisplay<T extends Unit> extends EntityInfoDisplay<T>{
+public class EntityHealthDisplay<T extends Teamc & Healthc> extends EntityInfoDisplay<T>{
   float tmp;
 
   @Override
@@ -15,25 +16,23 @@ public class UnitHealthDisplay<T extends Unit> extends EntityInfoDisplay<T>{
 
     Draw.alpha(alpha);
 
-    trnsPos(entity.x, entity.y, (x, y) -> {
-      tmp = Sgl.config.healthBarStyle.draw(
-          x, y + dy,
-          entry,
-          team,
-          dy,
-          alpha,
-          scl
-      );
+    tmp = Sgl.config.healthBarStyle.draw(
+        entity.x(), entity.y() + dy,
+        entry,
+        team,
+        dy,
+        alpha,
+        scl
+    );
 
-      Draw.reset();
-    });
+    Draw.reset();
 
     return tmp;
   }
 
   @Override
   public void updateVar(EntityInfoFrag.EntityEntry<T> entry, float delta) {
-    entry.handleVar("over", (float f) -> Mathf.lerp(f, entry.entity.health, delta*0.04f), entry.entity.health);
+    entry.handleVar("over", (float f) -> Mathf.lerp(f, entry.entity.health(), delta*0.04f), entry.entity.health());
   }
 
   @Override

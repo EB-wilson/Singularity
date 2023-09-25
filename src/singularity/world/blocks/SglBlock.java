@@ -46,10 +46,11 @@ import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.SglFx;
 import singularity.world.blocks.nuclear.NuclearNode;
-import singularity.world.components.NuclearEnergyBlockComp;
 import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
+import singularity.world.meta.SglStat;
+import singularity.world.meta.SglStatUnit;
 import singularity.world.modules.NuclearEnergyModule;
 import singularity.world.modules.SglConsumeModule;
 import singularity.world.modules.SglLiquidModule;
@@ -71,7 +72,7 @@ import static mindustry.Vars.*;
 
 /**此mod的基础方块类型，对block添加了完善的consume系统，并拥有中子能的基础模块*/
 @Annotations.ImplEntries
-public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyBlockComp{
+public class SglBlock extends Block implements ConsumerBlockComp{
   public static final int BASE_EXBLOSIVE_ENERGY = 128;
   public boolean autoSelect = false;
   public boolean canSelect = true;
@@ -238,6 +239,13 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
     if (this.hasLiquids) this.stats.add(Stat.liquidCapacity, this.liquidCapacity, StatUnit.liquidUnits);
   
     if (this.hasItems && this.itemCapacity > 0) this.stats.add(Stat.itemCapacity, (float)this.itemCapacity, StatUnit.items);
+
+    if(hasEnergy){
+      stats.add(SglStat.energyCapacity, energyCapacity, SglStatUnit.neutronFlux);
+      stats.add(SglStat.energyResident, resident);
+      if(basicPotentialEnergy > 0) stats.add(SglStat.basicPotentialEnergy, basicPotentialEnergy, SglStatUnit.neutronPotentialEnergy);
+      if(maxEnergyPressure > 0) stats.add(SglStat.maxEnergyPressure, maxEnergyPressure);
+    }
 
     if (!optionalCons().isEmpty()){
       stats.add(UncStat.optionalInputs, t -> {
@@ -625,12 +633,6 @@ public class SglBlock extends Block implements ConsumerBlockComp, NuclearEnergyB
 
     public float getMaximumAccepted(Liquid liquid){
       return block.liquidCapacity;
-    }
-  
-    @Override
-    public boolean acceptEnergy(NuclearEnergyBuildComp source){
-      return source.getBuilding().interactable(team) && energy.getEnergy() < getNuclearBlock().energyCapacity()
-          && source.getEnergyPressure(this) > basicPotentialEnergy;
     }
 
     @Override

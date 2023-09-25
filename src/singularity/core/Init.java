@@ -18,6 +18,7 @@ import dynamilize.annotations.DynamilizeClass;
 import dynamilize.runtimeannos.AspectInterface;
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.gen.Building;
 import mindustry.ui.Styles;
 import mindustry.ui.fragments.HintsFragment;
 import mindustry.world.Block;
@@ -53,8 +54,12 @@ public class Init{
       //禁用所有超速器
       if(target instanceof OverdriveProjector over){
         over.placeablePlayer = false;
-        over.update = false;
-        over.breakable = true;
+        over.buildType = () -> new Building(){
+          @Override
+          public void update() {
+            kill();
+          }
+        };
       }
     }
   }
