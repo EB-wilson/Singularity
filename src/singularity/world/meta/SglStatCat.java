@@ -19,6 +19,7 @@ public class SglStatCat{
     Seq<StatCat> all = StatCat.all;
     StatCat res = new StatCat(name);
 
+    all.remove(res);
     all.insert(index, res);
 
     for(int i = 0; i < all.size; i++){

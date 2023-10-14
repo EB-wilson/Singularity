@@ -349,6 +349,8 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
 
         Building next = curr.facingNext;
         if (next instanceof TokamakOrbit.TokamakOrbitBuild n){
+          if (n.facingThis.size > 1) break;
+
           if (curr.relativeTo(next) != next.rotation){
             cornerCount++;
 
@@ -464,7 +466,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
     public void updateTile() {
       chains.container.update();
 
-      if (!consumeValid()){
+      if (!consumeValid() || !structValid()){
         recooldown = true;
       }
       else if (warmup() <= 0.2f){
@@ -486,6 +488,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
             Tmp.v2.x, Tmp.v2.y,
             Mathf.random(0.2f, 0.5f), Layer.block
         );
+        p.maxCloudCounts = Mathf.random(40, 55);
         p.setVar(OWNER, this);
         p.setVar(TimeParticle.LIFE_TIME, Mathf.random(12.8f, 16.4f)*Mathf.sqrt(scale));
       }

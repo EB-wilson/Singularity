@@ -1,17 +1,22 @@
 package singularity.contents;
 
+import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.math.Angles;
+import arc.math.Interp;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.math.geom.Vec2;
+import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
 import mindustry.entities.Effect;
+import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Sounds;
 import mindustry.graphics.Layer;
@@ -21,12 +26,15 @@ import mindustry.type.Item;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.world.Block;
+import mindustry.world.blocks.liquid.LiquidBlock;
 import mindustry.world.draw.*;
 import mindustry.world.meta.BuildVisibility;
 import singularity.Sgl;
+import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.type.SglCategory;
+import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.blocks.nuclear.*;
 import singularity.world.blocks.product.NormalCrafter;
@@ -35,6 +43,7 @@ import singularity.world.draw.DrawBottom;
 import singularity.world.draw.DrawExpandPlasma;
 import singularity.world.draw.DrawReactorHeat;
 import singularity.world.draw.DrawRegionDynamic;
+import singularity.world.meta.SglStat;
 import singularity.world.particles.SglParticleModels;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.ConsumeItems;
@@ -57,6 +66,10 @@ public class NuclearBlocks implements ContentList{
   high_voltage_buffer,
   /**中子缓冲矩阵*/
   neutron_matrix_buffer,
+  /**晶体储能簇*/
+  crystal_container,
+  /**环形电磁储能簇*/
+  magnetic_energy_container,
   /**衰变仓*/
   decay_bin,
   /**中子能发电机*/
@@ -164,6 +177,144 @@ public class NuclearBlocks implements ContentList{
       energyCapacity = 65536;
       minPotential = 1;
       maxPotential = 65536;
+    }};
+
+    crystal_container = new EnergyContainer("crystal_container"){{
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.crystal_FEX, 160,
+          SglItems.aerogel, 80,
+          SglItems.matrix_alloy, 80,
+          SglItems.strengthening_alloy, 100,
+          Items.silicon, 60,
+          Items.phaseFabric, 55
+      ));
+      size = 3;
+      energyCapacity = 2 << 16;
+      energyPotential = 1024;
+      maxEnergyPressure = 4096;
+
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawDefault(),
+          new DrawRegionDynamic<EnergyContainerBuild>("_top"){{
+            layer = Layer.effect;
+            color = e -> SglDrawConst.fexCrystal;
+            alpha = e -> Mathf.clamp(e.getEnergy()/e.energyCapacity());
+          }}
+      );
+    }};
+
+    magnetic_energy_container = new EnergyContainer("magnetic_energy_container"){{
+      requirements(SglCategory.nuclear, ItemStack.with(
+          SglItems.crystal_FEX, 200,
+          SglItems.crystal_FEX_power, 100,
+          SglItems.matrix_alloy, 120,
+          SglItems.strengthening_alloy, 120,
+          SglItems.aerogel, 100,
+          Items.surgeAlloy, 80,
+          Items.silicon, 120
+      ));
+      size = 5;
+      energyCapacity = 2 << 19;
+      energyPotential = 4096;
+      maxEnergyPressure = 16384;
+
+      warmupSpeed = 0.02f;
+
+      newConsume();
+      consume.power(12);
+
+      setStats = s -> {
+        s.add(SglStat.special, Core.bundle.format("infos.nonCons", Core.bundle.format("infos.energyContainerLeak", 3600)));
+      };
+
+      nonCons = ne -> {
+        float leak = Math.min(ne.getEnergy(), 60);
+        if (leak > 0){
+          ne.energy.handle(-leak*Time.delta*(1 - ne.warmup));
+
+          float rate = Mathf.clamp(ne.getEnergy()/ne.energyCapacity());
+          if (rate > 0.5f){
+            if (Mathf.chanceDelta(rate*0.007f)){
+              SglTurrets.spilloverEnergy.create(ne, Team.derelict, ne.x, ne.y, Mathf.random(360f), Mathf.random(0.4f, 1f));
+            }
+          }
+
+          if (Mathf.chanceDelta((1 - ne.warmup)*0.05f)){
+            Angles.randLenVectors(System.nanoTime(), 1, 2, 3.5f,
+                (x, y) -> SglParticleModels.floatParticle.create(ne.x, ne.y, SglDrawConst.fexCrystal, x, y, 2.3f).setVar(RandDeflectParticle.STRENGTH, 0.4f)
+            );
+          }
+
+          if (Mathf.chanceDelta((1 - ne.warmup)*0.075f)){
+            SglFx.circleSparkMini.at(ne.x, ne.y, Tmp.c1.set(SglDrawConst.fexCrystal).lerp(SglDrawConst.matrixNet, Mathf.random(0, 1f)));
+          }
+        }
+      };
+
+      draw = new DrawMulti(
+          new DrawBottom(),
+          new DrawBlock() {
+            @Override
+            public void draw(Building build) {
+              LiquidBlock.drawTiledFrames(
+                  build.block.size,
+                  build.x, build.y,
+                  4,
+                  SglLiquids.spore_cloud,
+                  build.warmup()
+              );
+            }
+          },
+          new DrawBlock() {
+            @Override
+            public void draw(Building build) {
+              super.draw(build);
+
+              SglDraw.drawBloomUnderBlock((EnergyContainerBuild)build, e -> {
+                MathRenderer.setThreshold(0.65f, 0.8f);
+                MathRenderer.setDispersion(0.7f*e.warmup);
+                Draw.color(SglDrawConst.fexCrystal);
+                MathRenderer.drawCurveCircle(e.x, e.y, 9.5f, 4, 6, -Time.time*0.8f);
+                Draw.color(SglDrawConst.matrixNet);
+                MathRenderer.drawCurveCircle(e.x, e.y, 9.5f, 3, 6, Time.time*1.2f);
+              });
+              Draw.z(Layer.block + 5);
+            }
+          },
+          new DrawDefault(),
+          new DrawBlock() {
+            static final float[] param = new float[9];
+            final Rand rand = new Rand();
+
+            @Override
+            public void draw(Building build) {
+              super.draw(build);
+              EnergyContainerBuild e = (EnergyContainerBuild)build;
+              float l = Interp.pow2Out.apply(Mathf.clamp(e.getEnergy()/e.energyCapacity()));
+
+              Draw.z(Layer.effect);
+              Draw.color(SglDrawConst.fexCrystal);
+              Fill.circle(e.x, e.y, 6*l);
+              Draw.color(Color.white);
+              Fill.circle(e.x, e.y, 4*l);
+
+              rand.setSeed(build.id);
+              for (int i = 0; i < 3; i++) {
+                boolean bool = rand.random(1f) > 0.5f;
+                for (int d = 0; d < 3; d++) {
+                  param[d * 3] = rand.random(2f, 3f) / (d + 1) * (bool != (d % 2 == 0) ? -1 : 1);
+                  param[d * 3 + 1] = rand.random(360f);
+                  param[d * 3 + 2] = rand.random(5f, 8f) / ((d + 1) * (d + 1));
+                }
+                Vec2 v = MathTransform.fourierSeries(Time.time, param).scl(l);
+
+                Draw.color(SglDrawConst.fexCrystal, SglDrawConst.matrixNet, Mathf.absin(Time.time*rand.random(4.8f, 7.2f), 1));
+                Fill.circle(e.x + v.x, e.y + v.y, 1.3f*l);
+              }
+            }
+          }
+      );
     }};
     
     decay_bin = new NormalCrafter("decay_bin"){{

@@ -143,6 +143,8 @@ public class SglTurret extends SglBlock{
   public float rotateSpeed = 5;
   /**炮台在充能时能否转向*/
   public boolean moveWhileCharging = true;
+  /**炮塔充能时是否保持预热状态*/
+  public boolean chargingWarm = true;
 
   public ObjectMap<BaseConsumers, AmmoDataEntry> ammoTypes = new ObjectMap<>();
 
@@ -453,7 +455,8 @@ public class SglTurret extends SglBlock{
             }
           }
         }
-      }else{
+      }
+      else if (!chargingWarm || !charging()){
         warmup = linearWarmup? Mathf.approachDelta(warmup, 0, warmupSpeed): Mathf.lerpDelta(warmup, 0, warmupSpeed);
       }
 

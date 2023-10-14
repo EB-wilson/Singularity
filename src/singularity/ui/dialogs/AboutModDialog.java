@@ -1,7 +1,9 @@
 package singularity.ui.dialogs;
 
 import arc.Core;
+import arc.files.Fi;
 import arc.func.Cons;
+import arc.func.Floatc;
 import arc.func.Prov;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
@@ -10,6 +12,11 @@ import arc.scene.Element;
 import arc.scene.style.Drawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
+import arc.util.Http;
+import arc.util.Nullable;
+import arc.util.io.Streams;
+import arc.util.serialization.Jval;
+import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -19,9 +26,14 @@ import singularity.Sgl;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
 
-import static mindustry.Vars.ui;
+import java.io.OutputStream;
+import java.util.regex.Pattern;
+
+import static mindustry.Vars.*;
 
 public class AboutModDialog extends BaseDialog {
+  public static final Pattern UNC_RELEASE_FILE = Pattern.compile("^Singularity-\\w*-?\\d+\\.\\d+\\.\\d+\\.(jar|zip)$");
+
   BaseListDialog openUrl = new BaseListDialog(){{
     width = 490;
     itemBoardWidth = 180;
@@ -37,6 +49,11 @@ public class AboutModDialog extends BaseDialog {
       buttonTable.clearChildren();
     });
   }};
+
+  @Nullable String newVersion;
+  @Nullable String updateUrl;
+  boolean checking;
+  float downloadProgress;
   
   Seq<BaseListDialog.ItemEntry> facebookPages = Seq.with(
       getEntry(Core.bundle.get("dialog.openUriDialog.facebook"), Sgl.facebook)
@@ -86,7 +103,7 @@ public class AboutModDialog extends BaseDialog {
         t.add(Core.bundle.get("infos.qq"));
       }, () -> Pal.redderDust, () -> showUrl.get(qqPages)),
   };
-  
+
   public AboutModDialog() {
     super(Core.bundle.get("dialog.aboutMod.title"));
     
@@ -111,18 +128,19 @@ public class AboutModDialog extends BaseDialog {
         update.add(new Element(){
           @Override
           public void draw(){
-            Draw.alpha(parentAlpha);
+            Draw.alpha(parentAlpha*color.a);
             Draw.color(Pal.accent);
             Fill.square(x + width/2, y + height/2, 8);
             Fill.square(x + width/2, y + height/2, 8, 45);
           }
         }).size(40);
-        update.add(Core.bundle.get("infos.newestVersion"));
+        update.add("").update(l -> l.setText(checking? Core.bundle.get("infos.checkingUpgrade"): newVersion != null? Core.bundle.format("infos.hasUpdate", newVersion): Core.bundle.get("infos.newestVersion")));
       }).width(230);
       t.row();
       t.add(Core.bundle.get("infos.releaseDate")).color(Pal.accent);
       t.add(Core.bundle.get("mod.updateDate"));
-      t.button(Core.bundle.get("infos.checkUpdate"), Icon.upload, Styles.nonet, 16, () -> {}).width(230);
+      t.button("", Icon.upload, Styles.nonet, 28, this::checkOrDoUpdate)
+          .update(b -> b.setText(newVersion != null? Core.bundle.get("misc.update"): Core.bundle.get("infos.checkUpdate"))).width(230);
     }).width(580).fillY().padTop(40);
     
     cont.row();
@@ -175,7 +193,89 @@ public class AboutModDialog extends BaseDialog {
       }
     }).growX().padTop(20);
   }
-  
+
+  private void checkOrDoUpdate() {
+    if(newVersion != null){
+      if (updateUrl == null) ui.showException("what? updateUrl was null!", new NullPointerException());
+      else {
+        Http.get(updateUrl, this::downloadMod);
+      }
+    }
+    else {
+      checking = true;
+      Http.get(Sgl.githubProjReleaseApi, res -> {
+        Jval response = Jval.read(res.getResultAsString());
+
+        if (isNewVersion(response.getString("tag_name"))) {
+          newVersion = response.getString("tag_name");
+
+          for (Jval asset : response.get("assets").asArray()) {
+            if (asset.has("name") && UNC_RELEASE_FILE.matcher(asset.getString("name")).matches()) {
+              updateUrl = asset.getString("browser_download_url");
+            }
+          }
+        }
+
+        Core.app.post(() -> {
+          checking = false;
+        });
+      }, e -> {
+        Core.app.post(() -> {
+          checking = false;
+          ui.showException(e);
+        });
+      });
+    }
+  }
+
+  private void downloadMod(Http.HttpResponse result){
+    try{
+      Fi file = tmpDirectory.child("Singularity" + newVersion + ".jar");
+      long len = result.getContentLength();
+
+      downloadProgress = 0f;
+      ui.loadfrag.show("@downloading");
+      ui.loadfrag.setProgress(() -> downloadProgress);
+
+      try(OutputStream stream = file.write(false)){
+        Streams.copyProgress(result.getResultAsStream(), stream, len, 4096,  len <= 0 ? f -> {} : p -> downloadProgress = p);
+      }
+
+      var mod = mods.importMod(file);
+      mod.setRepo("EB-wilson/Singularity");
+      file.delete();
+
+      ui.loadfrag.hide();
+    }catch(Throwable e){
+      ui.showException(e);
+    }
+  }
+
+  private static boolean isNewVersion(String version) {
+    String[] version_arr = version.split("\\.");
+    String[] curr_version_arr = Sgl.modVersion.split("\\.");
+
+    boolean newestVersion = false;
+    int n = Math.max(version_arr.length, curr_version_arr.length);
+    for (int i = 0; i < n; i++) {
+      if (i < version_arr.length && i < curr_version_arr.length){
+        try {
+          if (Integer.parseInt(curr_version_arr[i]) < Integer.parseInt(version_arr[i])){
+            newestVersion = true;
+            break;
+          }
+        } catch (NumberFormatException ignored){
+          break; //忽略意外的版本号
+        }
+      }
+      else if (i < version_arr.length){
+        newestVersion = true;
+        break;
+      }
+    }
+    return newestVersion;
+  }
+
   private static void openUrl(String url){
     if(!Core.app.openURI(url)){
       ui.showErrorMessage("@linkfail");

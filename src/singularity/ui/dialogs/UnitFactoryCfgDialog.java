@@ -28,6 +28,7 @@ import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
 import arc.struct.Seq;
+import arc.struct.SnapshotSeq;
 import arc.util.*;
 import mindustry.Vars;
 import mindustry.ai.UnitCommand;
@@ -259,7 +260,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
                             t.table(button -> {
                               button.defaults().height(48).pad(5);
                               button.button(Core.bundle.get("misc.details"), Icon.info, Styles.grayt, 32, () -> {
-                                Vars.ui.content.show(unit);
+                                ui.content.show(unit);
                               }).growX();
                               button.button(Core.bundle.get("misc.add"), Icon.add, Styles.grayt, 32, () -> {
                                 if (currConfig.taskCount() >= currConfig.block().maxTasks) {
@@ -298,9 +299,25 @@ public class UnitFactoryCfgDialog extends BaseDialog {
                     inf.table(req -> {
                       req.left().defaults().left().padRight(2);
                       req.add(Stat.buildCost.localized() + ":").padRight(4);
+
+                      Table tmp = new Table();
                       for (BaseConsume<? extends ConsumerBuildComp> consume : cons.all()) {
-                        consume.buildIcons(req);
+                        consume.buildIcons(tmp);
                       }
+
+                      SnapshotSeq<Element> seq = tmp.getChildren();
+                      Element[] items = seq.begin();
+                      int s = Core.graphics.isPortrait()? 8: 6;
+                      for (int i = 0, n = seq.size; i < n; i++) {
+                        Element item = items[i];
+
+                        if (i > s){
+                          req.add(Core.bundle.format("infos.andMore", n - s));
+                          break;
+                        }
+                        req.add(item);
+                      }
+                      seq.end();
                     });
                     inf.row();
                     inf.add(Stat.buildTime.localized() + ": " + timeFormat(cons.craftTime)).color(Color.gray);

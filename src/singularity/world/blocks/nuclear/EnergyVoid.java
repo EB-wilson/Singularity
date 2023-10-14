@@ -7,7 +7,8 @@ import singularity.world.components.NuclearEnergyBuildComp;
 public class EnergyVoid extends NuclearBlock {
   public EnergyVoid(String name){
     super(name);
-    energyCapacity = 1024;
+    energyCapacity = 65536;
+    energyProtect = true;
     outputEnergy = false;
     consumeEnergy = true;
     noUpdateDisabled = true;

@@ -113,6 +113,8 @@ public class SglBlock extends Block implements ConsumerBlockComp{
   public float energyCapacity = 256;
   /**此方块接受的最大势能差，可设为-1将根据容量自动设置*/
   public float maxEnergyPressure = -1;
+  /**方块是否有过压保护*/
+  public boolean energyProtect = false;
   
   public String liquidsStr = Iconc.liquidWater + Core.bundle.get("fragment.bars.liquids");
   public String recipeIndfo = Core.bundle.get("fragment.buttons.selectPrescripts");
@@ -188,7 +190,7 @@ public class SglBlock extends Block implements ConsumerBlockComp{
     }
 
     if (hasEnergy && maxEnergyPressure == -1){
-      maxEnergyPressure = energyCapacity*4;
+      maxEnergyPressure = energyProtect? Float.MAX_VALUE: energyCapacity*4;
     }
 
     for (BaseConsumers consumer : consumers()) {
@@ -244,7 +246,12 @@ public class SglBlock extends Block implements ConsumerBlockComp{
       stats.add(SglStat.energyCapacity, energyCapacity, SglStatUnit.neutronFlux);
       stats.add(SglStat.energyResident, resident);
       if(basicPotentialEnergy > 0) stats.add(SglStat.basicPotentialEnergy, basicPotentialEnergy, SglStatUnit.neutronPotentialEnergy);
-      if(maxEnergyPressure > 0) stats.add(SglStat.maxEnergyPressure, maxEnergyPressure);
+      if(maxEnergyPressure > 0) {
+        if (energyProtect){
+          stats.add(SglStat.maxEnergyPressure, Core.bundle.get("misc.infinity"));
+        }
+        else stats.add(SglStat.maxEnergyPressure, maxEnergyPressure, SglStatUnit.neutronPotentialEnergy);
+      }
     }
 
     if (!optionalCons().isEmpty()){

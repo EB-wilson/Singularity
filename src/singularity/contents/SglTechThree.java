@@ -95,6 +95,18 @@ public class SglTechThree implements ContentList{
         decBin.node(nuclear_pipe_node, nucNode -> {
           nucNode.node(phase_pipe_node, phaseNode -> {});
 
+          nucNode.node(energy_buffer, energyBuf -> {
+            energyBuf.node(crystal_buffer, crystalBuf -> {
+              crystalBuf.node(high_voltage_buffer, highVoltBuf -> {
+                highVoltBuf.node(neutron_matrix_buffer, neutronMatBuf -> {});
+              });
+            });
+
+            energyBuf.node(crystal_container, crystalCont -> {
+              crystalCont.node(magnetic_energy_container, neutronMatCont -> {});
+            });
+          });
+
           nucNode.node(fuel_packager, fuelPack -> {
             fuelPack.node(gas_phase_packer, phaPac -> {});
           });

@@ -74,6 +74,7 @@ public class Sgl{
   public static final String libGithubProject = "https://github.com/EB-wilson/UniverseCore";
   public static final String discord = "";
   public static final String githubRawMaster = "https://raw.githubusercontent.com/EB-wilson/Singularity/master/";
+  public static final String githubProjReleaseApi = "https://api.github.com/repos/EB-wilson/Singularity/releases/latest";
   public static final String publicInfo = githubRawMaster + "publicInfo/";
   
   public static final String modAddress = "";
@@ -95,7 +96,7 @@ public class Sgl{
   public static EMPHealthManager empHealth;
 
   public static ModsInteropAPI interopAPI = new ModsInteropAPI();
-  
+
   public static void init(){
     //注册所有打包数据类型id
     BytePackAssign.assignAll();

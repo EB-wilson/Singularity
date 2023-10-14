@@ -13,7 +13,6 @@ import universecore.components.blockcomp.Takeable;
 public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
   Seq<NuclearEnergyBuildComp> tmp = new Seq<>(){{ordered = false;}};
 
-
   @Annotations.BindField("hasEnergy")
   default boolean hasEnergy(){
     return false;
@@ -75,7 +74,7 @@ public interface NuclearEnergyBuildComp extends BuildCompBase, Takeable{
     if(!next.hasEnergy() || !next.acceptEnergy(this)) return 0;
     float rate = getEnergyMoveRate(next);
 
-    if (rate > 0) {
+    if (rate > 0.01f) {
       float energyDiff = getEnergyPressure(next);
       if (energyDiff > next.maxEnergyPressure()) next.onOverpressure(energyDiff);
 

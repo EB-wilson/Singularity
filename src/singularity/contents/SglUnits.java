@@ -24,7 +24,6 @@ import arc.util.io.Reads;
 import arc.util.io.Writes;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
-import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.content.Liquids;
@@ -32,7 +31,6 @@ import mindustry.entities.Damage;
 import mindustry.entities.Effect;
 import mindustry.entities.UnitSorts;
 import mindustry.entities.Units;
-import mindustry.entities.abilities.Ability;
 import mindustry.entities.bullet.*;
 import mindustry.entities.bullet.LightningBulletType;
 import mindustry.entities.effect.MultiEffect;
@@ -1093,7 +1091,7 @@ public class SglUnits implements ContentList{
               public void update(Unit unit, DataWeaponMount mount){
                 Shooter[] shooters = mount.getVar(SHOOTERS);
                 for(Shooter shooter: shooters){
-                  Vec2 v = MathTransform.fourierTransform(Time.time, shooter.param).scl(mount.warmup);
+                  Vec2 v = MathTransform.fourierSeries(Time.time, shooter.param).scl(mount.warmup);
                   Tmp.v1.set(mount.weapon.x, mount.weapon.y).rotate(unit.rotation - 90);
                   shooter.x = Tmp.v1.x + v.x;
                   shooter.y = Tmp.v1.y + v.y;
@@ -1235,8 +1233,63 @@ public class SglUnits implements ContentList{
                 cooldownTime = 60;
                 reload = 60;
                 shadow = 45;
+                linearWarmup = false;
+                shootWarmupSpeed = 0.03f;
+                minWarmup = 0.8f;
 
                 layerOffset = 1;
+
+                parts.addAll(
+                    new CustomPart(){{
+                      x = 0;
+                      y = -16f;
+                      layer = Layer.effect;
+                      progress = PartProgress.warmup;
+
+                      draw = (x, y, r, p) -> {
+                        Lines.stroke(p*1.6f, SglDrawConst.matrixNet);
+                        Lines.circle(x, y, 3*p);
+
+                        Tmp.v1.set(0, 9*p).setAngle(r + 180 + 40*p);
+                        Tmp.v2.set(0, 9*p).setAngle(r + 180 - 40*p);
+
+                        SglDraw.drawDiamond(x + Tmp.v1.x, y + Tmp.v1.y, 9*p, 7f*p, Tmp.v1.angle());
+                        SglDraw.drawDiamond(x + Tmp.v2.x, y + Tmp.v2.y, 9*p, 7f*p, Tmp.v2.angle());
+
+                        Tmp.v1.set(0, 9*p).setAngle(r + 180 + 100*p);
+                        Tmp.v2.set(0, 9*p).setAngle(r + 180 - 100*p);
+
+                        SglDraw.drawDiamond(x + Tmp.v1.x, y + Tmp.v1.y, 9*p, 7f*p, Tmp.v1.angle());
+                        SglDraw.drawDiamond(x + Tmp.v2.x, y + Tmp.v2.y, 9*p, 7f*p, Tmp.v2.angle());
+                      };
+                    }},
+                    new CustomPart(){{
+                      x = 0;
+                      y = -16f;
+                      layer = Layer.effect;
+                      progress = PartProgress.warmup.delay(0.7f);
+
+                      draw = (x, y, r, p) -> {
+                        Tmp.v1.set(0, 14*p).setAngle(r + 195);
+                        Tmp.v2.set(0, 14*p).setAngle(r + 165);
+
+                        SglDraw.gapTri(x + Tmp.v1.x, y + Tmp.v1.y, 3*p, 10, -3, Tmp.v1.angle());
+                        SglDraw.gapTri(x + Tmp.v2.x, y + Tmp.v2.y, 3*p, 10, -3, Tmp.v2.angle());
+
+                        Tmp.v1.set(0, 14*p).setAngle(r + 250);
+                        Tmp.v2.set(0, 14*p).setAngle(r + 110);
+
+                        SglDraw.gapTri(x + Tmp.v1.x, y + Tmp.v1.y, 4*p, 12f, -4, Tmp.v1.angle());
+                        SglDraw.gapTri(x + Tmp.v2.x, y + Tmp.v2.y, 4*p, 12f, -4, Tmp.v2.angle());
+
+                        Tmp.v1.set(0, 14*p).setAngle(r + 305);
+                        Tmp.v2.set(0, 14*p).setAngle(r + 55);
+
+                        SglDraw.gapTri(x + Tmp.v1.x, y + Tmp.v1.y, 3*p, 10, -3, Tmp.v1.angle());
+                        SglDraw.gapTri(x + Tmp.v2.x, y + Tmp.v2.y, 3*p, 10, -3, Tmp.v2.angle());
+                      };
+                    }}
+                );
 
                 bullet = new EmpBulletType(){
                   {
@@ -2142,6 +2195,11 @@ public class SglUnits implements ContentList{
               if (Sgl.config.animateLevel < 2){
                 x = targetX;
                 y = targetY;
+                rot.set(1, 0).setAngle(unit.rotation() + mount.rotation);
+
+                trail.clear();
+                trail1.clear();
+                trail2.clear();
                 return;
               }
 
@@ -2170,8 +2228,8 @@ public class SglUnits implements ContentList{
               x += vel.x*Time.delta;
               y += vel.y*Time.delta;
 
-              tmp1.set(MathTransform.fourierTransform(Time.time, farg1)).scl(mount.warmup);
-              tmp2.set(MathTransform.fourierTransform(Time.time, farg2)).scl(mount.warmup);
+              tmp1.set(MathTransform.fourierSeries(Time.time, farg1)).scl(mount.warmup);
+              tmp2.set(MathTransform.fourierSeries(Time.time, farg2)).scl(mount.warmup);
 
               trail.update(x, y);
               trail1.update(x + tmp1.x, y + tmp1.y);
@@ -2779,7 +2837,7 @@ public class SglUnits implements ContentList{
 
       {
         Events.on(EventType.ClientLoadEvent.class, e -> {
-          immunities.addAll(content.statusEffects());
+          //immunities.addAll(content.statusEffects());
           Sgl.empHealth.setEmpDisabled(this);
         });
 
@@ -2815,49 +2873,6 @@ public class SglUnits implements ContentList{
         maxInterval = 4f;
         maxSpread = 4f;
       }};
-
-      final BulletType frag = new BulletType(){
-        {
-          collides = false;
-          absorbable = false;
-
-          splashDamage = 120;
-          splashDamageRadius = 24;
-          speed = 2.4f;
-          lifetime = 64;
-
-          hitShake = 4;
-          hitSize = 3;
-
-          despawnHit = true;
-          hitEffect = new MultiEffect(
-              SglFx.explodeImpWaveSmall,
-              SglFx.diamondSpark
-          );
-          hitColor = SglDrawConst.matrixNet;
-
-          trailColor = SglDrawConst.matrixNet;
-          trailEffect = SglFx.glowParticle;
-          trailRotation = true;
-          trailInterval = 15f;
-
-          fragBullet = new LightningBulletType(){{
-            lightningLength = 14;
-            lightningLengthRand = 4;
-            damage = 24;
-          }};
-          fragBullets = 1;
-        }
-
-        @Override
-        public void draw(Bullet b) {
-          Draw.color(hitColor);
-          float fout = b.fout(Interp.pow3Out);
-          Fill.circle(b.x, b.y, 5f*fout);
-          Draw.color(Color.black);
-          Fill.circle(b.x, b.y, 2.6f*fout);
-        }
-      };
 
       @Override
       public Unit create(Team team) {
@@ -2948,7 +2963,7 @@ public class SglUnits implements ContentList{
         else if (controlTime <= 300){
           float bullTime = unit.handleVar("bullTime", (float f) -> f - Time.delta, 0f);
           if (bullTime <= 0){
-            frag.create(u, u.team, u.x, u.y, Mathf.random(0, 360f), Mathf.random(0.5f, 1));
+            SglTurrets.spilloverEnergy.create(u, u.team, u.x, u.y, Mathf.random(0, 360f), Mathf.random(0.5f, 1));
             unit.health -= 180;
             unit.setVar("bullTime", Math.max(controlTime/10, 2));
           }

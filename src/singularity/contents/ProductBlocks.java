@@ -441,7 +441,7 @@ public class ProductBlocks implements ContentList {
                     param[d*3 + 2] = Mathf.randomSeed(b.id + d + i + 2, 8f, 20f)/((d + 1)*(d + 1));
                   }
 
-                  Vec2 v = Tmp.v1.set(MathTransform.fourierTransform(Time.time, param)).scl(b.warmup);
+                  Vec2 v = Tmp.v1.set(MathTransform.fourierSeries(Time.time, param)).scl(b.warmup);
                   Draw.color(Pal.reactorPurple);
                   Fill.circle(b.x + v.x, b.y + v.y, b.warmup);
 
@@ -464,14 +464,14 @@ public class ProductBlocks implements ContentList {
                         param[d*3 + 1] = Mathf.randomSeed(sec.id + d + 1, 0f, 360f);
                         param[d*3 + 2] = Mathf.randomSeed(sec.id + d + 2, 16f, 40f)/((d + 1)*(d + 1));
                       }
-                      Vec2 v = Tmp.v1.set(MathTransform.fourierTransform(Time.time, param));
+                      Vec2 v = Tmp.v1.set(MathTransform.fourierSeries(Time.time, param));
 
                       for(int d = 0; d < 3; d++){
                         param[d*3] = Mathf.randomSeed(sec.id + d + 3, 0.5f, 3f)/(d + 1)*(bool != (d%2 == 0)? -1: 1);
                         param[d*3 + 1] = Mathf.randomSeed(sec.id + d + 4, 0f, 360f);
                         param[d*3 + 2] = Mathf.randomSeed(sec.id + d + 5, 12f, 30f)/((d + 1)*(d + 1));
                       }
-                      Vec2 v2 = Tmp.v2.set(MathTransform.fourierTransform(Time.time, param));
+                      Vec2 v2 = Tmp.v2.set(MathTransform.fourierSeries(Time.time, param));
                       Draw.color(Pal.reactorPurple);
                       Fill.circle(sec.drillPos.x + v.x, sec.drillPos.y + v.y, 1.5f*b.warmup*sec.warmup);
                       Fill.circle(sec.drillPos.x + v2.x, sec.drillPos.y + v2.y, b.warmup*sec.warmup);

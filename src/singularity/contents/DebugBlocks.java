@@ -114,7 +114,7 @@ public class DebugBlocks implements ContentList{
         public void draw(Building e) {
           dist.setStrength(-64*Vars.renderer.getScale());
 
-          Tmp.v1.set(MathTransform.fourierTransform(Time.time, param));
+          Tmp.v1.set(MathTransform.fourierSeries(Time.time, param));
           float dx = Tmp.v1.x;
           float dy = Tmp.v1.y;
 
