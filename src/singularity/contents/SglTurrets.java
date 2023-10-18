@@ -2061,13 +2061,13 @@ public class SglTurrets implements ContentList{
         if(Mathf.chanceDelta(0.08f*e.warmup())) SglFx.iceParticle.at(
             t.x + Angles.trnsx(t.rotation, -12),
             t.y + Angles.trnsy(t.rotation, -12),
-            t.rotation + 90*(Mathf.randomBoolean()? 1: -1),
+            t.rotation + 90*Mathf.randomSign(),
             SglDrawConst.frost
         );
         if(Mathf.chanceDelta(0.05f*e.warmup())) SglFx.iceParticle.at(
             t.x + Angles.trnsx(t.rotation, 22),
             t.y + Angles.trnsy(t.rotation, 22),
-            t.rotation + 15*(Mathf.randomBoolean()? 1: -1),
+            t.rotation + 15*Mathf.randomSign(),
             SglDrawConst.frost
         );
       };
@@ -2406,7 +2406,7 @@ public class SglTurrets implements ContentList{
       updating = e -> {
         SglTurretBuild t = (SglTurretBuild) e;
         if(Mathf.chanceDelta(0.06f*t.warmup)){
-          Tmp.v1.set(36, 0).setAngle(t.rotation + (Mathf.randomBoolean()? 90: -90)).rotate(Mathf.random(-30, 30));
+          Tmp.v1.set(36, 0).setAngle(t.rotation + 90*Mathf.randomSign()).rotate(Mathf.random(-30, 30));
           SglFx.iceParticle.at(e.x + Tmp.v1.x, e.y + Tmp.v1.y, Tmp.v1.angle(), SglDrawConst.frost);
         }
       };
@@ -3366,7 +3366,7 @@ public class SglTurrets implements ContentList{
         public void shoot(int totalShots, BulletHandler handler) {
           for (int i = 0; i < shots; i+=2) {
             for (int sign : Mathf.signs) {
-              Tmp.v1.set(sign, 1).setLength(Mathf.random(2.5f)).scl(Mathf.randomBoolean()? 1: -1);
+              Tmp.v1.set(sign, 1).setLength(Mathf.random(2.5f)).scl(Mathf.randomSign());
               handler.shoot(12*sign + Tmp.v1.x, Tmp.v1.y, -45*sign + Mathf.random(-20, 20), i/2f*shotDelay, b -> {
                 if(b.owner instanceof SglTurretBuild turr && turr.wasShooting()){
                   b.vel.setAngle(Angles.moveToward(b.rotation(), b.angleTo(turr.targetPos), b.type.homingPower * Time.delta * 50f));
