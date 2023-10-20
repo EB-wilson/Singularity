@@ -20,12 +20,14 @@ import singularity.Sgl;
  * {
  *   "$apiName": {...},//调用交互API，之后的{...}为传递给API的参数
  *   "$apiName": {...},
- *   "$apiName": disabled,//禁用此API，这会停用该API可能本来存在的默认操作
+ *   "$apiName": "disabled",//禁用此API，这会停用该API可能本来存在的默认操作
  *   ...
  * }
  * }</pre>
  *
- * 另外，在API参数中会出现对content等的引用，关于content选择器，一般采取如下规范：
+ * 如果你希望禁用所有的交互api，那么在此记录文件中添加键值对{@code "disabled_api":true} 即可，当你设置禁用为true后，其他所有api描述都不会生效，无论你是否提供了声明
+ *
+ * <p>另外，在API参数中会出现对content等的引用，关于content选择器，一般采取如下规范：
  * <ul>
  *   <li><strong>如果名称不定义mod名称前缀，则会优先选择本mod（调用API的mod）的content，其次是原版内容</strong></li>
  *   <li><strong>如果名称中包含了mod名称前缀，则会选择前缀限定的mod中的content，但是通常操作性的选择器不提倡开发者跨mod操作，这可能会有警告</strong></li>

@@ -7,6 +7,7 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.math.Angles;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.struct.ObjectMap;
 import arc.util.Time;
 import arc.util.Tmp;
@@ -42,6 +43,8 @@ import universecore.util.aspect.triggers.TriggerEntry;
 import static singularity.contents.SglTurrets.crushCrystal;
 
 public class OtherContents implements ContentList{
+  private static final Rand rand = new Rand();
+
   public static AtomSchematic copper_schematic,
   lead_schematic,
   silicon_schematic,
@@ -271,7 +274,8 @@ public class OtherContents implements ContentList{
         if(unit.hasEffect(frost_freeze)) return;
         float rate = time/(30*unit.hitSize + unit.maxHealth/unit.hitSize);
 
-        float ro = Mathf.randomSeed(unit.id, 360);
+        rand.setSeed(unit.id);
+        float ro = rand.random(360);
         Draw.color(SglDrawConst.frost);
         Draw.alpha(0.85f*rate);
         Draw.z(Layer.flyingUnit);
@@ -313,7 +317,8 @@ public class OtherContents implements ContentList{
       @Override
       public void draw(Unit unit){
         super.draw(unit);
-        float ro = Mathf.randomSeed(unit.id, 360);
+        rand.setSeed(unit.id);
+        float ro = rand.random(360);
 
         float time = unit.getDuration(frost);
         float rate = time/(60*unit.hitSize + 3*unit.maxHealth/unit.hitSize);
@@ -323,15 +328,15 @@ public class OtherContents implements ContentList{
         SglDraw.drawDiamond(unit.x, unit.y, unit.hitSize*2.35f, unit.hitSize*2, ro, 0.3f);
 
         Draw.alpha(0.7f);
-        int n = (int) (unit.hitSize/8 + Mathf.randomSeed(unit.id + 1, 2, 5));
+        int n = (int) (unit.hitSize/8 + rand.random(2, 5));
         for(int i = 0; i < n; i++){
-          float v = Mathf.randomSeed(unit.id + 6 + i, 0.75f);
+          float v = rand.random(0.75f);
           float re = 1 - Mathf.clamp((1 - rate - v)/(1 - v));
 
-          float off = Mathf.randomSeed(unit.id + 2 + i, unit.hitSize*0.5f, unit.hitSize);
-          float len = Mathf.randomSeed(unit.id + 3 + i, unit.hitSize)*re;
-          float wid = Mathf.randomSeed(unit.id + 4 + i, unit.hitSize*0.4f, unit.hitSize*0.8f)*re;
-          float rot = Mathf.randomSeed(unit.id + 5 + i, 360);
+          float off = rand.random(unit.hitSize*0.5f, unit.hitSize);
+          float len = rand.random(unit.hitSize)*re;
+          float wid = rand.random(unit.hitSize*0.4f, unit.hitSize*0.8f)*re;
+          float rot = rand.random(360);
 
           SglDraw.drawDiamond(unit.x + Angles.trnsx(rot, off), unit.y + Angles.trnsy(rot, off), len, wid, rot, 0.2f);
         }
@@ -386,10 +391,11 @@ public class OtherContents implements ContentList{
           Draw.alpha(rate*0.7f);
           Lines.circle(u.x, u.y, u.hitSize/2 + rate*u.hitSize/2);
 
+          rand.setSeed(unit.id);
+
           for(int i = 0; i < 8; i++){
-            int finalI = i;
-            SglDraw.drawTransform(u.x, u.y, u.hitSize/2 + rate*u.hitSize/2, 0, Time.time + Mathf.randomSeed(u.id + i, 360f), (x, y, r) -> {
-              float len = Mathf.randomSeed(u.id + finalI + 1, u.hitSize/4, u.hitSize/1.5f);
+            SglDraw.drawTransform(u.x, u.y, u.hitSize/2 + rate*u.hitSize/2, 0, Time.time + rand.random(360f), (x, y, r) -> {
+              float len = rand.random(u.hitSize/4, u.hitSize/1.5f);
               SglDraw.drawDiamond(x, y, len, len*0.135f, r);
             });
           }

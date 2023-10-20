@@ -154,6 +154,7 @@ public class SglTurret extends SglBlock{
     update = true;
     solid = true;
     autoSelect = true;
+    canSelect = false;
     outlinedIcon = 1;
     quickRotate = false;
     outlineIcon = true;
@@ -165,6 +166,7 @@ public class SglTurret extends SglBlock{
     draw = new DrawSglTurret();
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public void init(){
     oneOfOptionCons = false;
@@ -173,15 +175,17 @@ public class SglTurret extends SglBlock{
     if(elevation < 0) elevation = size / 2f;
 
     for (BaseConsumers consumer : consumers) {
-      ConsumePower<?> cp = consumer.get(ConsumeType.power);
-      if (cp != null) cp.showIcon = true;
+      for (BaseConsume baseConsume : consumer.all()) {
+        if (baseConsume instanceof ConsumePower cp) cp.showIcon = true;
+
+        if (!(baseConsume instanceof ConsumeItemBase<?>) && !(baseConsume instanceof ConsumePayload<?>)){
+          Floatf old = baseConsume.consMultiplier;
+          baseConsume.setMultiple(old == null? e -> (((SglTurretBuild)e).coolantScl): (e -> old.get(e)*((SglTurretBuild)e).coolantScl));
+        }
+      }
     }
 
     super.init();
-  }
-
-  public void setReloadAmount(int amount){
-    ammoTypes.get(consume, () -> {throw new IllegalStateException("must declare a ammo then set amount");}).reloadAmount = amount;
   }
 
   public AmmoDataEntry newAmmo(BulletType ammoType){
@@ -326,8 +330,14 @@ public class SglTurret extends SglBlock{
                 }).fill();
               }
             }).fill();
+
             st.row();
             st.add(Stat.reload.localized() + ":" + Strings.autoFixed(60f/entry.key.craftTime*shoot.shots, 1) + StatUnit.perSecond.localized());
+
+            if (entry.value.reloadAmount > 1) {
+              st.row();
+              st.add(Core.bundle.format("bullet.multiplier", entry.value.reloadAmount));
+            }
           });
           t.row();
 
@@ -460,7 +470,7 @@ public class SglTurret extends SglBlock{
         warmup = linearWarmup? Mathf.approachDelta(warmup, 0, warmupSpeed): Mathf.lerpDelta(warmup, 0, warmupSpeed);
       }
 
-      if(canShoot() && shootValid() && reloadCounter < consumer.current.craftTime){
+      if(canShoot() && shootValid() && !charging() && reloadCounter < consumer.current.craftTime){
         reloadCounter += consEfficiency()*delta()*coolantScl;
         if(coolantSclTimer > 0){
           ConsumeLiquidBase<SglTurretBuild> c = (ConsumeLiquidBase<SglTurretBuild>) consumer.optionalCurr.get(ConsumeType.liquid);
@@ -505,7 +515,7 @@ public class SglTurret extends SglBlock{
 
     @Override
     public boolean shouldConsume(){
-      return super.shouldConsume() && consumer.current != null && reloadCounter < consumer.current.craftTime;
+      return super.shouldConsume() && !charging() && consumer.current != null && reloadCounter < consumer.current.craftTime;
     }
 
     public void doShoot(BulletType type){
@@ -514,7 +524,7 @@ public class SglTurret extends SglBlock{
 
       if(shoot.firstShotDelay > 0){
         chargeSound.at(bulletX, bulletY, Math.max(chargeSoundPitch + Mathf.random(-soundPitchRange, soundPitchRange), 0.01f), chargeSoundVolume);
-        type.chargeEffect.at(bulletX, bulletY, rotation);
+        type.chargeEffect.at(bulletX, bulletY, rotation, type.lightColor);
       }
 
       shoot.shoot(totalShots, (xOffset, yOffset, angle, delay, mover) -> {
@@ -745,9 +755,9 @@ public class SglTurret extends SglBlock{
     }
   }
 
-  static class AmmoDataEntry{
-    final BulletType bulletType;
+  public static class AmmoDataEntry{
     public int reloadAmount = 1;
+    final BulletType bulletType;
     final boolean override;
 
     final Seq<Cons2<Table, BulletType>> statValues = new Seq<>();
@@ -759,6 +769,11 @@ public class SglTurret extends SglBlock{
 
     public AmmoDataEntry display(Cons2<Table, BulletType> statValue){
       statValues.add(statValue);
+      return this;
+    }
+
+    public AmmoDataEntry setReloadAmount(int amount){
+      reloadAmount = amount;
       return this;
     }
   }

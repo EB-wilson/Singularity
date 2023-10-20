@@ -195,7 +195,7 @@ public class SglSerploGenerator extends PlanetGenerator{
         if(!connected.add(to) || to == this) return;
 
         Vec2 midpoint = Tmp.v1.set(to.x, to.y).add(x, y).scl(0.5f);
-        rand.nextFloat();
+        rand.random(1f);
 
         if(alt){
           midpoint.add(Tmp.v2.set(1, 0f).setAngle(Angles.angle(to.x, to.y, x, y) + 90f * (rand.chance(0.5) ? 1f : -1f)).scl(Tmp.v1.dst(x, y) * 2f));
@@ -244,7 +244,7 @@ public class SglSerploGenerator extends PlanetGenerator{
         if(to == this) return;
 
         Vec2 midpoint = Tmp.v1.set(to.x, to.y).add(x, y).scl(0.5f);
-        rand.nextFloat();
+        rand.random(1f);
 
         //add randomized offset to avoid straight lines
         midpoint.add(Tmp.v2.setToRandomDirection(rand).scl(Tmp.v1.dst(x, y)));
@@ -278,7 +278,7 @@ public class SglSerploGenerator extends PlanetGenerator{
     Room spawn = null;
     Seq<Room> enemies = new Seq<>();
     int enemySpawns = rand.random(1, Math.max((int)(sector.threat * 4), 1));
-    int offset = rand.nextInt(360);
+    int offset = rand.random(360);
     float length = width/2.55f - rand.random(13, 23);
     int angleStep = 5;
     int waterCheckRad = 5;

@@ -1081,6 +1081,25 @@ public class SglFx{
     }
   });
 
+  public final static Effect colorLaserCharge = new Effect(38f, e -> {
+    color(e.color);
+
+    randLenVectors(e.id, 14, 1f + 20f * e.fout(), e.rotation, 120f, (x, y) -> {
+      lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), e.fslope() * 3f + 1f);
+    });
+  }),
+
+  colorLaserChargeBegin = new Effect(60f, e -> {
+    float margin = 1f - Mathf.curve(e.fin(), 0.9f);
+    float fin = Math.min(margin, e.fin());
+
+    color(e.color);
+    Fill.circle(e.x, e.y, fin * 3f);
+
+    color();
+    Fill.circle(e.x, e.y, fin * 2f);
+  });
+
   public static Effect impactExplode(float size, float lifeTime){
     return impactExplode(size, lifeTime, false);
   }

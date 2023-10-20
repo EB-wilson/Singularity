@@ -380,13 +380,13 @@ public class MatrixBridge extends DistNetBlock{
       if(Sgl.config.animateLevel < 3) return;
 
       if(linkNext != null){
-        if(rand.nextFloat() <= 0.05f*linkNextLerp*netEfficiency*Time.delta*scl){
+        if(rand.random(1f) <= 0.05f*linkNextLerp*netEfficiency*Time.delta*scl){
           makeEff(x, y, linkNext.x, linkNext.y);
         }
       }
 
       if(linkElement != null){
-        if(rand.nextFloat() <= 0.05f*linkElementLerp*netEfficiency*Time.delta*scl){
+        if(rand.random(1f) <= 0.05f*linkElementLerp*netEfficiency*Time.delta*scl){
           if(linkElement instanceof DistNetworkCoreComp){
             makeEff(x, y, linkElement.getBuilding().x, linkElement.getBuilding().y);
           }

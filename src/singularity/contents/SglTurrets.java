@@ -10,6 +10,7 @@ import arc.graphics.g2d.*;
 import arc.math.Angles;
 import arc.math.Interp;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.math.geom.Vec2;
 import arc.util.Strings;
 import arc.util.Time;
@@ -70,6 +71,8 @@ import static mindustry.entities.Damage.collideLine;
 import static mindustry.entities.Damage.findPierceLength;
 
 public class SglTurrets implements ContentList{
+  private static final Rand rand = new Rand();
+
   public static final String CONTAINER = "lightningContainer";
   /**碎冰*/
   public static BulletType crushedIce,
@@ -369,28 +372,38 @@ public class SglTurrets implements ContentList{
         }};
 
         bulletInterval = 3f;
-      }});
+      }}).setReloadAmount(3);
       consume.item(Items.surgeAlloy, 1);
       consume.power(2.4f);
       consume.time(45);
-      setReloadAmount(3);
 
       newCoolant(1f, 0.4f, l -> l.heatCapacity >= 0.4f && l.temperature <= 0.5f, 0.25f, 20);
     }};
 
     roentgen = new ProjectileTurret("roentgen"){{
-      requirements(Category.turret, ItemStack.with());
+      requirements(Category.turret, ItemStack.with(
+          SglItems.strengthening_alloy, 120,
+          SglItems.aerogel, 100,
+          SglItems.aluminium, 60,
+          SglItems.crystal_FEX, 40,
+          Items.silicon, 75,
+          Items.surgeAlloy, 45
+      ));
       size = 4;
       range = 240;
       shootY = 12;
       cooldownTime = 60;
 
+      moveWhileCharging = false;
+      shoot.firstShotDelay = 40;
       shootSound = Sounds.laser;
 
       newAmmo(new LightLaserBulletType(){{
         length = 240;
         damage = 225;
         empDamage = 180;
+        lightColor = Pal.reactorPurple;
+        chargeEffect = new MultiEffect(SglFx.colorLaserChargeBegin, SglFx.colorLaserCharge, Fx.lightningCharge);
         status = StatusEffects.electrified;
         statusDuration = 12;
         hitColor = Pal.reactorPurple;
@@ -408,7 +421,7 @@ public class SglTurrets implements ContentList{
         generator.maxSpread = 6;
       }});
       consume.time(30);
-      consume.power(8.4f);
+      consume.power(12.4f);
 
       newAmmoCoating(Core.bundle.get("coating.crystal_fex"), SglDrawConst.fexCrystal, b -> {
         LightLaserBulletType res = (LightLaserBulletType) b.copy();
@@ -418,6 +431,7 @@ public class SglTurrets implements ContentList{
             SglDrawConst.fexCrystal,
             Color.white
         };
+        res.lightColor = SglDrawConst.fexCrystal;
         res.empDamage *= 0.8f;
         res.status = OtherContents.crystallize;
         res.statusDuration = 15f;
@@ -430,7 +444,7 @@ public class SglTurrets implements ContentList{
         t.row();
         t.add(OtherContents.crystallize.localizedName + "[lightgray] ~ [stat]0.25[lightgray] " + Core.bundle.get("unit.seconds"));
       });
-      consume.time(30);
+      consume.time(60);
       consume.liquid(SglLiquids.FEX_liquid, 0.1f);
 
       newCoolant(1.5f, 20);
@@ -714,8 +728,9 @@ public class SglTurrets implements ContentList{
               Draw.z(Layer.bullet - 5);
               Draw.color(Pal.stoneGray);
               Draw.alpha(0.6f);
+              rand.setSeed(e.id);
               randLenVectors(e.id, 8 + 70, r*1.2f, (x, y) -> {
-                float size = Mathf.randomSeed((int) (e.id+x), 14, 20);
+                float size = rand.random(14, 20);
                 float i = e.fin(Interp.pow3Out);
                 Fill.circle(e.x + x*i, e.y + y*i, size*e.fout(Interp.pow5Out));
               });
@@ -1238,6 +1253,8 @@ public class SglTurrets implements ContentList{
             public void draw(Building build){
               if(Sgl.config.animateLevel < 3) return;
 
+              rand.setSeed(build.id);
+
               SglTurretBuild turret = (SglTurretBuild) build;
               Draw.z(Layer.effect);
               Draw.color(Pal.reactorPurple);
@@ -1251,11 +1268,11 @@ public class SglTurrets implements ContentList{
                 float x = turret.x + (step*i)*sclX*turret.warmup + 14*sclX;
                 float y = turret.y + (step*i)*sclY*turret.warmup + 14*sclY;
                 SglDraw.drawRectAsCylindrical(x, y,
-                    Mathf.randomSeed(turret.id + i, 2, 18)*turret.warmup,
-                    Mathf.randomSeed(turret.id + i + 1, 1.5f, 10),
-                    (10 + i*0.75f + Mathf.randomSeed(turret.id + i + 2, 8))*turret.warmup,
-                    (Time.time*Mathf.randomSeed(turret.id + i + 3, 0.8f, 2) + Mathf.randomSeed(turret.id + i + 4, 360))
-                        *(Mathf.randomSeed(turret.id + i + 5, 1f) < 0.5? -1: 1),
+                    rand.random(2, 18)*turret.warmup,
+                    rand.random(1.5f, 10),
+                    (10 + i*0.75f + rand.random(8))*turret.warmup,
+                    (Time.time*rand.random(0.8f, 2) + rand.random(360))
+                        *(rand.random(1f) < 0.5? -1: 1),
                     turret.drawrot(),
                     Pal.reactorPurple, Pal.reactorPurple2, Layer.bullet - 0.5f, Layer.effect
                 );
@@ -1975,19 +1992,20 @@ public class SglTurrets implements ContentList{
             SglDraw.dashCircle(b.x, b.y, 4, Time.time*1.5f);
 
             Draw.draw(Draw.z(), () -> {
+              rand.setSeed(t.id);
               MathRenderer.setDispersion(0.2f*t.warmup);
               MathRenderer.setThreshold(0.3f, 0.6f);
               MathRenderer.drawOval(
                   b.x, b.y,
                   8*t.warmup,
                   3*t.warmup,
-                  Time.time*Mathf.randomSeed(b.id, 1.5f, 3f)
+                  Time.time*rand.random(1.5f, 3f)
               );
               MathRenderer.drawOval(
                   b.x, b.y,
                   9*t.warmup,
                   4f*t.warmup,
-                  -Time.time*Mathf.randomSeed(b.id + 1, 1.5f, 3f)
+                  -Time.time*rand.random(1.5f, 3f)
               );
             });
 
@@ -2813,7 +2831,7 @@ public class SglTurrets implements ContentList{
               SglDraw.drawCrystal(b.x, b.y, 30, 14, 9, 0, 0, 0.6f,
                   Layer.effect, Layer.bullet, rot, b.rotation(), Tmp.c1.set(SglDrawConst.fexCrystal).a(0.6f), SglDrawConst.fexCrystal);
 
-              Lines.stroke(0.45f, SglDrawConst.fexCrystal);
+              Lines.stroke(0.6f*b.fout(), SglDrawConst.fexCrystal);
               SglDraw.dashCircle(b.x, b.y, 180, 6, 180, Time.time*1.6f);
             }
 
@@ -3611,8 +3629,9 @@ public class SglTurrets implements ContentList{
         Draw.z(Layer.bullet - 5);
         Draw.color(Pal.stoneGray);
         Draw.alpha(0.6f);
+        rand.setSeed(e.id);
         randLenVectors(e.id, 8 + (int) size/2, size*1.2f, (x, y) -> {
-          float size = Mathf.randomSeed((int) (e.id+x), 14, 20);
+          float size = rand.random(14, 20);
           float i = e.fin(Interp.pow3Out);
           Fill.circle(e.x + x*i, e.y + y*i, size*e.fout(Interp.pow5Out));
         });

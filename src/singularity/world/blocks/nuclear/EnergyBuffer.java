@@ -1,10 +1,12 @@
 package singularity.world.blocks.nuclear;
 
+import arc.func.Floatc;
 import arc.math.Interp;
 import arc.math.Mathf;
 import arc.scene.actions.Actions;
 import arc.scene.ui.layout.Table;
 import arc.util.Align;
+import arc.util.Scaling;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.gen.Building;
@@ -71,20 +73,11 @@ public class EnergyBuffer extends NuclearNode {
         t.setOrigin(Align.center);
 
         t.table(Tex.pane, ta -> {
-          ta.left().defaults().left();
-          ta.table(sli -> {
-            sli.defaults().pad(0).margin(0);
-            sli.table(Tex.buttonTrans, i -> i.image(Icon.download).size(40)).size(50);
-            sli.slider(Mathf.log2(minPotential), Mathf.log2(maxPotential), 0.01f, Mathf.log2(input), f -> configure(new Object[]{false, Mathf.pow(2, f)})).size(200, 50).padLeft(8).padRight(8);
-            sli.add("").update(lable -> lable.setText(Mathf.round(input) + "NF"));
-          });
+          ta.image(Icon.download).size(40).get().setScaling(Scaling.fit);
+          buildEnergySlider(ta, minPotential, maxPotential, () -> input, f -> configure(new Object[]{false, f}));
           ta.row();
-          ta.table(sli -> {
-            sli.defaults().pad(0).margin(0);
-            sli.table(Tex.buttonTrans, i -> i.image(Icon.upload).size(40)).size(50);
-            sli.slider(Mathf.log2(minPotential), Mathf.log2(maxPotential), 0.01f, Mathf.log2(output), f -> configure(new Object[]{true, Mathf.pow(2, f)})).size(200, 50).padLeft(8).padRight(8);
-            sli.add("").update(lable -> lable.setText(Mathf.round(output) + "NF"));
-          });
+          ta.image(Icon.upload).size(40).get().setScaling(Scaling.fit);
+          buildEnergySlider(ta, minPotential, maxPotential, () -> output, f -> configure(new Object[]{true, f}));
         });
 
         show = () -> {

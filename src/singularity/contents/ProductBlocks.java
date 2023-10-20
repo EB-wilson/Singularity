@@ -429,6 +429,8 @@ public class ProductBlocks implements ContentList {
               if(Sgl.config.animateLevel < 2) return;
 
               if(build instanceof MatrixMinerComponentBuild b){
+                rand.setSeed(build.id);
+
                 Draw.z(Layer.effect);
                 Draw.color(SglDrawConst.matrixNet);
                 Fill.circle(b.x, b.y, 2*b.warmup);
@@ -436,9 +438,9 @@ public class ProductBlocks implements ContentList {
 
                 for(int i = 0; i < 3; i++){
                   for(int d = 0; d < 3; d++){
-                    param[d*3] = Mathf.randomSeed(b.id + d + i, 2f, 4f)/(d + 1)*(i%2 == 0? 1: -1);
-                    param[d*3 + 1] = Mathf.randomSeed(b.id + d + i + 1, 0f, 360f);
-                    param[d*3 + 2] = Mathf.randomSeed(b.id + d + i + 2, 8f, 20f)/((d + 1)*(d + 1));
+                    param[d*3] = rand.random(2f, 4f)/(d + 1)*(i%2 == 0? 1: -1);
+                    param[d*3 + 1] = rand.random(0f, 360f);
+                    param[d*3 + 2] = rand.random(8f, 20f)/((d + 1)*(d + 1));
                   }
 
                   Vec2 v = Tmp.v1.set(MathTransform.fourierSeries(Time.time, param)).scl(b.warmup);
@@ -458,18 +460,18 @@ public class ProductBlocks implements ContentList {
                   int ind = 0;
                   for(MatrixMinerPluginBuild plugin: b.owner.plugins){
                     if(plugin instanceof MatrixMinerSector.MatrixMinerSectorBuild sec){
-                      boolean bool = Mathf.randomSeed(sec.id, 1) > 0.5f;
+                      boolean bool = rand.random(1) > 0.5f;
                       for(int d = 0; d < 3; d++){
-                        param[d*3] = Mathf.randomSeed(sec.id + d, 0.5f, 3f)/(d + 1)*(bool != (d%2 == 0)? 1: -1);
-                        param[d*3 + 1] = Mathf.randomSeed(sec.id + d + 1, 0f, 360f);
-                        param[d*3 + 2] = Mathf.randomSeed(sec.id + d + 2, 16f, 40f)/((d + 1)*(d + 1));
+                        param[d*3] = rand.random(0.5f, 3f)/(d + 1)*(bool != (d%2 == 0)? 1: -1);
+                        param[d*3 + 1] = rand.random(0f, 360f);
+                        param[d*3 + 2] = rand.random(16f, 40f)/((d + 1)*(d + 1));
                       }
                       Vec2 v = Tmp.v1.set(MathTransform.fourierSeries(Time.time, param));
 
                       for(int d = 0; d < 3; d++){
-                        param[d*3] = Mathf.randomSeed(sec.id + d + 3, 0.5f, 3f)/(d + 1)*(bool != (d%2 == 0)? -1: 1);
-                        param[d*3 + 1] = Mathf.randomSeed(sec.id + d + 4, 0f, 360f);
-                        param[d*3 + 2] = Mathf.randomSeed(sec.id + d + 5, 12f, 30f)/((d + 1)*(d + 1));
+                        param[d*3] = rand.random(0.5f, 3f)/(d + 1)*(bool != (d%2 == 0)? -1: 1);
+                        param[d*3 + 1] = rand.random(0f, 360f);
+                        param[d*3 + 2] = rand.random(12f, 30f)/((d + 1)*(d + 1));
                       }
                       Vec2 v2 = Tmp.v2.set(MathTransform.fourierSeries(Time.time, param));
                       Draw.color(Pal.reactorPurple);

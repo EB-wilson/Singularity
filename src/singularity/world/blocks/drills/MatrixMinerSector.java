@@ -6,6 +6,7 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
 import arc.math.Angles;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.math.geom.Point2;
 import arc.math.geom.Vec2;
 import arc.struct.Seq;
@@ -41,6 +42,8 @@ import static arc.util.Tmp.v2;
 import static mindustry.Vars.tilesize;
 
 public class MatrixMinerSector extends MatrixMinerPlugin{
+  private static final Rand rand = new Rand();
+
   public float drillMoveSpeed = 0.05f;
   public Effect drillEffect = SglFx.matrixDrill;
 
@@ -269,13 +272,15 @@ public class MatrixMinerSector extends MatrixMinerPlugin{
           Draw.color(SglDrawConst.matrixNet);
           MathRenderer.setDispersion(0.23f*warmup);
           MathRenderer.setThreshold(0.5f, 0.7f);
+
+          rand.setSeed(id);
           for(int i = 0; i < 4; i++){
             MathRenderer.drawSin(
-                x, y, Mathf.randomSeed(id + i, 2f, 3.4f),
+                x, y, rand.random(2f, 3.4f),
                 drillPos.x, drillPos.y,
                 1.6f,
-                Mathf.randomSeed(id + i + 1, 500f, 800f),
-                Mathf.randomSeed(id + i + 2, 2f, 3.6f)*Time.time
+                rand.random(500f, 800f),
+                rand.random(2f, 3.6f)*Time.time
             );
           }
         });

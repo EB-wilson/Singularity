@@ -133,7 +133,7 @@ public class SglBlock extends Block implements ConsumerBlockComp{
   public void appliedConfig(){
     config(Integer.class, (SglBuilding e, Integer i) -> {
       if(consumers().size > 1){
-        e.recipeSelected = true;
+        if (canSelect) e.recipeSelected = true;
         e.reset();
         if(e.recipeCurrent == i || i == - 1){
           e.recipeCurrent = -1;

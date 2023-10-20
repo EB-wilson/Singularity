@@ -6,7 +6,7 @@
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/UniverseCore/annotations/1.8.7/annotations-1.8.7.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/UniverseCore/annotations/1.8.9/annotations-1.8.9.jar" />
           <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/JavaDynamilizer/apt/V1.8-A3/apt-V1.8-A3.jar" />
           <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/JavaDynamilizer/annotations/V1.8-A3/annotations-V1.8-A3.jar" />
         </processorPath>

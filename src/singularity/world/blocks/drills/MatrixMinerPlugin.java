@@ -4,6 +4,7 @@ import arc.Core;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Lines;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.math.geom.Point2;
 import arc.util.Time;
 import arc.util.io.Reads;
@@ -23,6 +24,8 @@ import singularity.world.blocks.SglBlock;
 import singularity.world.meta.SglStat;
 
 public abstract class MatrixMinerPlugin extends SglBlock{
+  private static final Rand rand = new Rand();
+
   public int range;
   public int drillSize;
   public boolean pierceBuild;
@@ -103,14 +106,15 @@ public abstract class MatrixMinerPlugin extends SglBlock{
 
         if(Sgl.config.animateLevel < 3) return;
         Draw.draw(Draw.z(), () -> {
+          rand.setSeed(id);
           Draw.color(SglDrawConst.matrixNet);
-          MathRenderer.setDispersion(Mathf.randomSeed(id, 0.08f, 0.12f)*warmup);
+          MathRenderer.setDispersion(rand.random(0.08f, 0.12f)*warmup);
           MathRenderer.setThreshold(0.4f, 0.6f);
 
           for(int i = 0; i < 3; i++){
-            MathRenderer.drawSin(x, y, 1f, owner.x, owner.y, Mathf.randomSeed(id + i + 3, 1.5f, 2.5f),
-                Mathf.randomSeed(id + i, 360f, 720f),
-                Time.time*Mathf.randomSeed(id + i + 1, 2f, 4f)*(Mathf.randomSeed(id + i + 2) > 0.5f? 1: -1)
+            MathRenderer.drawSin(x, y, 1f, owner.x, owner.y, rand.random(1.5f, 2.5f),
+                rand.random(360f, 720f),
+                Time.time*rand.random(2f, 4f)*(rand.random(1f) > 0.5f? 1: -1)
             );
           }
         });

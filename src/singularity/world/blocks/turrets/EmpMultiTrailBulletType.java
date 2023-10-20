@@ -1,6 +1,7 @@
 package singularity.world.blocks.turrets;
 
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.content.Fx;
@@ -10,6 +11,8 @@ import singularity.Sgl;
 import singularity.graphic.SglDraw;
 
 public class EmpMultiTrailBulletType extends EmpBulletType{
+  private static final Rand rand = new Rand();
+
   public int subTrails = 2;
   public float subTrailWidth = 2;
   public float subRotSpeed = 8;
@@ -47,7 +50,8 @@ public class EmpMultiTrailBulletType extends EmpBulletType{
       float step = 360f/trails.length;
       Tmp.v1.set(4 + offset*(offsetMove? b.fslope(): 1), 0).setAngle(b.rotation() + 90);
       for(int i = 0; i < trails.length; i++){
-        float lerp = Mathf.sinDeg(Mathf.randomSeed(b.id, 0f, 360f) + Time.time*subRotSpeed + step*i);
+        rand.setSeed(b.id);
+        float lerp = Mathf.sinDeg(rand.random(0f, 360f) + Time.time*subRotSpeed + step*i);
         trails[i].update(b.x + Tmp.v1.x*lerp, b.y + Tmp.v1.y*lerp);
       }
     }
@@ -60,7 +64,8 @@ public class EmpMultiTrailBulletType extends EmpBulletType{
       float step = 360f/trails.length;
       Tmp.v1.set(4 + offset*(offsetMove? b.fslope(): 1), 0).setAngle(b.rotation() + 90);
       for(int i = 0; i < trails.length; i++){
-        float lerp = Mathf.sinDeg(Mathf.randomSeed(b.id, 0f, 360f) + Time.time*subRotSpeed + step*i);
+        rand.setSeed(b.id);
+        float lerp = Mathf.sinDeg(rand.random(0f, 360f) + Time.time*subRotSpeed + step*i);
         SglDraw.drawDiamond(
             b.x + Tmp.v1.x*lerp, b.y + Tmp.v1.y*lerp,
             8, 4,

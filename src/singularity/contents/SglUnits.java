@@ -214,6 +214,10 @@ public class SglUnits implements ContentList{
                 trailRotation = true;
                 trailChance = 1;
 
+                lightColor = SglDrawConst.matrixNet;
+                lightRadius = 120;
+                lightOpacity = 0.8f;
+
                 shootEffect = new MultiEffect(
                     SglFx.shootRecoilWave,
                     SglFx.shootRail
@@ -319,6 +323,10 @@ public class SglUnits implements ContentList{
                 lifetime = 30;
                 damage = 180;
 
+                lightColor = SglDrawConst.matrixNet;
+                lightRadius = 58;
+                lightOpacity = 0.6f;
+
                 pierceCap = 1;
 
                 despawnHit = true;
@@ -386,7 +394,10 @@ public class SglUnits implements ContentList{
                   length = 420;
 
                   damage = 80;
-                  damageInterval = 5;
+
+                  lightColor = SglDrawConst.matrixNet;
+                  lightRadius = 96;
+                  lightOpacity = 1;
 
                   hitEffect = SglFx.railShootRecoil;
 
@@ -481,6 +492,10 @@ public class SglUnits implements ContentList{
 
                   homingPower = 0.03f;
                   homingRange = 360;
+
+                  lightColor = SglDrawConst.matrixNet;
+                  lightRadius = 75;
+                  lightOpacity = 0.8f;
 
                   despawnShake = 6;
 
@@ -592,7 +607,7 @@ public class SglUnits implements ContentList{
 
                   rand.setSeed(b.id);
                   for (int i = 0; i < 7; i++) {
-                    float w = rand.random(1f, 2.5f)*(rand.nextFloat() > 0.5? 1: -1);
+                    float w = rand.random(1f, 2.5f)*(rand.random(1f) > 0.5? 1: -1);
                     float f = rand.random(360f);
                     float r = rand.random(12f, 28f);
                     float size = rand.random(18f, 26f)*lerp;
@@ -708,6 +723,8 @@ public class SglUnits implements ContentList{
                     Lines.circle(ephemera.x, ephemera.y, 6);
                   }
 
+                  Drawf.light(ephemera.x, ephemera.y, 60, lightColor, 0.45f);
+
                   for (int i = 0; i < 3; i++) {
                     Tmp.v1.set(16, 0).setAngle(Time.time + i*120);
                     float sin = Mathf.absin((Time.time*4 + i*120)*Mathf.degRad, 0.5f, 1);
@@ -773,7 +790,7 @@ public class SglUnits implements ContentList{
               }
             }
 
-            class Ephemera implements Pool.Poolable {
+            static class Ephemera implements Pool.Poolable {
               float x, y, angelOff, move;
               float bestDst, alpha;
               boolean removed;
@@ -1038,11 +1055,12 @@ public class SglUnits implements ContentList{
                       MathRenderer.setDispersion(0.1f);
                       MathRenderer.setThreshold(0.4f, 0.6f);
 
+                      rand.setSeed(b.id);
                       for(int i = 0; i < 3; i++){
                         MathRenderer.drawSin(b.x, b.y, b.aimX, b.aimY,
-                            Mathf.randomSeed(b.id + i, 4f, 6f)*b.fslope(),
-                            Mathf.randomSeed(b.id + i + 1, 360f, 720f),
-                            Mathf.randomSeed(b.id + i + 2, 360f) - Time.time*Mathf.randomSeed(b.id + i + 3, 4f, 7f)
+                            rand.random(4f, 6f)*b.fslope(),
+                            rand.random(360f, 720f),
+                            rand.random(360f) - Time.time*rand.random(4f, 7f)
                         );
                       }
                     });
@@ -1379,7 +1397,7 @@ public class SglUnits implements ContentList{
                       Bullet bull = intervalBullet.create(b, b.x, b.y, b.rotation());
                       bull.vel.scl(b.fout());
                       rand.setSeed(bull.id);
-                      float scl = rand.random(3.65f, 5.25f)*(rand.nextBoolean()? 1: -1);
+                      float scl = rand.random(3.65f, 5.25f)*(rand.random(1f) > 0.5f? 1: -1);
                       float mag = rand.random(2.8f, 5.6f)*b.fout();
                       bull.mover = e -> {
                         e.moveRelative(0f, Mathf.cos(e.time, scl, mag));

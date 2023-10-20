@@ -1,7 +1,11 @@
 package singularity.core;
 
 import arc.Core;
+import arc.Events;
+import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.GlyphLayout;
 import arc.math.Interp;
 import arc.math.Mat;
 import arc.scene.Element;
@@ -18,16 +22,25 @@ import dynamilize.annotations.DynamilizeClass;
 import dynamilize.runtimeannos.AspectInterface;
 import mindustry.Vars;
 import mindustry.content.Blocks;
+import mindustry.game.EventType;
 import mindustry.gen.Building;
+import mindustry.gen.Groups;
+import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
 import mindustry.ui.fragments.HintsFragment;
+import mindustry.ui.fragments.PlacementFragment;
 import mindustry.world.Block;
 import mindustry.world.blocks.defense.OverdriveProjector;
 import mindustry.world.blocks.liquid.Conduit;
 import singularity.Sgl;
 import singularity.game.SglHint;
 import singularity.world.meta.SglAttribute;
+import universecore.UncCore;
+import universecore.util.aspect.EntityAspect;
+import universecore.util.aspect.triggers.TriggerEntry;
 import universecore.util.handler.FieldHandler;
+
+import static mindustry.Vars.tilesize;
 
 /**改动游戏原内容重初始化，用于对游戏已定义的实例进行操作*/
 public class Init{
@@ -54,14 +67,32 @@ public class Init{
       //禁用所有超速器
       if(target instanceof OverdriveProjector over){
         over.placeablePlayer = false;
-        over.buildType = () -> new Building(){
-          @Override
-          public void update() {
-            kill();
-          }
-        };
+        over.update = false;
+        over.destructible = true;
       }
     }
+
+    //超速禁用提示
+    Events.run(EventType.Trigger.draw, () -> {
+      if (Vars.ui.hudfrag.blockfrag.hover() instanceof OverdriveProjector.OverdriveBuild b){
+        GlyphLayout layout = GlyphLayout.obtain();
+        layout.setText(Fonts.outline, Core.bundle.get("infos.blockDisabled"));
+
+        float w = layout.width*0.185f;
+        float h = layout.height*0.185f;
+
+        layout.free();
+        Draw.color(Color.darkGray, 0.6f);
+        Fill.quad(
+            b.x - w/2 - 2, b.y + b.block.size*tilesize/2f + h + 2,
+            b.x - w/2 - 2, b.y + b.block.size*tilesize/2f - 2,
+            b.x + w/2 + 2, b.y + b.block.size*tilesize/2f - 2,
+            b.x + w/2 + 2, b.y + b.block.size*tilesize/2f + h + 2
+        );
+
+        Fonts.outline.draw(Core.bundle.get("infos.blockDisabled"), b.x, b.y + b.block.size*tilesize/2f + h, Color.white, 0.185f, false, Align.center);
+      }
+    });
   }
 
   @AspectInterface

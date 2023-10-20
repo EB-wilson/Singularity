@@ -255,13 +255,13 @@ public class CrafterBlocks implements ContentList{
 
                   rand.setSeed(b.id);
 
-                  int am = (int) (1 + rand.nextInt(3)*b.warmup());
-                  float move = 0.2f*Mathf.sinDeg(Time.time + rand.nextInt(360))*b.warmup();
+                  int am = (int) (1 + rand.random(3)*b.warmup());
+                  float move = 0.2f*Mathf.sinDeg(Time.time + rand.random(360f))*b.warmup();
                   Draw.color(SglLiquids.algae_mud.color);
                   Draw.alpha(alp);
                   Angles.randLenVectors(b.id, am, 3.5f, (dx, dy) -> {
                     Fill.circle(b.x + dx + move, b.y + dy + move,
-                        (Mathf.randomSeed(b.id, 0.2f, 0.8f) + Mathf.absin(5, 0.1f))
+                        (rand.random(0.2f, 0.8f) + Mathf.absin(5, 0.1f))
                             *Math.max(b.warmup(), b.liquids.get(SglLiquids.algae_mud)/cap));
                   });
                   Draw.reset();
@@ -1870,6 +1870,8 @@ public class CrafterBlocks implements ContentList{
       requirements(Category.crafting, ItemStack.with());
       size = 4;
 
+      placeablePlayer = false;
+
       energyCapacity = 16384;
       mediumCapacity = 32;
 
@@ -1882,6 +1884,8 @@ public class CrafterBlocks implements ContentList{
     substance_inverter = new MediumCrafter("substance_inverter"){{
       requirements(Category.crafting, ItemStack.with());
       size = 5;
+
+      placeablePlayer = false;
 
       itemCapacity = 20;
       energyCapacity = 1024f;
@@ -2025,6 +2029,8 @@ public class CrafterBlocks implements ContentList{
     destructor = new Destructor("destructor"){{
       requirements(Category.effect, ItemStack.with());
       size = 5;
+
+      placeablePlayer = false;
       recipeIndfo = Core.bundle.get("infos.destructItems");
 
       draw = new DrawMulti(
@@ -2049,6 +2055,8 @@ public class CrafterBlocks implements ContentList{
       ));
       size = 4;
       itemCapacity = 24;
+
+      placeablePlayer = false;
       
       craftEffect = SglFx.hadronReconstruct;
 

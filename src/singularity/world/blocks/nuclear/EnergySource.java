@@ -24,23 +24,20 @@ public class EnergySource extends NuclearNode {
     envEnabled = Env.any;
   }
   
-  @Override
-  public void appliedConfig(){
-    super.appliedConfig();
-    config(Float.class, (EnergySourceBuild tile, Float value) -> tile.outputEnergy = value);
-    configClear((EnergySourceBuild tile) -> tile.outputEnergy = 0);
-  }
-  
   public class EnergySourceBuild extends NuclearNodeBuild {
-    protected float outputEnergy = 0;
-  
     @Override
-    public void updateTile(){
-      energy.set(Mathf.pow(2, outputEnergy));
-
-      super.updateTile();
+    public float moveEnergy(NuclearEnergyBuildComp next) {
+      float adding = next.energyCapacity() - next.getEnergy();
+      next.energy().handle(adding);
+      energyMoved(next, adding);
+      return adding;
     }
-    
+
+    @Override
+    public float getEnergyMoveRate(NuclearEnergyBuildComp next) {
+      return 1;
+    }
+
     @Override
     public void displayEnergy(Table table){
       //不执行任何操作
@@ -50,32 +47,21 @@ public class EnergySource extends NuclearNode {
     public Object config(){
       return outputEnergy;
     }
-    
-    @Override
-    public void buildConfiguration(Table table){
-      table.table(Styles.black6, t -> {
-        t.defaults().pad(0).margin(0);
-        t.table(Tex.buttonTrans, i -> i.image(Singularity.getModAtlas("nuclear")).size(40)).size(50);
-        t.slider(0, 16, 0.01f, outputEnergy, this::configure).size(200, 50).padLeft(8).padRight(8).get().setStyle(SglStyles.sliderLine);
-        t.add("0").size(50).update(lable -> lable.setText(Mathf.round(Mathf.pow(2, outputEnergy)) + "NF"));
-      });
-    }
   
     @Override
     public boolean acceptEnergy(NuclearEnergyBuildComp source){
       return false;
     }
-  
+
     @Override
-    public void write(Writes write){
-      super.write(write);
-      write.f(outputEnergy);
+    public byte version() {
+      return 5;
     }
-    
+
     @Override
     public void read(Reads read, byte b){
       super.read(read, b);
-      outputEnergy = read.f();
+      if (b < 5) read.f();
     }
   }
 }

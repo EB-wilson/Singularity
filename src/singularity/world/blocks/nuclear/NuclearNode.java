@@ -378,7 +378,7 @@ public class NuclearNode extends NuclearBlock{
     }
 
     public Seq<NuclearEnergyBuildComp> getNodeDumps(){
-      Seq<NuclearEnergyBuildComp> res = proximityNuclearBuilds().filter(e -> e.consumeEnergy());
+      Seq<NuclearEnergyBuildComp> res = proximityNuclearBuilds().select(NuclearEnergyBuildComp::consumeEnergy);
 
       for (int i = 0; i < linked.size; i++) {
         int pos = linked.get(i);

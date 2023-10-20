@@ -6,16 +6,20 @@ import arc.graphics.Color;
 import arc.math.WindowedMean;
 import arc.scene.ui.layout.Table;
 import arc.util.Interval;
+import arc.util.Scaling;
 import arc.util.Strings;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.core.UI;
 import mindustry.gen.Building;
+import mindustry.gen.Icon;
 import mindustry.gen.Tex;
+import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
 import mindustry.world.modules.BlockModule;
 import singularity.core.UpdatePool;
+import singularity.graphic.SglDrawConst;
 import singularity.world.blocks.SglBlock.SglBuilding;
 import singularity.world.components.NuclearEnergyBuildComp;
 import universecore.util.handler.FieldHandler;
@@ -40,14 +44,14 @@ public class NuclearEnergyModule extends BlockModule {
 
   public final NuclearEnergyBuildComp entity;
   
-  private float added;
-  private final WindowedMean moveMean = new WindowedMean(6);
+  private float added, removed;
+  private final WindowedMean addedMean = new WindowedMean(6), moveMean = new WindowedMean(6);
   private final Interval flowTimer = new Interval();
   
   /**目前具有的核能量大小*/
   private float energy = 0f;
   
-  public float displayMoving = 0f;
+  public float displayAdding = 0, displayMoving = 0f;
   
   public NuclearEnergyModule(NuclearEnergyBuildComp entity){
     this.entity = entity;
@@ -55,15 +59,21 @@ public class NuclearEnergyModule extends BlockModule {
 
   public void stopFlow() {
     added = 0;
+    removed = 0;
+    addedMean.clear();
     moveMean.clear();
-    displayMoving = -1;
+    displayAdding = 0;
+    displayMoving = 0;
   }
 
   public void updateFlow(){
     if(flowTimer.get(20f)){
-      moveMean.add(added);
+      addedMean.add(added);
+      moveMean.add(removed);
       added = 0;
-      displayMoving = moveMean.hasEnoughData() ? moveMean.mean()/20 : - 1;
+      removed = 0;
+      displayAdding = addedMean.hasEnoughData()? addedMean.mean()/20: -1;
+      displayMoving = moveMean.hasEnoughData()? moveMean.mean()/20: -1;
     }
   }
   
@@ -76,9 +86,8 @@ public class NuclearEnergyModule extends BlockModule {
   
   public void handle(float value){
     energy += value;
-    if(value > 0){
-      added += value;
-    }
+    if (value >= 0) added += value;
+    if (value < 0) removed += value;
   }
   
   public void set(float value){
@@ -87,31 +96,19 @@ public class NuclearEnergyModule extends BlockModule {
   
   public void display(Table table){
     table.row();
-    table.table(Tex.pane, energyBoard -> {
-      energyBoard.add(Core.bundle.get("fragment.bars.nuclearEnergy")).center();
-      energyBoard.defaults().pad(5).growX();
-      energyBoard.row();
-      Func<Building, Bar> bar = (ent -> {
-        SglBuilding e = (SglBuilding) ent;
-        return new Bar(
-          () -> "energy",
-          () -> Color.white,
-          () -> e.energy.energy/e.block().energyCapacity
-        );
-      });
-  
-      energyBoard.add(bar.get((Building)entity)).height(18).pad(4);
-      energyBoard.row();
-      energyBoard.table(info -> {
-        info.defaults().left().padLeft(5);
-        info.left();
-        info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearContain",
-            energy >= 1000? UI.formatAmount((long) energy): Strings.autoFixed(energy, 1))));
-        info.row();
-        info.add("--").update(t -> t.setText(Core.bundle.format("fragment.bars.nuclearMoving", displayMoving >= 0? Strings.autoFixed(displayMoving*60, 1): "--")));
-        info.row();
-      });
-    }).fillX().growY();
+    table.table(energyBoard -> {
+      energyBoard.defaults().pad(5).left();
+      energyBoard.image(SglDrawConst.nuclearIcon).size(20).get().setScaling(Scaling.fit);
+      energyBoard.add(new Bar(
+          () -> Core.bundle.format("fragment.bars.nuclearContain",
+              energy >= 1000? UI.formatAmount((long) energy): Strings.autoFixed(energy, 1),
+              entity.energyCapacity() >= 1000? UI.formatAmount((long) entity.energyCapacity()): Strings.autoFixed(entity.energyCapacity(), 1),
+              displayAdding < -0.1f? "--": "+" + UI.formatAmount((long) (displayAdding*60))
+          ),
+          () -> Pal.reactorPurple,
+          () -> energy/entity.energyCapacity()
+      )).height(18).padLeft(4).growX();
+    }).growX().fillY();
   }
   
   @Override
