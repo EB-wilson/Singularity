@@ -104,7 +104,7 @@ public class DebugBlocks implements ContentList{
 
         static {
           for (int d = 0; d < 3; d++) {
-            param[d * 3] = Mathf.random(0.5f, 3f) / (d + 1) * (Mathf.randomBoolean() ? 1 : -1);
+            param[d * 3] = Mathf.random(0.5f, 3f) / (d + 1) * Mathf.randomSign();
             param[d * 3 + 1] = Mathf.random(0f, 360f);
             param[d * 3 + 2] = Mathf.random(24f, 64f) / ((d + 1) * (d + 1));
           }

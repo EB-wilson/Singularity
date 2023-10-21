@@ -1179,7 +1179,7 @@ public class SglUnits implements ContentList{
                 {
                   param = new float[9];
                   for(int d = 0; d < 3; d++){
-                    param[d*3] = Mathf.random(0.5f, 3f)/(d + 1)*(Mathf.randomBoolean()? 1: -1);
+                    param[d*3] = Mathf.random(0.5f, 3f)/(d + 1)*Mathf.randomsign();
                     param[d*3 + 1] = Mathf.random(0f, 360f);
                     param[d*3 + 2] = Mathf.random(18f, 48f)/((d + 1)*(d + 1));
                   }
@@ -2192,12 +2192,12 @@ public class SglUnits implements ContentList{
             {
               off = Mathf.random(0f, 360f);
               for(int d = 0; d < 3; d++){
-                farg1[d*3] = Mathf.random(0.5f, 3f)/(d + 1)*(Mathf.randomBoolean()? 1: -1);
+                farg1[d*3] = Mathf.random(0.5f, 3f)/(d + 1)*Mathf.randomSign();
                 farg1[d*3 + 1] = Mathf.random(0f, 360f);
                 farg1[d*3 + 2] = Mathf.random(8f, 16f)/((d + 1)*(d + 1));
               }
               for(int d = 0; d < 3; d++){
-                farg2[d*3] = Mathf.random(0.5f, 3f)/(d + 1)*(Mathf.randomBoolean()? 1: -1);
+                farg2[d*3] = Mathf.random(0.5f, 3f)/(d + 1)*Mathf.randomSign();
                 farg2[d*3 + 1] = Mathf.random(0f, 360f);
                 farg2[d*3 + 2] = Mathf.random(8f, 16f)/((d + 1)*(d + 1));
               }
