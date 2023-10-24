@@ -33,7 +33,9 @@ import mindustry.world.Block;
 import mindustry.world.blocks.defense.OverdriveProjector;
 import mindustry.world.blocks.liquid.Conduit;
 import singularity.Sgl;
+import singularity.Singularity;
 import singularity.game.SglHint;
+import singularity.ui.SglStyles;
 import singularity.world.meta.SglAttribute;
 import universecore.UncCore;
 import universecore.util.aspect.EntityAspect;
@@ -150,6 +152,19 @@ public class Init{
                   build.run();
                 }).size(112f, 40f).left();
               }
+
+              if (sglHint.docPaths[page] != null){
+                String[] arr = sglHint.docPaths[page].split(String.valueOf(SglHint.SEP_CHAR));
+                String butText = arr[0];
+                String docPath = arr[1];
+
+                GlyphLayout l = GlyphLayout.obtain();
+                l.setText(Styles.nonet.font, butText);
+                bu.left().button(butText, Styles.nonet, () -> Sgl.ui.document.showDocument(butText, SglStyles.defaultMD, Singularity.getDocument(docPath)))
+                    .size(l.width, 40f);
+                l.free();
+              }
+
               if (page < sglHint.pages() - 1){
                 bu.left().button("@hint.next", Styles.nonet, () -> {
                   page++;

@@ -3,8 +3,8 @@ name: "singularity",
 displayName: "Singularity",
 author: "EBwilson",
 main: "singularity.Singularity",
-description: "A large tech mod, and more things you can interested\n\n大型科技向mod，有很多东西你会感兴趣的\n\n based on UniverseCore mod",
-version: "0.8.11",
+description: "A large tech mod, and more things you can interested\n\n大型科技向mod，有很多东西你会感兴趣的\n\n ==================== \n based on UniverseCore mod",
+version: "0.8.12",
 minGameVersion: 144,
 hideBrowser: true
 }

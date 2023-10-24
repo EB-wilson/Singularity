@@ -6,7 +6,7 @@ plugins {
   id 'com.github.johnrengelman.shadow' version '2.0.4'
 }
 
-version 'alpha-0.8.11'
+version 'alpha-0.8.12'
 
 sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]

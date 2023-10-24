@@ -1,7 +1,11 @@
-pages: [
-  {
-    title: testing
-    languages: [zh_CN]
-    info: https://raw.githubusercontent.com/EB-wilson/Singularity/master/publicInfo/testing_#locale#.txt
-  },
-]
+{
+  pages: [
+    {
+      docName: "testing.md",
+      languages: ["en_US", "zh_CN"],
+      title: ["testing", "测试"],
+      date:  "2023-19-25, 01:39:05",
+      color:  "#ffffff",
+    },
+  ]
+}

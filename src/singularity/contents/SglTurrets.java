@@ -1946,6 +1946,7 @@ public class SglTurrets implements ContentList{
           despawnEffect = Fx.none;
           hittable = false;
           collides = false;
+          absorbable = false;
         }
 
         final Color trans = Color.white.cpy().a(0);
@@ -3650,6 +3651,7 @@ public class SglTurrets implements ContentList{
         collides = false;
         hittable = false;
         absorbable = false;
+        reflectable = false;
 
         hitColor = color;
         hitEffect = Fx.hitLancer;

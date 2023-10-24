@@ -1,4 +1,0 @@
-testing: {
-  en: matrix test
-  zh_CN: 矩阵测试
-}

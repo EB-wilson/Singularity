@@ -5,7 +5,6 @@ import arc.files.Fi;
 import arc.graphics.Color;
 import arc.graphics.Texture;
 import arc.graphics.gl.Shader;
-import arc.math.Mat;
 import arc.math.geom.Vec2;
 import arc.util.Time;
 import singularity.Singularity;
@@ -14,40 +13,20 @@ import static mindustry.Vars.renderer;
 
 public class SglShaders {
   public static SglSurfaceShader boundWater;
-  public static BlurShader blur;
+  public static MaskShader alphaMask;
   public static WaveShader wave;
+  public static MirrorFieldShader mirrorField;
+
   public static Shader baseShader;
 
   private static final Fi internalShaderDir = Singularity.getInternalFile("shaders");
 
   public static void load() {
     boundWater = new SglSurfaceShader("boundwater");
-    //blur = new BlurShader();
+    alphaMask = new MaskShader("alpha_mask");
+    mirrorField = new MirrorFieldShader();
     wave = new WaveShader("wave");
     baseShader = new Shader(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child("dist_base.frag"));
-  }
-
-  public static class BlurShader extends Shader {
-    private final Mat convMat = new Mat();
-    private final Vec2 size = new Vec2();
-
-    public BlurShader() {
-      super(Core.files.internal("bloomshaders/blurspace.vert"), internalShaderDir.child("gaussian_blur_convolution.frag"));
-    }
-
-    public void setConvMat(float... conv){
-      convMat.set(conv);
-    }
-
-    public void setBlurSize(float width, float height){
-      size.set(width, height);
-    }
-
-    @Override
-    public void apply() {
-      setUniformMatrix("conv", convMat);
-      setUniformf("size", size);
-    }
   }
 
   public static class SglSurfaceShader extends Shader {
@@ -113,6 +92,57 @@ public class SglShaders {
       setUniformf("wave_scl", waveScl);
       setUniformf("max_threshold", maxThreshold);
       setUniformf("min_threshold", minThreshold);
+    }
+  }
+
+  public static class MirrorFieldShader extends Shader {
+    public Color waveMix = Color.white;
+    public Vec2 offset = new Vec2(0, 0);
+    public float stroke = 2;
+    public float gridStroke = 0.8f;
+    public float mixAlpha = 0.4f;
+    public float alpha = 0.2f;
+    public float maxThreshold = 1;
+    public float minThreshold = 0.7f;
+    public float waveScl = 0.03f;
+    public float sideLen = 10;
+
+    public MirrorFieldShader() {
+      super(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child( "mirrorfield.frag"));
+    }
+
+    @Override
+    public void apply(){
+      setUniformf("u_campos", Core.camera.position.x - Core.camera.width / 2, Core.camera.position.y - Core.camera.height / 2);
+      setUniformf("u_resolution", Core.camera.width, Core.camera.height);
+      setUniformf("u_time", Time.time);
+
+      setUniformf("offset", offset);
+      setUniformf("u_step", stroke);
+      setUniformf("mix_color", waveMix);
+      setUniformf("mix_alpha", mixAlpha);
+      setUniformf("u_stroke", gridStroke);
+      setUniformf("u_alpha", alpha);
+      setUniformf("wave_scl", waveScl);
+      setUniformf("max_threshold", maxThreshold);
+      setUniformf("min_threshold", minThreshold);
+      setUniformf("side_len", sideLen);
+    }
+  }
+
+  public static class MaskShader extends Shader {
+    public Texture texture;
+
+    public MaskShader(String fragment) {
+      super(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child(fragment + ".frag"));
+    }
+
+    @Override
+    public void apply() {
+      setUniformi("u_texture", 1);
+      setUniformi("u_mask", 0);
+
+      texture.bind(1);
     }
   }
 }

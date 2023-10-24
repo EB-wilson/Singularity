@@ -12,6 +12,7 @@ import arc.math.Rand;
 import arc.math.geom.Geometry;
 import arc.math.geom.Position;
 import arc.math.geom.Vec2;
+import arc.util.Structs;
 import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.pooling.Pools;
@@ -19,6 +20,7 @@ import mindustry.Vars;
 import mindustry.content.Fx;
 import mindustry.content.Items;
 import mindustry.entities.Effect;
+import mindustry.entities.abilities.ForceFieldAbility;
 import mindustry.entities.effect.MultiEffect;
 import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;
@@ -29,6 +31,8 @@ import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.blocks.defence.GameOfLife;
 import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.unit.abilities.MirrorFieldAbility;
+import singularity.world.unit.abilities.MirrorShieldBase;
 import universecore.math.Functions;
 import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.RandomGenerator;
@@ -1099,6 +1103,25 @@ public class SglFx{
     color();
     Fill.circle(e.x, e.y, fin * 2f);
   });
+
+  public static Effect mirrorShieldBreak = new Effect(40, e -> {
+    stroke(1.4f * e.fout());
+
+    float radius = 130;
+    if (e.data instanceof MirrorFieldAbility base){
+      radius = base.nearRadius;
+    }
+
+    rand.setSeed(e.id);
+    Angles.randLenVectors(e.id, rand.random((int) radius/5, (int) radius/3), 0, radius, (x, y) -> {
+      float offX = rand.random(-16f, 16f)*e.fout(Interp.pow2Out);
+      float offY = rand.random(-16f, 16f)*e.fout(Interp.pow2Out);
+      color(e.color, e.color.a*0.4f);
+      Fill.poly(e.x + x + offX, e.y + y + offY, 6, 10*e.fout(Interp.pow4));
+      alpha(1);
+      Lines.poly(e.x + x + offX, e.y + y + offY, 6, 10);
+    });
+  }).followParent(true);
 
   public static Effect impactExplode(float size, float lifeTime){
     return impactExplode(size, lifeTime, false);

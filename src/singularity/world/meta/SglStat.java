@@ -70,7 +70,10 @@ public class SglStat{
       healthLimit = create("healthLimit", StatCat.crafting),
       buildLevel = create("buildLevel", StatCat.crafting),
 
-      effect = create("effect", StatCat.function);
+      effect = create("effect", StatCat.function),
+
+      fieldStrength = create("fieldStrength", StatCat.function),
+      albedo = create("albedo", StatCat.function);
 
   private static Stat create(String name, StatCat cat){
     return create(name, Stat.all.size, cat);

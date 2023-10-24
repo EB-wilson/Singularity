@@ -5,6 +5,7 @@ import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.GlyphLayout;
+import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.struct.Seq;
@@ -171,7 +172,7 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
                 Vec2 out = cursor < 0? new Vec2(): cacheVecs.get(cursor--);
                 out.set(p.x - b.x, p.y - b.y);
 
-                p.speed.setAngle(angle + MathTransform.innerAngle(angle, rot)/2);
+                p.speed.setAngle(angle + Angles.angleDist(angle, rot)/2);
 
                 out.setAngle(2*(p.speed.angle() + 90) - out.angle()).add(b.x, b.y);
 

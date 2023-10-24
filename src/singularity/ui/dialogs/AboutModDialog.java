@@ -8,12 +8,15 @@ import arc.func.Prov;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.math.Mathf;
 import arc.scene.Element;
 import arc.scene.style.Drawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import arc.util.Http;
+import arc.util.Log;
 import arc.util.Nullable;
+import arc.util.Time;
 import arc.util.io.Streams;
 import arc.util.serialization.Jval;
 import mindustry.Vars;
@@ -25,6 +28,7 @@ import mindustry.ui.dialogs.BaseDialog;
 import singularity.Sgl;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
+import singularity.util.MathTransform;
 
 import java.io.OutputStream;
 import java.util.regex.Pattern;
@@ -108,6 +112,12 @@ public class AboutModDialog extends BaseDialog {
     super(Core.bundle.get("dialog.aboutMod.title"));
     
     addCloseButton();
+    shown(this::checkOrDoUpdate);
+    hidden(() -> {
+      checking = false;
+      newVersion = null;
+      updateUrl = null;
+    });
   }
   
   public void build(){
@@ -129,9 +139,19 @@ public class AboutModDialog extends BaseDialog {
           @Override
           public void draw(){
             Draw.alpha(parentAlpha*color.a);
-            Draw.color(Pal.accent);
-            Fill.square(x + width/2, y + height/2, 8);
-            Fill.square(x + width/2, y + height/2, 8, 45);
+
+            if (checking){
+              Draw.color(Pal.accent);
+              Fill.square(x + width/2, y + height/2, 8, Time.time);
+              Fill.square(x + width/2, y + height/2, 8, 45 + 2*Time.time);
+            }
+            else{
+              if (newVersion == null) Draw.color(Pal.heal);
+              else Draw.color(Pal.accent, Pal.heal, Mathf.absin(8, 1));
+
+              Fill.square(x + width/2, y + height/2, 8);
+              Fill.square(x + width/2, y + height/2, 8, 45);
+            }
           }
         }).size(40);
         update.add("").update(l -> l.setText(checking? Core.bundle.get("infos.checkingUpgrade"): newVersion != null? Core.bundle.format("infos.hasUpdate", newVersion): Core.bundle.get("infos.newestVersion")));
@@ -198,13 +218,15 @@ public class AboutModDialog extends BaseDialog {
     if(newVersion != null){
       if (updateUrl == null) ui.showException("what? updateUrl was null!", new NullPointerException());
       else {
-        Http.get(updateUrl, this::downloadMod);
+        downloadMod();
       }
     }
     else {
       checking = true;
       Http.get(Sgl.githubProjReleaseApi, res -> {
         Jval response = Jval.read(res.getResultAsString());
+
+        if (!checking) return;
 
         if (isNewVersion(response.getString("tag_name"))) {
           newVersion = response.getString("tag_name");
@@ -228,27 +250,38 @@ public class AboutModDialog extends BaseDialog {
     }
   }
 
-  private void downloadMod(Http.HttpResponse result){
-    try{
-      Fi file = tmpDirectory.child("Singularity" + newVersion + ".jar");
-      long len = result.getContentLength();
+  private void downloadMod(){
+    downloadProgress = 0f;
+    ui.loadfrag.show("@downloading");
+    ui.loadfrag.setProgress(() -> downloadProgress);
+    Http.get(updateUrl, result -> {
+      try{
+        Fi file = tmpDirectory.child("Singularity" + newVersion + ".jar");
+        long len = result.getContentLength();
 
-      downloadProgress = 0f;
-      ui.loadfrag.show("@downloading");
-      ui.loadfrag.setProgress(() -> downloadProgress);
+        try(OutputStream stream = file.write(false)){
+          Streams.copyProgress(result.getResultAsStream(), stream, len, 4096,  len <= 0 ? f -> {} : p -> downloadProgress = p);
+        }
 
-      try(OutputStream stream = file.write(false)){
-        Streams.copyProgress(result.getResultAsStream(), stream, len, 4096,  len <= 0 ? f -> {} : p -> downloadProgress = p);
+        var mod = mods.importMod(file);
+        mod.setRepo("EB-wilson/Singularity");
+        file.delete();
+
+        Core.app.post(() -> {
+          ui.loadfrag.hide();
+          ui.showConfirm("@mods.reloadexit", () -> {
+            Log.info("Exiting to reload mods.");
+            Core.app.exit();
+          });
+        });
+      }catch(Throwable e){
+        ui.showException(e);
+        Log.err(e);
       }
-
-      var mod = mods.importMod(file);
-      mod.setRepo("EB-wilson/Singularity");
-      file.delete();
-
-      ui.loadfrag.hide();
-    }catch(Throwable e){
+    }, e -> {
       ui.showException(e);
-    }
+      Log.err(e);
+    });
   }
 
   private static boolean isNewVersion(String version) {

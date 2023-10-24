@@ -2,9 +2,14 @@ package singularity.graphic;
 
 import arc.Core;
 import arc.Events;
+import arc.func.Prov;
+import arc.graphics.Blending;
 import arc.graphics.Color;
+import arc.graphics.Pixmap;
+import arc.graphics.Texture;
 import arc.graphics.g2d.*;
 import arc.graphics.gl.FrameBuffer;
+import arc.graphics.gl.GLFrameBuffer;
 import arc.graphics.gl.Shader;
 import arc.math.Angles;
 import arc.math.Mathf;
@@ -14,10 +19,10 @@ import arc.math.geom.Vec3;
 import arc.util.Nullable;
 import arc.util.Time;
 import arc.util.Tmp;
-import mindustry.core.Renderer;
 import mindustry.game.EventType;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
+import mindustry.graphics.Shaders;
 import singularity.Sgl;
 import singularity.util.func.Floatc3;
 import universecore.world.particles.Particle;
@@ -49,6 +54,9 @@ public class SglDraw{
     return idCount++;
   }
 
+  public static final float mirrorField = 127.5f;
+  public static final FrameBuffer effectBuffer = new FrameBuffer();
+
   public static final int sharedUnderBlockBloomID = nextTaskID();
   public static final int sharedUponFlyUnitBloomID = nextTaskID();
   public static final int sharedUnderFlyUnitBloomID = nextTaskID();
@@ -56,6 +64,23 @@ public class SglDraw{
   static {
     Events.run(EventType.Trigger.draw, () -> {
       Particle.maxAmount = Sgl.config.enableParticle? Sgl.config.maxParticleCount: 0;
+
+      effectBuffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+      Draw.draw(mirrorField - 0.01f, () -> effectBuffer.begin(Color.clear));
+      Draw.draw(mirrorField + 0.51f, () -> {
+        effectBuffer.end();
+
+        SglShaders.mirrorField.waveMix = Tmp.c1.set(SglDrawConst.matrixNet);
+        SglShaders.mirrorField.waveScl = 0.03f;
+        SglShaders.mirrorField.gridStroke = 0.8f;
+        SglShaders.mirrorField.maxThreshold = 1f;
+        SglShaders.mirrorField.minThreshold = 0.7f;
+        SglShaders.mirrorField.stroke = 2;
+        SglShaders.mirrorField.sideLen = 10;
+        SglShaders.mirrorField.offset.set(Time.time/10, Time.time/10);
+
+        effectBuffer.blit(SglShaders.mirrorField);
+      });
     });
 
     Time.run(0, () -> Sgl.ui.debugInfos.addMonitor("drawTaskCount", () -> idCount));
@@ -136,6 +161,10 @@ public class SglDraw{
    * @param applyShader <strong>选择性的参数，若任务已初始化，这个参数无效</strong>，绘制前对着色器进行的操作
    * @param draw 添加到任务缓存的绘制任务，即此次绘制的操作*/
   public static <T, S extends Shader> void drawTask(int taskID, T target, S shader, DrawAcceptor<S> applyShader, DrawAcceptor<T> draw){
+    drawTask(taskID, target, FrameBuffer::new, shader, applyShader, draw);
+  }
+
+  public static <T, S extends Shader> void drawTask(int taskID, T target, Prov<FrameBuffer> bufferProv, S shader, DrawAcceptor<S> applyShader, DrawAcceptor<T> draw){
     if(!Sgl.config.enableShaders){
       draw.draw(target);
       return;
@@ -145,18 +174,16 @@ public class SglDraw{
       taskBuffer = Arrays.copyOf(taskBuffer, taskBuffer.length*2);
     }
 
-    FrameBuffer buffer = taskBuffer[taskID];
-    if (buffer == null){
-      buffer = taskBuffer[taskID] = new FrameBuffer();
+    if (taskBuffer[taskID] == null){
+      taskBuffer[taskID] = bufferProv.get();
     }
-    FrameBuffer b = buffer;
     drawTask(taskID, target, shader, e -> {
-      b.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-      b.begin(Color.clear);
+      taskBuffer[taskID].resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+      taskBuffer[taskID].begin(Color.clear);
     }, e -> {
-      b.end();
+      taskBuffer[taskID].end();
       applyShader.draw(e);
-      b.blit(e);
+      taskBuffer[taskID].blit(e);
     }, draw);
   }
 
@@ -212,6 +239,20 @@ public class SglDraw{
       Draw.draw(Draw.z(), task::flush);
     }
     task.addTask(null, draw);
+  }
+
+  public static <T, B extends FrameBuffer> void drawToBuffer(int taskID, B buffer, T target, DrawAcceptor<T> draw){
+    drawToBuffer(taskID, buffer, target, b -> {}, draw);
+  }
+
+  public static <T, B extends FrameBuffer> void drawToBuffer(int taskID, B buffer, T target, DrawAcceptor<B> endBuffer, DrawAcceptor<T> draw){
+    drawTask(taskID, target, buffer, b -> {
+      b.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+      b.begin(Color.clear);
+    }, b -> {
+      b.end();
+      endBuffer.draw(b);
+    }, draw);
   }
 
   /**发布一个泛光绘制任务，基于{@link SglDraw#drawTask(int, Object, DrawAcceptor, DrawAcceptor, DrawAcceptor)}实现
@@ -349,6 +390,17 @@ public class SglDraw{
       e.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
       e.capture();
     }, Blur::render, draw);
+  }
+
+  public static <T> void drawMirrorField(int taskID, T target, DrawAcceptor<SglShaders.MirrorFieldShader> pre, DrawAcceptor<T> draw){
+    SglDraw.drawTask(taskID, target, SglShaders.mirrorField, pre, draw);
+  }
+
+  public static <T> void drawMask(int taskID, SglShaders.MaskShader shader, GLFrameBuffer<? extends Texture> baseBuffer, T target, DrawAcceptor<T> draw){
+    drawTask(taskID, target, shader, s -> {
+      baseBuffer.end();
+      shader.texture = baseBuffer.getTexture();
+    }, draw);
   }
 
   public static void drawTransform(float originX, float originY, Vec2 vec, float rotate, Floatc3 draw){

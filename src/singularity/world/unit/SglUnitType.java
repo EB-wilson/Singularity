@@ -3,10 +3,11 @@ package singularity.world.unit;
 import arc.util.Nullable;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import mindustry.gen.Unit;
 import mindustry.type.ItemStack;
 import mindustry.type.UnitType;
 
-public class SglUnitType extends UnitType {
+public class SglUnitType<T extends Unit> extends UnitType {
   public @Nullable ItemStack[] requirements;
 
   public SglUnitType(String name) {
@@ -39,11 +40,11 @@ public class SglUnitType extends UnitType {
     return 0;
   }
 
-  public void init(SglUnitEntity unit) {}
+  public void init(T unit) {}
 
-  public void read(SglUnitEntity sglUnitEntity, Reads read, int revision) {
+  public void read(T sglUnitEntity, Reads read, int revision) {
   }
 
-  public void write(SglUnitEntity sglUnitEntity, Writes write) {
+  public void write(T sglUnitEntity, Writes write) {
   }
 }

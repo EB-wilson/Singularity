@@ -28,11 +28,13 @@ import mindustry.world.Block;
 import mindustry.world.Build;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
+import singularity.world.blocks.SglBlock;
 import singularity.world.blocks.distribute.DistNetCore;
 import singularity.world.blocks.distribute.MatrixBridge;
 import singularity.world.blocks.distribute.matrixGrid.MatrixEdgeBlock;
 import singularity.world.blocks.distribute.matrixGrid.MatrixGridBlock;
 import singularity.world.blocks.distribute.matrixGrid.MatrixGridCore;
+import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.distribution.DistributeNetwork;
 import universecore.components.blockcomp.SpliceBlockComp;
@@ -49,6 +51,7 @@ public class SglHint implements HintsFragment.Hint {
   public static final Seq<SglHint> all = new Seq<>();
 
   public static final HintsFragment.Hint[] EMP = new HintsFragment.Hint[0];
+  public static final char SEP_CHAR = '\udfce';
 
   static {
     Events.on(EventType.BlockBuildEndEvent.class, e -> {
@@ -63,6 +66,10 @@ public class SglHint implements HintsFragment.Hint {
   }
 
   public static final SglHint
+      nuclearEnergyGuidance = new SglHint("nuclearEnergyGuidance", 1,
+        () -> retentionBlocks.orderedKeys().contains(e -> e instanceof SglBlock s && s.hasEnergy),
+        () -> false).setDocPath(0, Core.bundle.get("hints.doc.nuclearGuidance"), "nuclear_energy_blocks.md"),
+
       spliceStructure = new SglHint("spliceStructure", 2,
         () -> retentionBlocks.orderedKeys().contains(e -> e instanceof SpliceBlockComp),
         () -> false),
@@ -307,6 +314,8 @@ public class SglHint implements HintsFragment.Hint {
   private final Boolp valid;
   private final int id;
 
+  public final String[] docPaths;
+
   SglHint(String text, int pages, HintsFragment.Hint[] dependencies, Boolp shouldShow, Boolp isComplete) {
     this(text, pages, dependencies, shouldShow, isComplete, () -> true);
   }
@@ -329,6 +338,7 @@ public class SglHint implements HintsFragment.Hint {
       }
     }
     this.dependencies = dependencies;
+    this.docPaths = new String[pages];
     this.shouldShow = shouldShow;
     this.isComplete = isComplete;
     this.valid = valid;
@@ -336,6 +346,11 @@ public class SglHint implements HintsFragment.Hint {
     id = HintsFragment.DefaultHint.values().length + all.size;
     all.add(this);
     Vars.ui.hints.hints.add(this);
+  }
+
+  public SglHint setDocPath(int page, String name, String doc){
+    docPaths[page] = name + SEP_CHAR + doc;
+    return this;
   }
 
   @Override

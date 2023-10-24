@@ -193,6 +193,7 @@ public class EMPHealthManager {
   }
 
   public void setEmpModel(UnitType type, float maxHealth, float armor, float repair, float empContDam){
+    type.immunities.remove(OtherContents.emp_damaged);
     unitDefaultHealthMap.put(type, new EMPModel(){{
       this.maxEmpHealth = maxHealth;
       this.empArmor = armor;
@@ -209,9 +210,11 @@ public class EMPHealthManager {
 
   public EMPModel getModel(UnitType type){
     return unitDefaultHealthMap.get(type, () -> {
+      type.immunities.remove(OtherContents.emp_damaged);
+
       EMPModel res = new EMPModel();
       res.maxEmpHealth = type.health/Mathf.pow(type.hitSize - type.armor, 2)*200;
-      res.empArmor = Mathf.clamp(type.armor/100);
+      res.empArmor = Mathf.clamp(type.armor/100, 0, 0.9f);
       res.empRepair = type.hitSize/60;
       res.empContinuousDamage = res.empRepair*2;
 

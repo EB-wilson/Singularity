@@ -96,7 +96,7 @@ public class EntityInfoFrag{
       mat.set(Draw.proj());
       Draw.proj(Core.camera.mat);
 
-      if (hold != null) {
+      if (hold != null && hold.entity != null) {
         float mv = 0.8f +  Mathf.absin(6, 0.2f);
         TextureRegion region = ((TextureRegionDrawable) SglDrawConst.matrixArrow).getRegion();
 
@@ -233,6 +233,8 @@ public class EntityInfoFrag{
         Sgl.config.showInfoScl = Mathf.clamp(Sgl.config.showInfoScl, 0.5f, 4f);
       }
     }
+
+    if (hold != null && hold.entity == null) hold = null;
 
     boolean touched = Core.input.keyTap(Binding.select) && Core.input.alt();
     if (touched){

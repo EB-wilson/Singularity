@@ -23,7 +23,6 @@ import mindustry.core.Renderer;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
-import mindustry.gen.Groups;
 import mindustry.gen.Iconc;
 import mindustry.gen.Unit;
 import mindustry.graphics.Drawf;

@@ -21,8 +21,7 @@ void main() {
 
     if(col.a > 0.0){
         vec2 c = v_texCoords;
-        vec2 v = vec2(1.0 / u_resolution.x, 1.0 / u_resolution.y);
-        vec2 coords = vec2(c.x / v.x + u_campos.x, c.y / v.y + u_campos.y);
+        vec2 coords = vec2(c.x * u_resolution.x + u_campos.x, c.y * u_resolution.y + u_campos.y);
 
         float stime = u_time*wave_scl;
 

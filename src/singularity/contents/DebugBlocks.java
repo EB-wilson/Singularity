@@ -2,16 +2,20 @@ package singularity.contents;
 
 import arc.Core;
 import arc.audio.Sound;
+import arc.graphics.Blending;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
+import arc.graphics.gl.FrameBuffer;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
+import mindustry.entities.Units;
+import mindustry.entities.abilities.ForceFieldAbility;
 import mindustry.gen.Building;
 import mindustry.gen.Groups;
 import mindustry.gen.Sounds;
@@ -23,10 +27,7 @@ import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
 import singularity.Sgl;
-import singularity.graphic.Blur;
-import singularity.graphic.Distortion;
-import singularity.graphic.MathRenderer;
-import singularity.graphic.SglDraw;
+import singularity.graphic.*;
 import singularity.type.SglCategory;
 import singularity.ui.SglStyles;
 import singularity.util.MathTransform;
@@ -46,6 +47,7 @@ public class DebugBlocks implements ContentList{
       configurable = true;
       hasShadow = false;
 
+      final int taskID = SglDraw.nextTaskID();
       buildType = () -> new TestBlockBuild(){
         float alpha = 1f;
         float alp = 20;
@@ -60,10 +62,16 @@ public class DebugBlocks implements ContentList{
 
         @Override
         public void draw() {
-          Draw.draw(Draw.z(), () -> {
-            MathRenderer.setDispersion(alpha);
-            MathRenderer.setThreshold(0.4f, 0.7f);
-            MathRenderer.drawCurveCircle(x, y, alp, n, a, Time.time);
+          SglDraw.drawTask(taskID, this, SglShaders.mirrorField, s -> {
+            s.waveMix = Tmp.c1.set(SglDrawConst.matrixNet);
+            s.waveScl = 0.03f;
+            s.gridStroke = 1f;
+            s.maxThreshold = 1f;
+            s.minThreshold = 0.7f;
+            s.offset.set(Time.time/10, Time.time/10);
+          }, b -> {
+            Draw.color(b.team.color);
+            Fill.poly(b.x, b.y, 6, 160);
           });
         }
 

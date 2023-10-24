@@ -105,7 +105,7 @@ public enum HealthBarStyle {
 
     drawBar(healthBar, origX, y, hOffX, hOffY, healthWidth, healthHeight, entry.getVar("over", 0f)/entity.maxHealth(), Pal.lightishGray, alpha);
     drawBar(healthBar, origX, y, hOffX, hOffY, healthWidth, healthHeight, present, entity.team().color, alpha);
-    if (entity instanceof Shieldc u) drawBar(healthBar, origX, y, hOffX, hOffY, healthWidth, healthHeight, Mathf.clamp(u.shield()/u.maxHealth()), c.set(entity.team().color).lerp(Pal.accent, Mathf.absin(10, 1)), alpha);
+    if (entity instanceof Shieldc u) drawBar(healthBar, origX, y, hOffX, hOffY, healthWidth, healthHeight, Mathf.clamp(u.shield()/u.maxHealth()), c.set(entity.team().color).lerp(Tmp.c1.set(Pal.accent).mul(1.6f), 0.3f + Mathf.absin(8, 0.7f)), alpha);
 
     float emp = 1 - empPresent;
     drawBar(empBar, origX, y, eOffX, eOffY, empWidth, empHeight, empPresent,
