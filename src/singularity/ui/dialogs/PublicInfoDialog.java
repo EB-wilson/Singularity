@@ -69,6 +69,7 @@ public class PublicInfoDialog extends BaseDialog {
       Core.app.post(() -> {
         loading = false;
         if (current == null) current = messages.first();
+        rebuild();
       });
     });
   }
@@ -81,7 +82,10 @@ public class PublicInfoDialog extends BaseDialog {
       }).grow().pad(4);
       mainLayout.row();
 
-      Collapser coll = new Collapser(t -> t.pane(p -> listView = p).growX().fillY(), true).setDuration(0.5f);
+      Collapser coll = new Collapser(t -> t.pane(p -> {
+        listView = p;
+        listView.defaults().growX().height(64).padBottom(6);
+      }).growX().fillY(), true).setDuration(0.5f);
       mainLayout.button(Icon.up, Styles.clearNonei, 32, () -> {
         coll.setCollapsed(!coll.isCollapsed(), true);
       }).growX().height(40).update(i -> i.getStyle().imageUp = coll.isCollapsed() ? Icon.upOpen : Icon.downOpen);
@@ -89,9 +93,10 @@ public class PublicInfoDialog extends BaseDialog {
       mainLayout.add(coll).growX().fillY();
     }
     else {
-      mainLayout.pane(list -> {
+      mainLayout.top().pane(list -> {
         listView = list;
-      }).growY().fillX().padLeft(40);
+        listView.defaults().growX().height(64).padBottom(6);
+      }).growY().width(280).padLeft(40).top();
       mainLayout.image().padLeft(3).padRight(3).colspan(2).color(Color.lightGray).width(3).growY();
       mainLayout.table(msg -> {
         messageView = msg;
@@ -103,7 +108,8 @@ public class PublicInfoDialog extends BaseDialog {
 
   protected void setupInfos() {
     for (MsgEntry entry : messages) {
-
+      listView.add(buildEntryButton(entry));
+      listView.row();
     }
   }
 
