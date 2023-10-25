@@ -9,6 +9,7 @@ import arc.scene.Element;
 import arc.scene.event.Touchable;
 import arc.scene.ui.Button;
 import arc.scene.ui.Image;
+import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Collapser;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
@@ -17,6 +18,7 @@ import arc.struct.Seq;
 import arc.util.*;
 import arc.util.serialization.Jval;
 import mindustry.gen.Icon;
+import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
@@ -191,13 +193,13 @@ public class PublicInfoDialog extends BaseDialog {
       }).grow().padLeft(5);
 
       Element drawer = entry.tag.getDrawer();
-      if (drawer != null) add(drawer).size(48);
-
-      touchablility = () -> entry.equals(current)? Touchable.disabled: Touchable.enabled;
+      if (drawer != null) add(drawer).size(48).get().addListener(new Tooltip(t -> t.table(Tex.paneLeft).get().add(Core.bundle.get("infos.msgTag." + entry.tag.name()))));
 
       update(() -> setChecked(entry.equals(current)));
 
       clicked(() -> {
+        if (entry.equals(current)) return;
+
         current = entry;
         setupInfos();
       });
@@ -235,12 +237,12 @@ public class PublicInfoDialog extends BaseDialog {
         @Override
         public void draw() {
           super.draw();
-          Draw.color(Tmp.c1.set(color).lerp(Color.black, 0.3f));
+          Draw.color(Tmp.c1.set(MsgTag.this.color).lerp(Color.black, 0.3f));
           Draw.alpha(parentAlpha);
-          Fill.square(x + width/2, y + height/2 - Scl.scl(6), width/8, 45);
-          Draw.color(color);
+          Fill.square(x + width/2, y + height/2 - Scl.scl(8), width/6, 45);
+          Draw.color(MsgTag.this.color);
           Draw.alpha(parentAlpha);
-          Fill.square(x + width/2, y + height/2, width/8, 45);
+          Fill.square(x + width/2, y + height/2, width/6, 45);
         }
       };
     }
