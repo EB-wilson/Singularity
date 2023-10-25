@@ -6,30 +6,24 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.math.Mathf;
 import arc.scene.Element;
+import arc.scene.event.Touchable;
 import arc.scene.ui.Button;
+import arc.scene.ui.Image;
 import arc.scene.ui.layout.Collapser;
+import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
-import arc.util.Http;
-import arc.util.Nullable;
-import arc.util.Scaling;
-import arc.util.Time;
+import arc.util.*;
 import arc.util.serialization.Jval;
 import mindustry.gen.Icon;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import singularity.Singularity;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
 import universecore.ui.elements.markdown.Markdown;
-import universecore.util.UrlDownloader;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
-import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
@@ -69,6 +63,9 @@ public class PublicInfoDialog extends BaseDialog {
 
   protected void refresh(){
     loading = true;
+    current = null;
+    messages.clear();
+
     setupInfos();
     Http.get(directory, res -> {
       if (!loading) return;
@@ -77,6 +74,8 @@ public class PublicInfoDialog extends BaseDialog {
       for (Jval jval : Jval.read(res.getResultAsString()).get("pages").asArray()) {
         messages.add(new MsgEntry(jval));
       }
+
+      messages.sort();
 
       Core.app.post(() -> {
         loading = false;
@@ -133,13 +132,14 @@ public class PublicInfoDialog extends BaseDialog {
           public void draw() {
             super.draw();
             Draw.color(Pal.accent);
+            Draw.alpha(Draw.getColor().a * parentAlpha);
             Fill.square(x + width/2, y + height/2, width/2/Mathf.sqrt2, Time.time);
             Fill.square(x + width/2, y + height/2, width/2/Mathf.sqrt2, 45 + 2*Time.time);
           }
         }).size(80);
         ld.row();
         ld.add(Core.bundle.get("misc.loading"));
-      }).grow().name("loading");
+      }).grow();
     }
     else if (current != null){
       messageView.clearChildren();
@@ -156,7 +156,7 @@ public class PublicInfoDialog extends BaseDialog {
 
           Core.app.post(() -> {
             documents.put(current.docName, new Markdown(doc, SglStyles.defaultMD));
-            if (current == curr){
+            if (current.equals(curr)){
               loading = false;
               setupInfos();
             }
@@ -190,18 +190,69 @@ public class PublicInfoDialog extends BaseDialog {
         t.add(entry.date == null? "no date": entry.date.toString()).color(Pal.gray);
       }).grow().padLeft(5);
 
-      update(() -> setChecked(entry == current));
+      Element drawer = entry.tag.getDrawer();
+      if (drawer != null) add(drawer).size(48);
 
-      clicked(() -> current = entry);
+      touchablility = () -> entry.equals(current)? Touchable.disabled: Touchable.enabled;
+
+      update(() -> setChecked(entry.equals(current)));
+
+      clicked(() -> {
+        current = entry;
+        setupInfos();
+      });
     }};
   }
 
-  protected static class MsgEntry{
+  protected enum MsgTag{
+    errorWarn(){
+      @Override
+      public Element getDrawer() {
+        Image img = new Image(Icon.warning).setScaling(Scaling.fit);
+        return img.update(() -> img.setColor(Tmp.c1.set(Color.crimson).lerp(Pal.accent, Mathf.absin(6, 1))));
+      }
+    },
+    updateLog(Color.sky),
+    note(Pal.accent),
+    normal(){
+      @Override
+      public Element getDrawer() {
+        return null;
+      }
+    };
+
+    Color color = Pal.accent;
+
+    MsgTag(){};
+
+    MsgTag(Color color){
+      this.color = color;
+    }
+
+    @Nullable
+    public Element getDrawer() {
+      return new Element(){
+        @Override
+        public void draw() {
+          super.draw();
+          Draw.color(Tmp.c1.set(color).lerp(Color.black, 0.3f));
+          Draw.alpha(parentAlpha);
+          Fill.square(x + width/2, y + height/2 - Scl.scl(6), width/8, 45);
+          Draw.color(color);
+          Draw.alpha(parentAlpha);
+          Fill.square(x + width/2, y + height/2, width/8, 45);
+        }
+      };
+    }
+  }
+
+  protected static class MsgEntry implements Comparable<MsgEntry>{
     public String docName;
     public Date date;
     public Color color;
     public String[] languages;
     public String[] titles;
+    public MsgTag tag = MsgTag.normal;
 
     public MsgEntry(Jval entry){
       docName = entry.getString("docName");
@@ -224,6 +275,10 @@ public class PublicInfoDialog extends BaseDialog {
       titles = new String[tits.size];
       for (int i = 0; i < tits.size; i++) {
         titles[i] = tits.get(i).asString();
+      }
+
+      if (entry.has("tag")){
+        tag = MsgTag.valueOf(entry.getString("tag"));
       }
     }
 
@@ -258,6 +313,11 @@ public class PublicInfoDialog extends BaseDialog {
     @Override
     public int hashCode() {
       return Objects.hash(docName);
+    }
+
+    @Override
+    public int compareTo(MsgEntry o) {
+      return o.tag == tag && date != null && o.date != null? date.compareTo(o.date): tag.compareTo(o.tag);
     }
   }
 }

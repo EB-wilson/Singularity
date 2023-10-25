@@ -4,15 +4,17 @@
       docName: "testing.md",
       languages: ["en_US", "zh_CN"],
       title: ["testing", "测试"],
-      date:  "2023-19-25",
+      date:  "2023/19/25",
       color:  "#ffd37f",
+      tag: "note"
     },
     {
       docName: "sample.md",
       languages: ["en_US", "zh_CN"],
       title: ["sample", "样本"],
-      date:  "2023-19-26",
+      date:  "2023/19/26",
       color:  "#ffd37f",
+      tag: "errorWarn"
     },
   ]
 }
