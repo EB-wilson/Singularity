@@ -4,7 +4,7 @@
       docName: "testing.md",
       languages: ["en_US", "zh_CN"],
       title: ["testing", "测试"],
-      date:  "Wed Oct 25 22:24:29 CST 2023",
+      date:  "2023-19-25, 22:30:12",
       color:  "#ffd37f",
       tag: "note"
     },
@@ -12,7 +12,7 @@
       docName: "sample.md",
       languages: ["en_US", "zh_CN"],
       title: ["sample", "样本"],
-      date:  "Wed Oct 25 22:24:29 CST 2023",
+      date:  "2023-19-26, 22:30:12",
       color:  "#ffd37f",
       tag: "errorWarn"
     },

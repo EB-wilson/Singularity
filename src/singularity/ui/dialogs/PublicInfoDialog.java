@@ -28,6 +28,7 @@ import universecore.ui.elements.markdown.Markdown;
 
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
@@ -260,7 +261,8 @@ public class PublicInfoDialog extends BaseDialog {
       docName = entry.getString("docName");
 
       try {
-        date = DateFormat.getInstance().parse(entry.getString("date"));
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd, HH:mm:ss");
+        date = format.parse(entry.getString("date"));
       } catch (ParseException e) {
         date = null;
       }
