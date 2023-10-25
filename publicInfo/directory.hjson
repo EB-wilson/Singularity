@@ -10,7 +10,7 @@
     {
       docName: "sample.md",
       languages: ["en_US", "zh_CN"],
-      title: ["testing", "测试"],
+      title: ["sample", "样本"],
       date:  "2023-19-26",
       color:  "#ffd37f",
     },
