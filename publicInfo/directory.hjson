@@ -16,5 +16,12 @@
       color:  "#ffd37f",
       tag: "errorWarn"
     },
+    {
+      docName: "matrix_grid_config_help.md",
+      languages: ["en_US", "zh_CN"],
+      title: ["sample", "样本"],
+      date:  "2023-19-26, 16:05:34",
+      color:  "#ffd37f",
+    },
   ]
 }

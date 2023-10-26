@@ -22,10 +22,14 @@ import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
+import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
 import universecore.ui.elements.markdown.Markdown;
+import universecore.util.UrlDownloader;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -41,6 +45,7 @@ public class PublicInfoDialog extends BaseDialog {
   protected static final String docNamePart = "$docName$";
 
   boolean loading;
+  float loadProgress;
   @Nullable Throwable error;
   Table mainLayout, listView, messageView;
 
@@ -70,11 +75,13 @@ public class PublicInfoDialog extends BaseDialog {
     messages.clear();
 
     setupInfos();
+
     Http.get(directory, res -> {
       if (!loading) return;
 
       messages.clear();
-      for (Jval jval : Jval.read(res.getResultAsString()).get("pages").asArray()) {
+      String directory = getToString(res.getResultAsStream(), res.getContentLength());
+      for (Jval jval : Jval.read(directory).get("pages").asArray()) {
         messages.add(new MsgEntry(jval));
       }
 
@@ -141,7 +148,9 @@ public class PublicInfoDialog extends BaseDialog {
           }
         }).size(80);
         ld.row();
-        ld.add(Core.bundle.get("misc.loading"));
+        ld.add("").update(l -> l.setText(Core.bundle.get("misc.loading") + loadingPoints()));
+        ld.row();
+        ld.add("").update(l -> l.setText(Mathf.round(loadProgress*100) + "%"));
       }).grow();
     }
     else if (current != null){
@@ -155,7 +164,8 @@ public class PublicInfoDialog extends BaseDialog {
         MsgEntry curr = current;
         Http.get(current.getDocURL(Core.bundle.getLocale()), response -> {
           if (!loading) return;
-          String doc = response.getResultAsString();
+
+          String doc = getToString(response.getResultAsStream(), response.getContentLength());
 
           Core.app.post(() -> {
             documents.put(current.docName, new Markdown(doc, SglStyles.defaultMD));
@@ -176,35 +186,74 @@ public class PublicInfoDialog extends BaseDialog {
     }
   }
 
+  private String loadingPoints() {
+    StringBuilder res = new StringBuilder(".");
+
+    int points = (int) (Time.time%60/20);
+    for (int i = 0; i < points; i++) {
+      res.append(".");
+    }
+
+    return res.toString();
+  }
+
+  private String getToString(InputStream in, long len) throws IOException {
+    loadProgress = 0;
+    InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8);
+
+    StringWriter writer = new StringWriter();
+
+    long count = 0;
+    for (int i = reader.read(); i != -1; i = reader.read()) {
+      count++;
+      writer.write(i);
+      loadProgress = (float) count/len;
+    }
+
+    return writer.toString();
+  }
+
   protected Button buildEntryButton(MsgEntry entry){
-    return new Button(SglStyles.underline){{
-      left().defaults().left();
+    return new Button(SglStyles.underline){
+      {
+        left().defaults().left();
 
-      table(img -> {
-        img.image().growY().width(40f).color(entry.color);
-        img.row();
-        img.image().height(6).width(40f).color(entry.color.cpy().mul(0.8f, 0.8f, 0.8f, 1f));
-      }).growY().fillX().padLeft(-12).padBottom(-11);
+        table(img -> {
+          img.image().growY().padTop(-11).width(40f).color(entry.color);
+          img.row();
+          img.image().height(6).width(40f).color(entry.color.cpy().mul(0.8f, 0.8f, 0.8f, 1f));
+        }).growY().fillX().padLeft(-12).padBottom(-11);
 
-      table(t -> {
-        t.defaults().left().growX();
-        t.add(entry.getTitle(Core.bundle.getLocale())).color(Pal.accent);
-        t.row();
-        t.add(entry.date == null? "no date": entry.date.toString()).color(Pal.gray);
-      }).grow().padLeft(5);
+        table(t -> {
+          t.defaults().left().growX();
+          t.add(entry.getTitle(Core.bundle.getLocale())).color(Pal.accent);
+          t.row();
+          t.add(entry.date == null? "no date":
+              DateFormat.getDateInstance(DateFormat.DEFAULT, Core.bundle.getLocale()).format(entry.date)).color(Pal.gray);
+        }).grow().padLeft(5);
 
-      Element drawer = entry.tag.getDrawer();
-      if (drawer != null) add(drawer).size(48).get().addListener(new Tooltip(t -> t.table(Tex.paneLeft).get().add(Core.bundle.get("infos.msgTag." + entry.tag.name()))));
+        Element drawer = entry.tag.getDrawer();
+        if (drawer != null) add(drawer).size(48).get().addListener(new Tooltip(t -> t.table(Tex.paneLeft).get().add(Core.bundle.get("infos.msgTag." + entry.tag.name()))));
 
-      update(() -> setChecked(entry.equals(current)));
+        update(() -> setChecked(entry.equals(current)));
 
-      clicked(() -> {
-        if (entry.equals(current)) return;
+        clicked(() -> {
+          if (entry.equals(current)) return;
 
-        current = entry;
-        setupInfos();
-      });
-    }};
+          current = entry;
+          setupInfos();
+        });
+      }
+
+      @Override
+      protected void drawBackground(float x, float y) {
+        if (entry.equals(current)){
+          Draw.color(Color.darkGray);
+          Fill.rect(x + width/2, y + height/2, width, height);
+        }
+        else super.drawBackground(x, y);
+      }
+    };
   }
 
   protected enum MsgTag{
