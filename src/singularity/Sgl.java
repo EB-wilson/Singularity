@@ -65,7 +65,7 @@ public class Sgl{
   public static final String telegram = "https://t.me/EB_wilson";
   public static final String facebook = "https://www.facebook.com/profile.php?id=100024490163405";
   public static final String qqGroup = "https://jq.qq.com/?_wv=1027&k=BTHaN7gd";
-  public static final String telegramGroup = "";
+  public static final String telegramGroup = "https://t.me/+Dv_nTdi3e_k0ZDk9";
   public static final String modDevelopGroup = "https://jq.qq.com/?_wv=1027&k=vjybgqDG";
   public static final String githubUserAvatars = "https://avatars.githubusercontent.com/";
   public static final String githubProject = "https://github.com/EB-wilson/Singularity";

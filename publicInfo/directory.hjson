@@ -1,5 +1,12 @@
 {
   pages: [
-
+    {
+      docName: "alpha_testing.md",
+      languages: ["en_US", "zh_CN"],
+      title: ["note of alpha test", "alpha测试须知"],
+      date:  "2023-10-27, 18:16:05",
+      color:  "#ffd37f",
+      tag: "note"
+    },
   ]
 }
