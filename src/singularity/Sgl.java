@@ -4,7 +4,6 @@ import arc.Core;
 import arc.Events;
 import arc.files.Fi;
 import arc.files.ZipFi;
-import arc.graphics.Color;
 import arc.graphics.g2d.PixmapRegion;
 import arc.scene.ui.layout.Table;
 import arc.util.Log;
@@ -65,8 +64,7 @@ public class Sgl{
   //URIs
   public static final String telegram = "https://t.me/EB_wilson";
   public static final String facebook = "https://www.facebook.com/profile.php?id=100024490163405";
-  public static final String qqGroup1 = "https://jq.qq.com/?_wv=1027&k=BTHaN7gd";
-  public static final String qqGroup2 = "";
+  public static final String qqGroup = "https://jq.qq.com/?_wv=1027&k=BTHaN7gd";
   public static final String telegramGroup = "";
   public static final String modDevelopGroup = "https://jq.qq.com/?_wv=1027&k=vjybgqDG";
   public static final String githubUserAvatars = "https://avatars.githubusercontent.com/";

@@ -2,6 +2,7 @@ package singularity.type;
 
 import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
+import mindustry.entities.abilities.Ability;
 import singularity.world.blocks.structure.BlockStructure;
 import universecore.util.UncContentType;
 
@@ -30,7 +31,7 @@ public class SglContentType extends UncContentType{
   }
   
   public static void load(){
-    ability = new SglContentType("ability", Ability.class);
+    ability = new SglContentType("ability", PlayerAbility.class);
     structure = new SglContentType("structure", BlockStructure.class);
 
     atomSchematic = new SglContentType("atomSchematic", AtomSchematic.class, false);

@@ -9,7 +9,9 @@ import arc.scene.Element;
 import arc.scene.event.Touchable;
 import arc.scene.ui.Button;
 import arc.scene.ui.Image;
+import arc.scene.ui.ScrollPane;
 import arc.scene.ui.Tooltip;
+import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Collapser;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
@@ -17,6 +19,7 @@ import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.*;
 import arc.util.serialization.Jval;
+import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -29,6 +32,7 @@ import universecore.ui.elements.markdown.Markdown;
 import universecore.util.UrlDownloader;
 
 import java.io.*;
+import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -48,6 +52,8 @@ public class PublicInfoDialog extends BaseDialog {
   float loadProgress;
   @Nullable Throwable error;
   Table mainLayout, listView, messageView;
+
+  @Nullable Collapser coll;
 
   MsgEntry current;
 
@@ -70,6 +76,7 @@ public class PublicInfoDialog extends BaseDialog {
   }
 
   protected void refresh(){
+    error = null;
     loading = true;
     current = null;
     messages.clear();
@@ -98,9 +105,13 @@ public class PublicInfoDialog extends BaseDialog {
   protected void handleError(Throwable e) {
     error = e;
     loading = false;
+
+    Core.app.post(this::setupError);
   }
 
   protected void rebuild() {
+    coll = null;
+
     mainLayout.clearChildren();
     if (Core.graphics.isPortrait()){
       mainLayout.table(SglDrawConst.grayUI, msg -> {
@@ -108,20 +119,25 @@ public class PublicInfoDialog extends BaseDialog {
       }).grow().pad(4);
       mainLayout.row();
 
-      Collapser coll = new Collapser(t -> t.pane(p -> {
+      coll = new Collapser(t -> t.pane(Styles.smallPane, p -> {
         listView = p;
-        listView.defaults().growX().height(74).padBottom(6);
-      }).growX().fillY(), true).setDuration(0.5f);
+        listView.top().defaults().top().growX().height(74).padTop(6).padLeft(4).padRight(4);
+      }).growX().height(Core.graphics.getHeight()/2f), true).setDuration(0.5f);
+      Table tab = new Table(SglDrawConst.grayUI, ta -> ta.add(coll).growX().fillY());
+      mainLayout.addChild(tab);
+
       mainLayout.button(Icon.up, Styles.clearNonei, 32, () -> {
         coll.setCollapsed(!coll.isCollapsed(), true);
-      }).growX().height(40).update(i -> i.getStyle().imageUp = coll.isCollapsed() ? Icon.upOpen : Icon.downOpen);
-      mainLayout.row();
-      mainLayout.table(SglDrawConst.grayUI, t -> t.add(coll).growX().fillY()).growX().fillY();
+      }).growX().height(40).update(i -> {
+        i.getStyle().imageUp = coll.isCollapsed() ? Icon.upOpen : Icon.downOpen;
+        tab.setSize(tab.parent.getWidth(), tab.getPrefHeight());
+        tab.setPosition(i.x, i.y + i.getPrefHeight() + 4, Align.bottomLeft);
+      });
     }
     else {
       mainLayout.table(SglDrawConst.grayUI).growY().width(420).padLeft(40).get().top().pane(list -> {
         listView = list;
-        listView.defaults().growX().height(74).padLeft(4).padRight(4).padBottom(6);
+        listView.defaults().growX().height(74).padLeft(6).padRight(6).padBottom(6);
       }).growX().fillY().top();
       mainLayout.image().padLeft(5).padRight(5).color(Color.lightGray).width(3).growY();
       mainLayout.table(SglDrawConst.grayUI, msg -> {
@@ -133,7 +149,11 @@ public class PublicInfoDialog extends BaseDialog {
   }
 
   protected void setupInfos() {
+    if (error != null) setupError();
+
     if (loading){
+      loadProgress = 0;
+
       messageView.clearChildren();
       messageView.table(ld -> {
         ld.center().defaults().center();
@@ -180,24 +200,41 @@ public class PublicInfoDialog extends BaseDialog {
     }
 
     listView.clearChildren();
+    MsgTag c = null;
     for (MsgEntry entry : messages) {
+      if (c != entry.tag){
+        c = entry.tag;
+        listView.add(c.localized()).set(Cell.defaults()).color(Pal.accent).fillY().left().padLeft(6);
+        listView.row();
+        listView.image().color(Pal.accent).growX().height(3).padTop(4).padBottom(4);
+        listView.row();
+      }
+
       listView.add(buildEntryButton(entry));
       listView.row();
     }
   }
 
-  private String loadingPoints() {
-    StringBuilder res = new StringBuilder(".");
+  protected void setupError() {
+    messageView.clear();
+    messageView.table(t -> {
+      t.center().defaults().center();
+      t.add(Core.bundle.get("dialog.publicInfo.getFailed"));
+      t.row();
 
-    int points = (int) (Time.time%60/20);
-    for (int i = 0; i < points; i++) {
-      res.append(".");
-    }
+      Collapser col = new Collapser(s -> s.pane(Styles.smallPane, e -> e.add(Strings.getStackTrace(error))).fill(), true);
 
-    return res.toString();
+      t.table(bu -> {
+        bu.defaults().size(210, 60);
+        bu.button(Core.bundle.get("misc.refresh"), Styles.flatt, this::refresh);
+        bu.button(Core.bundle.get("misc.unfold"), Styles.flatt, col::toggle).update(b -> b.setText(Core.bundle.get(col.isCollapsed()? "misc.unfold": "misc.fold")));
+      }).pad(6);
+      t.row();
+      t.add(col).growX().fill();
+    }).grow();
   }
 
-  private String getToString(InputStream in, long len) throws IOException {
+  protected String getToString(InputStream in, long len) throws IOException {
     loadProgress = 0;
     InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8);
 
@@ -219,10 +256,10 @@ public class PublicInfoDialog extends BaseDialog {
         left().defaults().left();
 
         table(img -> {
-          img.image().growY().padTop(-11).width(40f).color(entry.color);
+          img.image().growY().padTop(-12).width(40f).color(entry.color);
           img.row();
           img.image().height(6).width(40f).color(entry.color.cpy().mul(0.8f, 0.8f, 0.8f, 1f));
-        }).growY().fillX().padLeft(-12).padBottom(-11);
+        }).growY().fillX().padLeft(-12).padBottom(-12);
 
         table(t -> {
           t.defaults().left().growX();
@@ -240,6 +277,8 @@ public class PublicInfoDialog extends BaseDialog {
         clicked(() -> {
           if (entry.equals(current)) return;
 
+          if (coll != null && !coll.isCollapsed()) coll.toggle();
+
           current = entry;
           setupInfos();
         });
@@ -254,6 +293,20 @@ public class PublicInfoDialog extends BaseDialog {
         else super.drawBackground(x, y);
       }
     };
+  }
+
+  @SuppressWarnings("StringRepeatCanBeUsed")
+  private String loadingPoints() {
+    StringBuilder res = new StringBuilder(".");
+
+    int points = (int) (Time.time%60/20);
+    //I want to use String.repeat, but...
+    //WHO WILL USE JAVA 8 TO PLAY GAME??? YEAH! IS EXIST! FU*K!
+    for (int i = 0; i < points; i++) {
+      res.append(".");
+    }
+
+    return res.toString();
   }
 
   protected enum MsgTag{
@@ -295,6 +348,10 @@ public class PublicInfoDialog extends BaseDialog {
           Fill.square(x + width/2, y + height/2, width/6, 45);
         }
       };
+    }
+
+    public String localized() {
+      return Core.bundle.get("infos.title." + name());
     }
   }
 
@@ -370,7 +427,7 @@ public class PublicInfoDialog extends BaseDialog {
 
     @Override
     public int compareTo(MsgEntry o) {
-      return o.tag == tag && date != null && o.date != null? date.compareTo(o.date): tag.compareTo(o.tag);
+      return o.tag == tag && date != null && o.date != null? -date.compareTo(o.date): tag.compareTo(o.tag);
     }
   }
 }

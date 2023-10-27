@@ -3,7 +3,6 @@ package singularity.ui.dialogs;
 import arc.Core;
 import arc.files.Fi;
 import arc.func.Cons;
-import arc.func.Floatc;
 import arc.func.Prov;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
@@ -12,14 +11,12 @@ import arc.math.Mathf;
 import arc.scene.Element;
 import arc.scene.style.Drawable;
 import arc.scene.ui.layout.Table;
-import arc.struct.Seq;
 import arc.util.Http;
 import arc.util.Log;
 import arc.util.Nullable;
 import arc.util.Time;
 import arc.util.io.Streams;
 import arc.util.serialization.Jval;
-import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -28,7 +25,6 @@ import mindustry.ui.dialogs.BaseDialog;
 import singularity.Sgl;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
-import singularity.util.MathTransform;
 
 import java.io.OutputStream;
 import java.util.regex.Pattern;
@@ -38,47 +34,10 @@ import static mindustry.Vars.*;
 public class AboutModDialog extends BaseDialog {
   public static final Pattern UNC_RELEASE_FILE = Pattern.compile("^Singularity-\\w*-?\\d+\\.\\d+\\.\\d+\\.(jar|zip)$");
 
-  BaseListDialog openUrl = new BaseListDialog(){{
-    width = 490;
-    itemBoardWidth = 180;
-    height = 240;
-    itemBoardHeight = 180;
-    itemHeight = 45;
-    
-    build();
-    shown(() -> {
-      infoTable.clearChildren();
-      defaultInfo.get(infoTable);
-      
-      buttonTable.clearChildren();
-    });
-  }};
-
   @Nullable String newVersion;
   @Nullable String updateUrl;
   boolean checking;
   float downloadProgress;
-  
-  Seq<BaseListDialog.ItemEntry> facebookPages = Seq.with(
-      getEntry(Core.bundle.get("dialog.openUriDialog.facebook"), Sgl.facebook)
-  );
-  
-  Seq<BaseListDialog.ItemEntry> telegramPages = Seq.with(
-      getEntry(Core.bundle.get("dialog.openUriDialog.telegramPerson"), Sgl.telegram),
-      getEntry(Core.bundle.get("dialog.openUriDialog.telegramGroup"), Sgl.telegramGroup)
-  );
-  
-  Seq<BaseListDialog.ItemEntry> qqPages = Seq.with(
-      getEntry(Core.bundle.get("dialog.openUriDialog.qqGroup1"), Sgl.qqGroup1),
-      getEntry(Core.bundle.get("dialog.openUriDialog.qqGroup2"), Sgl.qqGroup2)
-  );
-  
-  Cons<Seq<BaseListDialog.ItemEntry>> showUrl = items -> {
-    openUrl.set(items);
-    openUrl.rebuild();
-    
-    openUrl.show();
-  };
   
   ButtonEntry[] modPages = new ButtonEntry[]{
       new ButtonEntry(Icon.githubSquare, t -> {
@@ -91,21 +50,19 @@ public class AboutModDialog extends BaseDialog {
         t.add(Core.bundle.get("misc.discord")).color(Pal.accent);
         t.row();
         t.add(Core.bundle.get("infos.discord"));
-      }, () -> Color.valueOf("7289da"), () -> openUrl(Sgl.discord)),
-  };
-  
-  ButtonEntry[] authorPages = new ButtonEntry[]{
+      }, () -> Pal.lightOrange, () -> openUrl(Sgl.discord)),
+
       new ButtonEntry(SglDrawConst.telegramIcon, t -> {
         t.add(Core.bundle.get("misc.telegram")).color(Pal.accent);
         t.row();
         t.add(Core.bundle.get("infos.telegram"));
-      }, () -> Color.lightGray, () -> showUrl.get(telegramPages)),
-      
+      }, () -> Color.valueOf("7289da"), () -> openUrl(Sgl.telegramGroup)),
+
       new ButtonEntry(SglDrawConst.qqIcon, t -> {
         t.add(Core.bundle.get("misc.qq")).color(Pal.accent);
         t.row();
         t.add(Core.bundle.get("infos.qq"));
-      }, () -> Pal.redderDust, () -> showUrl.get(qqPages)),
+      }, () -> Pal.lightishGray, () -> openUrl(Sgl.qqGroup)),
   };
 
   public AboutModDialog() {
@@ -190,27 +147,6 @@ public class AboutModDialog extends BaseDialog {
         
         t.row();
       }
-      
-      t.add(Core.bundle.get("infos.authorPage")).color(Pal.accent).height(24).width(720);
-      t.row();
-      t.image().color(Pal.accent).width(740).height(4).pad(0).padTop(4);
-      t.row();
-      for(ButtonEntry item : authorPages){
-        t.button(table -> {
-          table.table(img -> {
-            img.image().height(60).width(40f).update(i -> i.setColor(item.color.get()));
-            img.row();
-            img.image().height(4).width(40f).update(i -> i.setColor(item.color.get().cpy().mul(0.8f, 0.8f, 0.8f, 1f)));
-          }).expandY();
-    
-          table.table(Tex.buttonEdge3, i -> i.image(item.drawable).size(32)).size(64);
-          Table i = table.table().width(611).padLeft(10).padRight(12).get();
-          i.defaults().growX().left();
-          item.text.get(i);
-        }, SglStyles.underline, item.clicked).width(722);
-        
-        t.row();
-      }
     }).growX().padTop(20);
   }
 
@@ -244,7 +180,7 @@ public class AboutModDialog extends BaseDialog {
       }, e -> {
         Core.app.post(() -> {
           checking = false;
-          ui.showException(e);
+          ui.showInfoFade("\n\n" + Core.bundle.get("infos.checkFailed"));
         });
       });
     }
@@ -314,17 +250,6 @@ public class AboutModDialog extends BaseDialog {
       ui.showErrorMessage("@linkfail");
       Core.app.setClipboardText(url);
     }
-  }
-  
-  private BaseListDialog.ItemEntry getEntry(String title, String url){
-    return new BaseListDialog.ItemEntry(t -> t.add(title), info -> {
-      info.add(url).width(260).get().setWrap(true);
-      openUrl.buttonTable.clearChildren();
-      openUrl.buttonTable.table(t -> {
-        t.button(Core.bundle.get("misc.copy"), () -> Core.app.setClipboardText(url));
-        t.button(Core.bundle.get("misc.open"), () -> openUrl(url));
-      });
-    });
   }
   
   private static class ButtonEntry{

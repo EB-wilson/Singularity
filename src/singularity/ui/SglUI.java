@@ -293,7 +293,7 @@ public class SglUI{
               Sgl.ui.config.setHover(t -> {
                 t.setSize(220, 0);
                 t.update(() -> {
-                  t.setPosition(self.getX(Align.bottom), self.getY(Align.bottom), Align.bottomRight);
+                  t.setPosition(self.getX(Align.bottom), self.getY(Align.bottom), Align.bottomLeft);
                   t.setTransform(true);
                 });
                 t.visible = true;
