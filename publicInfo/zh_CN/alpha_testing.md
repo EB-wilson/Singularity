@@ -9,7 +9,6 @@
 当前mod尚在开发中，内容有很大缺失，并且可能存在很多严重的问题，包括但不限于致命的程序问题，内容数据设计的不合理及机制上的设计问题等。
 
 若您有遇到什么错误或者有建议反馈，您可以通过以下渠道进行：
-
 - __首选__ 在github上提交issue，您可以[点此](https://github.com/EB-wilson/Singularity/issues)直接跳转到issue页面
 - 此外，您也可以使用社交平台的交流群组向作者直接提交意见，您可以通过[此链接](https://jq.qq.com/?_wv=1027&k=BTHaN7gd)加入本mod的qq测试交流群
 - 对于海外玩家或者不希望使用qq的玩家，您也可以使用[telegram群组](https://t.me/+Dv_nTdi3e_k0ZDk9)向作者进行反馈
