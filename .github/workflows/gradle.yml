@@ -1,7 +1,6 @@
 name: Build project
 
 on: 
-  push:
   workflow_dispatch:
 
 jobs:
