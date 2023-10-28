@@ -5,7 +5,6 @@ import arc.struct.ObjectMap;
 import mindustry.gen.Building;
 import mindustry.world.meta.StatUnit;
 import singularity.world.blocks.distribute.DistNetBlock;
-import singularity.world.components.distnet.DistComponent;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
 import singularity.world.distribution.DistBufferType;
@@ -42,30 +41,7 @@ public class CoreNeighbourComponent extends DistNetBlock{
     }
   }
 
-  public class CoreNeighbourComponentBuild extends DistNetBuild implements DistComponent{
-    @Override
-    public ObjectMap<DistBufferType<?>, Integer> bufferSize(){
-      return bufferSize;
-    }
-
-    @Override
-    public int topologyCapacity(){
-      return topologyCapaity;
-    }
-
-    @Override
-    public int computingPower() {
-      return computingPower;
-    }
-
-    @Override
-    public boolean componentValid(){
-      for(Building building: proximity){
-        if(building instanceof DistNetworkCoreComp core && distributor.network.getCore() == core) return true;
-      }
-      return false;
-    }
-
+  public class CoreNeighbourComponentBuild extends DistNetBuild{
     @Override
     public boolean linkable(DistElementBuildComp other){
       return false;

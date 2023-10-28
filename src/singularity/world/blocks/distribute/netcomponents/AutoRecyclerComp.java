@@ -26,6 +26,7 @@ import mindustry.type.Liquid;
 import mindustry.ui.Styles;
 import mindustry.world.Tile;
 import mindustry.world.blocks.payloads.Payload;
+import singularity.world.blocks.distribute.DistNetBlock;
 import singularity.world.blocks.distribute.TargetConfigure;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.distribution.DistBufferType;
@@ -36,7 +37,7 @@ import universecore.util.Empties;
 
 import java.util.HashMap;
 
-public class AutoRecyclerComp extends NetPluginComp{
+public class AutoRecyclerComp extends DistNetBlock {
   public OrderedMap<DistBufferType<?>, Cons<Building>> usableRecycle = new OrderedMap<>();
 
   public AutoRecyclerComp(String name){
@@ -67,25 +68,10 @@ public class AutoRecyclerComp extends NetPluginComp{
     usableRecycle.put(type, (Cons)recycle);
   }
 
-  public class AutoRecyclerCompBuild extends NetPluginCompBuild{
+  public class AutoRecyclerCompBuild extends DistNetBuild{
     ObjectMap<DistBufferType<?>, ObjectSet<UnlockableContent>> list = new ObjectMap<>();
     boolean isBlackList = true;
     boolean flush;
-
-    @Override
-    public void onPluginValided(){
-      flush = true;
-    }
-
-    @Override
-    public void onPluginInvalided(){
-
-    }
-
-    @Override
-    public void onPluginRemoved(){
-
-    }
 
     public void updateConfig(){
       if (distributor.network.netStructValid()) {
@@ -130,9 +116,14 @@ public class AutoRecyclerComp extends NetPluginComp{
         flush = false;
       }
 
-      for (DistBufferType<?> key : list.keys()) {
-        usableRecycle.get(key).get(this);
+      for (Cons<Building> rec : usableRecycle.values()) {
+        rec.get(this);
       }
+    }
+
+    @Override
+    public void networkValided() {
+      flush = true;
     }
 
     Runnable rebuildItems;

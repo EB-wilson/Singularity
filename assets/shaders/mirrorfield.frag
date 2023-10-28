@@ -48,8 +48,8 @@ vec2 selectCenter(vec2 coords){
         }
     }
 
-    float s1 = sqrt(pow(coords.x - v1.x, 2.0) + pow(coords.y - v1.y, 2.0));
-    float s2 = sqrt(pow(coords.x - v2.x, 2.0) + pow(coords.y - v2.y, 2.0));
+    float s1 = distance(coords, v1);
+    float s2 = distance(coords, v2);
 
     if(s1 < s2){//use v1
         samp = v1;
@@ -96,7 +96,7 @@ void main(void) {
             vec2 coords = selectCenter(worldCoord);
 
             vec2 diff = worldCoord - coords;
-            float dst = sqrt(diff.x * diff.x + diff.y * diff.y);
+            float dst = distance(worldCoord, coords);
             float angle = mod(atan(diff.y, diff.x), PI/3.0);
             float realRad = TR*side_len/(sin(2.0*PI/3.0 - angle));
 

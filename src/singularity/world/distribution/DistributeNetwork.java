@@ -8,7 +8,6 @@ import arc.struct.OrderedSet;
 import arc.util.Time;
 import mindustry.gen.Building;
 import singularity.world.FinderContainerBase;
-import singularity.world.components.distnet.DistComponent;
 import singularity.world.components.distnet.DistElementBuildComp;
 import singularity.world.components.distnet.DistMatrixUnitBuildComp;
 import singularity.world.components.distnet.DistNetworkCoreComp;
@@ -17,8 +16,6 @@ import singularity.world.distribution.request.DistRequestBase;
 import universecore.util.Empties;
 import universecore.util.colletion.TreeSeq;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 
 public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp> implements Iterable<DistElementBuildComp>{
@@ -35,7 +32,6 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   public TreeSeq<MatrixGrid> grids = new TreeSeq<>((a, b) -> b.priority - a.priority);
   
   public OrderedSet<DistNetworkCoreComp> cores = new OrderedSet<>();
-  public OrderedSet<DistComponent> components = new OrderedSet<>();
 
   public ObjectMap<String, Object> vars = new ObjectMap<>();
 
@@ -51,6 +47,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
   private boolean structUpdated = true;
   private boolean status = false;
   private boolean lock = false;
+  private boolean handlingStat = false;
 
   long frame;
 
@@ -74,21 +71,11 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
         add(next);
       }
 
-      for(DistComponent component: other.components){
-        add(component);
-      }
       lock = false;
 
       vars.putAll(other.vars);
       modified();
     }
-  }
-
-  public void add(DistComponent comp){
-    if(comp instanceof DistElementBuildComp ele && (ele.distributor().network == this)) return;
-
-    components.add(comp);
-    modified();
   }
   
   public void add(DistElementBuildComp other){
@@ -97,7 +84,6 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
     elements.add(other);
     allElem.add(other);
     if(other.getDistBlock().matrixEnergyCapacity() > 0) energyBuffer.add(other);
-    if(other instanceof DistComponent c) components.add(c);
     if(other instanceof DistNetworkCoreComp d) cores.add(d);
     if(other instanceof DistMatrixUnitBuildComp mat) grids.add(mat.matrixGrid());
     
@@ -143,40 +129,53 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
       structUpdated = false;
     }
 
-    updateEnergy();
-
-    topologyUsed = 0;
+    handlingStat = true;
     totalTopologyCapacity = 0;
 
-    for(DistElementBuildComp element: elementsIterateArr){
-      topologyUsed += element.frequencyUse();
-    }
-
-    for(DistComponent distComponent: components){
-      if(!distComponent.componentValid()) continue;
-
-      totalTopologyCapacity += distComponent.topologyCapacity();
-    }
-
-    if(netStructValid()){
-      DistNetworkCoreComp core = getCore();
-
-      for(DistBufferType<?> buffers: DistBufferType.all){
+    DistNetworkCoreComp core = getCore();
+    if (core != null) {
+      for (DistBufferType<?> buffers : DistBufferType.all) {
         core.getBuffer(buffers).capacity = 0;
       }
 
       core.distCore().calculatePower = 0;
-
-      for(DistComponent distComponent: components){
-        if(!distComponent.componentValid()) continue;
-
-        core.distCore().calculatePower += distComponent.computingPower();
-
-        for(DistBufferType<?> buffers: DistBufferType.all){
-          core.getBuffer(buffers).capacity += distComponent.bufferSize().get(buffers, 0);
-        }
-      }
     }
+
+    for (DistElementBuildComp element : elements) {
+      element.updateNetStat();
+    }
+    handlingStat = false;
+
+    updateEnergy();
+
+    topologyUsed = 0;
+
+    for(DistElementBuildComp element: elementsIterateArr){
+      topologyUsed += element.frequencyUse();
+    }
+  }
+
+  public void handleTopologyCapacity(int count){
+    if (!handlingStat) return;
+    totalTopologyCapacity += count;
+  }
+
+  public void handleBufferCapacity(DistBufferType<?> type, int count){
+    if (!handlingStat) return;
+
+    DistNetworkCoreComp core = getCore();
+    if (core == null) return;
+
+    core.getBuffer(type).capacity += count;
+  }
+
+  public void handleCalculatePower(int count){
+    if (!handlingStat) return;
+
+    DistNetworkCoreComp core = getCore();
+    if (core == null) return;
+
+    core.distCore().calculatePower += count;
   }
 
   public void updateEnergy(){
@@ -227,7 +226,6 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
     allElem.clear();
     grids.clear();
     cores.clear();
-    components.clear();
 
     restruct(origin, excl);
   }
@@ -255,8 +253,7 @@ public class DistributeNetwork extends FinderContainerBase<DistElementBuildComp>
     for(DistElementBuildComp other: elementsIterateArr){
       if(other.distributor().network != this) continue;
       
-      other.distributor().setNet();
-      other.distributor().network.restruct(other, tmp);
+      new DistributeNetwork().flow(other, tmp);
     }
 
     modified();

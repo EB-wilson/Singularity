@@ -18,10 +18,8 @@ import mindustry.world.Tile;
 import mindustry.world.meta.BlockStatus;
 import mindustry.world.meta.StatUnit;
 import singularity.world.blocks.distribute.netcomponents.CoreNeighbourComponent;
-import singularity.world.components.distnet.DistMatrixUnitBuildComp;
-import singularity.world.components.distnet.DistMatrixUnitComp;
-import singularity.world.components.distnet.DistNetworkCoreComp;
-import singularity.world.components.distnet.IOPointComp;
+import singularity.world.blocks.distribute.netcomponents.NetPluginComp;
+import singularity.world.components.distnet.*;
 import singularity.world.distribution.DistBufferType;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
@@ -32,21 +30,20 @@ import universecore.util.colletion.TreeSeq;
 
 import static mindustry.Vars.tilesize;
 
-public class DistNetCore extends DistNetBlock implements DistMatrixUnitComp {
-  public int computingPower = 8;
-  public int topologyCapacity = 8;
-
+public class DistNetCore extends NetPluginComp implements DistMatrixUnitComp {
   public float requestEnergyCost = 0.1f;
-
-  public ObjectMap<DistBufferType<?>, Integer> bufferSize = ObjectMap.of(
-      DistBufferType.itemBuffer, 256,
-      DistBufferType.liquidBuffer, 256
-  );
 
   public DistNetCore(String name){
     super(name);
     topologyUse = 0;
     isNetLinker = true;
+
+    computingPower = 8;
+    topologyCapacity = 8;
+    bufferSize = ObjectMap.of(
+        DistBufferType.itemBuffer, 256,
+        DistBufferType.liquidBuffer, 256
+    );
   }
 
   @Override
@@ -71,7 +68,7 @@ public class DistNetCore extends DistNetBlock implements DistMatrixUnitComp {
   }
 
   @Annotations.ImplEntries
-  public class DistNetCoreBuild extends DistNetBuild implements DistNetworkCoreComp {
+  public class DistNetCoreBuild extends NetPluginCompBuild implements DistNetworkCoreComp {
     DistCoreModule distCore;
 
     Seq<CoreNeighbourComponent.CoreNeighbourComponentBuild> proximityComps = new Seq<>();
@@ -111,26 +108,6 @@ public class DistNetCore extends DistNetBlock implements DistMatrixUnitComp {
     @Override
     public BlockStatus status() {
       return distCore.requestTasks.isEmpty()? BlockStatus.noInput: super.status();
-    }
-
-    @Override
-    public ObjectMap<DistBufferType<?>, Integer> bufferSize(){
-      return bufferSize;
-    }
-
-    @Override
-    public int computingPower(){
-      return computingPower;
-    }
-
-    @Override
-    public int topologyCapacity(){
-      return topologyCapacity;
-    }
-
-    @Override
-    public boolean componentValid(){
-      return true;
     }
 
     @Override

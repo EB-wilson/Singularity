@@ -9,6 +9,7 @@ import arc.util.Tmp;
 import mindustry.game.EventType;
 import mindustry.graphics.g3d.PlanetParams;
 import mindustry.graphics.g3d.PlanetRenderer;
+import mindustry.type.Planet;
 
 public class SglPlanetRender extends PlanetRenderer{
   @Override
@@ -58,9 +59,10 @@ public class SglPlanetRender extends PlanetRenderer{
     }
     
     Events.fire(EventType.Trigger.universeDraw);
-    
-    renderPlanet(params.solarSystem, params);
-    renderTransparent(params.solarSystem, params);
+
+    Planet solarSystem = params.planet.solarSystem;
+    renderPlanet(solarSystem, params);
+    renderTransparent(solarSystem, params);
     
     bloom.render();
     

@@ -1,6 +1,7 @@
 package singularity.world.unit.abilities;
 
 import arc.Core;
+import arc.Settings;
 import arc.func.Cons;
 import arc.func.Floatf;
 import arc.graphics.Color;
@@ -15,11 +16,16 @@ import arc.math.geom.Vec2;
 import arc.struct.Seq;
 import arc.util.Nullable;
 import arc.util.Time;
+import mindustry.Vars;
+import mindustry.core.Renderer;
 import mindustry.gen.Bullet;
 import mindustry.gen.Groups;
 import mindustry.gen.Unit;
 import mindustry.type.UnitType;
+import singularity.Sgl;
 import singularity.graphic.SglDraw;
+
+import static arc.Core.settings;
 
 public class MirrorFieldAbility extends MirrorShieldBase{
   public boolean rotation;
@@ -122,16 +128,19 @@ public class MirrorFieldAbility extends MirrorShieldBase{
 
       Draw.color(unit.team.color, Color.white, Mathf.clamp(alpha));
 
-      if(true){
+      if(Sgl.config.enableShaders && Core.settings.getBool("animatedshields")){
         Draw.z(SglDraw.mirrorField + 0.001f * alpha);
         Fill.poly(drawX, drawY, sides, radius*scl, rotation + angle + moveOffsetRot);
       }else{
-        Draw.z(SglDraw.mirrorField + 3);
+        Draw.z(SglDraw.mirrorField + 1);
         Lines.stroke(1.5f);
         Draw.alpha(0.09f);
         Fill.poly(drawX, drawY, sides, radius*scl, rotation + angle + moveOffsetRot);
-        Draw.alpha(1f);
-        Lines.poly(drawX, drawY, sides, radius*scl, rotation + angle + moveOffsetRot);
+
+        for (int i = 1; i <= 4; i++) {
+          Draw.alpha(i/4f);
+          Lines.poly(drawX, drawY, sides, radius*scl*(i/4f), rotation + angle + moveOffsetRot);
+        }
       }
     }
 

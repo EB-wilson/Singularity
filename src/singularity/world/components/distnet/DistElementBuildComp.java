@@ -33,12 +33,12 @@ public interface DistElementBuildComp extends BuildCompBase {
 
   @Annotations.BindField("matrixEnergyBuffered")
   default void matrixEnergyBuffered(float set){}
+
+  default void updateNetStat(){}
   
   default void networkValided(){}
 
   default void networkUpdated(){}
-
-  default void networkRemoved(DistElementBuildComp remove){}
 
   default void linked(DistElementBuildComp target){}
 
@@ -51,12 +51,16 @@ public interface DistElementBuildComp extends BuildCompBase {
   default DistElementBlockComp getDistBlock(){
     return getBlock(DistElementBlockComp.class);
   }
-  
+
+  default void networkRemoved(DistElementBuildComp remove){
+    distributor().distNetLinks.removeValue(remove.getBuilding().pos());
+  }
+
   default void link(DistElementBuildComp target){
     if(!linkable(target) || !target.linkable(this)) return;
 
-    if(getDistBlock().isNetLinker()) distributor().distNetLinks.add(target.getBuilding().pos());
-    if(target.getDistBlock().isNetLinker()) target.distributor().distNetLinks.add(getBuilding().pos());
+    if(getDistBlock().isNetLinker()) distributor().distNetLinks.addUnique(target.getBuilding().pos());
+    if(target.getDistBlock().isNetLinker()) target.distributor().distNetLinks.addUnique(getBuilding().pos());
   
     updateNetLinked();
     target.updateNetLinked();
@@ -116,15 +120,9 @@ public interface DistElementBuildComp extends BuildCompBase {
 
   @Annotations.MethodEntry(entryMethod = "onProximityRemoved")
   default void distNetRemove(){
-    IntSeq links = distributor().distNetLinks;
-    for(int i=0; i<links.size; i++){
-      Building other = Vars.world.build(links.get(i));
-      if(other instanceof DistElementBuildComp){
-        ((DistElementBuildComp) other).distributor().distNetLinks.removeValue(getBuilding().pos());
-      }
-    }
-    links.clear();
+    distributor().distNetLinks.clear();
     distributor().network.remove(this);
+    updateNetLinked();
   }
   
   default int frequencyUse(){

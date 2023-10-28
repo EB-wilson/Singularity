@@ -26,6 +26,7 @@ import singularity.world.blocks.distribute.netcomponents.*;
 import singularity.world.distribution.DistBufferType;
 import singularity.world.draw.DrawDirSpliceBlock;
 import singularity.world.draw.DrawEdgeLinkBits;
+import universecore.components.blockcomp.SpliceBuildComp;
 
 public class DistributeBlocks implements ContentList{
   /**运输节点*/
@@ -56,8 +57,6 @@ public class DistributeBlocks implements ContentList{
   matrix_energy_buffer,
   /**矩阵组件接口*/
   matrix_component_interface,
-  /**接口跳线*/
-  interface_jump_line,
   /**矩阵处理单元*/
   matrix_process_unit,
   /**矩阵拓扑容器*/
@@ -251,6 +250,9 @@ public class DistributeBlocks implements ContentList{
           Items.graphite, 30
       ));
       size = 2;
+
+      consPower = 1000;
+      eneProd = 480;
     }};
 
     matrix_neutron_interface = new DistNeutronEntry("matrix_neutron_interface"){{
@@ -271,49 +273,19 @@ public class DistributeBlocks implements ContentList{
       ));
       size = 2;
       topologyUse = 0;
-
-      matrixEnergyRequestMulti = 0.4f;
+      matrixEnergyUse = 0.2f;
 
       draw = new DrawMulti(
           new DrawDefault(),
           new DrawDirSpliceBlock<ComponentInterfaceBuild>(){{
             simpleSpliceRegion = true;
-            spliceBits = e -> e.busLinked;
+            spliceBits = e -> e.interSplice;
           }},
           new DrawEdgeLinkBits<ComponentInterfaceBuild>(){{
             layer = Layer.blockOver;
-            compLinked = e -> e.compLinked;
+            compLinked = e -> e.connectSplice;
           }}
       );
-    }};
-
-    interface_jump_line = new JumpLine("interface_jump_line"){{
-      requirements(SglCategory.matrix, ItemStack.with(
-          SglItems.matrix_alloy, 16,
-          SglItems.aerogel, 12,
-          Items.graphite, 10
-      ));
-      topologyUse = 0;
-
-      draw = new DrawDefault(){
-        TextureRegion rot;
-
-        @Override
-        public void load(Block block){
-          super.load(block);
-          rot = Core.atlas.find(block.name + "_r");
-        }
-
-        @Override
-        public void drawPlan(Block block, BuildPlan plan, Eachable<BuildPlan> list){
-          Draw.rect(!plan.block.rotate || plan.rotation == 0 || plan.rotation == 2? plan.block.region: rot, plan.drawx(), plan.drawy());
-        }
-
-        @Override
-        public void draw(Building build){
-          Draw.rect(!build.block.rotate || build.rotation == 0 || build.rotation == 2? build.block.region: rot, build.x, build.y);
-        }
-      };
     }};
 
     matrix_process_unit = new CoreNeighbourComponent("matrix_process_unit"){{
@@ -358,7 +330,6 @@ public class DistributeBlocks implements ContentList{
           DistBufferType.itemBuffer, 512,
           DistBufferType.liquidBuffer, 512
       );
-      connectReq = LEFT | RIGHT;
       matrixEnergyUse = 0.6f;
     }};
 
@@ -376,7 +347,6 @@ public class DistributeBlocks implements ContentList{
       setRecycle(DistBufferType.liquidBuffer, e -> e.liquids.clear());
 
       size = 3;
-      connectReq = LEFT | RIGHT;
       matrixEnergyUse = 0.4f;
 
       buildType = () -> new AutoRecyclerCompBuild(){

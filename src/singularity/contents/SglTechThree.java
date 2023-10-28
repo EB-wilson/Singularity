@@ -159,8 +159,6 @@ public class SglTechThree implements ContentList{
           matCore.node(matrix_topology_container, matTop -> {});
 
           matCore.node(matrix_component_interface, matComp -> {
-            matComp.node(interface_jump_line, jump -> {});
-
             matComp.node(matrix_buffer, buff -> {});
 
             matComp.node(automatic_recycler_component, recComp -> {});
