@@ -7,6 +7,7 @@ import arc.graphics.Color;
 import arc.graphics.g2d.*;
 import arc.math.Angles;
 import arc.math.Interp;
+import arc.math.Mat;
 import arc.math.Mathf;
 import arc.math.geom.Point2;
 import arc.scene.Element;
@@ -200,25 +201,6 @@ public class SglBlock extends Block implements ConsumerBlockComp{
   }
   
   @Override
-  public void drawPotentialLinks(int x, int y){
-    super.drawPotentialLinks(x, y);
-    
-    if((consumeEnergy || outputEnergy) && hasEnergy){
-      Tile tile = world.tile(x, y);
-      if(tile != null){
-        for (NuclearEnergyBuildComp e : NuclearNode.getNodeLinks(tile, this, player.team())) {
-          if(!(e.getBlock() instanceof NuclearNode node)) continue;
-
-          Draw.color(node.linkColor, Renderer.laserOpacity * 0.5f);
-          node.drawLink(tile.worldx() + offset, tile.worldy() + offset, size, e.getBuilding().tile.drawx(), e.getBuilding().tile.drawy(), e.getBlock().size);
-          Drawf.square(e.getBuilding().x, e.getBuilding().y, e.getBlock().size * tilesize / 2f + 2f, Pal.place);
-          break;
-        }
-      }
-    }
-  }
-  
-  @Override
   public void load(){
     super.load();
     draw.load(this);
@@ -345,23 +327,6 @@ public class SglBlock extends Block implements ConsumerBlockComp{
     public void onControlSelect(Unit player){
       super.onControlSelect(player);
       FieldHandler.setValueDefault(Vars.ui.hudfrag.blockfrag, "lastDisplayState", null);
-    }
-
-    @Override
-    public void placed(){
-      super.placed();
-      if(net.client()) return;
-  
-      if(consumeEnergy && hasEnergy){
-        for (NuclearEnergyBuildComp e : NuclearNode.getNodeLinks(tile, block(), player.team())) {
-          if(!(e instanceof NuclearNode.NuclearNodeBuild n)) continue;
-          
-          if(!n.linked.contains(pos())){
-            e.getBuilding().configureAny(Point2.unpack(pos()));
-            break;
-          }
-        }
-      }
     }
 
     @Override

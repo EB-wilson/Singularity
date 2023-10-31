@@ -182,22 +182,6 @@ public class NuclearNode extends NuclearBlock{
     Draw.color(Pal.placing);
     Drawf.circles(x * tilesize + offset, y * tilesize + offset, linkRange * tilesize);
 
-    getPotentialLink(tile, player.team(), other -> {
-      setLaserColor();
-      Draw.alpha(0.5f);
-
-      if (!(other instanceof NuclearNodeBuild)) {
-        Fill.circle(Tmp.v1.x, Tmp.v1.y, lightRadius / 2);
-      }
-
-      float len = Mathf.len(other.getBuilding().x - tile.worldx() + offset, other.getBuilding().y - tile.worldy() + offset);
-
-      Drawf.arrow(tile.worldx() + offset, tile.worldy() + offset,
-          other.getBuilding().x, other.getBuilding().y, len*(Time.time%120)/120, linkLeaserStroke*2, linkColor);
-      Drawf.line(linkColor, tile.worldx() + offset, tile.worldy() + offset, other.getBuilding().x, other.getBuilding().y);
-      Drawf.square(other.getBuilding().x, other.getBuilding().y, other.getBlock().size * tilesize / 2f + 2f, Pal.place);
-    });
-
     if (lastPlaced != null && lastPlaced.isAdded()
         && inRange(tile, lastPlaced.tile, linkRange*tilesize)
         && inRange(lastPlaced.tile, tile, lastPlaced.block().linkRange*tilesize)
@@ -239,39 +223,6 @@ public class NuclearNode extends NuclearBlock{
         cons.get(e);
       }
     });
-  }
-  
-  public static Seq<NuclearEnergyBuildComp> getNodeLinks(Tile tile, Block block, Team team){
-    Boolf<NuclearEnergyBuildComp> valid = other -> other != null && other.getBuilding().tile() != tile
-        && other instanceof NuclearNodeBuild n && n.linksCount() < other.getBlock(NuclearNode.class).maxLinks
-        && other.getBlock(NuclearNode.class).inRange(other.getBuilding().tile, tile, other.getBlock(NuclearNode.class).linkRange*tilesize)
-        && other.getBuilding().team == team
-        && !Structs.contains(Edges.getEdges(block.size), p -> {
-          Tile t = world.tile(tile.x + p.x, tile.y + p.y);
-          return t != null && t.build == other;
-        });
-  
-    tempNuclearEntity.clear();
-    
-    Geometry.circle(tile.x, tile.y, 20, (x, y) -> {
-      Building other = world.build(x, y);
-      if(other instanceof NuclearEnergyBuildComp){
-        if(valid.get((NuclearEnergyBuildComp) other) && !tempNuclearEntity.contains((NuclearEnergyBuildComp) other)){
-          tempNuclearEntity.add((NuclearEnergyBuildComp) other);
-        }
-      }
-    });
-  
-    tempNuclearEntity.sort((a, b) -> {
-      int type = -Boolean.compare(a.getBlock() instanceof NuclearNode, b.getBlock() instanceof NuclearNode);
-      if(type != 0) return type;
-      return Float.compare(a.getBuilding().dst2(tile), b.getBuilding().dst2(tile));
-    });
-   
-    Seq<NuclearEnergyBuildComp> seq = new Seq<>();
-    tempNuclearEntity.each(valid, seq::add);
-    
-    return seq;
   }
 
   public boolean inRange(Tile origin, Tile other, float range){
@@ -337,10 +288,6 @@ public class NuclearNode extends NuclearBlock{
     @Override
     public void placed(){
       if(net.client()) return;
-
-      getPotentialLink(tile, team, e -> {
-        if(!linked.contains(e.getBuilding().pos())) configure(Point2.unpack(e.getBuilding().pos()));
-      });
 
       if (lastPlaced != null && lastPlaced.isAdded()){
         if (canLink(this, lastPlaced)){

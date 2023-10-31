@@ -80,74 +80,76 @@ public class AboutModDialog extends BaseDialog {
   public void build(){
     cont.clearChildren();
     cont.defaults().fillY().top();
-  
-    cont.table(Tex.buttonTrans, t -> {
-      t.defaults().left().padTop(5).growX().height(40);
-      t.add(Core.bundle.get("mod.name")).color(Pal.accent);
-      t.row();
-      t.add(Core.bundle.get("misc.author")).color(Pal.accent);
-      t.add(Core.bundle.get("mod.author"));
-      t.button(Core.bundle.get("mod.contributor"), SglDrawConst.contributeIcon, Styles.nonet, 28, () -> Sgl.ui.contributors.show()).update(b -> b.setChecked(false)).width(230);
-      t.row();
-      t.add(Core.bundle.get("misc.version")).color(Pal.accent);
-      t.add(Core.bundle.get("mod.version"));
-      t.table(update -> {
-        update.add(new Element(){
-          @Override
-          public void draw(){
-            Draw.alpha(parentAlpha*color.a);
 
-            if (checking){
-              Draw.color(Pal.accent);
-              Fill.square(x + width/2, y + height/2, 8, Time.time);
-              Fill.square(x + width/2, y + height/2, 8, 45 + 2*Time.time);
-            }
-            else{
-              if (newVersion == null) Draw.color(Pal.heal);
-              else Draw.color(Pal.accent, Pal.heal, Mathf.absin(8, 1));
-
-              Fill.square(x + width/2, y + height/2, 8);
-              Fill.square(x + width/2, y + height/2, 8, 45);
-            }
-          }
-        }).size(40);
-        update.add("").update(l -> l.setText(checking? Core.bundle.get("infos.checkingUpgrade"): newVersion != null? Core.bundle.format("infos.hasUpdate", newVersion): Core.bundle.get("infos.newestVersion")));
-      }).width(230);
-      t.row();
-      t.add(Core.bundle.get("infos.releaseDate")).color(Pal.accent);
-      t.add(Core.bundle.get("mod.updateDate"));
-      t.button("", Icon.upload, Styles.nonet, 28, this::checkOrDoUpdate)
-          .update(b -> b.setText(newVersion != null? Core.bundle.get("misc.update"): Core.bundle.get("infos.checkUpdate"))).width(230);
-    }).width(580).fillY().padTop(40);
-    
-    cont.row();
-    
-    cont.pane(t -> {
-      t.defaults().growX().height(64).pad(0).padTop(10).margin(0);
-      
-      t.add(Core.bundle.get("infos.modPage")).color(Pal.accent).height(24).width(720);
-      t.row();
-      t.image().color(Pal.accent).width(740).height(4).pad(0).padTop(4);
-      t.row();
-      for(ButtonEntry item : modPages){
-        t.table(Tex.underline, table -> {
-          table.table(img -> {
-            img.image().height(60).width(40f).update(i -> i.setColor(item.color.get()));
-            img.row();
-            img.image().height(4).width(40f).update(i -> i.setColor(item.color.get().cpy().mul(0.8f, 0.8f, 0.8f, 1f)));
-          }).expandY();
-  
-          table.table(Tex.buttonEdge3, i -> i.image(item.drawable).size(32)).size(64);
-          Table i = table.table().width(545).padLeft(10).get();
-          i.defaults().growX().left();
-          item.text.get(i);
-  
-          table.button(Icon.link, item.clicked).size(64).left().padLeft(12);
-        }).width(710);
-        
+    cont.table(main -> {
+      main.table(SglDrawConst.grayUI, t -> {
+        t.defaults().left().pad(5).growX().height(40);
+        t.add(Core.bundle.get("mod.name")).color(Pal.accent);
         t.row();
-      }
-    }).growX().padTop(20);
+        t.add(Core.bundle.get("misc.author")).color(Pal.accent);
+        t.add(Core.bundle.get("mod.author"));
+        t.button(Core.bundle.get("mod.contributor"), SglDrawConst.contributeIcon, Styles.nonet, 28, () -> Sgl.ui.contributors.show()).update(b -> b.setChecked(false)).width(230);
+        t.row();
+        t.add(Core.bundle.get("misc.version")).color(Pal.accent);
+        t.add(Core.bundle.get("mod.version"));
+        t.table(update -> {
+          update.add(new Element(){
+            @Override
+            public void draw(){
+              Draw.alpha(parentAlpha*color.a);
+
+              if (checking){
+                Draw.color(Pal.accent);
+                Fill.square(x + width/2, y + height/2, 8, Time.time);
+                Fill.square(x + width/2, y + height/2, 8, 45 + 2*Time.time);
+              }
+              else{
+                if (newVersion == null) Draw.color(Pal.heal);
+                else Draw.color(Pal.accent, Pal.heal, Mathf.absin(8, 1));
+
+                Fill.square(x + width/2, y + height/2, 8);
+                Fill.square(x + width/2, y + height/2, 8, 45);
+              }
+            }
+          }).size(40);
+          update.add("").update(l -> l.setText(checking? Core.bundle.get("infos.checkingUpgrade"): newVersion != null? Core.bundle.format("infos.hasUpdate", newVersion): Core.bundle.get("infos.newestVersion")));
+        }).width(230);
+        t.row();
+        t.add(Core.bundle.get("infos.releaseDate")).color(Pal.accent);
+        t.add(Core.bundle.get("mod.updateDate"));
+        t.button("", Icon.upload, Styles.nonet, 28, this::checkOrDoUpdate)
+            .update(b -> b.setText(newVersion != null? Core.bundle.get("misc.update"): Core.bundle.get("infos.checkUpdate"))).width(230);
+      }).growX().fillY().padTop(40).margin(4);
+
+      main.row();
+
+      main.pane(t -> {
+        t.defaults().growX().height(64).pad(0).padTop(10).margin(0);
+
+        t.add(Core.bundle.get("infos.modPage")).color(Pal.accent).height(24).width(720);
+        t.row();
+        t.image().color(Pal.accent).width(740).height(4).pad(0).padTop(4);
+        t.row();
+        for(ButtonEntry item : modPages){
+          t.table(Tex.underline, table -> {
+            table.table(img -> {
+              img.image().height(60).width(40f).update(i -> i.setColor(item.color.get()));
+              img.row();
+              img.image().height(4).width(40f).update(i -> i.setColor(item.color.get().cpy().mul(0.8f, 0.8f, 0.8f, 1f)));
+            }).expandY();
+
+            table.table(Tex.buttonEdge3, i -> i.image(item.drawable).size(32)).size(64);
+            Table i = table.table().width(545).padLeft(10).get();
+            i.defaults().growX().left();
+            item.text.get(i);
+
+            table.button(Icon.link, item.clicked).size(64).left().padLeft(12);
+          }).width(710);
+
+          t.row();
+        }
+      }).growX().padTop(20);
+    });
   }
 
   private void checkOrDoUpdate() {

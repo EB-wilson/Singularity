@@ -46,6 +46,8 @@ import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.CircleGenerator;
 import universecore.world.lightnings.generator.ShrinkGenerator;
 import universecore.world.particles.models.RandDeflectParticle;
+import universecore.world.producers.ProducePayload;
+import universecore.world.producers.ProduceType;
 
 import static mindustry.Vars.*;
 
@@ -374,6 +376,11 @@ public class SglUnits implements ContentList {
               Lines.square(b.x, b.y, size*tilesize, Time.time*1.25f);
               Lines.square(b.x, b.y, 32, Time.time*3.25f);
 
+              ProducePayload<?> p;
+              if (b.producer.current != null && (p = b.producer.current.get(ProduceType.payload)) != null && p.payloads[0].item instanceof UnitType unitType) {
+                SglDraw.arc(b.x, b.y, unitType.hitSize + 8, 360*b.progress(), -Time.time*0.8f);
+              }
+
               Draw.color(Pal.reactorPurple);
               Lines.square(b.x, b.y, 28, -MathTransform.gradientRotateDeg(Time.time, 0) + 45f);
 
@@ -455,6 +462,11 @@ public class SglUnits implements ContentList {
               Lines.circle(b.x, b.y, 18*b.warmup());
               Lines.square(b.x, b.y, size*tilesize, Time.time*1.25f);
               SglDraw.drawCornerTri(b.x, b.y, 58, 14, Time.time*3.5f, true);
+
+              ProducePayload<?> p;
+              if (b.producer.current != null && (p = b.producer.current.get(ProduceType.payload)) != null && p.payloads[0].item instanceof UnitType unitType) {
+                SglDraw.arc(b.x, b.y, unitType.hitSize + 8, 360*b.progress(), -Time.time*0.8f);
+              }
 
               Draw.color(Pal.reactorPurple);
               Lines.square(b.x, b.y, 34, -Time.time*2.6f);

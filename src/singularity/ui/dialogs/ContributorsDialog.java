@@ -34,7 +34,7 @@ public class ContributorsDialog extends BaseDialog{
     
     touchable = Touchable.enabled;
 
-    table.table(table -> {
+    table.table(SglDrawConst.grayUI, table -> {
       table.defaults().pad(8);
 
       table.table(Tex.underline, t -> {
@@ -65,7 +65,7 @@ public class ContributorsDialog extends BaseDialog{
       });
       table.row();
       table.left().add(Core.bundle.get("dialog.contributors.thanks")).fill().left();
-    });
+    }).margin(8);
   }
   
   protected static class ContributorTable extends Table{

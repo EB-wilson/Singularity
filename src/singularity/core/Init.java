@@ -140,8 +140,8 @@ public class Init{
 
           ta.table(Styles.black5, cont -> {
             cont.actions(Actions.alpha(0f), Actions.alpha(1f, 1f, Interp.smooth));
-            cont.margin(6f).add(hint instanceof SglHint sglHint? sglHint.text(page): hint.text()).width(Vars.mobile ? 270f : 400f).left().labelAlign(Align.left).wrap();
-          });
+            cont.margin(6f).add(hint instanceof SglHint sglHint? sglHint.text(page): hint.text()).minWidth(Vars.mobile ? 270f : 400f).growX().fillY().left().labelAlign(Align.left).wrap();
+          }).growX().fillY();
           ta.row();
 
           if (hint instanceof SglHint sglHint){

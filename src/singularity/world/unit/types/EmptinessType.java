@@ -931,7 +931,7 @@ public class EmptinessType extends SglUnitType<UnitEntity> {
                     }};
 
                     fragBullets = 8;
-                    fragBullet = SglTurrets.lightning(108, 32, 62, 5.2f, SglDrawConst.matrixNet, b -> {
+                    fragBullet = SglTurrets.lightning(128, 32, 62, 5.2f, SglDrawConst.matrixNet, b -> {
                       g.originAngle = b.rotation();
                       return g;
                     });

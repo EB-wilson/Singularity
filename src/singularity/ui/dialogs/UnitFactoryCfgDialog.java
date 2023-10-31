@@ -679,14 +679,14 @@ public class UnitFactoryCfgDialog extends BaseDialog {
       status.row();
       status.add("").update(l -> {
         SglConsumeEnergy cons = factory.consumer.current == null ? null : factory.consumer.current.get(SglConsumeType.energy);
-        l.setText(Core.bundle.format("dialog.unitFactor.energy", cons == null ? "0": Strings.autoFixed(cons.usage*cons.multiple(factory)*60, 1)));
+        l.setText(Core.bundle.format("dialog.unitFactor.energy", cons == null ? "0": Strings.autoFixed(cons.usage*cons.multiple(factory)*60*factory.consEfficiency(), 1)));
       });
       status.row();
       status.add(new Bar(
-          () -> Core.bundle.format("fragment.bars.nuclearContain", factory.getEnergy()),
+          () -> Core.bundle.format("fragment.bars.nuclearContain", factory.getEnergy(), factory.energyCapacity(), factory.energy().displayAdding),
           () -> SglDrawConst.matrixNetDark,
           () -> factory.getEnergy()/factory.energyCapacity()
-      )).height(24);
+      )).height(24).update(b -> factory.energy().updateFlow());
     }
     status.row();
     status.add(new Bar(

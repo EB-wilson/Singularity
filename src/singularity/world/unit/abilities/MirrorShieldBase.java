@@ -5,6 +5,7 @@ import arc.func.Cons;
 import arc.math.Angles;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
+import arc.util.Interval;
 import arc.util.Strings;
 import arc.util.Time;
 import mindustry.content.Fx;
@@ -102,15 +103,14 @@ public abstract class MirrorShieldBase extends Ability implements ICollideBlocke
   }
 
   public void doCollide(Unit unit, Bullet bullet) {
-    if (bullet.damage + bullet.type.splashDamage*2.25f < Math.min(strength, unit.shield)){
+    if (bullet.damage < Math.min(strength, unit.shield)){
       doReflect(unit, bullet);
     }
     else {
       alpha = 1;
       bullet.collided.add(unit.id);
-      damageShield(unit, bullet.damage() + bullet.type.splashDamage*2.25f);
+      damageShield(unit, bullet.damage());
 
-      bullet.lifetime *= 1 - Math.min(strength, unit.shield)/(bullet.damage() + bullet.type.splashDamage*2.25f - shieldArmor);
       bullet.damage -= Math.min(strength, unit.shield);
       float rot;
       bullet.rotation(rot = bullet.rotation() + Mathf.range(refractAngleRange));
@@ -133,7 +133,7 @@ public abstract class MirrorShieldBase extends Ability implements ICollideBlocke
 
     float albedo = Mathf.equal(minAlbedo, maxAlbedo)? minAlbedo: Mathf.random(minAlbedo, maxAlbedo);
 
-    damageShield(unit, (bullet.damage() + bullet.type.splashDamage*2.25f)*albedo);
+    damageShield(unit, bullet.damage()*albedo);
 
     float baseAngel = Angles.angle(bullet.x - unit.x, bullet.y - unit.y);
     float diffAngel = MathTransform.innerAngle(bullet.rotation(), baseAngel);
@@ -159,7 +159,6 @@ public abstract class MirrorShieldBase extends Ability implements ICollideBlocke
 
       float rot;
       bullet.rotation(rot = bullet.rotation() + Mathf.range(refractAngleRange));
-      if (bullet.type.splashDamage > bullet.damage) bullet.lifetime *= 1 - albedo;
       bullet.damage *= 1 - albedo;
       bullet.collided.add(unit.id);
 

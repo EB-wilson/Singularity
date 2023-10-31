@@ -1,33 +1,36 @@
 package singularity.world.unit.types;
 
+import arc.Core;
 import arc.func.Func2;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
-import arc.math.Angles;
-import arc.math.Mathf;
-import arc.math.Rand;
+import arc.math.*;
 import arc.math.geom.Vec2;
+import arc.scene.ui.layout.Collapser;
+import arc.scene.ui.layout.Table;
+import arc.util.Interval;
+import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.content.Fx;
 import mindustry.content.Items;
+import mindustry.entities.Units;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.bullet.LaserBulletType;
 import mindustry.entities.bullet.PointLaserBulletType;
 import mindustry.entities.effect.MultiEffect;
 import mindustry.entities.part.RegionPart;
 import mindustry.entities.units.WeaponMount;
-import mindustry.gen.Bullet;
-import mindustry.gen.Sounds;
-import mindustry.gen.Unit;
-import mindustry.gen.UnitEntity;
+import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Trail;
+import mindustry.type.UnitType;
 import mindustry.type.Weapon;
 import mindustry.type.weapons.PointDefenseWeapon;
+import mindustry.ui.Styles;
 import mindustry.world.meta.BlockFlag;
 import singularity.Sgl;
 import singularity.contents.SglItems;
@@ -35,10 +38,12 @@ import singularity.contents.SglUnits;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
+import singularity.ui.StatUtils;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.blocks.turrets.MultiTrailBulletType;
 import singularity.world.draw.part.CustomPart;
+import singularity.world.meta.SglStatUnit;
 import singularity.world.unit.DataWeapon;
 import singularity.world.unit.SglUnitType;
 import singularity.world.unit.SglWeapon;
@@ -378,6 +383,58 @@ public class KaguyaType extends SglUnitType<UnitEntity> {
             );
           }
 
+          final BulletType subBull = new BulletType(){
+            {
+              damage = 62;
+              speed = 5;
+              homingDelay = 30;
+              homingPower = 0.1f;
+              homingRange = 460;
+              lifetime = 150;
+              hitSize = 2;
+              keepVelocity = false;
+              pierceArmor = true;
+
+              hitColor = trailColor = SglDrawConst.matrixNet;
+              trailWidth = 1;
+              trailLength = 38;
+
+              hitEffect = SglFx.neutronWeaveMicro;
+              despawnEffect = SglFx.constructSpark;
+            }
+
+            @Override
+            public void draw(Bullet b) {
+              super.draw(b);
+              Draw.color(hitColor);
+              Fill.circle(b.x, b.y, hitSize/2);
+            }
+
+            @Override
+            public void updateHoming(Bullet b) {
+              if (b.time > homingDelay){
+                float realAimX = b.aimX < 0 ? b.x : b.aimX;
+                float realAimY = b.aimY < 0 ? b.y : b.aimY;
+
+                Teamc target;
+
+                if(b.aimTile != null && b.aimTile.build != null && b.aimTile.build.team != b.team && collidesGround && !b.hasCollided(b.aimTile.build.id)){
+                  target = b.aimTile.build;
+                }else{
+                  target = Units.closestTarget(b.team, realAimX, realAimY, homingRange,
+                      e -> e != null && e.checkTarget(collidesAir, collidesGround) && !b.hasCollided(e.id),
+                      t -> t != null && collidesGround && !b.hasCollided(t.id));
+                }
+
+                if(target != null){
+                  Tmp.v1.set(target).sub(b).setLength(homingPower).scl(Time.delta);
+                  if (b.vel.len() < speed) b.vel.add(Tmp.v1);
+                  b.vel.setAngle(Angles.moveToward(b.rotation(), b.angleTo(target), homingPower * Time.delta * 50f));
+                }
+              }
+            }
+          };
+
           @Override
           public void init(Unit unit, DataWeaponMount mount) {
             Shooter[] shooters = new Shooter[3];
@@ -385,11 +442,13 @@ public class KaguyaType extends SglUnitType<UnitEntity> {
               shooters[i] = new Shooter();
             }
             mount.setVar(SglUnits.SHOOTERS, shooters);
+            mount.setVar(SglUnits.TIMER, new Interval());
           }
 
           @Override
           public void update(Unit unit, DataWeaponMount mount) {
             Shooter[] shooters = mount.getVar(SglUnits.SHOOTERS);
+            Interval timer = mount.getVar(SglUnits.TIMER);
             for (Shooter shooter : shooters) {
               Vec2 v = MathTransform.fourierSeries(Time.time, shooter.param).scl(mount.warmup);
               Tmp.v1.set(mount.weapon.x, mount.weapon.y).rotate(unit.rotation - 90);
@@ -397,6 +456,40 @@ public class KaguyaType extends SglUnitType<UnitEntity> {
               shooter.y = Tmp.v1.y + v.y;
               shooter.trail.update(unit.x + shooter.x, unit.y + shooter.y);
             }
+
+            if (mount.warmup > 0.8f && timer.get(120)){
+              for (int i = 0; i < shooters.length; i++) {
+                Shooter shooter = shooters[i];
+                Time.run(i*40, () -> {
+                  for (int l = 0; l < 10; l++) {
+                    Time.run(l*4, () -> {
+                      Vec2 v = MathTransform.fourierSeries(Time.time, shooter.param).scl(mount.warmup);
+                      subBull.create(unit, unit.team, unit.x + shooter.x, unit.y + shooter.y, Angles.angle(v.x, v.y), 0.2f);
+                    });
+                  }
+                });
+              }
+            }
+          }
+
+          @Override
+          public void addStats(UnitType u, Table t) {
+            super.addStats(u, t);
+            t.row();
+
+            Table ic = new Table();
+            StatUtils.buildAmmo(ic, subBull);
+            Collapser coll = new Collapser(ic, true);
+            coll.setDuration(0.1f);
+
+            t.table(it -> {
+              it.left().defaults().left();
+
+              it.add(Core.bundle.format("bullet.interval", 15));
+              it.button(Icon.downOpen, Styles.emptyi, () -> coll.toggle(false)).update(i -> i.getStyle().imageUp = (!coll.isCollapsed() ? Icon.upOpen : Icon.downOpen)).size(8).padLeft(16f).expandX();
+            });
+            t.row();
+            t.add(coll).padLeft(16);
           }
 
           @Override
@@ -427,9 +520,13 @@ public class KaguyaType extends SglUnitType<UnitEntity> {
                 bulletY = mountY + Angles.trnsy(unit.rotation - 90, shootX, shootY);
 
             Draw.color(SglDrawConst.matrixNet);
-            Fill.circle(bulletX, bulletY, 6*mount.recoil);
+            SglDraw.drawDiamond(bulletX, bulletY, mount.recoil*18 + 10, mount.recoil*4, Time.time*1.2f);
+            SglDraw.drawDiamond(bulletX, bulletY, mount.recoil*24 + 12, mount.recoil*6, -Time.time);
+
+            float lerp = Math.max(mount.recoil, 0.5f*mount.warmup);
+            Fill.circle(bulletX, bulletY, 6*lerp);
             Draw.color(Color.white);
-            Fill.circle(bulletX, bulletY, 3*mount.recoil);
+            Fill.circle(bulletX, bulletY, 3*lerp);
 
             for (Shooter shooter : shooters) {
               Draw.color(SglDrawConst.matrixNet);
@@ -442,9 +539,9 @@ public class KaguyaType extends SglUnitType<UnitEntity> {
               SglDraw.drawDiamond(drawx, drawy, 4 + 8*mount.warmup, 3*mount.warmup, Time.time*1.45f);
               SglDraw.drawDiamond(drawx, drawy, 8 + 10*mount.warmup, 3.6f*mount.warmup, -Time.time*1.45f);
 
-              Lines.stroke(3*mount.recoil, SglDrawConst.matrixNet);
+              Lines.stroke(3*lerp, SglDrawConst.matrixNet);
               Lines.line(drawx, drawy, bulletX, bulletY);
-              Lines.stroke(1.75f*mount.recoil, Color.white);
+              Lines.stroke(1.75f*lerp, Color.white);
               Lines.line(drawx, drawy, bulletX, bulletY);
 
               Draw.alpha(0.5f);

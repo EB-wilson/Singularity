@@ -288,6 +288,7 @@ public class PublicInfoDialog extends BaseDialog {
       protected void drawBackground(float x, float y) {
         if (entry.equals(current)){
           Draw.color(Color.darkGray);
+          Draw.alpha(Draw.getColor().a*parentAlpha);
           Fill.rect(x + width/2, y + height/2, width, height);
         }
         else super.drawBackground(x, y);

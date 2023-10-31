@@ -1319,7 +1319,7 @@ public class SglTurrets implements ContentList{
 
       newAmmo(new BulletType(){
         {
-          damage = 60;
+          damage = 80;
           speed = 8;
           lifetime = 45;
           hitSize = 4.3f;
@@ -2093,6 +2093,7 @@ public class SglTurrets implements ContentList{
 
       newAmmo(new ContinuousLaserBulletType(){
         {
+          pierceCap = 5;
           damage = 115;
           lifetime = 240;
           damageInterval = 6;
@@ -2735,14 +2736,14 @@ public class SglTurrets implements ContentList{
           fragBullets = 1;
           fragBullet = new singularity.world.blocks.turrets.LightningBulletType(){
             {
-              damage = 46;
-              lifetime = 80;
+              damage = 42;
+              lifetime = 105;
               speed = 6;
 
               hitColor = SglDrawConst.fexCrystal;
 
               collides = false;
-              pierceCap = 36;
+              pierceCap = 42;
               hittable = false;
               absorbable = false;
 
@@ -2877,7 +2878,7 @@ public class SglTurrets implements ContentList{
 
             return gen;
           });
-          bulletInterval = 2f;
+          bulletInterval = 1.5f;
         }
 
         @Override
@@ -3402,7 +3403,7 @@ public class SglTurrets implements ContentList{
         {
           speed = 4.5f;
           lifetime = 180;
-          damage = 65;
+          damage = 85;
           hitSize = 2;
           homingPower = 0.06f;
           trailEffect = SglFx.glowParticle;
@@ -3427,7 +3428,7 @@ public class SglTurrets implements ContentList{
 
           meltDownTime = 12;
           melDamageScl = 0.3f;
-          maxExDamage = 90;
+          maxExDamage = 120;
         }
 
         @Override

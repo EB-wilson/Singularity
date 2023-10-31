@@ -795,24 +795,32 @@ public class SglFx{
     }
 
     e.scaled(100, ef -> {
-      Angles.randLenVectors(e.id, 7, 45, 164, (x, y) -> {
-        float lerp = ef.fin(Interp.pow3Out);
+      Angles.randLenVectors(e.id, 9, 45, 164, (x, y) -> {
+        float lerp = ef.fin(Interp.pow4Out);
         float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.6f, 0.8f);
         SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
       });
     });
 
-    e.scaled(130, ef -> {
-      Angles.randLenVectors(e.id*2L, 8, 40, 154, (x, y) -> {
-        float lerp = ef.fin(Interp.pow3Out);
+    e.scaled(120, ef -> {
+      Angles.randLenVectors(e.id*2L, 9, 40, 154, (x, y) -> {
+        float lerp = Mathf.clamp((ef.fin(Interp.pow4Out) - 0.2f)/0.8f);
+        float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.7f, 0.9f);
+        SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
+      });
+    });
+
+    e.scaled(140, ef -> {
+      Angles.randLenVectors(e.id*2L, 10, 36, 150, (x, y) -> {
+        float lerp = Mathf.clamp((ef.fin(Interp.pow4Out) - 0.4f)/0.6f);
         float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.7f, 0.9f);
         SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
       });
     });
 
     e.scaled(160, ef -> {
-      Angles.randLenVectors(e.id*3L, 9, 32, 144, (x, y) -> {
-        float lerp = ef.fin(Interp.pow3Out);
+      Angles.randLenVectors(e.id*3L, 12, 32, 144, (x, y) -> {
+        float lerp = Mathf.clamp((ef.fin(Interp.pow4Out) - 0.5f)/0.5f);
         float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.9f, 1f);
         SglDraw.drawDiamond(e.x + x*lerp, e.y + y*lerp, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
       });
@@ -975,24 +983,24 @@ public class SglFx{
     });
 
     e.scaled(45, ef -> {
-      Angles.randLenVectors(e.id, 6, 25, 94, (x, y) -> {
-        float le = ef.fin(Interp.pow3Out);
+      Angles.randLenVectors(e.id, 8, 25, 94, (x, y) -> {
+        float le = ef.fin(Interp.pow4Out);
         float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.6f, 0.8f);
         SglDraw.drawDiamond(e.x + x*le, e.y + y*le, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
       });
     });
 
     e.scaled(56, ef -> {
-      Angles.randLenVectors(e.id*2L, 7, 20, 82, (x, y) -> {
-        float le = ef.fin(Interp.pow3Out);
+      Angles.randLenVectors(e.id*2L, 8, 20, 82, (x, y) -> {
+        float le = Mathf.clamp((ef.fin(Interp.pow4Out) - 0.3f)/0.7f);
         float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.7f, 0.9f);
         SglDraw.drawDiamond(e.x + x*le, e.y + y*le, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
       });
     });
 
     e.scaled(75, ef -> {
-      Angles.randLenVectors(e.id*3L, 8, 14, 69, (x, y) -> {
-        float le = ef.fin(Interp.pow3Out);
+      Angles.randLenVectors(e.id*3L, 9, 14, 69, (x, y) -> {
+        float le = Mathf.clamp((ef.fin(Interp.pow4Out) - 0.5f)/0.5f);
         float si = Mathf.len(x, y)*Mathf.randomSeed((long) (x + y), 0.9f, 1f);
         SglDraw.drawDiamond(e.x + x*le, e.y + y*le, si, si/10*ef.fout(Interp.pow2Out), Mathf.angle(x, y) - 90);
       });

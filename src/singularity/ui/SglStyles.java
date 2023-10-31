@@ -115,7 +115,7 @@ public class SglStyles{
       codeFont = jetBrainsMono;
       FreeTypeFontGenerator gen = new FreeTypeFontGenerator(Core.files.internal("fonts/font.woff"));
       strongFont = gen.generateFont(new FreeTypeFontGenerator.FreeTypeFontParameter(){{
-        size = 17;
+        size = 19;
         borderWidth = 0.3f;
         shadowOffsetY = 2;
         incremental = true;

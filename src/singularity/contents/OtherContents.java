@@ -62,7 +62,8 @@ public class OtherContents implements ContentList{
   frost,
   frost_freeze,
   meltdown,
-  crystallize;
+  crystallize,
+  mirror;
 
   static final ObjectMap<Unit, float[]> lastHealth = new ObjectMap<>();
 
@@ -137,7 +138,7 @@ public class OtherContents implements ContentList{
         }
       }
 
-      class BanedAbility extends Ability implements Pool.Poolable {
+      static class BanedAbility extends Ability implements Pool.Poolable {
         Ability masked;
         int index;
 
@@ -453,6 +454,24 @@ public class OtherContents implements ContentList{
             );
           }
         }
+      }
+    };
+
+    mirror = new StatusEffect("mirror"){
+      {
+        init(() -> {
+
+        });
+      }
+
+      @Override
+      public void draw(Unit unit, float time) {
+        super.draw(unit, time);
+      }
+
+      @Override
+      public void update(Unit unit, float time) {
+        super.update(unit, time);
       }
     };
   }

@@ -47,6 +47,7 @@ public class SglUI{
   public ContributorsDialog contributors;
   public DocumentDialog document;
   public ModConfigDialog config;
+  public SupportUsDialog support;
 
   public DistNetMonitorDialog bufferStat;
 
@@ -207,6 +208,7 @@ public class SglUI{
     publicInfo = new PublicInfoDialog();
     contributors = new ContributorsDialog();
     config = new ModConfigDialog();
+    support = new SupportUsDialog();
     bufferStat = new DistNetMonitorDialog();
     document = new DocumentDialog();
     unitFactoryCfg = new UnitFactoryCfgDialog();

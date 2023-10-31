@@ -69,6 +69,8 @@ public class Sgl{
   public static final String modDevelopGroup = "https://jq.qq.com/?_wv=1027&k=vjybgqDG";
   public static final String githubUserAvatars = "https://avatars.githubusercontent.com/";
   public static final String githubProject = "https://github.com/EB-wilson/Singularity";
+  public static final String afdian = "";
+  public static final String patreon = "";
   public static final String libGithubProject = "https://github.com/EB-wilson/UniverseCore";
   public static final String discord = "";
   public static final String githubRawMaster = "https://raw.githubusercontent.com/EB-wilson/Singularity/master/";

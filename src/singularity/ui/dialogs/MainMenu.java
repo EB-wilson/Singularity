@@ -19,6 +19,7 @@ import mindustry.ui.dialogs.BaseDialog;
 import singularity.Sgl;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
+import singularity.ui.SglUI;
 
 public class MainMenu extends BaseDialog {
   protected boolean launch = true;
@@ -40,7 +41,7 @@ public class MainMenu extends BaseDialog {
       new ButtonEntry(SglDrawConst.aboutIcon, Core.bundle.get("misc.aboutMod"), Color.violet, () -> {
         Sgl.ui.aboutDialog.show();
       }),
-      new ButtonEntry(SglDrawConst.contributeIcon, Core.bundle.get("misc.contribute"), Color.yellow, lookForward),
+      new ButtonEntry(SglDrawConst.contributeIcon, Core.bundle.get("misc.contribute"), Color.yellow, () -> Sgl.ui.support.show()),
   };
   
   public MainMenu() {
