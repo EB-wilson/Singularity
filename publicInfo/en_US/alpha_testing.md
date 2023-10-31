@@ -1,22 +1,21 @@
-__wait for translate__
-
-### Alpha阶段内部测试
+### Alpha Test
 
 ---
 
-> 当前版本尚处于开发测试阶段，alpha测试仅代表本mod的部分内容，请知悉
+> Please know that this mod is still working in progress. Only part of content is shown during the Alpha Test.
 
-首先，感谢您参与本轮内部测试，您的反馈可以有效的帮助我们优化和完善内容，希望您在遇到问题或者有什么建议时，不吝意见积极提交反馈。
+To begin with, thank you for taking part in the Alpha Test. Your feedback will efficiently help us make the content better. We are sincerely looking forward to your feedback!
 
-当前mod尚在开发中，内容有很大缺失，并且可能存在很多严重的问题，包括但不限于致命的程序问题，内容数据设计的不合理及机制上的设计问题等。
+At the moment, the mod is still developing, and the content is not the final full version. Therefore, fatal crash, unbalance and breaking change on mechanics might occur during the game.
 
-若您有遇到什么错误或者有建议反馈，您可以通过以下渠道进行：
-- __首选__ 在github上提交issue，您可以[点此](https://github.com/EB-wilson/Singularity/issues)直接跳转到issue页面
-- 此外，您也可以使用社交平台的交流群组向作者直接提交意见，您可以通过[此链接](https://jq.qq.com/?_wv=1027&k=BTHaN7gd)加入本mod的qq测试交流群
-- 对于海外玩家或者不希望使用qq的玩家，您也可以使用[telegram群组](https://t.me/+Dv_nTdi3e_k0ZDk9)向作者进行反馈
+If you have found some buges or suggestions, you can use the following ways to give us your feedback:
+- __BEST__ Open a issue [here](https://github.com/EB-wilson/Singularity/issues).
+- Join the [Telegram group](https://t.me/+Dv_nTdi3e_k0ZDk9).
+- Otherwise, [Tencent QQ](https://jq.qq.com/?_wv=1027&k=BTHaN7gd) is also available for QQ users
 
-此外，mod内的许多复杂机制使用说明和教程引导尚未完善，后续的版本会慢慢完善各个说明文档，现阶段的许多内容使用方法可能会通过媒体平台视频的方式陆续在公告中向您说明。
 
-最后，也希望您可以享受本mod的内容，如果您喜欢这个mod并期待后续的完整内容，希望您可以为[github上的本项目](https://github.com/EB-wilson/Singularity)点击一个star。
+Moreover, many introduction of complicated mechanics and tutorials have not been completed yet. Some introduction may be presented on the Internet sometime.
 
-__祝您玩的开心__
+Hopefully, you will enjoy the mod. If you like the mod, give the mod a star in [Github](https://github.com/EB-wilson/Singularity) please
+
+__Wish You Have A Good Day__
