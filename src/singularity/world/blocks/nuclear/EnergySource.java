@@ -19,7 +19,6 @@ public class EnergySource extends NuclearNode {
     outputEnergy = true;
     consumeEnergy = false;
     configurable = true;
-    saveConfig = true;
     noUpdateDisabled = true;
     envEnabled = Env.any;
   }

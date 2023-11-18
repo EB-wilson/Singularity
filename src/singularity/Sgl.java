@@ -76,9 +76,7 @@ public class Sgl{
   public static final String githubRawMaster = "https://raw.githubusercontent.com/EB-wilson/Singularity/master/";
   public static final String githubProjReleaseApi = "https://api.github.com/repos/EB-wilson/Singularity/releases/latest";
   public static final String publicInfo = githubRawMaster + "publicInfo/";
-  
-  public static final String modAddress = "";
-  public static final String libAddress = "";
+
 
   public static final Team none = Team.get(255);
   

@@ -29,7 +29,7 @@ import java.util.Locale;
 
 import static mindustry.game.EventType.*;
 
-@Annotations.ImportUNC(requireVersion = "1.8.9")
+@Annotations.ImportUNC(requireVersion = "1.8.10")
 public class Singularity extends Mod{
   private static final ContentList[] modContents = new ContentList[]{
       new OtherContents(),//其他内容

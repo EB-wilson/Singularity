@@ -23,7 +23,6 @@ import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
 import mindustry.world.draw.*;
-import mindustry.world.meta.Stat;
 import singularity.Sgl;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
@@ -31,14 +30,12 @@ import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.blocks.drills.*;
 import singularity.world.blocks.product.FloorCrafter;
-import singularity.world.blocks.product.SglAttributeCrafter;
+import singularity.world.blocks.product.NormalCrafter;
 import singularity.world.consumers.SglConsumeFloor;
 import singularity.world.draw.DrawBottom;
 import singularity.world.draw.DrawDirSpliceBlock;
 import singularity.world.draw.DrawExpandPlasma;
 import singularity.world.meta.SglAttribute;
-import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.ConsumeType;
 
 import static mindustry.Vars.tilesize;
 import static mindustry.type.ItemStack.with;
@@ -65,7 +62,7 @@ public class ProductBlocks implements ContentList {
 
   @Override
   public void load() {
-    rock_drill = new SglAttributeCrafter("rock_drill"){{
+    rock_drill = new NormalCrafter("rock_drill"){{
       requirements(Category.production, with(Items.titanium, 45, Items.lead, 30, Items.copper, 30));
       size = 2;
       liquidCapacity = 24;
@@ -82,7 +79,8 @@ public class ProductBlocks implements ContentList {
 
       autoSelect = true;
 
-      setAttrBooster(SglAttribute.bitumen, 1.12f);
+      newBooster(1);
+      consume.add(new SglConsumeFloor<>(SglAttribute.bitumen, 1.12f));
       
       newConsume();
       consume.time(90);
@@ -132,8 +130,6 @@ public class ProductBlocks implements ContentList {
       itemCapacity = 25;
       liquidCapacity = 30;
 
-      willDumpItems.add(SglItems.alkali_stone);
-
       newConsume();
       consume.time(30f);
       consume.power(2.2f);
@@ -144,23 +140,19 @@ public class ProductBlocks implements ContentList {
           Blocks.shale, 1f/9f,
           Blocks.salt, 1f/9f
       ){{ baseEfficiency = 0; }});
-      consume.addSelfAccess(ConsumeType.item, SglItems.alkali_stone);
+
       newProduce();
       produce.item(Items.sand, 1);
 
-      newOptionalConsume((FloorCrafterBuild e, BaseConsumers c) -> {}, (s, c) -> {
-        s.add(Stat.output, SglItems.alkali_stone);
-      });
-      consume.setConsTrigger((FloorCrafterBuild e) -> {
-        if (e.acceptItem(e, SglItems.alkali_stone)) e.handleItem(e, SglItems.alkali_stone);
-      });
+      newOptionalProduct();
       consume.time(45f);
       consume.add(new SglConsumeFloor<FloorCrafterBuild>(
           Blocks.stone, 0.4f/9f,
           Blocks.craters, 0.5f/9f,
           Blocks.salt, 2f/9f
-      ){{ baseEfficiency = 0; }});
+      ));
       consume.optionalAlwaysValid = false;
+      produce.item(SglItems.alkali_stone, 1);
 
       newBooster(1.8f);
       consume.liquid(Liquids.water, 0.12f);

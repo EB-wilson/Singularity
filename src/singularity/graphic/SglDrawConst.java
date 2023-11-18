@@ -34,7 +34,8 @@ public class SglDrawConst{
 
       qqIcon, telegramIcon,
       showInfos, unShowInfos, showRange, hold, defaultShow,
-      grayUI, padGrayUI;
+      grayUI, padGrayUI,
+      sgl2, a_z;
 
   public static TextureRegion cursor;
 
@@ -65,6 +66,8 @@ public class SglDrawConst{
     showRange = Singularity.getModDrawable("show_range");
     hold = Singularity.getModDrawable("hold");
     defaultShow = Singularity.getModDrawable("default_show");
+    sgl2 = Singularity.getModDrawable("sgl-2");
+    a_z = Singularity.getModDrawable("a_z");
 
     cursor = Singularity.getModAtlas("cursor");
 

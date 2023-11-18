@@ -201,7 +201,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
                                 info.table(req -> {
                                   req.left().defaults().left().fill().pad(4);
                                   req.add(Stat.buildCost.localized() + ":");
-                                  ConsumeItems<?> ci = cons.get(ConsumeType.item);
+                                  ConsumeItemBase<?> ci = cons.get(ConsumeType.item);
                                   ConsumePower<?> cp = cons.get(ConsumeType.power);
                                   SglConsumeEnergy<?> cn = cons.get(SglConsumeType.energy);
 

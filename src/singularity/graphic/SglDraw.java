@@ -54,7 +54,7 @@ public class SglDraw{
     return idCount++;
   }
 
-  public static final float mirrorField = 127.5f;
+  public static final float mirrorField = 135f;
   public static final FrameBuffer effectBuffer = new FrameBuffer();
 
   public static final int sharedUnderBlockBloomID = nextTaskID();

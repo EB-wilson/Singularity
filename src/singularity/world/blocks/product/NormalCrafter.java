@@ -4,20 +4,21 @@ import arc.Core;
 import arc.audio.Sound;
 import arc.func.Cons;
 import arc.func.Cons2;
+import arc.func.Floatf;
 import arc.func.Floatp;
 import arc.graphics.Color;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.scene.Element;
 import arc.scene.event.Touchable;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Image;
 import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
-import arc.struct.EnumSet;
-import arc.struct.Seq;
-import arc.struct.SnapshotSeq;
+import arc.struct.*;
 import arc.util.Scaling;
 import arc.util.Strings;
+import arc.util.Time;
 import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
@@ -32,6 +33,7 @@ import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.logic.LAccess;
 import mindustry.type.Item;
+import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import mindustry.ui.Bar;
@@ -39,6 +41,8 @@ import mindustry.ui.ItemDisplay;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.meta.*;
+import singularity.Sgl;
+import singularity.contents.SglItems;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.StatUtils;
 import singularity.world.blocks.SglBlock;
@@ -66,6 +70,8 @@ import java.util.concurrent.atomic.AtomicReference;
 /**常规的工厂类方块，具有强大的consume-produce制造系统的近乎全能的制造类方块*/
 @Annotations.ImplEntries
 public class NormalCrafter extends SglBlock implements FactoryBlockComp{
+  protected Rand rand = new Rand();
+
   public float updateEffectChance = 0.04f;
   public Effect updateEffect = Fx.none;
   public Color updateEffectColor = Color.white;
@@ -87,8 +93,10 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
   public float warmupSpeed = 0.02f;
   public float stopSpeed = 0.02f;
 
-  public Seq<Item> willDumpItems = new Seq<>();
-  public Seq<Liquid> willDumpLiquids = new Seq<>();
+  public OrderedMap<BaseConsumers, Byproduct> byproducts = new OrderedMap<>();
+  public OrderedMap<BaseConsumers, BaseProducers> optionalProducts = new OrderedMap<>();
+
+  public ObjectFloatMap<BaseConsumers> boosts = new ObjectFloatMap<>();
 
   /**常规的工厂类方块，具有强大的consume-produce制造系统的近乎全能的制造类方块*/
   public NormalCrafter(String name) {
@@ -108,6 +116,39 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     return produce;
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public void newOptionalProduct(){
+    Producers prod = produce = new Producers();
+    newOptionalConsume((NormalCrafterBuild e, BaseConsumers c) -> {
+      for (BaseProduce baseProduce : prod.all()) {
+        if (baseProduce.valid(e)) baseProduce.update(e);
+        baseProduce.dump(e);
+      }
+    }, (s, c) -> {
+      prod.display(s);
+    });
+    prod.cons = consume;
+    consume.setConsTrigger((NormalCrafterBuild e) -> {
+      for (BaseProduce baseProduce : prod.all()) {
+        if (baseProduce.valid(e)) baseProduce.produce(e);
+      }
+    });
+
+    optionalProducts.put(consume, prod);
+  }
+
+  public static class Byproduct{
+    public Item item;
+    public float chance;
+    public int base;
+
+    public Byproduct(Item item, float chance, int base){
+      this.item = item;
+      this.chance = chance;
+      this.base = base;
+    }
+  }
+
   /**对当前生产清单设置随机副产物
    *
    * @param chance 副产物产出的机会，为任意大于0的值，实际机会计算值从0到chance之间随机取值，结果将超出1的部分直接作为产出数量，与1取模后剩余机会取{@link Mathf#chance(double)}
@@ -122,15 +163,17 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
    * @param chance 副产物产出的机会，为任意大于0的值，实际机会计算值从0到chance之间随机取值，结果将超出1的部分直接作为产出数量，与1取模后剩余机会取{@link Mathf#chance(double)}
    * @param item 副产物物品*/
   public void setByProduct(int base, float chance, Item item){
+    byproducts.put(consume, new Byproduct(item, chance, base));
+
     consume.addSelfAccess(ConsumeType.item, item);
     consume.setConsTrigger((NormalCrafterBuild e) -> {
-      float chanceV = Mathf.random(chance) + base;
+      float chanceV = chance + base;
       while(chanceV >= 1){
-        if(e.acceptItem(e, Items.thorium)) e.offload(Items.thorium);
+        if(e.acceptItem(e, item)) e.offload(item);
         chanceV--;
       }
 
-      if(Mathf.chance(chanceV)) if(e.acceptItem(e, Items.thorium)) e.offload(Items.thorium);
+      if(rand.chance(chanceV)) if(e.acceptItem(e, item)) e.offload(item);
     });
     Cons2<Stats, BaseConsumers> old = consume.display;
     consume.display = (s, c) -> s.add(Stat.output, t -> {
@@ -142,7 +185,49 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
         i.add("[gray]" + (base > 0? " +": "") + Strings.autoFixed(chance*100, 2) + "%[]");
       }).left().padLeft(5);
     });
-    willDumpItems.add(item);
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  public BaseConsumers newBooster(float boost){
+    Floatf<NormalCrafterBuild>[] fun = new Floatf[1];
+    BaseConsumers res = newOptionalConsume((NormalCrafterBuild e, BaseConsumers c) -> {
+      e.currBoost = fun[0];
+      e.mark = 2;
+    }, (s, c) -> {
+      s.add(Stat.boostEffect, t -> {
+        t.table(req -> {
+          req.left().defaults().left().padLeft(3);
+          for (BaseConsume<? extends ConsumerBuildComp> co : c.all()) {
+            co.buildIcons(req);
+          }
+        }).left().padRight(40);
+        t.add(Core.bundle.get("misc.efficiency") + Strings.autoFixed(boost*100, 1) + "%").growX().right();
+      });
+    });
+    boosts.put(res, boost);
+
+    fun[0] = e -> {
+      float mul = 1;
+      for (BaseConsume cons : res.all()) {
+        mul *= cons.efficiency(e);
+      }
+      return boost*mul*Mathf.clamp(e.consumer.consEfficiency)*e.consumer.getOptionalEff(res);
+    };
+
+    consume.customDisplayOnly = true;
+    consume.optionalAlwaysValid = false;
+
+    return res;
+  }
+
+  @Override
+  public void setBars() {
+    super.setBars();
+    addBar("efficiency", (NormalCrafterBuild e) -> new Bar(
+        () -> Core.bundle.get("misc.efficiency") + ": " + Mathf.round(e.workEfficiency()*100) + "%",
+        () -> Pal.accent,
+        e::workEfficiency
+    ));
   }
 
   @Override
@@ -158,6 +243,12 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
 
     for (BaseProducers producer : producers()) {
       outputsPayload |= producer.get(ProduceType.payload) != null;
+    }
+
+    for (ObjectMap.Entry<BaseConsumers, BaseProducers> product : optionalProducts) {
+      for (BaseProduce<?> baseProduce : product.value.all()) {
+        baseProduce.parent.cons = product.key;
+      }
     }
     
     super.init();
@@ -271,6 +362,10 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     
     public float powerProdEfficiency;
 
+    public Floatf<NormalCrafterBuild> currBoost = e -> 1;
+    public float real;
+    public int mark;
+
     @Override
     public NormalCrafterBuild create(Block block, Team team) {
       super.create(block, team);
@@ -353,8 +448,10 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
     }
 
     @Override
-    public float consEfficiency(){
-      return super.consEfficiency()*warmup();
+    public float consEfficiency() {
+      float eff = super.consEfficiency();
+
+      return real*eff*warmup();
     }
 
     @Override
@@ -370,17 +467,19 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
 
     @Override
     public void updateTile() {
+      real = Mathf.lerpDelta(real, currBoost.get(this), 0.05f);
+
+      if (mark > 0 && --mark <= 0){
+        currBoost = e -> 1;
+      }
+
       if(updateRecipe && producer.current != null){
         if(producer.current.get(SglProduceType.item) != null) outputItems = new Seq<>(producer.current.get(SglProduceType.item).items).map(e -> e.item);
         if(producer.current.get(SglProduceType.liquid) != null) outputLiquids = new Seq<>(producer.current.get(SglProduceType.liquid).liquids).map(e -> e.liquid);
       }
 
-      for (Item item : willDumpItems) {
-        dump(item);
-      }
-
-      for (Liquid liquid : willDumpLiquids) {
-        dumpLiquid(liquid);
+      for (Byproduct byproduct : byproducts.values()) {
+        dump(byproduct.item);
       }
     }
     

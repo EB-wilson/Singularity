@@ -11,6 +11,7 @@ import arc.struct.Seq;
 import arc.util.Scaling;
 import arc.util.Strings;
 import arc.util.Tmp;
+import mindustry.Vars;
 import mindustry.ctype.Content;
 import mindustry.gen.Building;
 import mindustry.gen.Icon;
@@ -18,7 +19,9 @@ import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
 import mindustry.ui.Styles;
+import mindustry.world.Block;
 import mindustry.world.blocks.environment.Floor;
+import mindustry.world.meta.Attribute;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 import mindustry.world.meta.Stats;
@@ -29,9 +32,10 @@ import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.ConsumeType;
 
 public class SglConsumeFloor<T extends Building & ConsumerBuildComp & FloorCrafterBuildComp> extends BaseConsume<T> {
-  final ObjectFloatMap<Floor> floorEff = new ObjectFloatMap<>();
+  public final ObjectFloatMap<Floor> floorEff = new ObjectFloatMap<>();
 
   public float baseEfficiency = 0;
+  public boolean checkDeep = true;
 
   public SglConsumeFloor(Object... floors){
     for (int i = 0; i < floors.length; i+=2) {
@@ -39,6 +43,14 @@ public class SglConsumeFloor<T extends Building & ConsumerBuildComp & FloorCraft
       Float effInc = (Float) floors[i + 1];
 
       floorEff.put(floor, effInc);
+    }
+  }
+
+  public SglConsumeFloor(Attribute attribute, float scl){
+    for (Block block : Vars.content.blocks()) {
+      if (!(block instanceof Floor f) || (checkDeep && f.isDeep()) || f.attributes.get(attribute) <= 0) continue;
+
+      floorEff.put(f, block.attributes.get(attribute)*scl);
     }
   }
 

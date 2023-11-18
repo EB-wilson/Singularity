@@ -71,7 +71,10 @@ public class PublicInfoDialog extends BaseDialog {
 
     rebuild();
 
-    shown(this::refresh);
+    shown(() -> {
+      rebuild();
+      refresh();
+    });
     resized(this::rebuild);
   }
 

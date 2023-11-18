@@ -91,13 +91,13 @@ public class ModConfigDialog extends BaseDialog{
 
             catTable.clearActions();
             catTable.actions(
-                Actions.alpha(0, 0.5f),
+                Actions.alpha(0, 0.3f),
                 Actions.run(() -> {
                   catTable.clearChildren();
                   catTable.image(icons.get(currCat, Core.atlas.drawable("settings_" + currCat))).size(38);
                   catTable.add(Core.bundle.get("settings.category." + currCat));
                 }),
-                Actions.alpha(1, 0.5f));
+                Actions.alpha(1, 0.3f));
           };
 
           cats.button(Icon.leftOpen, Styles.clearNonei, () -> {
@@ -105,9 +105,9 @@ public class ModConfigDialog extends BaseDialog{
             rebuild.run();
             settings.clearActions();
             settings.actions(
-                Actions.alpha(0, 0.5f),
+                Actions.alpha(0, 0.3f),
                 Actions.run(this::rebuildSettings),
-                Actions.alpha(1, 0.5f)
+                Actions.alpha(1, 0.3f)
             );
           }).size(60).padLeft(12);
           cats.table(Tex.underline, t -> catTable = t).height(60).growX().padLeft(4).padRight(4);
@@ -116,9 +116,9 @@ public class ModConfigDialog extends BaseDialog{
             rebuild.run();
             settings.clearActions();
             settings.actions(
-                Actions.alpha(0, 0.5f),
+                Actions.alpha(0, 0.3f),
                 Actions.run(this::rebuildSettings),
-                Actions.alpha(1, 0.5f)
+                Actions.alpha(1, 0.3f)
             );
           }).size(60).padRight(12);
 
@@ -145,9 +145,9 @@ public class ModConfigDialog extends BaseDialog{
                   currCat = key;
                   settings.clearActions();
                   settings.actions(
-                      Actions.alpha(0, 0.5f),
+                      Actions.alpha(0, 0.3f),
                       Actions.run(this::rebuildSettings),
-                      Actions.alpha(1, 0.5f)
+                      Actions.alpha(1, 0.3f)
                   );
                 }
             ).update(b -> b.setChecked(key.equals(currCat)));

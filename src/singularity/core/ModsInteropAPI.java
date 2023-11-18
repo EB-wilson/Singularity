@@ -31,7 +31,9 @@ import singularity.Sgl;
  * <ul>
  *   <li><strong>如果名称不定义mod名称前缀，则会优先选择本mod（调用API的mod）的content，其次是原版内容</strong></li>
  *   <li><strong>如果名称中包含了mod名称前缀，则会选择前缀限定的mod中的content，但是通常操作性的选择器不提倡开发者跨mod操作，这可能会有警告</strong></li>
- * </ul>*/
+ * </ul>
+ *
+ * 有一部分条目的配置会需要传入的是一个文本字符串作为参数，对于这类参数，您可以使用 {@code "@bundleName"} 的形式去选择本地化文本，否则会传入为原始文本*/
 public class ModsInteropAPI {
   private final ObjectMap<Mods.LoadedMod, Jval> declares = new ObjectMap<>();
   private final OrderedSet<ConfigModel> models = new OrderedSet<>();

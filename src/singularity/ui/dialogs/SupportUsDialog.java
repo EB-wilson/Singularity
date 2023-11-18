@@ -4,6 +4,7 @@ import arc.Core;
 import arc.graphics.Color;
 import arc.scene.style.Drawable;
 import arc.scene.ui.layout.Table;
+import arc.util.Scaling;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -25,6 +26,8 @@ public class SupportUsDialog extends BaseDialog {
         p.row();
         p.image().color(Pal.accent).height(4).pad(0).padTop(4).padBottom(8).growX();
         p.row();
+        p.image(SglDrawConst.sgl2).scaling(Scaling.fit).size(365);
+        p.row();
         p.add(Core.bundle.get("dialog.support.star")).growX().wrap();
         p.row();
         buildButton(p, Icon.github, Pal.accent, "GitHub", Core.bundle.get("dialog.support.githubStar"), () -> Core.app.openURI(Sgl.githubProject));
@@ -35,7 +38,7 @@ public class SupportUsDialog extends BaseDialog {
         p.row();
         buildButton(p, Icon.none, Pal.lancerLaser, "Patreon", Core.bundle.get("dialog.support.patreon"), () -> {});
       }).growX().fillY();
-    }).margin(12).growX().fillY().maxWidth(585);
+    }).margin(12).growX().fillY().maxWidth(735);
   }
 
   private void buildButton(Table table, Drawable icon, Color color, String name, String subText, Runnable listener) {

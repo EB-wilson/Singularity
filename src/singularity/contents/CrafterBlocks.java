@@ -37,14 +37,12 @@ import mindustry.world.meta.Attribute;
 import mindustry.world.meta.BlockStatus;
 import singularity.Sgl;
 import singularity.Singularity;
-import singularity.graphic.Distortion;
-import singularity.graphic.SglDraw;
-import singularity.graphic.SglDrawConst;
-import singularity.graphic.SglShaders;
+import singularity.graphic.*;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.blocks.function.Destructor;
 import singularity.world.blocks.product.*;
+import singularity.world.consumers.SglConsumeFloor;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.DrawAntiSpliceBlock;
@@ -54,10 +52,7 @@ import singularity.world.draw.DrawRegionDynamic;
 import singularity.world.meta.SglStat;
 import singularity.world.particles.SglParticleModels;
 import universecore.components.blockcomp.FactoryBuildComp;
-import universecore.world.consumers.BaseConsume;
-import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.ConsumeItems;
-import universecore.world.consumers.ConsumeType;
+import universecore.world.consumers.*;
 import universecore.world.lightnings.LightningContainer;
 import universecore.world.lightnings.generator.CircleGenerator;
 import universecore.world.lightnings.generator.LightningGenerator;
@@ -334,7 +329,7 @@ public class CrafterBlocks implements ContentList{
       }
     };
     
-    incubator = new SglAttributeCrafter("incubator"){{
+    incubator = new FloorCrafter("incubator"){{
       requirements(Category.production, ItemStack.with(
           Items.plastanium, 85,
           Items.titanium, 90,
@@ -363,9 +358,9 @@ public class CrafterBlocks implements ContentList{
       ));
       newProduce();
       produce.item(Items.sporePod, 3);
-      
-      setAttrBooster(Attribute.spores, 0.86f);
-      setAttrBooster(Attribute.heat, 1.8f, 3f);
+
+      newBooster(1);
+      consume.add(new SglConsumeFloor<>(Attribute.spores, 0.86f));
       
       draw = new DrawMulti(
           new DrawBottom(),
@@ -659,7 +654,7 @@ public class CrafterBlocks implements ContentList{
       );
     }};
 
-    combustion_chamber = new BoosterCrafter("combustion_chamber"){{
+    combustion_chamber = new NormalCrafter("combustion_chamber"){{
       requirements(Category.crafting, ItemStack.with(
           Items.titanium, 90,
           Items.graphite, 80,
@@ -1425,7 +1420,7 @@ public class CrafterBlocks implements ContentList{
             rotation = e -> -e.totalProgress()*1.2f;
             color = e -> e.producer.current != null? e.producer.current.color: transColor;
             alpha = e -> {
-              ConsumeItems<?> cons = e.consumer.current == null? null: e.consumer.current.get(ConsumeType.item);
+              ConsumeItemBase<?> cons = e.consumer.current == null? null: e.consumer.current.get(ConsumeType.item);
               Item i = cons == null? null: cons.consItems[0].item;
               return cons == null? 0: ((float) e.items.get(i))/itemCapacity;
             };

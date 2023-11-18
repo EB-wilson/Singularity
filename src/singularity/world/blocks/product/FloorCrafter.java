@@ -10,7 +10,7 @@ import singularity.world.consumers.SglConsumeType;
 import universecore.annotations.Annotations;
 import universecore.world.consumers.BaseConsumers;
 
-public class FloorCrafter extends BoosterCrafter{
+public class FloorCrafter extends NormalCrafter{
   public FloorCrafter(String name){
     super(name);
   }
@@ -54,7 +54,7 @@ public class FloorCrafter extends BoosterCrafter{
   }
 
   @Annotations.ImplEntries
-  public class FloorCrafterBuild extends BoosterCrafterBuild implements FloorCrafterBuildComp {
+  public class FloorCrafterBuild extends NormalCrafterBuild implements FloorCrafterBuildComp {
 
   }
 }
