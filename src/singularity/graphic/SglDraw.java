@@ -65,8 +65,10 @@ public class SglDraw{
     Events.run(EventType.Trigger.draw, () -> {
       Particle.maxAmount = Sgl.config.enableParticle? Sgl.config.maxParticleCount: 0;
 
-      effectBuffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
-      Draw.draw(mirrorField - 0.01f, () -> effectBuffer.begin(Color.clear));
+      Draw.draw(mirrorField - 0.01f, () -> {
+        effectBuffer.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
+        effectBuffer.begin(Color.clear);
+      });
       Draw.draw(mirrorField + 0.51f, () -> {
         effectBuffer.end();
 

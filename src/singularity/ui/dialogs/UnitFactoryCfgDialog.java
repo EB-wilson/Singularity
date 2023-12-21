@@ -644,7 +644,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
     status.table(t -> {
       t.defaults().left();
       t.add(Core.bundle.get("misc.priority"));
-      t.field(String.valueOf(pri), TextField.TextFieldFilter.digitsOnly, num -> pri = Integer.parseInt(num)).growX();
+      t.field(String.valueOf(pri), TextField.TextFieldFilter.digitsOnly, num -> pri = num.isEmpty()? 0: Integer.parseInt(num)).growX();
     });
     status.row();
     status.button(Core.bundle.get("misc.sure"), Icon.ok, Styles.grayt, () -> factory.configure(cfgArgs(SET_PRIORITY, pri))).height(38).growX()
