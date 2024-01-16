@@ -12,6 +12,7 @@ import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Button;
 import arc.scene.ui.Dialog;
 import arc.scene.ui.Slider;
+import arc.scene.ui.layout.Scl;
 import arc.util.Tmp;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -115,7 +116,7 @@ public class SglStyles{
       codeFont = jetBrainsMono;
       FreeTypeFontGenerator gen = new FreeTypeFontGenerator(Core.files.internal("fonts/font.woff"));
       strongFont = gen.generateFont(new FreeTypeFontGenerator.FreeTypeFontParameter(){{
-        size = 19;
+        size = (int) Scl.scl(19);
         borderWidth = 0.3f;
         shadowOffsetY = 2;
         incremental = true;
