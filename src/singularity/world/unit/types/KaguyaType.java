@@ -238,6 +238,7 @@ public class KaguyaType extends SglUnitType<UnitEntity> {
 
                 fragBullet = new EdgeFragBullet();
                 fragBullets = 4;
+                fragLifeMin = 0.7f;
                 fragOnHit = true;
                 fragOnAbsorb = true;
               }
@@ -461,6 +462,7 @@ public class KaguyaType extends SglUnitType<UnitEntity> {
               for (int i = 0; i < shooters.length; i++) {
                 Shooter shooter = shooters[i];
                 Time.run(i*40, () -> {
+                  SglFx.explodeImpWaveMini.at(unit.x + shooter.x, unit.y + shooter.y, SglDrawConst.matrixNet);
                   for (int l = 0; l < 10; l++) {
                     Time.run(l*4, () -> {
                       Vec2 v = MathTransform.fourierSeries(Time.time, shooter.param).scl(mount.warmup);

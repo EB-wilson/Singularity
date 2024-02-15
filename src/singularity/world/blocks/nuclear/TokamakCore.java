@@ -9,15 +9,13 @@ import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
 import arc.struct.Seq;
-import arc.util.Align;
-import arc.util.Nullable;
-import arc.util.Strings;
-import arc.util.Tmp;
+import arc.util.*;
 import mindustry.Vars;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
+import mindustry.mod.Mods;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.ui.Bar;
@@ -465,6 +463,8 @@ public class TokamakCore extends NormalCrafter implements SpliceBlockComp {
 
     @Override
     public void updateTile() {
+      super.updateTile();
+
       chains.container.update();
 
       if (!consumeValid() || !structValid()){

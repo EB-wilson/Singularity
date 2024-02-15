@@ -216,6 +216,7 @@ public class MornstarType extends AirSeaAmphibiousUnit {
               fragOnHit = true;
               fragBullets = 3;
               fragRandomSpread = 115;
+              fragLifeMin = 0.7f;
             }
 
             @Override
@@ -542,6 +543,7 @@ public class MornstarType extends AirSeaAmphibiousUnit {
                   }
                 };
                 fragBullets = 5;
+                fragLifeMin = 0.7f;
 
                 intervalBullet = new LightLaserBulletType() {
                   {

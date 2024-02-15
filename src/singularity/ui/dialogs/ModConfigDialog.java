@@ -245,7 +245,7 @@ public class ModConfigDialog extends BaseDialog{
 
   public static class ConfigSepLine extends ConfigLayout{
     String string;
-    Color lineColor = Color.lightGray;
+    Color lineColor = Pal.accent, lineColorBack = Pal.accentBack;
 
     public ConfigSepLine(String name, String str){
       super(name);
@@ -254,9 +254,17 @@ public class ModConfigDialog extends BaseDialog{
 
     @Override
     public void build(Table table){
-      table.left().add(string).fill().left().padBottom(0);
+      table.stack(
+          new Table(t -> {
+            t.image().color(lineColor).pad(0).grow();
+            t.row();
+            t.image().color(lineColorBack).pad(0).height(4).growX();
+          }),
+          new Table(t -> {
+            t.left().add(string, Styles.outlineLabel).fill().left().padLeft(5);
+          })
+      ).grow().pad(-5).padBottom(4).padTop(4);
       table.row();
-      table.image().color(lineColor).pad(-5).padBottom(4).height(4).growX();
     }
   }
 

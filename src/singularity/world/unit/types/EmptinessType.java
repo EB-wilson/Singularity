@@ -9,6 +9,7 @@ import arc.graphics.g2d.Lines;
 import arc.math.Angles;
 import arc.math.Interp;
 import arc.math.Mathf;
+import arc.math.Rand;
 import arc.math.geom.Vec2;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Collapser;
@@ -35,6 +36,7 @@ import mindustry.ui.Styles;
 import mindustry.world.blocks.environment.Floor;
 import mindustry.world.meta.BlockFlag;
 import singularity.Sgl;
+import singularity.contents.OtherContents;
 import singularity.contents.SglItems;
 import singularity.contents.SglTurrets;
 import singularity.contents.SglUnits;
@@ -62,6 +64,7 @@ import static mindustry.Vars.headless;
 import static mindustry.Vars.world;
 
 public class EmptinessType extends SglUnitType<UnitEntity> {
+  private static final Rand rand = new Rand();
 
   public EmptinessType() {
     super("emptiness");
@@ -703,8 +706,8 @@ public class EmptinessType extends SglUnitType<UnitEntity> {
             linearWarmup = false;
             shootWarmupSpeed = 0.014f;
 
-            class BlastLaser extends singularity.world.blocks.turrets.LightningBulletType {
-              float blastDelay = 24;
+            class BlastLaser extends singularity.world.blocks.turrets.EmpLightningBulletType {
+              float blastDelay = 30;
               float damageInterval = 5;
               float laserShake = 5, damageShake = 12;
               Effect laserEffect = Fx.none;
@@ -748,6 +751,18 @@ public class EmptinessType extends SglUnitType<UnitEntity> {
                 Effect.shake(laserShake, laserShake, b);
                 if (b.timer(1, damageInterval)) {
                   Damage.collideLaser(b, Mathf.len(b.aimX - b.x, b.aimY - b.y)*Mathf.clamp(b.time/blastDelay), true, false, -1);
+                }
+              }
+
+              @Override
+              public void updateBulletInterval(Bullet b) {
+                Vec2 n = Tmp.v1.set(b.x, b.y).lerp(b.aimX, b.aimY, Mathf.clamp(b.time/blastDelay));
+
+                if(intervalBullet != null && b.time >= intervalDelay && b.timer.get(2, bulletInterval)){
+                  float ang = b.rotation();
+                  for(int i = 0; i < intervalBullets; i++){
+                    intervalBullet.create(b, n.x, n.y, ang + Mathf.range(intervalRandomSpread) + intervalAngle + ((i - (intervalBullets - 1f)/2f) * intervalSpread), rand.random(0.4f, 1f), rand.random(0.8f, 1f));
+                  }
                 }
               }
 
@@ -867,11 +882,22 @@ public class EmptinessType extends SglUnitType<UnitEntity> {
                 damage = 160;
                 damageInterval = 5;
 
+                blastDelay = 38;
                 rangeOverride = 600;
                 splashDamage = 3280;
                 splashDamageRadius = 120;
-                lifetime = 240;
+                empDamage = 530;
+                empRange = 120;
+                lifetime = 245;
                 hitSize = 12;
+
+                intervalBullet = SglTurrets.spilloverEnergy.copy();
+                intervalBullet.damage = 160;
+                intervalBullet.splashDamage = 160;
+                intervalBullet.splashDamageRadius = 45;
+                intervalBullets = 2;
+                intervalDelay = 3;
+                intervalRandomSpread = 360;
 
                 laserEffect = new MultiEffect(
                     SglFx.laserBlastWeaveLarge,
@@ -902,6 +928,8 @@ public class EmptinessType extends SglUnitType<UnitEntity> {
                     rangeOverride = 360;
                     splashDamage = 1400;
                     splashDamageRadius = 60;
+                    empDamage = 220;
+                    empRange = 60;
                     lifetime = 186;
                     hitSize = 9;
 

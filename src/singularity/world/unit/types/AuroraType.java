@@ -464,6 +464,7 @@ public class AuroraType extends AirSeaAmphibiousUnit {
                 fragSpread = 10;
                 fragOnHit = true;
                 fragRandomSpread = 60;
+                fragLifeMin = 0.7f;
                 shake = 5;
                 incendAmount = 0;
                 incendChance = 0;
@@ -629,6 +630,7 @@ public class AuroraType extends AirSeaAmphibiousUnit {
                   }
                 };
                 fragBullets = 3;
+                fragLifeMin = 0.7f;
               }
 
               @Override
