@@ -26,6 +26,7 @@ import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Iconc;
 import mindustry.gen.Unit;
+import mindustry.gen.UnitEntity;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;

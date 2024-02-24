@@ -120,7 +120,7 @@ public class DocumentDialog extends BaseDialog {
             }
             else {
               lastPane = clip.table(SglDrawConst.padGrayUI, page -> {
-                page.top().table().get().pane(Styles.smallPane, documents[index[0]]).scrollX(false).get().setFillParent(true);
+                page.top().table().grow().get().pane(Styles.smallPane, documents[index[0]]).scrollX(false).grow().get().setFillParent(true);
               }).grow().get();
             }
           };

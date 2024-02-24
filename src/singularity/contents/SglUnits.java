@@ -62,10 +62,8 @@ public class SglUnits implements ContentList {
 
   /**棱镜*/
   public static UnitType prism,
-  /**光弧*/
-  lightarc,
-  /**黎明*/
-  dawn;
+  /**流形*/
+  manifold;
 
   /**辉夜*/
   @UnitEntityType(SglUnitEntity.class)

@@ -87,30 +87,62 @@ public class SglTurrets implements ContentList{
   public static Block flash,
   /**伦琴*/
   roentgen,
+  /**红移*/
+  redshift,
+  /**蓝移*/
+  blueshift,
+
   /**遮幕*/
   curtain,
   /**迷雾*/
   mist,
   /**阴霾*/
   haze,
+
   /**惊蛰*/
   thunder,
+
+  /**阵雨*/
+  shower,
   /**白露*/
   dew,
+  /**羿*/
+  yii,//super weapon
+
+  /**细雨*/
+  drizzle,
   /**春分*/
   spring,
+
   /**吹雪*/
   fubuki,
   /**霜降*/
   frost,
   /**冬至*/
   winter,
+  /**冥王*/
+  pluto,//super weapon
+
   /**虚妄*/
   mirage,
+  /**幻象*/
+  illusion,
+  /**边界*/
+  edge,//super weapon
+
+  /**火花*/
+  spark,
+  /**热流*/
+  heatflux,
   /**阳炎*/
   soflame,
   /**夏至*/
-  summer;
+  summer,
+  /**耀斑*/
+  sunflare,//super weapon
+
+  /**夜空*/
+  night;//super weapon
 
   private static final RandomGenerator branch = new RandomGenerator();
 
@@ -708,7 +740,7 @@ public class SglTurrets implements ContentList{
             @Override
             public void update(Bullet b){
               super.update(b);
-              Units.nearbyEnemies(b.team, b.x, b.y, r, u -> Sgl.empHealth.empDamage(u, 0.5f, false));
+              Units.nearbyEnemies(b.team, b.x, b.y, r, u -> Sgl.empHealth.empDamage(u, 0.8f, false));
               if(b.timer(0, 6)){
                 Damage.status(b.team, b.x, b.y, r, OtherContents.electric_disturb, Math.min(450 - b.time, 120), true, true);
               }
@@ -810,7 +842,7 @@ public class SglTurrets implements ContentList{
         t.add(Core.bundle.get("infos.graphiteEmpAmmo"));
         t.row();
         t.table(table -> {
-          table.add(Core.bundle.format("bullet.empDamage", Strings.autoFixed(0.5f*60, 1) + "/" + StatUnit.seconds.localized(), ""));
+          table.add(Core.bundle.format("bullet.empDamage", Strings.autoFixed(0.8f*60, 1) + "/" + StatUnit.seconds.localized(), ""));
           table.row();
           table.add(OtherContents.electric_disturb.emoji() + "[stat]" + OtherContents.electric_disturb.localizedName + "[lightgray] ~ [stat]7.5[lightgray] " + Core.bundle.get("unit.seconds"));
         }).padLeft(15);
