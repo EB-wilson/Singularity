@@ -70,7 +70,6 @@ import java.io.StringReader;
 import java.util.Iterator;
 
 import static mindustry.Vars.state;
-import static singularity.world.blocks.product.SglUnitFactory.ConfigCmd.*;
 
 @Annotations.ImplEntries
 public class SglUnitFactory extends PayloadCrafter implements DistElementBlockComp {
@@ -264,7 +263,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
         t.add(Core.bundle.get("infos.matrixDistOnly")).color(Color.darkGray);
       }
 
-      Table table = new Table(SglDrawConst.grayUI);
+      Table table = new Table(SglDrawConst.grayUIAlpha);
       Collapser coll = new Collapser(table, true);
 
       table.left().defaults().left().pad(3).size(185, 60);

@@ -5,14 +5,16 @@ import arc.Events;
 import arc.files.Fi;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.style.Drawable;
+import arc.scene.ui.Dialog;
 import arc.struct.ObjectMap;
 import arc.util.Log;
 import mindustry.Vars;
 import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
 import mindustry.ctype.UnlockableContent;
+import mindustry.game.Team;
 import mindustry.mod.Mod;
-import mindustry.ui.Styles;
+import mindustry.ui.dialogs.BaseDialog;
 import singularity.contents.*;
 import singularity.contents.override.OverrideBlocks;
 import singularity.contents.override.OverridePlanets;
@@ -22,16 +24,19 @@ import singularity.type.SglCategory;
 import singularity.type.SglContentType;
 import singularity.ui.SglStyles;
 import singularity.world.meta.SglAttribute;
-import singularity.contents.SglUnits;
+import tmi.RecipeEntryPoint;
 import universecore.UncCore;
 import universecore.annotations.Annotations;
+import universecore.ui.elements.markdown.Markdown;
+import universecore.ui.elements.markdown.MarkdownStyles;
 import universecore.util.OverrideContentList;
 
 import java.util.Locale;
 
 import static mindustry.game.EventType.*;
 
-@Annotations.ImportUNC(requireVersion = "1.8.10")
+@RecipeEntryPoint(Recipes.class)
+@Annotations.ImportUNC(requireVersion = "2.1.0")
 public class Singularity extends Mod{
   private static final ContentList[] modContents = new ContentList[]{
       new OtherContents(),//其他内容
@@ -48,6 +53,7 @@ public class Singularity extends Mod{
       new SglTurrets(),//炮台
       new SglUnits(),//单位相关内容（单位、工厂）
       new DefenceBlocks(),//防御方块
+      new SglPlanets(),//星球
 
       new SglTechThree(),//科技树
   };
@@ -77,6 +83,7 @@ public class Singularity extends Mod{
     if(Sgl.config.showModMenuWenLaunch){
       Events.on(ClientLoadEvent.class, e -> {
         Sgl.ui.mainMenu.show();
+        Sgl.ui.techTreeDialog.show();
       });
     }
 
@@ -88,7 +95,7 @@ public class Singularity extends Mod{
 
     if(Sgl.config.debugMode) Events.on(WorldLoadEvent.class, e -> Vars.state.rules.infiniteResources = true);
   }
-  
+
   @Override
   public void init(){
     //游戏本体更改初始化
@@ -141,6 +148,10 @@ public class Singularity extends Mod{
     return Core.atlas.find(Sgl.modName + "-" + name);
   }
 
+  public static TextureRegion getModAtlas(String name, TextureRegion def) {
+    return Core.atlas.find(Sgl.modName + "-" + name, def);
+  }
+
   public static <T extends Drawable> T getModDrawable(String name){
     return Core.atlas.getDrawable(Sgl.modName + "-" + name);
   }
@@ -154,7 +165,8 @@ public class Singularity extends Mod{
   }
 
   public static Fi getDocumentFile(Locale locale, String name){
-    return getInternalFile("documents").child(locale.toString()).child(name);
+    Fi docs = getInternalFile("documents").child(locale.toString());
+    return docs.exists()? docs.child(name): getInternalFile("documents").child("zh_CN");
   }
 
   private static final ObjectMap<Fi, String> docCache = new ObjectMap<>();

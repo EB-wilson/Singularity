@@ -15,7 +15,7 @@ import singularity.Contributors;
 import singularity.Sgl;
 import singularity.Singularity;
 import singularity.graphic.SglDrawConst;
-import universecore.ui.table.ZoomableTable;
+import universecore.ui.elements.ZoomableTable;
 
 public class ContributorsDialog extends BaseDialog{
   protected ZoomableTable table = new ZoomableTable();
@@ -34,7 +34,7 @@ public class ContributorsDialog extends BaseDialog{
     
     touchable = Touchable.enabled;
 
-    table.table(SglDrawConst.grayUI, table -> {
+    table.table(SglDrawConst.grayUIAlpha, table -> {
       table.defaults().pad(8);
 
       table.table(Tex.underline, t -> {

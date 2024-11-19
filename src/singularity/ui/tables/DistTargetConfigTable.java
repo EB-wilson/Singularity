@@ -1,7 +1,6 @@
 package singularity.ui.tables;
 
 import arc.Core;
-import arc.Events;
 import arc.Graphics;
 import arc.KeyBinds;
 import arc.func.Cons;
@@ -15,14 +14,12 @@ import arc.math.Interp;
 import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
-import arc.scene.Action;
 import arc.scene.Element;
 import arc.scene.actions.Actions;
 import arc.scene.event.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
-import arc.scene.utils.Elem;
 import arc.struct.ObjectSet;
 import arc.struct.SnapshotSeq;
 import arc.util.*;
@@ -36,15 +33,9 @@ import mindustry.graphics.Pal;
 import mindustry.input.Binding;
 import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
-import mindustry.world.blocks.logic.LogicBlock;
-import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.blocks.distribute.TargetConfigure;
 import singularity.world.distribution.GridChildType;
-import universecore.util.handler.FieldHandler;
-import universecore.world.lightnings.generator.VectorLightningGenerator;
-
-import java.util.Arrays;
 
 public class DistTargetConfigTable extends Table{
   private static final ObjectSet<Character> numbers = ObjectSet.with('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-');
@@ -310,10 +301,10 @@ public class DistTargetConfigTable extends Table{
                     Point2 po1 = Geometry.d8(i*2 - 1);
                     Point2 po2 = Geometry.d8((i + 1)*2 - 1);
                     Fill.quad(
-                        ox + width*po1.x/2 + po1.x*4, oy + height*po1.y/2 + po1.y*4,
+                        ox + width*po1.x/2 + Scl.scl(po1.x*4), oy + height*po1.y/2 + Scl.scl(po1.y*4),
                         ox + width*po1.x/2, oy + height*po1.y/2,
                         ox + width*po2.x/2, oy + height*po2.y/2,
-                        ox + width*po2.x/2 + po2.x*4, oy + height*po2.y/2 + po2.y*4
+                        ox + width*po2.x/2 + Scl.scl(po2.x*4), oy + height*po2.y/2 + Scl.scl(po2.y*4)
                     );
                   }
                 }
@@ -376,7 +367,7 @@ public class DistTargetConfigTable extends Table{
       image().color(Pal.gray).growX().height(4).colspan(2).padTop(3).padBottom(3).margin(0);
       row();
       table(dirCfg -> {
-        dirCfg.table(SglDrawConst.padGrayUI, infos -> {
+        dirCfg.table(SglDrawConst.padGrayUIAlpha, infos -> {
           infos.top().defaults().top().left().growX();
           infos.add("").update(l -> l.setText(current == null? Core.bundle.get("infos.selectAItem"): Core.bundle.get("infos.flipCfg")));
           infos.row();
@@ -403,7 +394,7 @@ public class DistTargetConfigTable extends Table{
             }).disabled(b -> current == null).get().addListener(new Tooltip(t -> t.table(Tex.paneLeft).get().add(Core.bundle.get("misc.clearAllDir"))));
           });
         }).growY().width(150);
-        dirCfg.table(SglDrawConst.padGrayUI, fliper -> {
+        dirCfg.table(SglDrawConst.padGrayUIAlpha, fliper -> {
           fliper.add(new Flip()).size(75);
         });
         dirCfg.table(IOty -> {
@@ -411,7 +402,7 @@ public class DistTargetConfigTable extends Table{
 
           TextButton[] currSelecting = new TextButton[]{null, null};
 
-          Table bot = new Table(SglDrawConst.grayUI){{
+          Table bot = new Table(SglDrawConst.grayUIAlpha){{
             update(() -> {
               if (currSelecting[0] != currSelecting[1]){
                 currSelecting[1] = currSelecting[0];

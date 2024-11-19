@@ -5,25 +5,20 @@ import arc.audio.Sound;
 import arc.func.Cons;
 import arc.func.Cons2;
 import arc.func.Floatf;
-import arc.func.Floatp;
 import arc.graphics.Color;
 import arc.math.Mathf;
 import arc.math.Rand;
 import arc.scene.Element;
 import arc.scene.event.Touchable;
-import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Image;
 import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Table;
 import arc.struct.*;
 import arc.util.Scaling;
 import arc.util.Strings;
-import arc.util.Time;
-import arc.util.Tmp;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.content.Fx;
-import mindustry.content.Items;
 import mindustry.entities.Effect;
 import mindustry.game.Team;
 import mindustry.gen.Icon;
@@ -33,7 +28,6 @@ import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.logic.LAccess;
 import mindustry.type.Item;
-import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import mindustry.ui.Bar;
@@ -41,10 +35,7 @@ import mindustry.ui.ItemDisplay;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.meta.*;
-import singularity.Sgl;
-import singularity.contents.SglItems;
 import singularity.graphic.SglDrawConst;
-import singularity.ui.StatUtils;
 import singularity.world.blocks.SglBlock;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.meta.SglStat;
@@ -57,11 +48,9 @@ import universecore.components.blockcomp.FactoryBlockComp;
 import universecore.components.blockcomp.FactoryBuildComp;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
-import universecore.world.consumers.ConsumePower;
 import universecore.world.consumers.ConsumeType;
 import universecore.world.producers.BaseProduce;
 import universecore.world.producers.BaseProducers;
-import universecore.world.producers.ProduceLiquids;
 import universecore.world.producers.ProduceType;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -69,7 +58,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**常规的工厂类方块，具有强大的consume-produce制造系统的近乎全能的制造类方块*/
 @Annotations.ImplEntries
-public class NormalCrafter extends SglBlock implements FactoryBlockComp{
+public class NormalCrafter extends SglBlock implements FactoryBlockComp {
   protected Rand rand = new Rand();
 
   public float updateEffectChance = 0.04f;
@@ -195,13 +184,19 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
       e.mark = 2;
     }, (s, c) -> {
       s.add(Stat.boostEffect, t -> {
-        t.table(req -> {
-          req.left().defaults().left().padLeft(3);
-          for (BaseConsume<? extends ConsumerBuildComp> co : c.all()) {
-            co.buildIcons(req);
-          }
-        }).left().padRight(40);
-        t.add(Core.bundle.get("misc.efficiency") + Strings.autoFixed(boost*100, 1) + "%").growX().right();
+        t.row();
+        t.table(cons -> {
+          cons.table(req -> {
+            req.left().defaults().left().padLeft(3);
+            Stats stats = new Stats();
+            for (BaseConsume<? extends ConsumerBuildComp> co : c.all()) {
+              co.display(stats);
+            }
+            FactoryBlockComp.buildStatTable(req, stats);
+          }).left().padRight(40);
+          cons.add(Core.bundle.get("misc.efficiency") + Strings.autoFixed(boost*100, 1) + "%").growX().right();
+        });
+
       });
     });
     boosts.put(res, boost);
@@ -300,7 +295,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp{
         AtomicBoolean isSim = new AtomicBoolean(false);
         AtomicReference<Runnable> rebuild = new AtomicReference<>();
 
-        t.table(SglDrawConst.grayUI, ta -> {
+        t.table(SglDrawConst.grayUIAlpha, ta -> {
           rebuild.set(() -> {
             ta.clearChildren();
             ta.left().add(isSim.get()? details: simple);

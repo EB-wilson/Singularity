@@ -3,15 +3,29 @@ package singularity.ui.dialogs;
 import arc.Core;
 import arc.func.Prov;
 import arc.graphics.Color;
+import arc.graphics.Pixmap;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.TextureRegion;
+import arc.math.Mathf;
 import arc.scene.Element;
+import arc.scene.actions.Actions;
 import arc.scene.style.Drawable;
+import arc.scene.style.TextureRegionDrawable;
+import arc.scene.ui.Image;
 import arc.scene.ui.Label;
 import arc.scene.ui.layout.Scl;
+import arc.struct.IntSeq;
+import arc.struct.Seq;
+import arc.util.Align;
+import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
+import mindustry.content.Fx;
+import mindustry.content.Items;
 import mindustry.content.Liquids;
+import mindustry.ctype.UnlockableContent;
+import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.WarningBar;
@@ -20,6 +34,9 @@ import singularity.Sgl;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
+import singularity.world.SglFx;
+import universecore.ui.elements.BloomGroup;
+import universecore.ui.elements.SceneEffect;
 
 public class MainMenu extends BaseDialog {
   protected boolean launch = true;
@@ -29,8 +46,7 @@ public class MainMenu extends BaseDialog {
   ButtonEntry[] buttonEntries = new ButtonEntry[]{
       new ButtonEntry(SglDrawConst.startIcon,
           () -> Core.bundle.get(launch? "misc.startGame": "misc.backToGame"),
-          () -> Color.white, () -> {hide(); launch = false;
-      }),
+          () -> Color.white, () -> { hide(); launch = false; }),
       new ButtonEntry(SglDrawConst.databaseIcon, Core.bundle.get("misc.modDatabase"), Pal.accent, lookForward),
       new ButtonEntry(SglDrawConst.configureIcon, Core.bundle.get("misc.modConfigure"), Color.lightGray, () -> {
         Sgl.ui.config.show();
@@ -43,12 +59,17 @@ public class MainMenu extends BaseDialog {
       }),
       new ButtonEntry(SglDrawConst.contributeIcon, Core.bundle.get("misc.contribute"), Color.yellow, () -> Sgl.ui.support.show()),
   };
-  
+
   public MainMenu() {
     super(Core.bundle.get("dialog.mainMenu.title"));
   }
   
   public void build() {
+
+    TextureRegion region =  Items.copper.fullIcon;
+    Pixmap map = region.texture.getTextureData().getPixmap();
+    map.crop((int) (region.u*region.width), (int) (region.v*region.height), region.width, region.height);
+
     cont.top().table(main -> {
       main.image(SglDrawConst.sglLaunchLogo).size(220, 110).padTop(30);
       main.row();

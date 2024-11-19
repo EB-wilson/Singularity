@@ -757,6 +757,8 @@ public class SglDraw{
   }
 
   public static void dashCircle(float x, float y, float radius, float scaleFactor, int dashes, float totalDashDeg, float rotate){
+    if (Mathf.equal(totalDashDeg, 0)) return;
+
     int sides = 40 + (int)(radius * scaleFactor);
     if(sides % 2 == 1) sides++;
 
@@ -768,17 +770,19 @@ public class SglDraw{
     float dashDeg = totalDashDeg/dashes;
     float empDeg = rem/dashes;
 
+    Lines.beginLine();
+    v1.set(radius, 0).setAngle(rotate + 90);
+    Lines.linePoint(v1.x + x, v1.y + y);
     for(int i = 0; i < sides; i++){
       if(i*Math.abs(per)%(dashDeg+empDeg) > dashDeg) continue;
 
-      v1.set(radius, 0).setAngle(rotate + per * i + 90);
+      v1.set(radius, 0).setAngle(rotate + per * (i + 1) + 90);
       float x1 = v1.x;
       float y1 = v1.y;
 
-      v1.set(radius, 0).setAngle(rotate + per * (i + 1) + 90);
-
-      Lines.line(x1 + x, y1 + y, v1.x + x, v1.y + y);
+      Lines.linePoint(x1 + x, y1 + y);
     }
+    Lines.endLine();
   }
 
   public static void drawLaser(float originX, float originY, float otherX, float otherY, TextureRegion linkRegion,

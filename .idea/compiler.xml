@@ -6,7 +6,7 @@
       <profile name="Gradle Imported" enabled="true">
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/UniverseCore/annotations/1.8.10/annotations-1.8.10.jar" />
+          <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/UniverseCore/annotations/2.2.0/annotations-2.2.0.jar" />
           <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/JavaDynamilizer/apt/V1.8-A3/apt-V1.8-A3.jar" />
           <entry name="$MAVEN_REPOSITORY$/com/github/EB-wilson/JavaDynamilizer/annotations/V1.8-A3/annotations-V1.8-A3.jar" />
         </processorPath>
@@ -14,5 +14,10 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="17" />
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="Singularity.main" options="--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED" />
+    </option>
   </component>
 </project>

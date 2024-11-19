@@ -19,7 +19,7 @@ public class SupportUsDialog extends BaseDialog {
 
     addCloseButton();
 
-    cont.table(SglDrawConst.grayUI, main -> {
+    cont.table(SglDrawConst.grayUIAlpha, main -> {
       main.pane(p -> {
         p.defaults().growX().pad(5);
         p.add(Core.bundle.get("dialog.support.info")).growX().wrap();

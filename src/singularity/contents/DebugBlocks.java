@@ -2,24 +2,18 @@ package singularity.contents;
 
 import arc.Core;
 import arc.audio.Sound;
-import arc.graphics.Blending;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Lines;
-import arc.graphics.gl.FrameBuffer;
 import arc.math.Mathf;
 import arc.scene.ui.layout.Table;
 import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
-import mindustry.entities.Units;
-import mindustry.entities.abilities.ForceFieldAbility;
-import mindustry.gen.Building;
-import mindustry.gen.Groups;
-import mindustry.gen.Sounds;
-import mindustry.gen.Tex;
+import mindustry.gen.*;
+import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import mindustry.type.ItemStack;
@@ -28,6 +22,7 @@ import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
 import singularity.Sgl;
 import singularity.graphic.*;
+import singularity.graphic.renders.Aftershadow;
 import singularity.type.SglCategory;
 import singularity.ui.SglStyles;
 import singularity.util.MathTransform;
@@ -37,7 +32,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 public class DebugBlocks implements ContentList{
-  public static Block drawTest, voidDrawTest, volTest, empDamageTester;
+  public static Block drawTest, voidDrawTest, drawShadowTest, volTest, empDamageTester;
 
   @Override
   public void load(){
@@ -141,6 +136,37 @@ public class DebugBlocks implements ContentList{
 
             SglDraw.drawDiamond(b.x + dx, b.y + dy, 180, 5, 0);
             Draw.reset();
+          });
+        }
+      };
+    }};
+
+    drawShadowTest = new TestBlock("shadow_test"){{
+      requirements(SglCategory.debugging, ItemStack.with());
+      configurable = true;
+
+      buildType = () -> new TestBlockBuild(){
+        final Aftershadow shadow = new Aftershadow(128, 128, 8);
+
+        {
+          shadow.setBaseColor(Color.clear);
+        }
+
+        @Override
+        public void update() {
+          super.update();
+          shadow.update();
+        }
+
+        @Override
+        public void draw() {
+          super.draw();
+          shadow.draw(x, y, () -> {
+            Lines.stroke(2f);
+            Tmp.v1.set(26, 0).setAngle(Time.time);
+            Tmp.v2.set(32, 0).setAngle(-Time.time).add(Tmp.v1);
+
+            Drawf.dashLine(Color.white, x + Tmp.v1.x, y + Tmp.v1.y, x + Tmp.v2.x, y + Tmp.v2.y, 7);
           });
         }
       };

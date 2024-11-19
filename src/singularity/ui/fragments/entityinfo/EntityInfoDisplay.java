@@ -1,8 +1,5 @@
-package singularity.ui.fragments;
+package singularity.ui.fragments.entityinfo;
 
-import arc.Core;
-import arc.func.Floatc2;
-import arc.util.Tmp;
 import mindustry.game.Team;
 import mindustry.gen.Entityc;
 import mindustry.gen.Posc;

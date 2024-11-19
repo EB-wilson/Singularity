@@ -3,14 +3,12 @@ package singularity.type;
 import mindustry.ctype.Content;
 import mindustry.ctype.ContentType;
 import mindustry.entities.abilities.Ability;
+import singularity.world.blocks.research.ResearchDevice;
 import singularity.world.blocks.structure.BlockStructure;
 import universecore.util.UncContentType;
 
 public class SglContentType extends UncContentType{
-  public static SglContentType ability;
-  public static SglContentType structure;
-  public static SglContentType reaction;
-  public static SglContentType atomSchematic;
+  public static SglContentType ability, structure, atomSchematic, researchDevice;
 
   public static SglContentType[] allSglContentType;
   
@@ -33,9 +31,9 @@ public class SglContentType extends UncContentType{
   public static void load(){
     ability = new SglContentType("ability", PlayerAbility.class);
     structure = new SglContentType("structure", BlockStructure.class);
-
     atomSchematic = new SglContentType("atomSchematic", AtomSchematic.class, false);
-    
-    allSglContentType = new SglContentType[]{ability, structure, reaction, atomSchematic};
+    researchDevice = new SglContentType("researchDevice", ResearchDevice.class);
+
+    allSglContentType = new SglContentType[]{ability, structure, atomSchematic, researchDevice};
   }
 }

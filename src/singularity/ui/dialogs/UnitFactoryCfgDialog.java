@@ -183,7 +183,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
 
                         Runnable rebuild = () -> {
                           cont.clearChildren();
-                          cont.table(SglDrawConst.grayUI, t -> {
+                          cont.table(SglDrawConst.grayUIAlpha, t -> {
                             t.left().defaults().left().growX().pad(4);
 
                             t.top().table(top -> {
@@ -280,7 +280,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
                             });
                           }).fill();
                           cont.row();
-                          tip = cont.table(SglDrawConst.grayUI, t -> t.add(Core.bundle.get("dialog.unitFactor.addFaid")).color(Color.red)).margin(6).fill().get();
+                          tip = cont.table(SglDrawConst.grayUIAlpha, t -> t.add(Core.bundle.get("dialog.unitFactor.addFaid")).color(Color.red)).margin(6).fill().get();
                           tip.color.a = 0;
                         };
 
@@ -409,7 +409,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
         new BaseDialog("") {{
           setStyle(SglStyles.transparentBack);
 
-          cont.table(SglDrawConst.grayUI, t -> {
+          cont.table(SglDrawConst.grayUIAlpha, t -> {
             t.defaults().size(320, 58);
             t.add(Core.bundle.get("dialog.unitFactor.imports")).padBottom(12).center().labelAlign(Align.center);
             t.row();
@@ -468,7 +468,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
         }
       });
 
-      Table buttons = new Table(SglDrawConst.grayUI, tab -> {
+      Table buttons = new Table(SglDrawConst.grayUIAlpha, tab -> {
         tab.table(cmds -> commandCfgTab = cmds).pad(5).fill();
         tab.button(Icon.ok, Styles.clearNonei, () -> {
           currConfig.configure(cfgArgs(COMMAND, currConfig.indexOfTask(configCmdTask),
@@ -528,13 +528,13 @@ public class UnitFactoryCfgDialog extends BaseDialog {
     Runnable rebuildLayout = () -> {
       cont.clearChildren();
       cont.table(root -> {
-        root.table(SglDrawConst.grayUI, pa -> {
+        root.table(SglDrawConst.grayUIAlpha, pa -> {
           pa.top().pane(list -> taskQueue = list).growX().fillY().top();
         }).grow();
 
         if (Core.graphics.isPortrait()) root.row();
 
-        Cell<Table> cell = root.table(SglDrawConst.grayUI, side -> {
+        Cell<Table> cell = root.table(SglDrawConst.grayUIAlpha, side -> {
           Table t = side;
           if (Core.graphics.isPortrait()) {
             side = new Table();
@@ -756,7 +756,7 @@ public class UnitFactoryCfgDialog extends BaseDialog {
 
   private void buildTaskItem(Table table, SglUnitFactory.SglUnitFactoryBuild.BuildTask task, boolean executing) {
     Table[] mark = new Table[1];
-    mark[0] = table.table(SglDrawConst.grayUI, ta -> {
+    mark[0] = table.table(SglDrawConst.grayUIAlpha, ta -> {
       ta.defaults().left().pad(6);
       if (task == null) {
         ta.add("no task executing!").center().height(80);

@@ -18,7 +18,6 @@ import arc.struct.OrderedMap;
 import arc.struct.Seq;
 import arc.util.Align;
 import arc.util.Strings;
-import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
@@ -62,7 +61,7 @@ public class ModConfigDialog extends BaseDialog{
         new BaseDialog("") {{
           setStyle(SglStyles.transparentBack);
 
-          cont.table(SglDrawConst.grayUI, t -> {
+          cont.table(SglDrawConst.grayUIAlpha, t -> {
             t.add(Core.bundle.get("infos.relaunchEnsure")).padBottom(12).center().labelAlign(Align.center).grow();
             t.row();
             t.table(bu -> {
@@ -169,7 +168,7 @@ public class ModConfigDialog extends BaseDialog{
       }).growX().fillY().top().get().setScrollingDisabledX(true);
     }).grow().pad(4).padLeft(12).padRight(12);
     cont.row();
-    relaunchTip = cont.table(SglDrawConst.grayUI, t -> t.add(Core.bundle.get("infos.requireRelaunch")).color(Color.red)).fill().center().margin(10).pad(4).get();
+    relaunchTip = cont.table(SglDrawConst.grayUIAlpha, t -> t.add(Core.bundle.get("infos.requireRelaunch")).color(Color.red)).fill().center().margin(10).pad(4).get();
     relaunchTip.color.a(0);
 
     rebuildSettings();

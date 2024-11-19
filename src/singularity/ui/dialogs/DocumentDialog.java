@@ -8,11 +8,8 @@ import arc.math.Interp;
 import arc.scene.Element;
 import arc.scene.actions.Actions;
 import arc.scene.ui.ImageButton;
-import arc.scene.ui.Label;
-import arc.scene.ui.ScrollPane;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
-import arc.util.Align;
 import arc.util.Nullable;
 import mindustry.gen.Icon;
 import mindustry.graphics.Pal;
@@ -86,7 +83,7 @@ public class DocumentDialog extends BaseDialog {
               index[0]--;
               rebuilder.get(-1);
             }).disabled(b -> index[0] <= 0).get();
-            bu.getStyle().up = bu.getStyle().disabled = SglDrawConst.grayUI;
+            bu.getStyle().up = bu.getStyle().disabled = SglDrawConst.grayUIAlpha;
           }
         };
 
@@ -103,7 +100,7 @@ public class DocumentDialog extends BaseDialog {
                   ),
                   Actions.run(() -> {
                     clip.removeChild(lastPane);
-                    lastPane = clip.table(SglDrawConst.padGrayUI, page -> {
+                    lastPane = clip.table(SglDrawConst.padGrayUIAlpha, page -> {
                       page.top().table().get().pane(Styles.smallPane, documents[index[0]]).scrollX(false).get().setFillParent(true);
                     }).scrollX(false).grow().get();
                     lastPane.color.a = 0;
@@ -119,7 +116,7 @@ public class DocumentDialog extends BaseDialog {
               );
             }
             else {
-              lastPane = clip.table(SglDrawConst.padGrayUI, page -> {
+              lastPane = clip.table(SglDrawConst.padGrayUIAlpha, page -> {
                 page.top().table().grow().get().pane(Styles.smallPane, documents[index[0]]).scrollX(false).grow().get().setFillParent(true);
               }).grow().get();
             }
@@ -134,11 +131,11 @@ public class DocumentDialog extends BaseDialog {
             }
             else t.defaults().growY().width(40);
 
-            ImageButton bu = t.button(Icon.rightOpen, new ImageButton.ImageButtonStyle(Styles.clearNonei){{ up = SglDrawConst.grayUI; }}, () -> {
+            ImageButton bu = t.button(Icon.rightOpen, new ImageButton.ImageButtonStyle(Styles.clearNonei){{ up = SglDrawConst.grayUIAlpha; }}, () -> {
               index[0]++;
               rebuilder.get(1);
             }).disabled(b -> index[0] >= documents.length - 1).get();
-            bu.getStyle().up = bu.getStyle().disabled = SglDrawConst.grayUI;
+            bu.getStyle().up = bu.getStyle().disabled = SglDrawConst.grayUIAlpha;
           }
         };
 

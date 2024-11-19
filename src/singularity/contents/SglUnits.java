@@ -52,8 +52,6 @@ import universecore.world.producers.ProduceType;
 import static mindustry.Vars.*;
 
 public class SglUnits implements ContentList {
-  private static final Rand rand = Mathf.rand;
-
   public static final String EPHEMERAS = "ephemeras";
   public static final String TIMER = "timer";
   public static final String STATUS = "status";

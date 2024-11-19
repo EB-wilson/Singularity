@@ -11,9 +11,6 @@ import arc.math.Mathf;
 import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.math.geom.Vec2;
-import arc.scene.event.Touchable;
-import arc.scene.style.TextureRegionDrawable;
-import arc.scene.ui.Image;
 import arc.scene.ui.layout.Table;
 import arc.struct.IntSeq;
 import arc.struct.Seq;
@@ -62,10 +59,6 @@ import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeItems;
 import universecore.world.consumers.ConsumeLiquids;
-import universecore.world.producers.BaseProducers;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static mindustry.Vars.tilesize;
 
@@ -227,7 +220,7 @@ public class GameOfLife extends SglBlock{
         Table details = new Table();
         FactoryBlockComp.buildRecipe(details, cons, null);
 
-        t.table(SglDrawConst.grayUI, ta -> ta.add(details).pad(4));
+        t.table(SglDrawConst.grayUIAlpha, ta -> ta.add(details).pad(4));
         t.row();
       }
     });
@@ -258,7 +251,7 @@ public class GameOfLife extends SglBlock{
         }
 
         t.add(Core.bundle.format("infos.cellYears", i)).left().top().color(Pal.gray).fill();
-        t.table(SglDrawConst.grayUI, item -> {
+        t.table(SglDrawConst.grayUIAlpha, item -> {
           item.defaults().grow().left();
           FactoryBlockComp.buildStatTable(item, stat);
         }).fill().pad(5).left().margin(5);
@@ -267,7 +260,7 @@ public class GameOfLife extends SglBlock{
 
       if (cellSenescence){
         t.add().left().top();
-        t.table(SglDrawConst.grayUI, item -> {
+        t.table(SglDrawConst.grayUIAlpha, item -> {
           item.defaults().grow().left();
           item.add(Core.bundle.get("infos.cellYearsOverflow"));
         }).fill().pad(5).left().margin(5);

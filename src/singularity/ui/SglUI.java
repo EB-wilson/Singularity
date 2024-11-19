@@ -2,7 +2,6 @@ package singularity.ui;
 
 import arc.Core;
 import arc.input.KeyCode;
-import arc.math.Interp;
 import arc.math.Mathf;
 import arc.math.WindowedMean;
 import arc.math.geom.Vec3;
@@ -33,6 +32,10 @@ import singularity.ui.dialogs.ModConfigDialog.ConfigCheck;
 import singularity.ui.dialogs.ModConfigDialog.ConfigSepLine;
 import singularity.ui.dialogs.ModConfigDialog.ConfigSlider;
 import singularity.ui.fragments.*;
+import singularity.ui.fragments.entityinfo.EntityHealthDisplay;
+import singularity.ui.fragments.entityinfo.EntityInfoFrag;
+import singularity.ui.fragments.entityinfo.HealthBarStyle;
+import singularity.ui.fragments.entityinfo.UnitStatusDisplay;
 import singularity.ui.fragments.override.SglMenuFrag;
 
 @SuppressWarnings("DuplicatedCode")
@@ -52,6 +55,8 @@ public class SglUI{
   public DistNetMonitorDialog bufferStat;
 
   public UnitFactoryCfgDialog unitFactoryCfg;
+  public SglTechTreeDialog techTreeDialog;
+  public InstituteConfigDialog instituteCfg;
 
   public ToolBarFrag toolBar;
 
@@ -211,6 +216,7 @@ public class SglUI{
     support = new SupportUsDialog();
     bufferStat = new DistNetMonitorDialog();
     document = new DocumentDialog();
+    techTreeDialog = new SglTechTreeDialog();
     unitFactoryCfg = new UnitFactoryCfgDialog();
 
     toolBar = new ToolBarFrag();

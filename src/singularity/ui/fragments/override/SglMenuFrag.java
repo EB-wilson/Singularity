@@ -160,8 +160,8 @@ public class SglMenuFrag extends MenuFragment{
               @Override
               public void pan(InputEvent event, float x, float y, float deltaX, float deltaY){
                 paning = true;
-                params.camDir.rotate(camRight, deltaY/9);
-                params.camUp.rotate(camRight, deltaY/9);
+                params.camDir.rotate(camRight, -deltaY/9);
+                params.camUp.rotate(camRight, -deltaY/9);
 
                 params.camDir.rotate(params.camUp, deltaX/9);
                 camRight.rotate(params.camUp, deltaX/9);

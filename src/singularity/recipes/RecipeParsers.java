@@ -7,12 +7,12 @@ import arc.math.Mathf;
 import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import mindustry.world.Block;
+import org.jetbrains.annotations.NotNull;
 import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.consumers.SglConsumeFloor;
+import singularity.world.consumers.SglConsumeType;
 import singularity.world.products.SglProduceType;
-import tmi.recipe.Recipe;
-import tmi.recipe.RecipeItemStack;
-import tmi.recipe.RecipeParser;
-import tmi.recipe.RecipeType;
+import tmi.recipe.*;
 import universecore.components.blockcomp.ConsumerBuildComp;
 import universecore.world.consumers.BaseConsume;
 import universecore.world.consumers.BaseConsumers;
@@ -37,34 +37,39 @@ public class RecipeParsers {
 
   public static class ProducerParser extends RecipeParser<NormalCrafter>{
     @Override
-    public boolean isTarget(Block block) {
+    public boolean isTarget(@NotNull Block block) {
       return block instanceof NormalCrafter;
     }
 
+    @SuppressWarnings("rawtypes")
+    @NotNull
     @Override
     public Seq<Recipe> parse(NormalCrafter normalCrafter) {
       Seq<Recipe> recipes = new Seq<>();
 
-      for (BaseProducers producer : normalCrafter.producers()) {
+      for (BaseProducers crafter : normalCrafter.producers()) {
         boolean isGenerator = false;
 
-        for (BaseProduce<?> produce : producer.all()) {
+        for (BaseProduce<?> produce : crafter.all()) {
           if (produce.type() == ProduceType.power || produce.type() == SglProduceType.energy){
             isGenerator = true;
             break;
           }
         }
 
-        Recipe recipe = new Recipe(isGenerator? RecipeType.generator: RecipeType.factory);
-        recipe.setBlock(getWrap(normalCrafter));
-        recipe.setTime(producer.cons.craftTime);
+        Recipe recipe = new Recipe(
+            isGenerator? RecipeType.generator: RecipeType.factory,
+            getWrap(normalCrafter),
+            crafter.cons.craftTime
+        );
 
-        for (BaseProduce<?> produce : producer.all()) {
-          if (prodParsers.containsKey(produce.type())) prodParsers.get(produce.type()).get(normalCrafter, recipe, produce, s -> {});
-        }
-
-        for (BaseConsume<?> consume : producer.cons.all()) {
-          if (consParsers.containsKey(consume.type())) consParsers.get(consume.type()).get(normalCrafter, recipe, consume, s -> {});
+        for (BaseConsume<?> consume : crafter.cons.all()) {
+          if (consParsers.containsKey(consume.type())) {
+            consParsers.get(consume.type()).get(normalCrafter, recipe, consume, s -> {});
+            if (consume instanceof SglConsumeFloor cf){
+              recipe.setEff(Recipe.getDefaultEff(cf.baseEfficiency));
+            }
+          }
         }
 
         for (BaseConsumers consumers : normalCrafter.optionalCons()) {
@@ -72,32 +77,39 @@ public class RecipeParsers {
 
           for (BaseConsume<? extends ConsumerBuildComp> consume : consumers.all()) {
             if (consParsers.containsKey(consume.type())) consParsers.get(consume.type()).get(normalCrafter, recipe, consume, recipeItemStack -> {
-              RecipeItemStack.AmountFormatter old = recipeItemStack.amountFormat;
-              float eff = normalCrafter.boosts.get(consumers, 1f)*recipeItemStack.efficiency;
+              AmountFormatter old = recipeItemStack.getAmountFormat();
+              float eff = normalCrafter.boosts.get(consumers, 1f)*recipeItemStack.getEfficiency();
+              if (eff == 1 && recipeItemStack.getAttributeGroup() == null) return;
               recipeItemStack
-                  .setOptionalCons()
-                  .setEfficiency(eff)
+                  .setOptional()
+                  .setEff(eff)
                   .setFormat(f -> old.format(f) + "\n[#98ffa9]" + Mathf.round(eff*100) + "%");
             });
           }
         }
 
-        NormalCrafter.Byproduct byproduct = normalCrafter.byproducts.get(producer.cons);
+        for (BaseProduce<?> produce : crafter.all()) {
+          if (prodParsers.containsKey(produce.type())) prodParsers.get(produce.type()).get(normalCrafter, recipe, produce, s -> {});
+        }
+
+        NormalCrafter.Byproduct byproduct = normalCrafter.byproducts.get(crafter.cons);
         if (byproduct != null) {
-          recipe.addProduction(getWrap(byproduct.item), byproduct.base + byproduct.chance).setOptionalCons();
+          recipe.addProduction(getWrap(byproduct.item), byproduct.base + byproduct.chance).setOptional();
         }
 
         recipes.add(recipe);
       }
 
       for (ObjectMap.Entry<BaseConsumers, BaseProducers> product : normalCrafter.optionalProducts) {
-        Recipe recipe = new Recipe(RecipeType.factory);
-        recipe.setBlock(getWrap(normalCrafter));
-        recipe.setTime(product.key.craftTime);
-        recipe.subInfoBuilder = t -> {
+        Recipe recipe = new Recipe(
+            RecipeType.factory,
+            getWrap(normalCrafter),
+            product.key.craftTime
+        );
+        recipe.setSubInfo(t -> {
           t.add(Core.bundle.get("infos.optionalProducer"));
           if (!product.key.optionalAlwaysValid) t.row().add(Core.bundle.get("infos.requireMainProd")).padTop(4);
-        };
+        });
 
         for (BaseProduce<?> produce : product.value.all()) {
           if (prodParsers.containsKey(produce.type())) prodParsers.get(produce.type()).get(normalCrafter, recipe, produce, s -> {});

@@ -6,10 +6,8 @@ import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.Fill;
 import arc.math.Mathf;
 import arc.scene.Element;
-import arc.scene.event.Touchable;
 import arc.scene.ui.Button;
 import arc.scene.ui.Image;
-import arc.scene.ui.ScrollPane;
 import arc.scene.ui.Tooltip;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Collapser;
@@ -19,20 +17,17 @@ import arc.struct.ObjectMap;
 import arc.struct.Seq;
 import arc.util.*;
 import arc.util.serialization.Jval;
-import mindustry.Vars;
 import mindustry.gen.Icon;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
-import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.ui.SglStyles;
 import universecore.ui.elements.markdown.Markdown;
-import universecore.util.UrlDownloader;
+import universecore.ui.elements.markdown.MarkdownStyles;
 
 import java.io.*;
-import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -117,7 +112,7 @@ public class PublicInfoDialog extends BaseDialog {
 
     mainLayout.clearChildren();
     if (Core.graphics.isPortrait()){
-      mainLayout.table(SglDrawConst.grayUI, msg -> {
+      mainLayout.table(SglDrawConst.grayUIAlpha, msg -> {
         messageView = msg;
       }).grow().pad(4);
       mainLayout.row();
@@ -126,7 +121,7 @@ public class PublicInfoDialog extends BaseDialog {
         listView = p;
         listView.top().defaults().top().growX().height(74).padTop(6).padLeft(4).padRight(4);
       }).growX().height(Core.graphics.getHeight()/2f), true).setDuration(0.5f);
-      Table tab = new Table(SglDrawConst.grayUI, ta -> ta.add(coll).growX().fillY());
+      Table tab = new Table(SglDrawConst.grayUIAlpha, ta -> ta.add(coll).growX().fillY());
       mainLayout.addChild(tab);
 
       mainLayout.button(Icon.up, Styles.clearNonei, 32, () -> {
@@ -138,12 +133,12 @@ public class PublicInfoDialog extends BaseDialog {
       });
     }
     else {
-      mainLayout.table(SglDrawConst.grayUI).growY().width(420).padLeft(40).get().top().pane(list -> {
+      mainLayout.table(SglDrawConst.grayUIAlpha).growY().width(420).padLeft(40).get().top().pane(list -> {
         listView = list;
         listView.defaults().growX().height(74).padLeft(6).padRight(6).padBottom(6);
       }).growX().fillY().top();
       mainLayout.image().padLeft(5).padRight(5).color(Color.lightGray).width(3).growY();
-      mainLayout.table(SglDrawConst.grayUI, msg -> {
+      mainLayout.table(SglDrawConst.grayUIAlpha, msg -> {
         messageView = msg;
       }).grow().padRight(40);
     }
@@ -191,7 +186,7 @@ public class PublicInfoDialog extends BaseDialog {
           String doc = getToString(response.getResultAsStream(), response.getContentLength());
 
           Core.app.post(() -> {
-            documents.put(current.docName, new Markdown(doc, SglStyles.defaultMD));
+            documents.put(current.docName, new Markdown(doc, MarkdownStyles.defaultMD));
             if (current.equals(curr)){
               loading = false;
               setupInfos();
@@ -397,23 +392,25 @@ public class PublicInfoDialog extends BaseDialog {
     }
 
     public String getDocURL(Locale locale){
-      String loc = locale.toString().replace("en_US", "").replace("en", "");
+      String loc = locale.toString();
+      loc = loc.isEmpty()? "en_US": loc;
 
       for (String language : languages) {
         if (language.equals(loc)) return langDir.replace(localePart, loc).replace(docNamePart, docName);
       }
 
-      return langDir.replace(localePart, "").replace(docNamePart, docName);
+      return langDir.replace(localePart, "zh_CN").replace(docNamePart, docName);
     }
 
     public String getTitle(Locale locale){
-      String loc = locale.toString().replace("en_US", "").replace("en", "");
+      String loc = locale.toString();
+      loc = loc.isEmpty()? "en_US": loc;
 
       for (int i = 0; i < languages.length; i++) {
         if (languages[i].equals(loc)) return titles[i];
       }
 
-      return getTitle(Locale.US);
+      return getTitle(Locale.SIMPLIFIED_CHINESE);
     }
 
     @Override

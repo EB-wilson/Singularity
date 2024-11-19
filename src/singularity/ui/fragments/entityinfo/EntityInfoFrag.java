@@ -1,4 +1,4 @@
-package singularity.ui.fragments;
+package singularity.ui.fragments.entityinfo;
 
 import arc.Core;
 import arc.func.Boolf;
@@ -9,14 +9,12 @@ import arc.graphics.g2d.TextureRegion;
 import arc.input.KeyCode;
 import arc.math.Mat;
 import arc.math.Mathf;
-import arc.math.geom.Geometry;
-import arc.math.geom.Point2;
 import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
 import arc.scene.Element;
+import arc.scene.Group;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Scl;
-import arc.scene.ui.layout.WidgetGroup;
 import arc.struct.OrderedMap;
 import arc.struct.OrderedSet;
 import arc.struct.Seq;
@@ -24,14 +22,11 @@ import arc.util.*;
 import arc.util.pooling.Pool;
 import arc.util.pooling.Pools;
 import mindustry.Vars;
-import mindustry.core.Renderer;
 import mindustry.gen.*;
 import mindustry.gen.Icon;
-import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
 import mindustry.input.Binding;
 import mindustry.ui.Fonts;
-import mindustry.world.Block;
 import singularity.Sgl;
 import singularity.core.UpdatePool;
 import singularity.graphic.SglDraw;
@@ -40,7 +35,6 @@ import singularity.util.MathTransform;
 import universecore.annotations.Annotations;
 import universecore.components.ExtraVariableComp;
 
-import javax.swing.*;
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -83,7 +77,7 @@ public class EntityInfoFrag{
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public void build(WidgetGroup parent){
+  public void build(Group parent){
     parent.fill((x, y, w, h) -> {
       if (!Sgl.config.showInfos){
         alphaQueue.clear();

@@ -95,25 +95,15 @@ public class NuclearReactor extends NormalCrafter{
   }
   
   public void addTransfer(ItemStack output){
-    newOptionalConsume((e, c) -> {}, (e, s) -> {
-      e.add(Stat.output, StatValues.items(s.craftTime, output));
-    });
-    consume.consValidCondition((NuclearReactorBuild e) -> e.consumeValid() && e.items.get(output.item) < itemCapacity);
-    consume.setConsTrigger((NuclearReactorBuild ent) -> {
-      for(int i = 0; i < output.amount; i++){
-        if(ent.items.get(output.item) < itemCapacity) ent.handleItem(ent, output.item);
-      }
-    });
+    newOptionalProduct();
+    consume.optionalAlwaysValid = false;
+    produce.item(output.item, output.amount);
   }
   
   public void addTransfer(LiquidStack output){
-    newOptionalConsume((NuclearReactorBuild e, BaseConsumers c) -> {
-      NuclearReactorBuild entity = e.getBuilding(NuclearReactorBuild.class);
-      if(e.liquids.get(output.liquid) < liquidCapacity) entity.handleLiquid(entity, output.liquid, output.amount);
-    }, (e, s) -> {
-      e.add(Stat.output, StatValues.liquid(output.liquid, output.amount*60, true));
-    });
-    consume.consValidCondition((NuclearReactorBuild e) -> e.consumeValid() && e.liquids.get(output.liquid) < liquidCapacity);
+    newOptionalProduct();
+    consume.optionalAlwaysValid = false;
+    produce.liquid(output.liquid, output.amount);
   }
 
   @Override

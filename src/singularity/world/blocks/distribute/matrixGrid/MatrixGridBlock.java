@@ -43,6 +43,7 @@ import singularity.world.meta.SglStat;
 import universecore.UncCore;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.SecondableConfigBuildComp;
+import universecore.ui.elements.markdown.MarkdownStyles;
 import universecore.util.DataPackable;
 import universecore.util.NumberStrify;
 
@@ -208,7 +209,7 @@ public class MatrixGridBlock extends DistNetBlock implements DistMatrixUnitComp{
           c -> configure(c.pack()),
           UncCore.secConfig::hideConfig
       )));
-      table.top().button(Icon.info, Styles.grayi, 32, () -> Sgl.ui.document.showDocument("", SglStyles.defaultMD, Singularity.getDocument("matrix_grid_config_help.md"))).size(45).top();
+      table.top().button(Icon.info, Styles.grayi, 32, () -> Sgl.ui.document.showDocument("", MarkdownStyles.defaultMD, Singularity.getDocument("matrix_grid_config_help.md"))).size(45).top();
     }
 
     private ContentType[] getAcceptType(Block block){

@@ -9,8 +9,11 @@ import arc.graphics.g2d.Lines;
 import arc.graphics.g2d.TextureRegion;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
+import arc.struct.ObjectSet;
+import arc.struct.Seq;
 import arc.util.Time;
 import arc.util.Tmp;
+import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Fx;
 import mindustry.content.Items;
@@ -22,7 +25,9 @@ import mindustry.graphics.Trail;
 import mindustry.type.Category;
 import mindustry.type.ItemStack;
 import mindustry.world.Block;
+import mindustry.world.blocks.environment.Floor;
 import mindustry.world.draw.*;
+import mindustry.world.meta.Attribute;
 import singularity.Sgl;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
@@ -62,7 +67,7 @@ public class ProductBlocks implements ContentList {
 
   @Override
   public void load() {
-    rock_drill = new NormalCrafter("rock_drill"){{
+    rock_drill = new FloorCrafter("rock_drill"){{
       requirements(Category.production, with(Items.titanium, 45, Items.lead, 30, Items.copper, 30));
       size = 2;
       liquidCapacity = 24;
@@ -78,9 +83,6 @@ public class ProductBlocks implements ContentList {
       hasLiquids = true;
 
       autoSelect = true;
-
-      newBooster(1);
-      consume.add(new SglConsumeFloor<>(SglAttribute.bitumen, 1.12f));
       
       newConsume();
       consume.time(90);
@@ -95,6 +97,9 @@ public class ProductBlocks implements ContentList {
       consume.power(1.75f);
       newProduce();
       produce.item(SglItems.rock_bitumen, 2);
+
+      newBooster(1);
+      consume.add(new SglConsumeFloor<>(SglAttribute.bitumen, 1.12f));
 
       draw = new DrawMulti(
           new DrawBottom(),
@@ -138,8 +143,10 @@ public class ProductBlocks implements ContentList {
           Blocks.craters, 0.8f/9f,
           Blocks.dacite, 0.8f/9f,
           Blocks.shale, 1f/9f,
-          Blocks.salt, 1f/9f
-      ){{ baseEfficiency = 0; }});
+          Blocks.salt, 1f/9f,
+          Blocks.moss, 0.6f/9f,
+          Blocks.sporeMoss, 0.4f/9f
+      )).baseEfficiency = 0;
 
       newProduce();
       produce.item(Items.sand, 1);
@@ -150,9 +157,14 @@ public class ProductBlocks implements ContentList {
           Blocks.stone, 0.4f/9f,
           Blocks.craters, 0.5f/9f,
           Blocks.salt, 2f/9f
-      ));
+      )).baseEfficiency = 0;
       consume.optionalAlwaysValid = false;
       produce.item(SglItems.alkali_stone, 1);
+
+      newOptionalProduct();
+      consume.add(new SglConsumeFloor<FloorCrafterBuild>(Attribute.spores, 1f)).baseEfficiency = 0;
+      consume.optionalAlwaysValid = false;
+      produce.liquid(SglLiquids.spore_cloud, 0.2f);
 
       newBooster(1.8f);
       consume.liquid(Liquids.water, 0.12f);

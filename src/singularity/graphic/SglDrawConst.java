@@ -1,6 +1,5 @@
 package singularity.graphic;
 
-import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.style.Drawable;
@@ -28,13 +27,14 @@ public class SglDrawConst{
 
   //Texture regions
   public static Drawable transparent, sglLaunchLogo, squareMarker, matrixArrow, sglIcon, artistIcon, codeIcon, translateIcon,
-      soundsIcon, time,
+      soundsIcon, time, techPoint, inspire,
 
       startIcon, databaseIcon, publicInfoIcon, aboutIcon, configureIcon, contributeIcon, debuggingIcon, nuclearIcon, matrixIcon,
 
       qqIcon, telegramIcon,
       showInfos, unShowInfos, showRange, hold, defaultShow,
-      grayUI, padGrayUI,
+      grayUI, padGrayUI, darkgrayUI,
+      grayUIAlpha, padGrayUIAlpha, darkgrayUIAlpha,
       sgl2, a_z;
 
   public static TextureRegion cursor;
@@ -50,6 +50,8 @@ public class SglDrawConst{
     translateIcon = Singularity.getModDrawable("translate");
     soundsIcon = Singularity.getModDrawable("sound");
     time = Singularity.getModDrawable("time");
+    techPoint = Singularity.getModDrawable("tech_point");
+    inspire = Singularity.getModDrawable("inspire");
     startIcon = Singularity.getModDrawable("icon_start");
     databaseIcon = Singularity.getModDrawable("icon_database");
     publicInfoIcon = Singularity.getModDrawable("icon_publicInfo");
@@ -71,11 +73,20 @@ public class SglDrawConst{
 
     cursor = Singularity.getModAtlas("cursor");
 
-    grayUI = ((TextureRegionDrawable) Tex.whiteui).tint(Tmp.c1.set(Pal.darkerGray).a(0.7f));
-    padGrayUI = ((TextureRegionDrawable) Tex.whiteui).tint(Tmp.c1.set(Pal.darkerGray).a(0.7f));
+    grayUI = ((TextureRegionDrawable) Tex.whiteui).tint(Pal.darkerGray);
+    padGrayUI = ((TextureRegionDrawable) Tex.whiteui).tint(Pal.darkerGray);
     padGrayUI.setLeftWidth(8);
     padGrayUI.setRightWidth(8);
     padGrayUI.setTopHeight(8);
     padGrayUI.setBottomHeight(8);
+    darkgrayUI = ((TextureRegionDrawable) Tex.whiteui).tint(Pal.darkestGray);
+
+    grayUIAlpha = ((TextureRegionDrawable) Tex.whiteui).tint(Tmp.c1.set(Pal.darkerGray).a(0.7f));
+    padGrayUIAlpha = ((TextureRegionDrawable) Tex.whiteui).tint(Tmp.c1.set(Pal.darkerGray).a(0.7f));
+    padGrayUIAlpha.setLeftWidth(8);
+    padGrayUIAlpha.setRightWidth(8);
+    padGrayUIAlpha.setTopHeight(8);
+    padGrayUIAlpha.setBottomHeight(8);
+    darkgrayUIAlpha = ((TextureRegionDrawable) Tex.whiteui).tint(Tmp.c1.set(Pal.darkestGray).a(0.7f));
   }
 }

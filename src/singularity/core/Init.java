@@ -38,6 +38,7 @@ import singularity.game.SglHint;
 import singularity.ui.SglStyles;
 import singularity.world.meta.SglAttribute;
 import universecore.UncCore;
+import universecore.ui.elements.markdown.MarkdownStyles;
 import universecore.util.aspect.EntityAspect;
 import universecore.util.aspect.triggers.TriggerEntry;
 import universecore.util.handler.FieldHandler;
@@ -160,8 +161,11 @@ public class Init{
 
                 GlyphLayout l = GlyphLayout.obtain();
                 l.setText(Styles.nonet.font, butText);
-                bu.left().button(butText, Styles.nonet, () -> Sgl.ui.document.showDocument(butText, SglStyles.defaultMD, Singularity.getDocument(docPath)))
-                    .size(l.width, 40f);
+                bu.left().button(
+                    butText,
+                    Styles.nonet,
+                    () -> Sgl.ui.document.showDocument(butText, MarkdownStyles.defaultMD, Singularity.getDocument(docPath))
+                ).size(l.width, 40f);
                 l.free();
               }
 

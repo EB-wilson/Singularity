@@ -52,6 +52,7 @@ import singularity.world.blocks.SglBlock;
 import singularity.world.distribution.GridChildType;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.Takeable;
+import universecore.ui.elements.markdown.MarkdownStyles;
 import universecore.util.DataPackable;
 
 import static mindustry.Vars.tilesize;
@@ -554,7 +555,7 @@ public class ItemNode extends SglBlock {
             },
             () -> Vars.control.input.config.hideConfig()
         )).fill().center();
-        t.top().button(Icon.info, Styles.grayi, 32, () -> Sgl.ui.document.showDocument("", SglStyles.defaultMD, Singularity.getDocument("matrix_grid_config_help.md"))).size(45).top();
+        t.top().button(Icon.info, Styles.grayi, 32, () -> Sgl.ui.document.showDocument("", MarkdownStyles.defaultMD, Singularity.getDocument("matrix_grid_config_help.md"))).size(45).top();
 
         show = () -> {
           t.visible = true;

@@ -1,4 +1,4 @@
-package singularity.ui.fragments;
+package singularity.ui.fragments.entityinfo;
 
 import arc.graphics.g2d.Draw;
 import arc.math.Mathf;

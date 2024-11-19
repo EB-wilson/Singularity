@@ -2,7 +2,6 @@ package singularity.world.consumers;
 
 import arc.Core;
 import arc.math.Mathf;
-import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Image;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectFloatMap;
@@ -10,12 +9,10 @@ import arc.struct.ObjectIntMap;
 import arc.struct.Seq;
 import arc.util.Scaling;
 import arc.util.Strings;
-import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.ctype.Content;
 import mindustry.gen.Building;
 import mindustry.gen.Icon;
-import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Bar;
 import mindustry.ui.Styles;
@@ -34,8 +31,7 @@ import universecore.world.consumers.ConsumeType;
 public class SglConsumeFloor<T extends Building & ConsumerBuildComp & FloorCrafterBuildComp> extends BaseConsume<T> {
   public final ObjectFloatMap<Floor> floorEff = new ObjectFloatMap<>();
 
-  public float baseEfficiency = 0;
-  public boolean checkDeep = true;
+  public float baseEfficiency = 1;
 
   public SglConsumeFloor(Object... floors){
     for (int i = 0; i < floors.length; i+=2) {
@@ -47,10 +43,27 @@ public class SglConsumeFloor<T extends Building & ConsumerBuildComp & FloorCraft
   }
 
   public SglConsumeFloor(Attribute attribute, float scl){
+    this(true, true, attribute, scl);
+  }
+
+  public SglConsumeFloor(boolean checkDeep, boolean checkLiquid, Attribute attribute, float scl){
     for (Block block : Vars.content.blocks()) {
-      if (!(block instanceof Floor f) || (checkDeep && f.isDeep()) || f.attributes.get(attribute) <= 0) continue;
+      if (!(block instanceof Floor f) || (checkDeep && f.isDeep()) || (checkLiquid && f.isLiquid) || f.attributes.get(attribute) <= 0) continue;
 
       floorEff.put(f, block.attributes.get(attribute)*scl);
+    }
+  }
+
+  public SglConsumeFloor(boolean checkDeep, boolean checkLiquid, Object[] attributes){
+    for (Block block : Vars.content.blocks()) {
+      for (int i = 0; i < attributes.length; i+=2) {
+        Attribute attribute = (Attribute) attributes[i];
+        float scl = (float) attributes[i + 1];
+
+        if (!(block instanceof Floor f) || (checkDeep && f.isDeep()) || (checkLiquid && f.isLiquid) || f.attributes.get(attribute) <= 0) continue;
+
+        floorEff.put(f, floorEff.get(f, 1f)*block.attributes.get(attribute)*scl);
+      }
     }
   }
 
@@ -104,7 +117,7 @@ public class SglConsumeFloor<T extends Building & ConsumerBuildComp & FloorCraft
   @Override
   public void display(Stats stats) {
     stats.add(Stat.tiles, st -> {
-      st.row().table(SglDrawConst.grayUI, t -> {
+      st.row().table(SglDrawConst.grayUIAlpha, t -> {
         t.clearChildren();
         t.defaults().pad(5).left();
 

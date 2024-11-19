@@ -9,7 +9,6 @@ import arc.graphics.Color;
 import arc.math.Angles;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
-import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.layout.Table;
 import arc.struct.EnumSet;
 import arc.struct.ObjectMap;
@@ -23,14 +22,12 @@ import mindustry.content.Fx;
 import mindustry.content.UnitTypes;
 import mindustry.core.World;
 import mindustry.entities.*;
-import mindustry.entities.abilities.ShieldArcAbility;
 import mindustry.entities.bullet.BulletType;
 import mindustry.entities.pattern.ShootPattern;
 import mindustry.game.Team;
 import mindustry.gen.*;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Pal;
-import mindustry.graphics.Shaders;
 import mindustry.logic.LAccess;
 import mindustry.logic.Ranged;
 import mindustry.type.ItemStack;
@@ -316,7 +313,7 @@ public class SglTurret extends SglBlock{
       table.defaults().padLeft(15);
       for(ObjectMap.Entry<BaseConsumers, AmmoDataEntry> entry: ammoTypes){
         table.row();
-        table.table(SglDrawConst.grayUI, t -> {
+        table.table(SglDrawConst.grayUIAlpha, t -> {
           t.left().defaults().left().growX();
           t.table(st -> {
             st.left().defaults().left();

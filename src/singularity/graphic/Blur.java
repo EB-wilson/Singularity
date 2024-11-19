@@ -6,6 +6,7 @@ import arc.graphics.Gl;
 import arc.graphics.gl.FrameBuffer;
 import arc.graphics.gl.Shader;
 import arc.util.Log;
+import org.intellij.lang.annotations.Language;
 import singularity.Sgl;
 
 public class Blur {
@@ -49,6 +50,57 @@ public class Blur {
       0.4876526883744f,
       0.2561736558128f,
   };
+
+  @Language("vert")
+  private static final String vertTemplate =
+      """
+      attribute vec4 a_position;
+      attribute vec2 a_texCoord0;
+              
+      uniform vec2 dir;
+      uniform vec2 size;
+              
+      varying vec2 v_texCoords;
+      
+      %varying%
+      
+      void main(){
+        vec2 len = dir/size;
+        
+        v_texCoords = a_texCoord0;
+        %assignVar%
+        gl_Position = a_position;
+      }
+      """;
+  @Language("frag")
+  private static final String fragmentTemplate =
+      """
+      uniform lowp sampler2D u_texture0;
+      uniform lowp sampler2D u_texture1;
+      
+      uniform lowp float def_alpha;
+              
+      varying vec2 v_texCoords;
+      
+      %varying%
+      
+      void main(){
+        vec4 blur = texture2D(u_texture0, v_texCoords);
+        vec3 color = texture2D(u_texture1, v_texCoords).rgb;
+        
+        if(blur.a > 0.0){
+          vec3 blurColor =
+              %convolution%
+             
+          gl_FragColor.rgb = mix(color, blurColor, blur.a);
+          gl_FragColor.a = 1.0;
+        }
+        else{
+          gl_FragColor.rgb = color;
+          gl_FragColor.a = def_alpha;
+        }
+      }
+      """;
 
   Shader blurShader;
   FrameBuffer buffer, pingpong;
@@ -115,48 +167,8 @@ public class Blur {
     }
     convolution.append(";");
 
-    String vertexShader = """
-        attribute vec4 a_position;
-        attribute vec2 a_texCoord0;
-                
-        uniform vec2 dir;
-        uniform vec2 size;
-                
-        varying vec2 v_texCoords;
-        %varying%
-        void main(){
-          vec2 len = dir/size;
-          
-          v_texCoords = a_texCoord0;
-          %assignVar%
-          gl_Position = a_position;
-        }
-        """.replace("%varying%", varyings).replace("%assignVar%", assignVar);
-    String fragmentShader = """
-        uniform lowp sampler2D u_texture0;
-        uniform lowp sampler2D u_texture1;
-        
-        uniform lowp float def_alpha;
-                
-        varying vec2 v_texCoords;
-        %varying%
-        void main(){
-          vec4 blur = texture2D(u_texture0, v_texCoords);
-          vec3 color = texture2D(u_texture1, v_texCoords).rgb;
-          
-          if(blur.a > 0.0){
-            vec3 blurColor =
-                %convolution%
-               
-            gl_FragColor.rgb = mix(color, blurColor, blur.a);
-            gl_FragColor.a = 1.0;
-          }
-          else{
-            gl_FragColor.rgb = color;
-            gl_FragColor.a = def_alpha;
-          }
-        }
-        """.replace("%varying%", varyings).replace("%convolution%", convolution);
+    String vertexShader = vertTemplate.replace("%varying%", varyings).replace("%assignVar%", assignVar);
+    String fragmentShader = fragmentTemplate.replace("%varying%", varyings).replace("%convolution%", convolution);
 
     if(Sgl.config.loadInfo && Sgl.config.debugMode){
       Log.info("[DEBUG] [Singularity] blur shader generate, shader content:" + Sgl.NL + "=vertexShader=" + Sgl.NL + vertexShader + Sgl.NL + "=fragShader=" + Sgl.NL + fragmentShader);

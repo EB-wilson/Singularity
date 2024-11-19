@@ -6,7 +6,7 @@ plugins {
   id 'com.github.johnrengelman.shadow' version '2.0.4'
 }
 
-version 'alpha-0.9.1'
+version 'alpha-0.10.0'
 
 sourceSets.main.java.srcDirs = ["src"]
 sourceSets.test.java.srcDirs = ["test"]
@@ -16,7 +16,7 @@ sourceSets.test.java.srcDirs = ["test"]
 ext {
   //the build number that this mod is made for
   mindustryVersion = "v146"
-  uncVersion = "1.8.10"
+  uncVersion = "2.2.0"
   //version of SDK you will be using
   minSdkAPI = 30
 
@@ -40,19 +40,21 @@ dependencies {
   compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
   compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
-  compileOnly "com.github.EB-wilson.UniverseCore:mindustry:$uncVersion"
-  compileOnly "com.github.EB-wilson.UniverseCore:utilties:$uncVersion"
-  compileOnly "com.github.EB-wilson.UniverseCore:abstract:$uncVersion"
-  compileOnly "com.github.EB-wilson.UniverseCore:implabstract:$uncVersion"
+  compileOnly "com.github.EB-wilson.UniverseCore:core:$uncVersion"
+  compileOnly "com.github.EB-wilson.UniverseCore:scenes:$uncVersion"
+  compileOnly "com.github.EB-wilson.UniverseCore:markdown:$uncVersion"
   compileOnly "com.github.EB-wilson.UniverseCore:dynamilizer:$uncVersion"
   compileOnly "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
 
-  compileOnly "com.github.EB-wilson:TooManyItems:1.2"
+  compileOnly "com.github.EB-wilson:TooManyItems:2.4.1"
 
   implementation "com.github.EB-wilson.JavaDynamilizer:annotations:V1.8-A3"
 
   annotationProcessor "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
   annotationProcessor "com.github.EB-wilson.JavaDynamilizer:apt:V1.8-A3"
+
+  testImplementation "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+  testImplementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
 }
 
 tasks.register('jarAndroid') {

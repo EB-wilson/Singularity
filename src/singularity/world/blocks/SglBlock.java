@@ -7,9 +7,7 @@ import arc.graphics.Color;
 import arc.graphics.g2d.*;
 import arc.math.Angles;
 import arc.math.Interp;
-import arc.math.Mat;
 import arc.math.Mathf;
-import arc.math.geom.Point2;
 import arc.scene.Element;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
@@ -20,14 +18,11 @@ import arc.util.Time;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
-import mindustry.core.Renderer;
 import mindustry.entities.units.BuildPlan;
 import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.gen.Iconc;
 import mindustry.gen.Unit;
-import mindustry.gen.UnitEntity;
-import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
 import mindustry.type.Item;
@@ -46,7 +41,6 @@ import singularity.contents.SglUnits;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.SglFx;
-import singularity.world.blocks.nuclear.NuclearNode;
 import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
@@ -240,7 +234,7 @@ public class SglBlock extends Block implements ConsumerBlockComp{
       stats.add(UncStat.optionalInputs, t -> {
         t.left().row();
         for (BaseConsumers con : optionalCons()) {
-          t.table(SglDrawConst.grayUI, ta -> {
+          t.table(SglDrawConst.grayUIAlpha, ta -> {
             ta.left().defaults().left();
             FactoryBlockComp.buildRecipe(ta, con, null);
           }).growX().fillY().pad(6).left().margin(10);

@@ -1,7 +1,6 @@
 package singularity.world.unit.abilities;
 
 import arc.Core;
-import arc.Settings;
 import arc.func.Cons;
 import arc.func.Floatf;
 import arc.graphics.Color;
@@ -16,16 +15,12 @@ import arc.math.geom.Vec2;
 import arc.struct.Seq;
 import arc.util.Nullable;
 import arc.util.Time;
-import mindustry.Vars;
-import mindustry.core.Renderer;
 import mindustry.gen.Bullet;
 import mindustry.gen.Groups;
 import mindustry.gen.Unit;
 import mindustry.type.UnitType;
 import singularity.Sgl;
 import singularity.graphic.SglDraw;
-
-import static arc.Core.settings;
 
 public class MirrorFieldAbility extends MirrorShieldBase{
   public boolean rotation;

@@ -340,27 +340,30 @@ public class CrafterBlocks implements ContentList{
       liquidCapacity = 20f;
       
       newConsume();
-      consume.time(60);
+      consume.time(45);
       consume.power(2.2f);
       consume.liquids(LiquidStack.with(
           Liquids.water, 0.4f,
-          SglLiquids.spore_cloud, 0.06f
+          SglLiquids.spore_cloud, 0.1f
       ));
       newProduce();
       produce.item(Items.sporePod, 3);
 
       newConsume();
-      consume.time(45);
+      consume.time(30);
       consume.power(2.2f);
       consume.liquids(LiquidStack.with(
           SglLiquids.purified_water, 0.3f,
-          SglLiquids.spore_cloud, 0.08f
+          SglLiquids.spore_cloud, 0.1f
       ));
       newProduce();
       produce.item(Items.sporePod, 3);
 
-      newBooster(1);
-      consume.add(new SglConsumeFloor<>(Attribute.spores, 0.86f));
+      newBooster(1f);
+      consume.add(new SglConsumeFloor<FloorCrafterBuild>(true, true, new Object[]{
+          Attribute.heat, 0.22f,
+          Attribute.spores, 0.36f
+      }));
       
       draw = new DrawMulti(
           new DrawBottom(),
@@ -424,7 +427,7 @@ public class CrafterBlocks implements ContentList{
 
       newConsume();
       consume.time(60);
-      consume.liquid(Liquids.water, 0.4f);
+      consume.liquid(SglLiquids.purified_water, 0.4f);
       consume.item(SglItems.alkali_stone, 1);
       consume.power(3f);
       newProduce();
@@ -435,11 +438,11 @@ public class CrafterBlocks implements ContentList{
       
       newConsume();
       consume.item(Items.sporePod, 1);
-      consume.liquid(Liquids.water, 0.1f);
+      consume.liquid(Liquids.water, 0.2f);
       consume.power(2.8f);
       consume.time(60);
       newProduce();
-      produce.liquid(SglLiquids.spore_cloud, 0.18f);
+      produce.liquid(SglLiquids.spore_cloud, 0.4f);
       
       newConsume();
       consume.item(SglItems.chlorella_block, 1);
@@ -593,6 +596,17 @@ public class CrafterBlocks implements ContentList{
       consume.power(1f);
       newProduce();
       produce.item(SglItems.flocculant, 2);
+
+      newConsume();
+      consume.time(30);
+      consume.item(Items.coal, 1);
+      consume.liquids(LiquidStack.with(
+          SglLiquids.acid, 0.2f,
+          SglLiquids.spore_cloud, 0.3f
+      ));
+      consume.power(1f);
+      newProduce();
+      produce.item(Items.blastCompound, 1);
 
       draw = new DrawMulti(
           new DrawBottom(),

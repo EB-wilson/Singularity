@@ -24,7 +24,6 @@ import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import singularity.Sgl;
 import singularity.graphic.SglDrawConst;
-import singularity.ui.SglStyles;
 
 import java.io.OutputStream;
 import java.util.regex.Pattern;
@@ -82,7 +81,7 @@ public class AboutModDialog extends BaseDialog {
     cont.defaults().fillY().top();
 
     cont.table(main -> {
-      main.table(SglDrawConst.grayUI, t -> {
+      main.table(SglDrawConst.grayUIAlpha, t -> {
         t.defaults().left().pad(5).growX().height(40);
         t.add(Core.bundle.get("mod.name")).color(Pal.accent);
         t.row();

@@ -12,21 +12,27 @@ import singularity.Singularity;
 import static mindustry.Vars.renderer;
 
 public class SglShaders {
+  // scene space shaders
+  public static Shader baseShader, simpleScreen;
   public static SglSurfaceShader boundWater;
   public static MaskShader alphaMask;
-  public static WaveShader wave;
   public static MirrorFieldShader mirrorField;
+  public static AlphaAdjust linearAlpha, lerpAlpha;
 
-  public static Shader baseShader;
+  // local space shaders
+  public static WaveShader wave;
 
   private static final Fi internalShaderDir = Singularity.getInternalFile("shaders");
 
   public static void load() {
+    simpleScreen = new Shader(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child("simple.frag"));
+    baseShader = new Shader(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child("dist_base.frag"));
     boundWater = new SglSurfaceShader("boundwater");
     alphaMask = new MaskShader("alpha_mask");
     mirrorField = new MirrorFieldShader();
     wave = new WaveShader("wave");
-    baseShader = new Shader(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child("dist_base.frag"));
+    linearAlpha = new AlphaAdjust(internalShaderDir.child("linear_alpha_adjust.frag"));
+    lerpAlpha = new AlphaAdjust(internalShaderDir.child("lerp_alpha_adjust.frag"));
   }
 
   public static class SglSurfaceShader extends Shader {
@@ -143,6 +149,19 @@ public class SglShaders {
       setUniformi("u_mask", 0);
 
       texture.bind(1);
+    }
+  }
+
+  public static class AlphaAdjust extends Shader{
+    public float coef;
+
+    public AlphaAdjust(Fi fragmentShader) {
+      super(Core.files.internal("shaders/screenspace.vert"), fragmentShader);
+    }
+
+    @Override
+    public void apply() {
+      setUniformf("u_coef", coef);
     }
   }
 }

@@ -453,7 +453,7 @@ public class EmptinessType extends SglUnitType<UnitEntity> {
           });
 
           float z = Draw.z();
-          Draw.z(Layer.effect);
+          Draw.z(Layer.effect - 1);
 
           Draw.color(SglDrawConst.matrixNet);
 
@@ -464,6 +464,8 @@ public class EmptinessType extends SglUnitType<UnitEntity> {
             MathRenderer.setThreshold(0.3f, 0.8f);
             MathRenderer.drawSin(x, y, 3, unit.x + dx, unit.y + dy, 5, 120, -3*Time.time + off);
           });
+
+          Draw.z(Draw.z() + 0.01f);
 
           trail1.draw(SglDrawConst.matrixNet, 3*mount.warmup);
           trail2.draw(SglDrawConst.matrixNet, 3*mount.warmup);
@@ -494,6 +496,7 @@ public class EmptinessType extends SglUnitType<UnitEntity> {
           unit.shadowAlpha = unit.shadowAlpha < 0 ? dest : Mathf.approachDelta(unit.shadowAlpha, dest, 0.11f);
           Draw.color(Pal.shadow, Pal.shadow.a*unit.shadowAlpha);
 
+          Draw.z(Draw.z() + 0.02f);
           Draw.rect(mount.weapon.region, this.x + shadowTX*e, this.y + shadowTY*e, angle);
           Draw.color();
           Draw.z(z);
@@ -1040,6 +1043,7 @@ public class EmptinessType extends SglUnitType<UnitEntity> {
             Lines.stroke(4f*Mathf.clamp(mount.warmup/mount.weapon.minWarmup), SglDrawConst.matrixNet);
             SglDraw.drawCornerTri(mount.aimX, mount.aimY, 46, 8, MathTransform.gradientRotateDeg(Time.time*0.85f, 38, 1/3f, 3), true);
 
+            Draw.z(Draw.z() + 0.01f);
             for (int i = 0; i < 3; i++) {
               SglDraw.drawTransform(mount.aimX, mount.aimY, 54, 0, -1.4f*Time.time + i*120, (rx, ry, r) -> {
                 Draw.rect(((TextureRegionDrawable) SglDrawConst.matrixArrow).getRegion(), rx, ry, 12*stLerp, 12*stLerp, r + 90);

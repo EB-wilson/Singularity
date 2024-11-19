@@ -4,12 +4,14 @@ import arc.files.Fi;
 import arc.util.Log;
 import arc.util.serialization.Jval;
 import singularity.Sgl;
-import singularity.ui.fragments.HealthBarStyle;
+import singularity.ui.fragments.entityinfo.HealthBarStyle;
 import universecore.util.handler.MethodHandler;
 
 import java.io.*;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -20,82 +22,50 @@ public class ModConfig{
 
   //basic/基础设置
   //主菜单界面设置
-  @Order(0f)
-  public boolean disableModMainMenu;
-  @Order(1f)
-  public boolean showModMenuWenLaunch;
-  @Order(2f)
-  public boolean mainMenuUniverseBackground;
-  @Order(3f)
-  public boolean staticMainMenuBackground;
-  @Order(4)
-  public float[] defaultCameraPos;
-  @Order(5f)
-  public boolean movementCamera;
+  @Order(0f) public boolean disableModMainMenu;
+  @Order(1f) public boolean showModMenuWenLaunch;
+  @Order(2f) public boolean mainMenuUniverseBackground;
+  @Order(3f) public boolean staticMainMenuBackground;
+  @Order(4f) public float[] defaultCameraPos;
+  @Order(5f) public boolean movementCamera;
 
   //游戏目标内信息显示
-  @Order(5.1f)
-  public boolean showInfos;
-  @Order(5.2f)
-  public float statusInfoAlpha;
-  @Order(6f)
-  public float flushInterval;
-  @Order(7f)
-  public int maxDisplay;
-  @Order(8f)
-  public float showInfoScl;
-  @Order(9f)
-  public float holdDisplayRange;
+  @Order(6f) public boolean showInfos;
+  @Order(7f) public float statusInfoAlpha;
+  @Order(8f) public float flushInterval;
+  @Order(9f) public int maxDisplay;
+  @Order(10f) public float showInfoScl;
+  @Order(11f) public float holdDisplayRange;
 
-  @Order(10f)
-  public HealthBarStyle healthBarStyle;
+  @Order(12f) public HealthBarStyle healthBarStyle;
 
-  @Order(11f)
-  public float statusSize;
-  @Order(12f)
-  public boolean showStatusTime;
+  @Order(13f) public float statusSize;
+  @Order(14f) public boolean showStatusTime;
 
   //UI视觉
-  @Order(12.01f)
-  public boolean enableBlur;
-  @Order(12.02f)
-  public int blurLevel;
-  @Order(12.03f)
-  public float backBlurLen;
+  @Order(15f) public boolean enableBlur;
+  @Order(16f) public int blurLevel;
+  @Order(17f) public float backBlurLen;
 
   //图形效果
-  @Order(12.05f)
-  public int animateLevel;
-  @Order(12.1f)
-  public boolean enableShaders;
-  @Order(12.15f)
-  public float mathShapePrecision;
-  @Order(12.2f)
-  public boolean enableDistortion;
-  @Order(12.3f)
-  public boolean enableParticle;
-  @Order(12.35f)
-  public int maxParticleCount;
-  @Order(12.4f)
-  public boolean enableLightning;
+  @Order(18f) public int animateLevel;
+  @Order(19f) public boolean enableShaders;
+  @Order(20f) public float mathShapePrecision;
+  @Order(21f) public boolean enableDistortion;
+  @Order(22f) public boolean enableParticle;
+  @Order(23f) public int maxParticleCount;
+  @Order(24f) public boolean enableLightning;
 
   //Advanced/高级设置
-  @Order(12.5f)
-  public boolean enableModsInterops;
-  @Order(12.6f)
-  public boolean interopAssignUnitCosts;
-  @Order(12.7f)
-  public boolean interopAssignEmpModels;
-  @Order(13f)
-  public boolean modReciprocal;
-  @Order(13.1f)
-  public boolean modReciprocalContent;
+  @Order(25f) public boolean enableModsInterops;
+  @Order(26f) public boolean interopAssignUnitCosts;
+  @Order(27f) public boolean interopAssignEmpModels;
+  @Order(28f) public boolean modReciprocal;
+  @Order(29f) public boolean modReciprocalContent;
 
   //debug/调试设置
-  @Order(14f)
-  public boolean loadInfo;
-  @Order(15f)
-  public boolean debugMode;
+  @Order(30f) public boolean loadInfo;
+  @Order(31f) public boolean debugMode;
 
   private String lastContext;
 
@@ -324,6 +294,7 @@ public class ModConfig{
   }
 
   @Retention(RetentionPolicy.RUNTIME)
+  @Target({ElementType.FIELD})
   private @interface Order{
     float value();
   }

@@ -1,7 +1,6 @@
-package singularity.ui.fragments;
+package singularity.ui.fragments.entityinfo;
 
 import arc.Core;
-import arc.graphics.Camera;
 import arc.graphics.Color;
 import arc.graphics.g2d.Draw;
 import arc.graphics.g2d.GlyphLayout;
@@ -17,7 +16,6 @@ import mindustry.game.Team;
 import mindustry.gen.*;
 import mindustry.graphics.Pal;
 import mindustry.ui.Fonts;
-import mindustry.world.Block;
 import singularity.Sgl;
 
 import static arc.graphics.g2d.Draw.xscl;

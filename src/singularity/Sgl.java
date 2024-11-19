@@ -2,11 +2,13 @@ package singularity;
 
 import arc.Core;
 import arc.Events;
+import arc.Settings;
 import arc.files.Fi;
 import arc.files.ZipFi;
 import arc.graphics.g2d.PixmapRegion;
 import arc.scene.ui.layout.Table;
 import arc.util.Log;
+import arc.util.Strings;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.game.Team;
@@ -14,7 +16,9 @@ import mindustry.ui.Styles;
 import mindustry.world.Block;
 import singularity.core.ModConfig;
 import singularity.core.ModsInteropAPI;
+import singularity.core.UpdatePool;
 import singularity.game.SglHint;
+import singularity.game.researchs.ResearchManager;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.ScreenSampler;
 import singularity.graphic.SglDrawConst;
@@ -25,11 +29,13 @@ import singularity.world.blocks.BytePackAssign;
 import singularity.world.blocks.turrets.SglTurret;
 import singularity.world.distribution.DistSupportContainerTable;
 import singularity.world.unit.EMPHealthManager;
+import universecore.UncCore;
 import universecore.util.handler.ClassHandler;
 import universecore.util.handler.FieldHandler;
 import universecore.util.mods.ModGetter;
 import universecore.util.mods.ModInfo;
 
+import static arc.Core.keybinds;
 import static arc.Core.settings;
 
 public class Sgl{
@@ -60,7 +66,11 @@ public class Sgl{
   public static final Fi configDirectory = modDirectory.child("config").child(modName);
   /**模组的mod_config.hjson配置文件*/
   public static final Fi configFile = configDirectory.child("mod_config.hjson");
-  
+  /**模组持久全局变量存储文件*/
+  public static final Fi globalVars = configDirectory.child("global_vars.bin");
+  /**模组持久全局变量备份文件*/
+  public static final Fi globalVarsBackup = configDirectory.child("global_vars.bin.bak");
+
   //URIs
   public static final String telegram = "https://t.me/EB_wilson";
   public static final String facebook = "https://www.facebook.com/profile.php?id=100024490163405";
@@ -82,22 +92,83 @@ public class Sgl{
   
   /**模组配置存储器*/
   public static ModConfig config = new ModConfig();
+  /**持久保存的全局变量集*/
+  public static Settings globals;
   /**模组配置存储器*/
   public static ClassHandler classes;
   /**ui类存放对象*/
   public static SglUI ui;
-  /***/
+  /**贡献者列表*/
   public static Contributors contributors;
 
   public static DistSupportContainerTable matrixContainers;
 
   public static EMPHealthManager empHealth;
 
+  public static ResearchManager researches = new ResearchManager();
   public static ModsInteropAPI interopAPI = new ModsInteropAPI();
 
   public static void init(){
     //注册所有打包数据类型id
     BytePackAssign.assignAll();
+
+    globals = new Settings(){
+      {
+        setAutosave(true);
+        setDataDirectory(configDirectory);
+      }
+
+      @Override
+      public Fi getSettingsFile() {
+        return globalVars;
+      }
+
+      @Override
+      public Fi getBackupFolder() {
+        return configDirectory.child("global_backups");
+      }
+
+      @Override
+      public Fi getBackupSettingsFile() {
+        return globalVarsBackup;
+      }
+
+      @Override
+      public synchronized void load() {
+        try{
+          loadValues();
+        }catch(Throwable error){
+          Log.err("Error in load: " + Strings.getStackTrace(error));
+          if(errorHandler != null){
+            if(!hasErrored) errorHandler.get(error);
+          }else{
+            throw error;
+          }
+          hasErrored = true;
+        }
+        loaded = true;
+      }
+
+      @Override
+      public synchronized void forceSave() {
+        if(!loaded) return;
+        try{
+          saveValues();
+        }catch(Throwable error){
+          Log.err("Error in forceSave to " + getSettingsFile() + ":\n" + Strings.getStackTrace(error));
+          if(errorHandler != null){
+            if(!hasErrored) errorHandler.get(error);
+          }else{
+            throw error;
+          }
+          hasErrored = true;
+        }
+        modified = false;
+      }
+    };
+
+    globals.load();
+    UpdatePool.receive("autosaveGlobal", globals::autosave);
 
     contributors = new Contributors();
     matrixContainers = new DistSupportContainerTable();
@@ -125,6 +196,7 @@ public class Sgl{
     matrixContainers.setDefaultSupports();
     interopAPI.init();
     empHealth.init();
+    researches.init();
 
     //添加设置项入口
     Vars.ui.settings.shown(() -> {

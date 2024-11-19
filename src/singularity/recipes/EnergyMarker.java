@@ -3,44 +3,26 @@ package singularity.recipes;
 import arc.Core;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.style.TextureRegionDrawable;
+import org.jetbrains.annotations.NotNull;
 import singularity.graphic.SglDrawConst;
-import tmi.TooManyItems;
-import tmi.recipe.types.RecipeItem;
+import tmi.recipe.types.SingleItemMark;
 
-public class EnergyMarker extends RecipeItem<String> {
-  public static final EnergyMarker INSTANCE = TooManyItems.itemsManager.addItemWrap("energy_marker", new EnergyMarker());
+public class EnergyMarker extends SingleItemMark {
+  public static final EnergyMarker INSTANCE = new EnergyMarker();
 
   private EnergyMarker(){
-    super("energy_marker");
+    super("energy-marker");
   }
 
+  @NotNull
   @Override
-  public int ordinal() {
-    return -1;
-  }
-
-  @Override
-  public int typeID() {
-    return -1;
-  }
-
-  @Override
-  public String name() {
-    return item;
-  }
-
-  @Override
-  public String localizedName() {
+  public String getLocalizedName() {
     return Core.bundle.get("category.neutron");
   }
 
+  @NotNull
   @Override
-  public TextureRegion icon() {
+  public TextureRegion getIcon() {
     return ((TextureRegionDrawable) SglDrawConst.nuclearIcon).getRegion();
-  }
-
-  @Override
-  public boolean hidden() {
-    return false;
   }
 }
