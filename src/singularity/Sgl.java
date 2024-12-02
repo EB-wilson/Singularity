@@ -6,36 +6,34 @@ import arc.Settings;
 import arc.files.Fi;
 import arc.files.ZipFi;
 import arc.graphics.g2d.PixmapRegion;
-import arc.scene.ui.layout.Table;
 import arc.util.Log;
 import arc.util.Strings;
+import arc.util.Threads;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.game.Team;
-import mindustry.ui.Styles;
 import mindustry.world.Block;
 import singularity.core.ModConfig;
 import singularity.core.ModsInteropAPI;
 import singularity.core.UpdatePool;
 import singularity.game.SglHint;
+import singularity.game.SingularityGameLogic;
 import singularity.game.researchs.ResearchManager;
-import singularity.graphic.MathRenderer;
-import singularity.graphic.ScreenSampler;
-import singularity.graphic.SglDrawConst;
-import singularity.graphic.SglShaders;
+import singularity.graphic.*;
 import singularity.ui.SglStyles;
 import singularity.ui.SglUI;
 import singularity.world.blocks.BytePackAssign;
 import singularity.world.blocks.turrets.SglTurret;
 import singularity.world.distribution.DistSupportContainerTable;
 import singularity.world.unit.EMPHealthManager;
-import universecore.UncCore;
 import universecore.util.handler.ClassHandler;
-import universecore.util.handler.FieldHandler;
 import universecore.util.mods.ModGetter;
 import universecore.util.mods.ModInfo;
 
-import static arc.Core.keybinds;
+import java.util.concurrent.ExecutorService;
+
 import static arc.Core.settings;
 
 public class Sgl{
@@ -67,9 +65,13 @@ public class Sgl{
   /**模组的mod_config.hjson配置文件*/
   public static final Fi configFile = configDirectory.child("mod_config.hjson");
   /**模组持久全局变量存储文件*/
-  public static final Fi globalVars = configDirectory.child("global_vars.bin");
+  public static final Fi globalVars = dataDirectory.child("global_vars.bin");
   /**模组持久全局变量备份文件*/
-  public static final Fi globalVarsBackup = configDirectory.child("global_vars.bin.bak");
+  public static final Fi globalVarsBackup = dataDirectory.child("global_vars.bin.bak");
+  /**通知标签历史*/
+  public static final Fi notificationHistory = dataDirectory.child("notifyHistory.bin");
+  /**通知标签历史备份*/
+  public static final Fi notificationHistoryBackup = dataDirectory.child("notifyHistory.bin");
 
   //URIs
   public static final String telegram = "https://t.me/EB_wilson";
@@ -87,11 +89,13 @@ public class Sgl{
   public static final String githubProjReleaseApi = "https://api.github.com/repos/EB-wilson/Singularity/releases/latest";
   public static final String publicInfo = githubRawMaster + "publicInfo/";
 
-
   public static final Team none = Team.get(255);
-  
+
+  /**Singularity平行逻辑存储对象*/
+  public static SingularityGameLogic logic = new SingularityGameLogic();
   /**模组配置存储器*/
   public static ModConfig config = new ModConfig();
+
   /**持久保存的全局变量集*/
   public static Settings globals;
   /**模组配置存储器*/
@@ -108,6 +112,8 @@ public class Sgl{
   public static ResearchManager researches = new ResearchManager();
   public static ModsInteropAPI interopAPI = new ModsInteropAPI();
 
+  public static ExecutorService executor = Threads.unboundedExecutor("SGL_EXEC", 1);
+
   public static void init(){
     //注册所有打包数据类型id
     BytePackAssign.assignAll();
@@ -115,7 +121,7 @@ public class Sgl{
     globals = new Settings(){
       {
         setAutosave(true);
-        setDataDirectory(configDirectory);
+        setDataDirectory(Sgl.dataDirectory);
       }
 
       @Override
@@ -125,7 +131,7 @@ public class Sgl{
 
       @Override
       public Fi getBackupFolder() {
-        return configDirectory.child("global_backups");
+        return Sgl.dataDirectory.child("global_backups");
       }
 
       @Override
@@ -168,13 +174,24 @@ public class Sgl{
     };
 
     globals.load();
-    UpdatePool.receive("autosaveGlobal", globals::autosave);
 
     contributors = new Contributors();
     matrixContainers = new DistSupportContainerTable();
     empHealth = new EMPHealthManager();
+    
+    matrixContainers.setDefaultSupports();
+
+    logic.init();
+    interopAPI.init();
+    empHealth.init();
+    researches.init();
+
+    UpdatePool.receive("autosaveGlobal", globals::autosave);
+    UpdatePool.receive("sglLogicUpdate", logic::update);
 
     if (!Core.app.isHeadless()) {
+      generatePostAtlas();
+
       //设置屏幕采样器
       ScreenSampler.setup();
       //载入着色器
@@ -189,26 +206,11 @@ public class Sgl{
       ui = new SglUI();
       ui.init();
 
+      configNotificationIO();
+
       int count = SglHint.all.size;
       if (Sgl.config.loadInfo) Log.info("[Singularity][INFO] loading sgl hints, hints count: " + count);
     }
-
-    matrixContainers.setDefaultSupports();
-    interopAPI.init();
-    empHealth.init();
-    researches.init();
-
-    //添加设置项入口
-    Vars.ui.settings.shown(() -> {
-      Table table = FieldHandler.getValueDefault(Vars.ui.settings, "menu");
-      table.button(
-          Core.bundle.get("settings.singularity"),
-          SglDrawConst.sglIcon,
-          Styles.flatt,
-          32,
-          () -> Sgl.ui.config.show()
-      ).marginLeft(8).row();
-    });
 
     Events.on(EventType.ClientLoadEvent.class, e -> interopAPI.updateModels());
 
@@ -218,5 +220,46 @@ public class Sgl{
         block.squareSprite = image.getA(0, 0) > 0.5f;
       }
     }
+  }
+
+  private static boolean saving;
+  private static void configNotificationIO() {
+    if (notificationHistory.exists() || notificationHistoryBackup.exists()) {
+      try (Reads reads = notificationHistory.reads()) {
+        ui.notificationFrag.loadHistory(reads);
+      } catch (RuntimeException ignored) {
+        if (notificationHistory.exists() && notificationHistoryBackup.exists())
+          Log.err("[Singularity] history notification load failed, trying load backup");
+
+        try (Reads reads = notificationHistoryBackup.reads()) {
+          ui.notificationFrag.loadHistory(reads);
+        } catch (RuntimeException e) {
+          Log.err("[Singularity] history notification load failed!", e);
+        }
+      }
+    }
+
+    UpdatePool.receive("notificationAutoSave", () -> {
+      if (ui.notificationFrag.shouldSave() && notificationHistory.exists() && !saving){
+        executor.submit(() -> {
+          saving = true;
+          notificationHistory.copyTo(notificationHistoryBackup);
+
+          try (Writes writes = notificationHistory.writes(false)) {
+            ui.notificationFrag.saveHistory(writes);
+          }
+          saving = false;
+        });
+      }
+    });
+  }
+
+  private static void generatePostAtlas() {
+    Log.info("[Singularity] load post generated atlas");
+    Vars.content.each(c -> {
+      if (c instanceof PostAtlasGenerator gen){
+        gen.postLoad();
+      }
+    });
   }
 }

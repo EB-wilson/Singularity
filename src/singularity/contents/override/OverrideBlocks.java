@@ -14,6 +14,7 @@ import mindustry.world.draw.DrawMulti;
 import mindustry.world.draw.DrawRegion;
 import singularity.contents.SglItems;
 import singularity.world.blocks.product.NormalCrafter;
+import singularity.world.draw.DrawMultiSgl;
 import universecore.util.OverrideContentList;
 
 import static mindustry.type.ItemStack.with;
@@ -45,7 +46,7 @@ public class OverrideBlocks implements OverrideContentList{
           newProduce();
           produce.liquid(Liquids.slag, 0.2f);
 
-          draw = new DrawMulti(new DrawRegion("-bottom"), new DrawLiquidTile(), new DrawDefault());
+          draw = new DrawMultiSgl(new DrawRegion("-bottom"), new DrawLiquidTile(), new DrawDefault());
         }}
     );
     
@@ -74,7 +75,7 @@ public class OverrideBlocks implements OverrideContentList{
           newProduce();
           produce.item(Items.sand, 1);
 
-          draw = new DrawMulti(
+          draw = new DrawMultiSgl(
               new DrawDefault(),
               new DrawRegion("-rotator"){{
                 spinSprite = true;

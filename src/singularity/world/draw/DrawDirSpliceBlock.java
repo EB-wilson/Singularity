@@ -13,13 +13,15 @@ import arc.math.geom.Point2;
 import arc.util.Eachable;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
+import mindustry.graphics.MultiPacker;
 import mindustry.world.Block;
 import mindustry.world.draw.DrawBlock;
+import singularity.Sgl;
 import singularity.graphic.GraphicUtils;
 import universecore.world.DirEdges;
 
-public class DrawDirSpliceBlock<E> extends DrawBlock{
-  public TextureRegion[] regions = new TextureRegion[16];
+public class DrawDirSpliceBlock<E> extends DrawBlock {
+  public TextureRegion[] splicers = new TextureRegion[4];
   public Intf<E> spliceBits = e -> 0;
   public Boolf2<BuildPlan, BuildPlan> planSplicer = (plan, other) -> false;
 
@@ -31,47 +33,29 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
 
   @Override
   public void load(Block block){
-    Pixmap[] splicers = new Pixmap[4];
-
     if(simpleSpliceRegion){
-      PixmapRegion region = Core.atlas.getPixmap(block.name + suffix);
-      Pixmap pixmap = region.crop();
       for(int i = 0; i < 4; i++){
-        Pixmap m = i == 1 || i == 2? GraphicUtils.rotatePixmap90(pixmap.flipY(), i): GraphicUtils.rotatePixmap90(pixmap, i);
-        splicers[i] = m;
+        splicers[i] = Core.atlas.find(block.name + suffix);
       }
     }
     else{
       for(int i = 0; i < splicers.length; i++){
-        splicers[i] = Core.atlas.getPixmap(block.name + suffix + "_" + i).crop();
+        splicers[i] = Core.atlas.find(block.name + suffix + "_" + i);
       }
-    }
-
-    for(int i = 0; i < regions.length; i++){
-      regions[i] = getSpliceRegion(splicers, i);
-    }
-
-    for(Pixmap pixmap: splicers){
-      pixmap.dispose();
     }
   }
 
-  protected TextureRegion getSpliceRegion(Pixmap[] splicers, int i){
+  protected void drawSplice(float x, float y, int dirBits){
     int move = 0;
 
-    Pixmap map = new Pixmap(splicers[move].width, splicers[move].height);
-    while(1 << move <= i){
+    while(1 << move <= dirBits){
       int bit = 1 << move;
-      if((i & bit) != 0){
-        map.draw(splicers[move], true);
+      if((dirBits & bit) != 0){
+
+        Draw.rect(splicers[move], x, y, move*90);
       }
       move++;
     }
-
-    Pixmaps.bleed(map, 2);
-    Texture tex = new Texture(map);
-    tex.setFilter(Texture.TextureFilter.linear);
-    return new TextureRegion(tex);
   }
 
   @SuppressWarnings("unchecked")
@@ -79,7 +63,8 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
   public void draw(Building build){
     float z = Draw.z();
     Draw.z(z + layerOffset);
-    Draw.rect(regions[spliceBits.get((E) build)], build.x, build.y);
+
+    drawSplice(build.x, build.y, spliceBits.get((E) build));
     if (layerRec){
       Draw.z(z);
     }
@@ -124,6 +109,6 @@ public class DrawDirSpliceBlock<E> extends DrawBlock{
       bits |= 0b0001 << i;
     }
 
-    Draw.rect(regions[bits], plan.drawx(), plan.drawy());
+    drawSplice(plan.drawx(), plan.drawy(), bits);
   }
 }

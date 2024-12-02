@@ -21,7 +21,7 @@ import mindustry.graphics.Pal;
 import mindustry.type.UnitType;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
-import singularity.ui.StatUtils;
+import singularity.ui.UIUtils;
 
 public class RelatedWeapon extends DataWeapon {
   public static final RelatedAlt
@@ -59,7 +59,7 @@ public class RelatedWeapon extends DataWeapon {
           ta.add("[lightgray]" + Stat.reload.localized() + ": " + (mirror ? "2x " : "") + "[white]" + Strings.autoFixed(60f/reload*shoot.shots, 2) + " " + StatUnit.perSecond.localized());
         }
         if (!override) {
-          StatUtils.buildAmmo(ta, bullet);
+          UIUtils.buildAmmo(ta, bullet);
         }
         if (customDisplay != null){
           customDisplay.get(bullet, ta);
@@ -79,7 +79,7 @@ public class RelatedWeapon extends DataWeapon {
           ta.add("[lightgray]" + Stat.reload.localized() + ": " + (mirror ? "2x " : "") + "[white]" + Strings.autoFixed(60f/reload*(alternativeShoot == null ? shoot.shots : alternativeShoot.shots), 2) + " " + StatUnit.perSecond.localized());
         }
         if (!overrideAlt) {
-          StatUtils.buildAmmo(ta, alternativeBullet);
+          UIUtils.buildAmmo(ta, alternativeBullet);
         }
         if (customAltDisplay != null){
           customDisplay.get(alternativeBullet, ta);

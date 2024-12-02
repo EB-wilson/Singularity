@@ -37,7 +37,7 @@ import mindustry.ui.LiquidDisplay;
 import mindustry.world.blocks.ControlBlock;
 import mindustry.world.meta.*;
 import singularity.graphic.SglDrawConst;
-import singularity.ui.StatUtils;
+import singularity.ui.UIUtils;
 import singularity.world.blocks.SglBlock;
 import singularity.world.consumers.SglConsumers;
 import singularity.world.draw.DrawSglTurret;
@@ -344,14 +344,14 @@ public class SglTurret extends SglBlock{
           t.left().defaults().padRight(3).left();
 
           if(type.spawnUnit != null && type.spawnUnit.weapons.size > 0){
-            StatUtils.buildAmmo(t, type.spawnUnit.weapons.first().bullet);
+            UIUtils.buildAmmo(t, type.spawnUnit.weapons.first().bullet);
             return;
           }
 
           t.table(bt -> {
             bt.defaults().left();
             if(!ammoEntry.override){
-              StatUtils.buildAmmo(bt, type);
+              UIUtils.buildAmmo(bt, type);
             }
 
             for(Cons2<Table, BulletType> value: ammoEntry.statValues){

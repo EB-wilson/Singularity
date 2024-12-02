@@ -16,14 +16,17 @@ import arc.math.Mathf;
 import arc.math.geom.Rect;
 import arc.math.geom.Vec2;
 import arc.math.geom.Vec3;
+import arc.scene.ui.layout.Scl;
 import arc.util.Nullable;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.game.EventType;
 import mindustry.graphics.Drawf;
 import mindustry.graphics.Layer;
+import mindustry.graphics.Pal;
 import mindustry.graphics.Shaders;
 import singularity.Sgl;
+import singularity.ui.layout.Line;
 import singularity.util.func.Floatc3;
 import universecore.world.particles.Particle;
 
@@ -741,7 +744,36 @@ public class SglDraw{
   }
 
   public static void arc(float x, float y, float radius, float innerAngel, float rotate){
-    dashCircle(x, y, radius, 1, innerAngel, rotate);
+    arc(x, y, radius, 1.8f, innerAngel, rotate);
+  }
+
+  public static void arc(float x, float y, float radius, float scaleFactor, float innerAngel, float rotate){
+    int sides = 40 + (int)(radius * scaleFactor);
+
+    float step = 360f/sides;
+    int sing = innerAngel > 0? 1: -1;
+    innerAngel = Math.min(Math.abs(innerAngel), 360f);
+
+    Lines.beginLine();
+
+    float overed = 0;
+    for (float ang = 0; ang <= innerAngel - step; ang += step){
+      overed += step;
+      v1.set(radius, 0).setAngle(ang*sing + rotate);
+      Lines.linePoint(x + v1.x, y + v1.y);
+    }
+
+    if (innerAngel >= 360f - 0.01f) {
+      Lines.endLine(true);
+      return;
+    }
+
+    if (overed < innerAngel){
+      v1.set(radius, 0).setAngle(innerAngel*sing + rotate);
+      Lines.linePoint(x + v1.x, y + v1.y);
+    }
+
+    Lines.endLine();
   }
 
   public static void dashCircle(float x, float y, float radius){
@@ -773,16 +805,26 @@ public class SglDraw{
     Lines.beginLine();
     v1.set(radius, 0).setAngle(rotate + 90);
     Lines.linePoint(v1.x + x, v1.y + y);
-    for(int i = 0; i < sides; i++){
-      if(i*Math.abs(per)%(dashDeg+empDeg) > dashDeg) continue;
 
+    boolean drawing = true;
+    for(int i = 0; i < sides; i++){
+      if(i*Math.abs(per)%(dashDeg+empDeg) > dashDeg) {
+        if (drawing) {
+          Lines.endLine();
+          drawing = false;
+        }
+        continue;
+      }
+
+      if (!drawing) Lines.beginLine();
+      drawing = true;
       v1.set(radius, 0).setAngle(rotate + per * (i + 1) + 90);
       float x1 = v1.x;
       float y1 = v1.y;
 
       Lines.linePoint(x1 + x, y1 + y);
     }
-    Lines.endLine();
+    if (drawing) Lines.endLine();
   }
 
   public static void drawLaser(float originX, float originY, float otherX, float otherY, TextureRegion linkRegion,
@@ -969,6 +1011,63 @@ public class SglDraw{
         x + v3.x, y + v3.y,
         x - v1.x, y - v1.y
     );
+  }
+
+  public static void drawCircleProgress(
+      float x, float y, float radius,
+      float stroke, float progress,
+      Color color, Color backColor
+  ){ drawCircleProgress(x, y, radius, stroke, stroke/2f, progress, 0, color, backColor); }
+
+  public static void drawCircleProgress(
+      float x, float y, float radius,
+      float frameStroke, float barStroke, float progress,
+      Color color, Color backColor
+  ){ drawCircleProgress(x, y, radius, frameStroke, barStroke, progress, 0, color, backColor); }
+
+  public static void drawCircleProgress(
+      float x, float y, float radius,
+      float frameStroke, float barStroke,
+      float progress, float subProgress,
+      Color color, Color backColor
+  ){
+    float parentAlpha = Draw.getColor().a;
+    float rad = radius - frameStroke/2f;
+
+    Draw.color(Color.black, parentAlpha);
+    Lines.stroke(frameStroke);
+    Lines.circle(x, y, rad);
+    Draw.color(backColor, 0.6f*parentAlpha);
+    Lines.circle(x, y, rad);
+    Draw.color(Color.black, 0.6f*parentAlpha);
+    Lines.stroke(barStroke);
+    Lines.circle(x, y, rad);
+
+    if (progress > 0) {
+      Lines.stroke(barStroke);
+      Draw.color(color, parentAlpha);
+      SglDraw.arc(
+          x, y, rad,
+          -360f*progress, 90
+      );
+    }
+
+    if (subProgress > 0){
+      Lines.stroke(frameStroke);
+      Draw.color(backColor, 0.5f*parentAlpha);
+      float angel = -360f*Math.min(subProgress, 1 - progress);
+      SglDraw.arc(
+          x, y, rad, angel,
+          90 - progress*360f
+      );
+
+      Draw.color(Color.black, 0.2f*parentAlpha);
+      Lines.stroke(frameStroke/3f);
+      SglDraw.arc(
+          x, y, rad, angel,
+          90 - progress*360f
+      );
+    }
   }
 
   @SuppressWarnings("unchecked")

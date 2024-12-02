@@ -9,6 +9,7 @@ import arc.graphics.g2d.TextureRegion;
 import arc.util.Eachable;
 import mindustry.entities.units.BuildPlan;
 import mindustry.gen.Building;
+import mindustry.graphics.MultiPacker;
 import mindustry.world.Block;
 import singularity.graphic.GraphicUtils;
 
@@ -26,21 +27,8 @@ public class DrawPayloadFactory<E> extends DrawDirSpliceBlock<E>{
     topRegion = Core.atlas.find(name + "_top", "factory-top-" + size + suffix);
     outRegion = Core.atlas.find(name + "_out", "factory-out-" + size + suffix);
 
-    Pixmap[] splicers = new Pixmap[4];
-
-    PixmapRegion region = Core.atlas.getPixmap(Core.atlas.find(name + "_in", "factory-in-" + size + suffix));
-    Pixmap pixmap = region.crop();
-    for(int i = 0; i < 4; i++){
-      Pixmap m = i == 1 || i == 2? GraphicUtils.rotatePixmap90(pixmap.flipY(), i): GraphicUtils.rotatePixmap90(pixmap, i);
-      splicers[i] = m;
-    }
-
-    for(int i = 0; i < regions.length; i++){
-      regions[i] = getSpliceRegion(splicers, i);
-    }
-
-    for(Pixmap p: splicers){
-      p.dispose();
+    for(int i = 0; i < splicers.length; i++){
+      splicers[i] = Core.atlas.find(name + "_in", "factory-in-" + size + suffix);
     }
   }
 
@@ -56,7 +44,7 @@ public class DrawPayloadFactory<E> extends DrawDirSpliceBlock<E>{
   @Override
   public void draw(Building build) {
     Draw.rect(build.block.region, build.x, build.y);
-    Draw.rect(regions[spliceBits.get((E) build)], build.x, build.y);
+    drawSplice(build.x, build.y, spliceBits.get((E) build));
     Draw.rect(outRegion, build.x, build.y, build.rotdeg());
 
     drawPayload.get((E) build);

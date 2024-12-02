@@ -33,7 +33,7 @@ import singularity.Sgl;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.type.AtomSchematic;
-import singularity.ui.StatUtils;
+import singularity.ui.UIUtils;
 import singularity.world.SglFx;
 import singularity.world.meta.SglStat;
 import universecore.UncCore;
@@ -427,7 +427,7 @@ public class OtherContents implements ContentList{
             t.add(Core.bundle.format("infos.shots", 3));
             t.row();
             t.table(Tex.underline, b -> {
-              StatUtils.buildAmmo(b, crushCrystal);
+              UIUtils.buildAmmo(b, crushCrystal);
             }).padLeft(10);
           });
         });

@@ -46,7 +46,7 @@ import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
 import mindustry.world.meta.Stats;
 import singularity.graphic.SglDrawConst;
-import singularity.ui.StatUtils;
+import singularity.ui.UIUtils;
 import singularity.world.SglFx;
 import singularity.world.blocks.SglBlock;
 import singularity.world.consumers.SglConsumers;
@@ -320,7 +320,7 @@ public class GameOfLife extends SglBlock{
               bt.row();
             }
 
-            StatUtils.buildAmmo(bt, bullet);
+            UIUtils.buildAmmo(bt, bullet);
           }).padTop(-9).padLeft(0).left().get().background(Tex.underline);
           t.row();
         });

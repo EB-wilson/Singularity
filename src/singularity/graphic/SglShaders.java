@@ -22,7 +22,7 @@ public class SglShaders {
   // local space shaders
   public static WaveShader wave;
 
-  private static final Fi internalShaderDir = Singularity.getInternalFile("shaders");
+  public static final Fi internalShaderDir = Singularity.getInternalFile("shaders");
 
   public static void load() {
     simpleScreen = new Shader(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child("simple.frag"));

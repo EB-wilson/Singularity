@@ -4,7 +4,7 @@
 //This is the configuration file of the singularity mod. You can see most of the configuration items in the configuration UI page.
 //Configurations that are not usually used, such as debugging options, need to be adjusted in this file.
 {
-  "configVersion": 9,
+  "configVersion": 10,
 
   //=====Basic/基础设置=====//
   //--main menu/主菜单设置--
@@ -27,6 +27,8 @@
   ],
   //主菜单背景的视角能移动，启用背景且非静态背景时有效
   "movementCamera": true,
+  //通知历史记录的最大数量
+  "maxNotifyHistories": 1000,
 
   //--target info/局内目标信息设置--
   //信息显示器开关

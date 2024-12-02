@@ -23,6 +23,7 @@ import singularity.core.Init;
 import singularity.type.SglCategory;
 import singularity.type.SglContentType;
 import singularity.ui.SglStyles;
+import singularity.ui.dialogs.TestDialog;
 import singularity.world.meta.SglAttribute;
 import tmi.RecipeEntryPoint;
 import universecore.UncCore;
@@ -84,6 +85,8 @@ public class Singularity extends Mod{
       Events.on(ClientLoadEvent.class, e -> {
         Sgl.ui.mainMenu.show();
         Sgl.ui.techTreeDialog.show();
+
+        new TestDialog().show();
       });
     }
 

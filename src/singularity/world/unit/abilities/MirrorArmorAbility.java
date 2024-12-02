@@ -86,12 +86,12 @@ public class MirrorArmorAbility extends MirrorShieldBase{
 
       //Yes, this code doesn't do anything, but it won't work properly without this code
       //fu*k off arc GL
-      SglDraw.drawTask(fu_kID, unit, u -> {}, (Unit u) -> Draw.draw(Draw.z(), () -> {
-        pingpongBuffer.resize(2, 2);
-        pingpongBuffer.begin(Color.clear);
-        pingpongBuffer.end();
-        pingpongBuffer.blit(Draw.getShader());
-      }), u -> {});
+      //SglDraw.drawTask(fu_kID, unit, u -> {}, (Unit u) -> Draw.draw(Draw.z(), () -> {
+      //  pingpongBuffer.resize(2, 2);
+      //  pingpongBuffer.begin(Color.clear);
+      //  pingpongBuffer.end();
+      //  pingpongBuffer.blit(Draw.getShader());
+      //}), u -> {});
     }
     else{
       Draw.z(SglDraw.mirrorField + 1);

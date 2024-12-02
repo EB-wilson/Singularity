@@ -15,7 +15,7 @@ public class UpdatePool{
     updateTasks.put(key, task);
   }
   
-  public static boolean deceive(String key){
+  public static boolean remove(String key){
     return updateTasks.remove(key) != null;
   }
   

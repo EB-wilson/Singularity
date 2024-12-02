@@ -106,7 +106,8 @@ public class SglTechTreeDialog extends BaseDialog {
                 childCompleted?
                     Pal.accent:
                 Tmp.c1.set(Pal.accent).lerp(Color.lightGray, Mathf.absin(10, 1)):
-            Color.lightGray
+            Color.lightGray,
+            parentAlpha
         );
 
         float originX = x + line.beginX;
@@ -167,7 +168,8 @@ public class SglTechTreeDialog extends BaseDialog {
                     childCompleted?
                         Pal.accent:
                     Tmp.c1.set(Pal.accent).lerp(Color.lightGray, Mathf.absin(10, 1)):
-                Color.lightGray
+                Color.lightGray,
+                parentAlpha
             );
 
             int ordFrom = node.children.indexOf(child);
@@ -202,7 +204,8 @@ public class SglTechTreeDialog extends BaseDialog {
                   anyCompleted?
                       Pal.accent:
                   Tmp.c1.set(Pal.accent).lerp(Color.lightGray, Mathf.absin(10, 1)):
-              Color.lightGray
+              Color.lightGray,
+              parentAlpha
           );
           Lines.line(originX - node.width/2f, originY, originX, originY);
         }
@@ -368,56 +371,21 @@ public class SglTechTreeDialog extends BaseDialog {
             @Override
             public void draw(float x, float y, float width, float height) {
               if (project.isCompleted()){
-                Draw.color(Pal.accent, 0.3f);
+                Draw.color(Pal.accent, 0.3f*parentAlpha);
               }
-              else Draw.color(Pal.darkerGray, 0.7f);
+              else Draw.color(Pal.darkerGray, 0.7f*parentAlpha);
               Fill.rect(x + width/2f, y + height/2f, width, height);
 
-              Draw.color(Pal.darkestGray);
+              Draw.color(Pal.darkestGray, parentAlpha);
               Fill.circle(x + width/2f, y + height/2f, width/2f - Scl.scl(4f));
 
-              Draw.color(Color.black);
-              Lines.stroke(8f);
-              Lines.circle(x + width/2f, y + height/2f, width/2f - Scl.scl(4f));
-              Draw.color(SglDrawConst.matrixNetDark, 0.6f);
-              Lines.circle(x + width/2f, y + height/2f, width/2f - Scl.scl(4f));
-              Draw.color(Pal.darkestGray, 0.6f);
-              Lines.stroke(4f);
-              Lines.circle(x + width/2f, y + height/2f, width/2f - Scl.scl(4f));
-
-              if (!project.isRevealed()) return;
-
-              Lines.stroke(8f);
-              Draw.color(SglDrawConst.matrixNetDark, 0.7f);
-
-              float progress = project.progress();
-              SglDraw.arc(
-                  x + width/2f, y + height/2f, width/2f - Scl.scl(4f),
-                  -360f*progress, 0
+              SglDraw.drawCircleProgress(
+                  x + width/2, y + height/2, width/2f,
+                  Scl.scl(6f), Scl.scl(3f),
+                  project.progress(),
+                  project.inspire == null || project.inspire.applied? 0: project.inspire.provProgress,
+                  SglDrawConst.matrixNet, SglDrawConst.matrixNet
               );
-              Lines.stroke(4f);
-              Draw.color(SglDrawConst.matrixNet);
-              SglDraw.arc(
-                  x + width/2f, y + height/2f, width/2f - Scl.scl(4f),
-                  -360f*progress, 0
-              );
-              if (project.inspire != null && !project.inspire.applied){
-                Lines.stroke(8f);
-                Draw.color(SglDrawConst.matrixNetDark, 0.25f);
-                SglDraw.arc(
-                    x + width/2f, y + height/2f, width/2f - Scl.scl(4f),
-                    -360f*Math.min(project.inspire.provProgress, 1 - progress),
-                    -progress*360f
-                );
-                Draw.color(SglDrawConst.matrixNetDark, 0.5f);
-
-                Lines.stroke(3f);
-                SglDraw.arc(
-                    x + width/2f, y + height/2f, width/2f - Scl.scl(4f),
-                    -360f*Math.min(project.inspire.provProgress, 1 - progress),
-                    -progress*360f
-                );
-              }
             }
           }, img -> {
             if (isReveal) {
@@ -430,33 +398,31 @@ public class SglTechTreeDialog extends BaseDialog {
           }).width(64f).growY().get().fill((x, y, w, h) -> {
             Lines.stroke(3f);
             Draw.color();
+            Draw.alpha(parentAlpha);
             SglDraw.arc(
                 x + w/2f, y + h/2f, w/3f,
-                -70f, -20f
+                15f, 90f
             );
             SglDraw.arc(
                 x + w/2f, y + h/2f, w/3f,
-                10f, 0f
-            );
-
-            Lines.stroke(2f);
-            Draw.color();
-            SglDraw.arc(
-                x + w/2f, y + h/2f, w/3f,
-                15f, 120f
+                70f, 0f
             );
             SglDraw.arc(
                 x + w/2f, y + h/2f, w/3f,
-                10f, 160f
+                15f, 210f
+            );
+            SglDraw.arc(
+                x + w/2f, y + h/2f, w/3f,
+                10f, 250f
             );
           });
           t.table(new BaseDrawable(){
             @Override
             public void draw(float x, float y, float width, float height) {
               if (project.isCompleted()){
-                Draw.color(Pal.accent, 0.3f);
+                Draw.color(Pal.accent, 0.3f*parentAlpha);
               }
-              else Draw.color(Pal.darkerGray, 0.7f);
+              else Draw.color(Pal.darkerGray, 0.7f*parentAlpha);
               Fill.tri(x, y, x, y + height, x + width/3f, y);
 
               Fill.quad(
@@ -516,11 +482,11 @@ public class SglTechTreeDialog extends BaseDialog {
               public void draw(float x, float y, float width, float height) {
                 if (isReveal) {
                   if (project.isCompleted() || (project.inspire != null && project.inspire.applied)){
-                    Draw.color(Pal.accent, 0.3f);
+                    Draw.color(Pal.accent, 0.3f*parentAlpha);
                   }
-                  else Draw.color(Pal.darkerGray, 0.7f);
+                  else Draw.color(Pal.darkerGray, 0.7f*parentAlpha);
                 }
-                else Draw.color(SglDrawConst.fexCrystal, 0.3f);
+                else Draw.color(SglDrawConst.fexCrystal, 0.3f*parentAlpha);
 
                 Fill.rect(x + width/2, y + height/2, width, height);
               }
@@ -538,7 +504,7 @@ public class SglTechTreeDialog extends BaseDialog {
                 prog.add().growX();
 
                 if (project.inspire != null) {
-                  prog.add(project.inspire.localized()).color(Color.lightGray).fontScale(0.75f).fill();
+                  prog.add(project.inspire.localized).color(Color.lightGray).fontScale(0.75f).fill();
                   prog.image(SglDrawConst.inspire).scaling(Scaling.fit).size(22f).color(SglDrawConst.matrixNet);
                 }
               }

@@ -4,7 +4,7 @@ import arc.Core;
 import arc.Events;
 import arc.util.Nullable;
 import singularity.Sgl;
-import singularity.game.SglEvents;
+import singularity.core.SglEventTypes;
 
 public abstract class RevealGroup {
   protected final String name;
@@ -25,7 +25,7 @@ public abstract class RevealGroup {
       revealed = true;
       Sgl.globals.put(name + "_revealed", true);
 
-      Events.fire(new SglEvents.RevealedEvent(this));
+      Events.fire(new SglEventTypes.RevealedEvent(this));
     }
   }
 
@@ -59,7 +59,7 @@ public abstract class RevealGroup {
 
     @Override
     public void applyTrigger() {
-      Events.on(SglEvents.ResearchCompletedEvent.class, e -> {
+      Events.on(SglEventTypes.ResearchCompletedEvent.class, e -> {
         if (!revealed && e.research == project) {
           reveal();
         }

@@ -4,6 +4,7 @@ import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.style.Drawable;
 import arc.scene.style.TextureRegionDrawable;
+import arc.scene.ui.Dialog;
 import arc.util.Tmp;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;

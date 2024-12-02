@@ -9,7 +9,7 @@ import arc.util.Nullable;
 import mindustry.ctype.UnlockableContent;
 import singularity.Sgl;
 import singularity.Singularity;
-import singularity.game.SglEvents;
+import singularity.core.SglEventTypes;
 import singularity.world.blocks.research.ResearchDevice;
 
 public class ResearchProject {
@@ -23,6 +23,7 @@ public class ResearchProject {
 
   public String localizedName;
   public String description;
+  public String slogan = "slogan";
   public TextureRegion icon;
 
   @Nullable public Inspire inspire;
@@ -30,6 +31,7 @@ public class ResearchProject {
 
   public boolean showIfRevealess;
   public boolean hideTechs;
+  public ResearchGroup group;
 
   protected boolean isCompleted;
   protected int techRequiresReal;
@@ -101,7 +103,10 @@ public class ResearchProject {
       inspire.init(this);
       inspire.applyTrigger(this);
     }
-    checkComplete();
+
+    if (dependenciesCompleted() && researched >= techRequiresReal){
+      isCompleted = true;
+    }
   }
 
   public boolean dependenciesCompleted(){
@@ -171,7 +176,7 @@ public class ResearchProject {
       content.unlock();
     }
 
-    Events.fire(new SglEvents.ResearchCompletedEvent(this));
+    Events.fire(new SglEventTypes.ResearchCompletedEvent(this));
 
     save();
   }

@@ -54,7 +54,6 @@ public class Init{
       //添加Hint的draw入口
       Vars.ui.hudGroup.removeChild(FieldHandler.getValueDefault(Vars.ui.hints, "group"));
       Vars.ui.hints = Sgl.classes.getDynamicMaker().newInstance(Vars.ui.hints.getClass(), new Class[]{HintsAspect.class}, HintDyClass).objSelf();
-      Vars.ui.hints.build(Vars.ui.hudGroup);
     }
   }
   

@@ -19,7 +19,8 @@ import universecore.world.DirEdges;
 public class DrawAntiSpliceBlock<E> extends DrawBlock{
   private final static String[] splices = {"right", "right_top", "top", "left_top", "left", "left_bot", "bot", "right_bot"};
 
-  public TextureRegion[] drawRegions = new TextureRegion[/*2^8=*/256];//空间换时间，不要太多的使用这个类型
+  public TextureRegion[] regions = new TextureRegion[8];
+  public TextureRegion[] inner = new TextureRegion[4];
   public Boolf2<BuildPlan, BuildPlan> planSplicer = (plan, other) -> false;
   public Intf<E> splicer = e -> 0;
 
@@ -34,18 +35,11 @@ public class DrawAntiSpliceBlock<E> extends DrawBlock{
   public void load(Block block) {
     icon = Core.atlas.find(block.name + "_icon");
 
-    Pixmap[] regions = new Pixmap[8];
-    Pixmap[] inner = new Pixmap[4];
-
     for (int i = 0; i < regions.length; i++) {
-      regions[i] = Core.atlas.getPixmap(block.name + "_" + splices[i]).crop();
+      regions[i] = Core.atlas.find(block.name + "_" + splices[i]);
     }
     for (int i = 0; i < inner.length; i++) {
-      inner[i] = Core.atlas.getPixmap(block.name + "_" + splices[i*2 + 1] + "_inner").crop();
-    }
-
-    for (int i = 0; i < drawRegions.length; i++) {
-      drawRegions[i] = getRegionWithBit(regions, inner, i);
+      inner[i] = Core.atlas.find(block.name + "_" + splices[i*2 + 1] + "_inner");
     }
   }
 
@@ -54,26 +48,19 @@ public class DrawAntiSpliceBlock<E> extends DrawBlock{
     return new TextureRegion[]{icon};
   }
 
-  protected TextureRegion getRegionWithBit(Pixmap[] regions, Pixmap[] inner, int i) {
-    Pixmap map = new Pixmap(regions[0].width, regions[0].height);
-
+  protected void drawSplice(float x, float y, int bits) {
     for (int dir = 0; dir < 8; dir++) {
       if (dir%2 == 0){
-        if ((i & (1 << dir)) == 0) map.draw(regions[dir], true);
+        if ((bits & (1 << dir)) == 0) Draw.rect(regions[dir], x, y);
       }
     }
     for (int dir = 0; dir < 8; dir++) {
       if ((dir + 1)%2 == 0){
         int dirBit = 1 << (dir + 1)%8 | 1 << (dir - 1);
-        if ((i & dirBit) == 0) map.draw(regions[dir], true);
-        else if ((i & dirBit) == dirBit && (interConner || (i & (1 << dir)) == 0)) map.draw(inner[dir/2], true);
+        if ((bits & dirBit) == 0) Draw.rect(regions[dir], x, y);
+        else if ((bits & dirBit) == dirBit && (interConner || (bits & (1 << dir)) == 0)) Draw.rect(inner[dir/2], x, y);
       }
     }
-
-    Pixmaps.bleed(map, 2);
-    Texture tex = new Texture(map);
-    tex.setFilter(Texture.TextureFilter.linear);
-    return new TextureRegion(tex);
   }
 
   @SuppressWarnings("unchecked")
@@ -81,7 +68,7 @@ public class DrawAntiSpliceBlock<E> extends DrawBlock{
   public void draw(Building build) {
     float z = Draw.z();
     Draw.z(z + layerOffset);
-    Draw.rect(drawRegions[splicer.get((E) build)], build.x, build.y);
+    drawSplice(build.x, build.y, splicer.get((E) build));
     if (layerRec) Draw.z(z);
   }
 
@@ -121,6 +108,6 @@ public class DrawAntiSpliceBlock<E> extends DrawBlock{
       data |= 1 << i;
     }
 
-    Draw.rect(drawRegions[data], plan.drawx(), plan.drawy());
+    drawSplice(plan.drawx(), plan.drawy(), data);
   }
 }

@@ -8,13 +8,16 @@ import mindustry.game.EventType;
 import mindustry.type.UnitType;
 import mindustry.world.Block;
 import singularity.Sgl;
-import singularity.game.SglEvents;
+import singularity.core.SglEventTypes;
 
 public abstract class Inspire {
   protected String name;
 
   public float provProgress = 0.5f;
   public boolean applied;
+
+  public String localized;
+  public String description;
 
   public Inspire() {
     this.name = null;
@@ -32,6 +35,12 @@ public abstract class Inspire {
   public void init(ResearchProject project){
     if (name == null) name = "inspire_" + project.name;
     applied = Sgl.globals.getBool( name + "_applied", false);
+
+    localized = Core.bundle.get("research." + name + ".inspire");
+    description = Core.bundle.get(
+        "research." + name + ".inspire.description",
+        Core.bundle.format("infos.inspiredBy", project.localizedName)
+    );
   }
 
   public void apply(ResearchProject project){
@@ -41,14 +50,12 @@ public abstract class Inspire {
     Sgl.globals.put(name + "_applied", true);
 
     project.researchProcess((int) (project.getRealRequireTechs()*provProgress));
+
+    Events.fire(new SglEventTypes.ResearchInspiredEvent(this, project));
   }
 
   public String getName(){
     return name;
-  }
-
-  public String localized(){
-    return Core.bundle.get("research." + name + ".inspire");
   }
 
   public void reset(){
@@ -130,13 +137,15 @@ public abstract class Inspire {
     }
 
     @Override
-    public String localized() {
-      return Core.bundle.format("research.inspire.researched", researchProject.localizedName);
+    public void init(ResearchProject project) {
+      super.init(project);
+
+      localized = Core.bundle.format("research.inspire.researched", researchProject.localizedName);
     }
 
     @Override
     public void applyTrigger(ResearchProject project) {
-      Events.on(SglEvents.ResearchCompletedEvent.class, e -> {
+      Events.on(SglEventTypes.ResearchCompletedEvent.class, e -> {
         if(!applied && e.research == researchProject) {
           apply(project);
         }
@@ -168,9 +177,11 @@ public abstract class Inspire {
     }
 
     @Override
-    public String localized() {
-      if (requireCount == 1) return Core.bundle.format("research.inspire.placeBlock", block.localizedName);
-      return Core.bundle.format("research.inspire.placeBlocks", requireCount, block.localizedName);
+    public void init(ResearchProject project) {
+      super.init(project);
+
+      localized = requireCount == 1? Core.bundle.format("research.inspire.placeBlock", block.localizedName)
+          : Core.bundle.format("research.inspire.placeBlocks", requireCount, block.localizedName);
     }
 
     @Override
@@ -207,9 +218,11 @@ public abstract class Inspire {
     }
 
     @Override
-    public String localized() {
-      if (requireCount == 1) return Core.bundle.format("research.inspire.createUnit", unitType.localizedName);
-      return Core.bundle.format("research.inspire.createUnits", requireCount, unitType.localizedName);
+    public void init(ResearchProject project) {
+      super.init(project);
+
+      localized = requireCount == 1? Core.bundle.format("research.inspire.createUnit", unitType.localizedName)
+          : Core.bundle.format("research.inspire.createUnits", requireCount, unitType.localizedName);
     }
 
     @Override

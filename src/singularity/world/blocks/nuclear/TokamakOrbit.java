@@ -19,6 +19,7 @@ import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.blocks.SglBlock;
 import singularity.world.draw.DrawDirSpliceBlock;
+import singularity.world.draw.DrawMultiSgl;
 import singularity.world.draw.DrawRegionDynamic;
 import universecore.annotations.Annotations;
 import universecore.components.blockcomp.ChainsBlockComp;
@@ -38,7 +39,7 @@ public class TokamakOrbit extends SglBlock implements SpliceBlockComp {
 
     rotate = true;
 
-    draw = new DrawMulti(
+    draw = new DrawMultiSgl(
         new DrawRegionDynamic<TokamakOrbitBuild>("_corner_bottom") {{
           alpha = e -> e.isCorner ? 1 : 0;
           rotation = e -> e.rotation * 90;

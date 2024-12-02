@@ -90,11 +90,11 @@ public class SglTechThree extends ResearchManager.ResearchSDL implements Content
       test14 = research("test-14", 180, () -> {
         contents(polymer_gravitational_generator, degenerate_neutron_polymer);
         dependencies("test-12", "test-15");
-        showRevealess();
+        inspire(new Inspire.PlaceBlockInspire(incubator));
       });
       test15 = research("test-15", 180, () -> {
         contents(uranium_rawore);
-        dependencies("test-6", "test-10");
+        dependencies("test-10");
       });
       test16 = research("test-16", 180, () -> {
         contents(vacuum_crucible);
@@ -124,6 +124,10 @@ public class SglTechThree extends ResearchManager.ResearchSDL implements Content
           dependencies("test-18");
         });
       });
+    });
+
+    Time.run(1, () -> {
+      test14.reset();
     });
   }
 }

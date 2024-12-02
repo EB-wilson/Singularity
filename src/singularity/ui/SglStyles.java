@@ -19,8 +19,8 @@ public class SglStyles{
   public static TextureRegionDrawable BLUR_BACK;
 
   public static Slider.SliderStyle sliderLine;
-  public static Button.ButtonStyle underline;
-  public static Dialog.DialogStyle blurBack, transparentBack;
+  public static Button.ButtonStyle underline, sideButtonRight;
+  public static Dialog.DialogStyle blurBack, transparentBack, transGrayBack;
 
   public static void load(){
     HealthBarStyle.loadAll();
@@ -54,6 +54,12 @@ public class SglStyles{
       over = underlineOver;
     }};
 
+    sideButtonRight = new Button.ButtonStyle(){{
+      up = Tex.buttonSideRight;
+      down = Tex.buttonSideRightDown;
+      over = Tex.buttonSideRightOver;
+    }};
+
     blurBack = new Dialog.DialogStyle(){{
       stageBackground = BLUR_BACK;
       titleFont = Fonts.def;
@@ -65,6 +71,13 @@ public class SglStyles{
       stageBackground = SglDrawConst.transparent;
       titleFont = Fonts.outline;
       background = SglDrawConst.transparent;
+      titleFontColor = Pal.accent;
+    }};
+
+    transGrayBack = new Dialog.DialogStyle(){{
+      stageBackground = SglDrawConst.grayUIAlpha;
+      titleFont = Fonts.outline;
+      background = windowEmpty;
       titleFontColor = Pal.accent;
     }};
   }

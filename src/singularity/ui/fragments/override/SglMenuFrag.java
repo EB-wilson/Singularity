@@ -4,6 +4,7 @@ import arc.Core;
 import arc.Events;
 import arc.graphics.Color;
 import arc.graphics.g2d.TextureRegion;
+import arc.graphics.g3d.VertexBatch3D;
 import arc.graphics.gl.FrameBuffer;
 import arc.input.KeyCode;
 import arc.math.Mathf;
@@ -122,8 +123,7 @@ public class SglMenuFrag extends MenuFragment{
 
               speed = Mathf.lerpDelta(speed, 0, 0.05f);
               if (Math.abs(speed) > 0.001f) {
-                params.camPos.add(
-                    params.camDir.cpy().setLength(speed).scl(speed > 0? 1 : -1));
+                params.camPos.add(params.camDir.cpy().setLength(speed).scl(speed > 0? 1 : -1));
               }
 
               if (paning){

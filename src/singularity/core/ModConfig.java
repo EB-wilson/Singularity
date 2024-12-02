@@ -17,7 +17,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 
 public class ModConfig{
-  private static final int configVersion = 9;
+  private static final int configVersion = 10;
   private static final Field[] configs = ModConfig.class.getFields();
 
   //basic/基础设置
@@ -28,6 +28,7 @@ public class ModConfig{
   @Order(3f) public boolean staticMainMenuBackground;
   @Order(4f) public float[] defaultCameraPos;
   @Order(5f) public boolean movementCamera;
+  @Order(5.5f) public int maxNotifyHistories;
 
   //游戏目标内信息显示
   @Order(6f) public boolean showInfos;

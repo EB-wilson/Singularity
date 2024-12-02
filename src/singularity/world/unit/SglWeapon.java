@@ -8,7 +8,7 @@ import mindustry.type.UnitType;
 import mindustry.type.Weapon;
 import mindustry.world.meta.Stat;
 import mindustry.world.meta.StatUnit;
-import singularity.ui.StatUtils;
+import singularity.ui.UIUtils;
 
 public class SglWeapon extends Weapon {
   public Cons2<BulletType, Table> customDisplay;
@@ -33,7 +33,7 @@ public class SglWeapon extends Weapon {
     }
 
     if (!override) {
-      StatUtils.buildAmmo(t, bullet);
+      UIUtils.buildAmmo(t, bullet);
     }
     if (customDisplay != null){
       customDisplay.get(bullet, t);

@@ -11,7 +11,6 @@ import arc.math.geom.Vec2;
 import arc.scene.ui.layout.Collapser;
 import arc.scene.ui.layout.Table;
 import arc.util.Interval;
-import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.content.Fx;
@@ -38,16 +37,14 @@ import singularity.contents.SglUnits;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
-import singularity.ui.StatUtils;
+import singularity.ui.UIUtils;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.blocks.turrets.MultiTrailBulletType;
 import singularity.world.draw.part.CustomPart;
-import singularity.world.meta.SglStatUnit;
 import singularity.world.unit.DataWeapon;
 import singularity.world.unit.SglUnitType;
 import singularity.world.unit.SglWeapon;
-import singularity.world.unit.abilities.MirrorArmorAbility;
 import singularity.world.unit.abilities.MirrorFieldAbility;
 
 public class KaguyaType extends SglUnitType<UnitEntity> {
@@ -480,7 +477,7 @@ public class KaguyaType extends SglUnitType<UnitEntity> {
             t.row();
 
             Table ic = new Table();
-            StatUtils.buildAmmo(ic, subBull);
+            UIUtils.buildAmmo(ic, subBull);
             Collapser coll = new Collapser(ic, true);
             coll.setDuration(0.1f);
 

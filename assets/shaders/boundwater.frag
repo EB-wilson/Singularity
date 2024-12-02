@@ -19,21 +19,16 @@ void main(){
     float stime = u_time / 5.0;
 
     vec4 tc = texture2D(u_texture, c, 0.0).rgba;
-    if(tc.a > 0.0) {
-        vec4 color = texture2D(u_texture, c + vec2(sin(stime/3.0 + coords.y/0.75) * v.x, 0.0)).rgba * vec4(0.9, 0.9, 1, 1);
-        float tester = mod((coords.x + coords.y * 1.1 + sin(stime / 8.0 + coords.x / 5.0 - coords.y / 100.0) * 2.0) +
+    vec4 color = texture2D(u_texture, c + vec2(sin(stime/3.0 + coords.y/0.75) * v.x, 0.0)).rgba * vec4(0.9, 0.9, 1, 1);
+    float tester = mod(
+        (coords.x + coords.y * 1.1 + sin(stime / 8.0 + coords.x / 5.0 - coords.y / 100.0) * 2.0) +
             sin(stime / 20.0 + coords.y / 3.0) * 1.0 +
             sin(stime / 10.0 - coords.y / 2.0) * 2.0 +
             sin(stime / 7.0 + coords.y / 1.0) * 0.5 +
             sin(coords.x / 3.0 + coords.y / 2.0) +
-            sin(stime / 20.0 + coords.x / 4.0) * 1.0, mscl);
+            sin(stime / 20.0 + coords.x / 4.0) * 1.0, mscl
+    );
 
-        if (tester < mth) {
-            color *= 1.2;
-        }
-
-        tc = color;
-    }
-
+    tc = mix(tc, color * 1.2, step(mth, tester));
     gl_FragColor = tc;
 }

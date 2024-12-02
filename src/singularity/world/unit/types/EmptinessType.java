@@ -36,14 +36,13 @@ import mindustry.ui.Styles;
 import mindustry.world.blocks.environment.Floor;
 import mindustry.world.meta.BlockFlag;
 import singularity.Sgl;
-import singularity.contents.OtherContents;
 import singularity.contents.SglItems;
 import singularity.contents.SglTurrets;
 import singularity.contents.SglUnits;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
-import singularity.ui.StatUtils;
+import singularity.ui.UIUtils;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.SglUnitSorts;
@@ -307,7 +306,7 @@ public class EmptinessType extends SglUnitType<UnitEntity> {
         super.addStats(u, t);
 
         Table ic = new Table();
-        StatUtils.buildAmmo(ic, subBullet);
+        UIUtils.buildAmmo(ic, subBullet);
         Collapser coll = new Collapser(ic, true);
         coll.setDuration(0.1f);
 

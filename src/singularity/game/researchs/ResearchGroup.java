@@ -17,6 +17,7 @@ public class ResearchGroup {
 
   public void addProject(ResearchProject project){
     projects.put(project.name, project);
+    project.group = this;
   }
 
   public ResearchProject getResearch(String name){

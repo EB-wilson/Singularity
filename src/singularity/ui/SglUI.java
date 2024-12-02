@@ -1,6 +1,7 @@
 package singularity.ui;
 
 import arc.Core;
+import arc.Events;
 import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.math.WindowedMean;
@@ -9,18 +10,25 @@ import arc.scene.actions.Actions;
 import arc.scene.event.ElementGestureListener;
 import arc.scene.event.InputEvent;
 import arc.scene.ui.TextButton;
+import arc.scene.ui.layout.Table;
 import arc.util.Align;
 import arc.util.Strings;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
-import mindustry.gen.*;
+import mindustry.game.EventType;
+import mindustry.gen.Healthc;
+import mindustry.gen.Icon;
+import mindustry.gen.Teamc;
+import mindustry.gen.Unit;
 import mindustry.graphics.g3d.PlanetParams;
 import mindustry.graphics.g3d.PlanetRenderer;
 import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import mindustry.world.meta.StatUnit;
 import singularity.Sgl;
+import singularity.contents.SglTechThree;
+import singularity.core.SglEventTypes;
 import singularity.core.UpdatePool;
 import singularity.game.SglHint;
 import singularity.graphic.Blur;
@@ -31,12 +39,16 @@ import singularity.ui.dialogs.ModConfigDialog.ConfigButton;
 import singularity.ui.dialogs.ModConfigDialog.ConfigCheck;
 import singularity.ui.dialogs.ModConfigDialog.ConfigSepLine;
 import singularity.ui.dialogs.ModConfigDialog.ConfigSlider;
-import singularity.ui.fragments.*;
+import singularity.ui.fragments.DebugInfos;
+import singularity.ui.fragments.ToolBarFrag;
 import singularity.ui.fragments.entityinfo.EntityHealthDisplay;
 import singularity.ui.fragments.entityinfo.EntityInfoFrag;
 import singularity.ui.fragments.entityinfo.HealthBarStyle;
 import singularity.ui.fragments.entityinfo.UnitStatusDisplay;
+import singularity.ui.fragments.notification.Notification;
+import singularity.ui.fragments.notification.NotificationFrag;
 import singularity.ui.fragments.override.SglMenuFrag;
+import universecore.util.handler.FieldHandler;
 
 @SuppressWarnings("DuplicatedCode")
 public class SglUI{
@@ -59,8 +71,8 @@ public class SglUI{
   public InstituteConfigDialog instituteCfg;
 
   public ToolBarFrag toolBar;
-
   public DebugInfos debugInfos;
+  public NotificationFrag notificationFrag;
 
   public static Blur uiBlur = new Blur(Blur.DEf_B);
 
@@ -220,10 +232,12 @@ public class SglUI{
     unitFactoryCfg = new UnitFactoryCfgDialog();
 
     toolBar = new ToolBarFrag();
-
     debugInfos = new DebugInfos();
+    notificationFrag = new NotificationFrag();
 
     entityInfoFrag.build(Vars.ui.hudGroup);
+    notificationFrag.build(Vars.ui.hudGroup);
+    Vars.ui.hints.build(Vars.ui.hudGroup);
 
     mainMenu.build();
     aboutDialog.build();
@@ -242,6 +256,66 @@ public class SglUI{
     }
 
     setConfigItems();
+    configEventListeners();
+
+    //添加设置项入口
+    Vars.ui.settings.shown(() -> {
+      Table table = FieldHandler.getValueDefault(Vars.ui.settings, "menu");
+      table.button(
+          Core.bundle.get("settings.singularity"),
+          SglDrawConst.sglIcon,
+          Styles.flatt,
+          32,
+          () -> Sgl.ui.config.show()
+      ).marginLeft(8).row();
+    });
+  }
+
+  void configEventListeners() {
+    Events.on(EventType.WorldLoadEndEvent.class, e -> {
+      for (int i = 0; i < 10; i++) {
+        int fi = i;
+        Time.run(60 + 30*i, () -> {
+          notificationFrag.notify(
+              new Notification.Warning(
+                  "notification test " + fi,
+                  "notification message"
+              )
+          );
+        });
+      }
+
+      Time.run(390, () -> {
+        Events.fire(new SglEventTypes.ResearchInspiredEvent(
+            SglTechThree.test14.inspire, SglTechThree.test14
+        ));
+      });
+      Time.run(420, () -> {
+        Events.fire(new SglEventTypes.ResearchCompletedEvent(
+            SglTechThree.test14
+        ));
+      });
+    });
+
+    Events.on(SglEventTypes.ResearchCompletedEvent.class, e -> {
+      notificationFrag.notify(
+          new Notification.ResearchCompleted(
+              Core.bundle.get("infos.researchCompleted"),
+              Core.bundle.format("infos.researched", e.research.localizedName),
+              e.research
+          )
+      );
+    });
+
+    Events.on(SglEventTypes.ResearchInspiredEvent.class, e -> {
+      notificationFrag.notify(
+          new Notification.Inspired(
+              Core.bundle.get("infos.inspired"),
+              Core.bundle.format("infos.inspiredBy", e.research.localizedName),
+              e.inspire, e.research
+          )
+      );
+    });
   }
 
   void setConfigItems(){

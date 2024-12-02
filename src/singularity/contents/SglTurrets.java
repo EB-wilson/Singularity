@@ -46,7 +46,7 @@ import singularity.Singularity;
 import singularity.graphic.MathRenderer;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
-import singularity.ui.StatUtils;
+import singularity.ui.UIUtils;
 import singularity.util.MathTransform;
 import singularity.world.SglFx;
 import singularity.world.SglUnitSorts;
@@ -3151,7 +3151,7 @@ public class SglTurrets implements ContentList{
       }, (t, b) -> {
         t.table(child -> {
           child.left().add(Core.bundle.format("infos.shots", 6)).color(Color.lightGray).left();
-          StatUtils.buildAmmo(child, subBullet);
+          UIUtils.buildAmmo(child, subBullet);
         }).padLeft(15);
       });
       consume.time(180);

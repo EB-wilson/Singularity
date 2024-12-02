@@ -24,6 +24,7 @@ import mindustry.gen.Building;
 import mindustry.gen.Iconc;
 import mindustry.gen.Unit;
 import mindustry.graphics.Layer;
+import mindustry.graphics.MultiPacker;
 import mindustry.graphics.Pal;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
@@ -38,12 +39,14 @@ import mindustry.world.draw.DrawDefault;
 import mindustry.world.meta.*;
 import singularity.Sgl;
 import singularity.contents.SglUnits;
+import singularity.graphic.PostAtlasGenerator;
 import singularity.graphic.SglDraw;
 import singularity.graphic.SglDrawConst;
 import singularity.world.SglFx;
 import singularity.world.components.NuclearEnergyBuildComp;
 import singularity.world.consumers.SglConsumeType;
 import singularity.world.consumers.SglConsumers;
+import singularity.world.draw.DrawAtlasGenerator;
 import singularity.world.meta.SglStat;
 import singularity.world.meta.SglStatUnit;
 import singularity.world.modules.NuclearEnergyModule;
@@ -67,7 +70,7 @@ import static mindustry.Vars.*;
 
 /**此mod的基础方块类型，对block添加了完善的consume系统，并拥有中子能的基础模块*/
 @Annotations.ImplEntries
-public class SglBlock extends Block implements ConsumerBlockComp{
+public class SglBlock extends Block implements ConsumerBlockComp, PostAtlasGenerator {
   public static final int BASE_EXBLOSIVE_ENERGY = 128;
   public boolean autoSelect = false;
   public boolean canSelect = true;
@@ -267,6 +270,16 @@ public class SglBlock extends Block implements ConsumerBlockComp{
   @Override
   public TextureRegion[] icons(){
     return draw.finalIcons(this);
+  }
+  @Override
+  public void postLoad() {
+    if (draw instanceof DrawAtlasGenerator gen) gen.postLoad(this);
+  }
+
+  @Override
+  public void createIcons(MultiPacker packer) {
+    super.createIcons(packer);
+    if (draw instanceof DrawAtlasGenerator gen) gen.generateAtlas(this, packer);
   }
 
   @Annotations.ImplEntries
