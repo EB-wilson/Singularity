@@ -3,18 +3,14 @@ package singularity.graphic.graphic3d;
 import arc.files.Fi;
 import arc.graphics.*;
 import arc.graphics.gl.FrameBuffer;
-import arc.graphics.gl.FrameBufferCubemap;
 import arc.graphics.gl.GLOnlyTextureData;
 import arc.graphics.gl.Shader;
 import arc.math.geom.Mat3D;
 import arc.math.geom.Vec3;
 import arc.util.Log;
-import arc.util.ScreenUtils;
-import mindustry.gen.Tex;
-import singularity.Sgl;
 import singularity.graphic.SglShaders;
 
-public class StdShadowBatch3D extends SortedBatch3D {
+public class StdShadowBatch3D extends StandardBatch3D {
   private final Vec3 tmpVec = new Vec3();
 
   protected class ShadowedLightSource extends LightSource {
@@ -79,23 +75,23 @@ public class StdShadowBatch3D extends SortedBatch3D {
 
   protected final int shadowSize;
   protected boolean shadowing = false;
-  protected float shadowRadius = 100;
-  public float shadowBias = 2f;
+  protected float shadowRadius = 250;
+  public float shadowBias = 1.35f;
 
   protected Shader shadowShader;
   protected ShadowedLightSource currentLight;
   protected int currFace;
 
-  public StdShadowBatch3D(int maxVertices, int shadowSize) {
-    this(maxVertices, Gl.triangles, shadowSize);
+  public StdShadowBatch3D(int max, int shadowSize) {
+    this(max, 4, shadowSize);
   }
 
-  public StdShadowBatch3D(int maxVertices, int primitiveType, int shadowSize) {
-    this(maxVertices, 4, primitiveType, shadowSize);
+  public StdShadowBatch3D(int max, int maxLights, int shadowSize) {
+    this(max, maxLights, Gl.triangles, shadowSize);
   }
 
-  public StdShadowBatch3D(int maxVertices, int maxLights, int primitiveType, int shadowSize) {
-    super(maxVertices, maxLights, primitiveType);
+  public StdShadowBatch3D(int max, int maxLights, int primitiveType, int shadowSize) {
+    super(max, maxLights, primitiveType);
     this.shadowSize = shadowSize;
 
     for (int i = 0; i < lights.length; i++) {
@@ -172,16 +168,30 @@ public class StdShadowBatch3D extends SortedBatch3D {
   }
 
   @Override
-  protected void applyShader(Shader shader, boolean hasNormalTex, boolean hasStandards) {
-    super.applyShader(shader, hasNormalTex, hasStandards);
+  protected void applyShader(Shader shader) {
+    super.applyShader(shader);
     shader.setUniformf("u_shadowBias", shadowBias);
     shader.setUniformf("u_shadowRadius", shadowRadius);
   }
 
   @Override
+  public void begin(boolean cullFace) {
+    super.begin(cullFace);
+
+    for (LightSource light : lights) {
+      ((ShadowedLightSource) light).resetBuffer();
+    }
+  }
+
+  @Override
   public void flush() {
     if (shadowing) {
-      if (!flushMesh()) return;
+      Mesh mesh = this.mesh;
+      //calling buffer() marks it as dirty, so it gets reuploaded upon render
+      mesh.getVerticesBuffer();
+
+      buffer.position(0);
+      buffer.limit(vertexIdx);
 
       Shader shader = shadowShader;
 
@@ -206,22 +216,18 @@ public class StdShadowBatch3D extends SortedBatch3D {
           shadowBuffer.end();
         }
       }
+
+      buffer.limit(buffer.capacity());
+      buffer.position(0);
+
+      vertexIdx = 0;
     }
     else super.flush();
   }
 
   @Override
-  public void begin(boolean cullFace) {
-    super.begin(cullFace);
-
-    for (LightSource light : lights) {
-      ((ShadowedLightSource) light).resetBuffer();
-    }
-  }
-
-  @Override
   protected void flushRequests() {
-    if(!flushing && requestCount > 0) {
+    if(!flushing && (noSortReqCount > 0 || sortedReqCount > 0)) {
       flushing = true;
       sortRequests();
 
@@ -230,45 +236,54 @@ public class StdShadowBatch3D extends SortedBatch3D {
 
       enablePreTransform = false;
 
-      DrawRequest[] r = requests;
-      int num = requestCount;
+      DrawRequests.DrawRequest[] r = noSortRequests; DrawRequests.SortedDrawRequest[] sr = sortedRequests;
+      int num = noSortReqCount, snum = sortedReqCount;
 
       shadowing = true;
-      putRequests(num, r);
+      putRequests(num, r, snum, sr);
       flush();
 
       Gl.clear(Gl.depthBufferBit);
       shadowing = false;
-      putRequests(num, r);
+      putRequests(num, r, snum, sr);
 
       isAlpha = lastAlpha;
       enablePreTransform = lastPreTransEnabled;
 
-      requestCount = 0;
       flushing = false;
+      noSortReqCount = 0;
+      sortedReqCount = 0;
+      noSortReqVertIdx = 0;
+      sortedReqVertIdx = 0;
     }
   }
 
-  private void putRequests(int num, DrawRequest[] r) {
-    for(int j = 0; j < num; j++){
-      DrawRequest req = r[j];
+  private void putRequests(int num, DrawRequests.DrawRequest[] r, int snum, DrawRequests.SortedDrawRequest[] sr) {
+    boolean lastPreTrnEnabled = enablePreTransform;
+    boolean lastAlpha = isAlpha;
+    enablePreTransform = false;
 
-      super.setAlpha(req.isAlpha);
+    isAlpha = false;
+    for (int i = 0; i < num; i++) {
+      DrawRequests.DrawRequest req = r[i];
 
-      if(req.isTriangle){
-        super.tri(
-            req.texture, req.normalTexture, req.diffTexture, req.specTexture,
-            req.x1, req.y1, req.z1, req.u1, req.v1, req.un1, req.vn1, req.ud1, req.vd1, req.us1, req.vs1,
-            req.x2, req.y2, req.z2, req.u2, req.v2, req.un2, req.vn2, req.ud2, req.vd2, req.us2, req.vs2,
-            req.x3, req.y3, req.z3, req.u3, req.v3, req.un3, req.vn3, req.ud3, req.vd3, req.us3, req.vs3,
-            req.color
-        );
-      }else{
-        super.vertices(
-            req.texture, req.normalTexture,
-            req.vertices, 0, vertexSize*3
-        );
-      }
+      putVertices(
+          req.texture, req.normalTexture, req.diffTexture, req.specTexture,
+          noSortReqVertices, req.verticesOffset, req.verticesSize
+      );
     }
+
+    isAlpha = true;
+    for (int i = 0; i < snum; i++) {
+      DrawRequests.SortedDrawRequest req = sr[i];
+
+      putVertices(
+          req.texture, req.normalTexture, req.diffTexture, req.specTexture,
+          sortedReqVeritces, req.verticesOffset, req.verticesSize
+      );
+    }
+
+    enablePreTransform = lastPreTrnEnabled;
+    isAlpha = lastAlpha;
   }
 }

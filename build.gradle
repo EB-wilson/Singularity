@@ -15,7 +15,7 @@ sourceSets.test.java.srcDirs = ["test"]
 
 ext {
   //the build number that this mod is made for
-  mindustryVersion = "d4717ea8f7"
+  mindustryVersion = "v146"
   uncVersion = "2.2.0"
   //version of SDK you will be using
   minSdkAPI = 30

@@ -2,9 +2,14 @@ package singularity.graphic.graphic3d;
 
 import arc.Core;
 import arc.graphics.Color;
+import arc.graphics.Mesh;
+import arc.graphics.Texture;
+import arc.graphics.VertexAttribute;
 import arc.graphics.g2d.TextureRegion;
 import arc.graphics.g3d.Camera3D;
 import arc.math.geom.*;
+
+import java.nio.FloatBuffer;
 
 public class Draw3D {
   private static final float diff = 0.0001f;
@@ -196,6 +201,76 @@ public class Draw3D {
       Color color
   ){
     batch.rect(region, normRegion, x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, color);
+  }
+
+  public static void drawMesh(
+      Mesh mesh
+  ){
+
+  }
+
+  public static void drawMesh(
+      TextureRegion region, TextureRegion normRegion, TextureRegion diffRegion, TextureRegion specRegion, Mesh mesh
+  ){
+
+  }
+
+  public static void meshToStandardVertices(
+      Mesh mesh, Mesh map, int[] attrMapIndex
+  ){
+    TextureRegion w = Core.atlas.white();
+    float u = (w.u + w.u2)/2f;
+    float v = (w.v + w.v2)/2f;
+
+    VertexAttribute[] attrList = mesh.attributes;
+    VertexAttribute[] toAttrList = map.attributes;
+    FloatBuffer buffer = mesh.getVerticesBuffer();
+    FloatBuffer toBuffer = map.getVerticesBuffer();
+    toBuffer.position(0);
+    toBuffer.limit(mesh.getMaxVertices()*map.vertexSize/4);
+
+    int[] offList = new int[attrMapIndex.length];
+    for (int i = 0, len = attrMapIndex.length; i < len; i++) {
+      int index = attrMapIndex[i];
+      int n = 0;
+      for (int o = 0; o < index; o++) {
+        n += toAttrList[o].size/4;
+      }
+      offList[i] = n;
+    }
+
+    int vertices = 0;
+    int vertexSize = map.vertexSize/4;
+
+    buffer.position(0);
+    while (buffer.hasRemaining()){
+      for (int i = 0, len = attrList.length; i < len; i++) {
+        VertexAttribute attr = attrList[i];
+        int s = attr.size/4;
+        int off = offList[i];
+        toBuffer.position(vertices * vertexSize + off);
+        for (int j = 0; j < s; j++) {
+          toBuffer.put(buffer.get());
+        }
+      }
+
+      toBuffer.position(vertices * vertexSize + StandardBatch3D.coordOff); toBuffer.put(u); toBuffer.put(v);
+      toBuffer.position(vertices * vertexSize + StandardBatch3D.coordNormOff); toBuffer.put(u); toBuffer.put(v);
+      toBuffer.position(vertices * vertexSize + StandardBatch3D.coordDiffOff); toBuffer.put(u); toBuffer.put(v);
+      toBuffer.position(vertices * vertexSize + StandardBatch3D.coordSpecOff); toBuffer.put(u); toBuffer.put(v);
+
+      toBuffer.position(vertices * vertexSize + StandardBatch3D.tangOff);
+      toBuffer.put(0); toBuffer.put(0); toBuffer.put(0);
+
+      vertices++;
+    }
+  }
+
+  public static void draw(
+      Texture texture, Texture normTexture, Texture diffTexture, Texture specTexture,
+      float[] vertices, int off, int counts
+  ){
+    batch.vertices(texture, normTexture, diffTexture, specTexture, vertices, off, counts);
   }
 
   public static void setBatch(StandardBatch3D batch3D) {

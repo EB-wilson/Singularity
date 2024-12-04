@@ -29,29 +29,32 @@ uniform int u_activeLights;
 
 float shadow(LightSource light, samplerCube shadowCube){
     vec3 fragToLight = v_fragPos - light.position;
-    float viewDistance = length(u_cameraPos - v_fragPos);
     float currentDepth = length(fragToLight);
+    if (currentDepth >= u_shadowRadius) return 0.0;
     float shadow = 0.0;
 
-    float diskRadius = (1.0 + (viewDistance/u_shadowRadius)) * 0.03;
+    float diskRadius = (currentDepth/u_shadowRadius) * 0.1;
+    float depth = currentDepth - u_shadowBias;
 
-    vec4 closestDepth = textureCube(shadowCube, fragToLight + vec3(0,           0, 0))
-                       + textureCube(shadowCube, fragToLight + vec3(-diskRadius, 0, diskRadius))
-                       + textureCube(shadowCube, fragToLight + vec3(-diskRadius, 0, -diskRadius))
-                       + textureCube(shadowCube, fragToLight + vec3(diskRadius,  0, -diskRadius))
-                       + textureCube(shadowCube, fragToLight + vec3(diskRadius,  0, diskRadius))
+    float closestDepth = step(textureCube(shadowCube, fragToLight + vec3(0.0,         0.0,        0.0         )).r * u_shadowRadius, depth) * 0.2
+                       + step(textureCube(shadowCube, fragToLight + vec3(-diskRadius, diskRadius, diskRadius)  ).r * u_shadowRadius, depth) * 0.1
+                       + step(textureCube(shadowCube, fragToLight + vec3(-diskRadius, diskRadius, -diskRadius) ).r * u_shadowRadius, depth) * 0.1
+                       + step(textureCube(shadowCube, fragToLight + vec3(diskRadius,  diskRadius, -diskRadius) ).r * u_shadowRadius, depth) * 0.1
+                       + step(textureCube(shadowCube, fragToLight + vec3(diskRadius,  diskRadius, diskRadius)  ).r * u_shadowRadius, depth) * 0.1
+                       + step(textureCube(shadowCube, fragToLight + vec3(-diskRadius, -diskRadius, diskRadius) ).r * u_shadowRadius, depth) * 0.1
+                       + step(textureCube(shadowCube, fragToLight + vec3(-diskRadius, -diskRadius, -diskRadius)).r * u_shadowRadius, depth) * 0.1
+                       + step(textureCube(shadowCube, fragToLight + vec3(diskRadius,  -diskRadius, -diskRadius)).r * u_shadowRadius, depth) * 0.1
+                       + step(textureCube(shadowCube, fragToLight + vec3(diskRadius,  -diskRadius, diskRadius) ).r * u_shadowRadius, depth) * 0.1
                        ;
 
-    float depth = closestDepth.r * u_shadowRadius * 0.2;
-
-    return step(depth, currentDepth - u_shadowBias);
+    return closestDepth;
 }
 
 vec3 calculateDirLighting(vec3 objectColor){
     vec3 lightDir = normalize(-u_lightDir);
     vec3 cameraDir = normalize(u_cameraPos - v_fragPos);
 
-    float diff = dot(lightDir, v_normal);
+    float diff = max(dot(lightDir, v_normal), 0.0);
     vec3 diffuse = diff * objectColor * u_lightColor.rgb;
 
     vec3 halfwayDir = normalize(lightDir + cameraDir);
@@ -69,7 +72,7 @@ vec3 calculateLighting(LightSource light, vec3 objectColor) {
     float dst = length(light.position - v_fragPos) + length(u_cameraPos - v_fragPos);
     float inten = light.color.a*pow(clamp(1.0 - dst/light.radius, 0.0, 1.0), light.attenuation);
 
-    float diff = dot(lightDir, normal);
+    float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = objectColor * light.color.rgb * diff;
 
     vec3 cameraDir = normalize(u_cameraPos - v_fragPos);

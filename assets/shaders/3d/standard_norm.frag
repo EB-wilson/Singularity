@@ -28,7 +28,7 @@ vec3 calculateDirLighting(vec3 objectColor, vec3 normalDir) {
     vec3 lightDir = normalize(-u_lightDir);
     vec3 cameraDir = normalize(v_tangCamPos - v_tangFragPos);
 
-    float diff = dot(lightDir, normalDir);
+    float diff = max(dot(lightDir, normalDir), 0.0);
     vec3 diffuse = diff * objectColor * u_lightColor.rgb;
 
     vec3 halfwayDir = normalize(lightDir + cameraDir);
@@ -46,15 +46,15 @@ vec3 calculateLighting(LightSource light, vec3 normalDir, vec3 tangLightPos, vec
     float dst = length(tangLightPos - v_tangFragPos) + length(v_tangCamPos - v_tangFragPos);
     float inten = light.color.a*pow(clamp(1.0 - dst/light.radius, 0.0, 1.0), light.attenuation);
 
-    float diff = dot(lightDir, normalDir)*inten;
-    vec3 diffuse = diff * inten * objectColor * light.color.rgb;
+    float diff = max(dot(lightDir, normalDir), 0.0);
+    vec3 diffuse = diff * objectColor * light.color.rgb;
 
     vec3 halfwayDir = normalize(lightDir + cameraDir);
     float spec = pow(max(dot(normalDir, halfwayDir), 0.0), 32.0);
 
-    vec3 specular = spec * inten * light.color.rgb;
+    vec3 specular = spec * light.color.rgb;
 
-    return diffuse + specular;
+    return inten * (diffuse + specular);
 }
 
 void main() {

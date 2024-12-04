@@ -7,7 +7,6 @@ attribute vec2 a_texCoord3;
 attribute vec4 a_color;
 attribute vec3 a_normal;
 attribute vec3 a_tangent;
-attribute vec3 a_subTangent;
 
 uniform mat4 u_proj;
 uniform mat4 u_view;
@@ -80,18 +79,19 @@ void main(){
     v_specCoords = a_texCoord3;
     v_color = a_color;
 
-    mat3 normalMat = transpose(inverse(mat3(
+    vec3 subTangent = normalize(cross(a_normal, a_tangent));
+    mat3 trans = transpose(inverse(mat3(
         u_transform[0][0], u_transform[0][1], u_transform[0][2],
         u_transform[1][0], u_transform[1][1], u_transform[1][2],
         u_transform[2][0], u_transform[2][1], u_transform[2][2]
     )));
-    vec3 T = normalize(normalMat * a_tangent);
-    vec3 B = normalize(normalMat * a_subTangent);
-    vec3 N = normalize(normalMat * a_normal);
+    vec3 T = normalize(a_tangent);
+    vec3 B = normalize(subTangent);
+    vec3 N = normalize(a_normal);
 
     v_normal = N;
 
-    mat3 TBN = transpose(mat3(T, B, N));
+    mat3 TBN = trans * transpose(mat3(T, B, N));
 
     #if version >= 300
     for (int i = 0; i < u_activeLights; i++) {

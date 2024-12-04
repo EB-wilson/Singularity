@@ -10,107 +10,114 @@ import arc.graphics.gl.Shader;
 import arc.math.geom.Mat3D;
 import arc.math.geom.Vec3;
 import arc.struct.Seq;
-import arc.util.Log;
+import arc.util.pooling.Pool;
+import arc.util.pooling.Pools;
 import singularity.graphic.SglShaders;
+import singularity.graphic.graphic3d.DrawRequests.DrawRequest;
+import singularity.graphic.graphic3d.DrawRequests.SortedDrawRequest;
+
+import java.nio.FloatBuffer;
+import java.util.Arrays;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 
 public class StandardBatch3D {
-  protected static final Vec3 temp1 = new Vec3(), temp2 = new Vec3(), temp3 = new Vec3(), temp4 = new Vec3(), temp5 = new Vec3();
-
-  protected static final int
+  protected static final Vec3 temp1 = new Vec3();
+  public static final int
       coordOff = 3,
       coordNormOff = 5,
       coordDiffOff = 7,
       coordSpecOff = 9,
       colorOff = 11,
       normOff = 12,
-      tangOff = 15,
-      sTangOff = 18;
+      tangOff = 15;
 
-  protected final int depthBufferHandle;
-  protected final FrameBuffer buffer;
+  protected final FrameBuffer depthBuffer;
 
+  // attributes
   protected final Mesh mesh;
   protected final int maxVertices;
   protected final int vertexSize;
+  protected final int maxVerticesSize;
   protected final int primitiveType;
 
-  protected boolean isAlpha = false;
-  protected boolean enablePreTransform = false;
-  protected final Mat3D preTransform = new Mat3D().idt(), trn = new Mat3D();
-  protected final Mat3D transform = new Mat3D().idt();
-
-  protected final Camera3D camera = new Camera3D();
-  protected final float[] vertices;
-
-  protected final Vec3 directionalLightDir = new Vec3(0, -1, 0);
-  protected final Color directionalLightColor = new Color();
-
-  protected final LightSource[] lights;
-  protected int activeLights = 0;
-
-  protected final Color ambientColor = new Color();
-
-  protected Texture lastTexture;
-  protected Texture lastNormTexture;
-  protected Texture lastDiffTexture;
-  protected Texture lastSpecTexture;
-
+  // shaders
   protected Shader baseShader;
   protected Shader normalShader;
   protected Shader standardShader;
 
-  protected int vertexIdx;
-  protected boolean isDrawing;
+  // state - modified will cause this batch flush
+  protected Texture lastTexture;
+  protected Texture lastNormTexture;
+  protected Texture lastDiffTexture;
+  protected Texture lastSpecTexture;
+  protected final Vec3 directionalLightDir = new Vec3(0, -1, 0);
+  protected final Color directionalLightColor = new Color();
+  protected final Mat3D transform = new Mat3D().idt();
+  protected final Camera3D camera = new Camera3D();
+  protected final Color ambientColor = new Color();
+  protected final LightSource[] lights;
+  protected int activeLights = 0;
 
-  public StandardBatch3D(int maxVertices){
-    this(maxVertices, 4, Gl.triangles);
+  // variables - dynamicInformation
+  protected boolean isAlpha = false;
+  protected boolean enablePreTransform = false;
+  protected final Mat3D preTransform = new Mat3D().idt();
+
+  // batch state
+  protected boolean flushing = false, sort = true, isDrawing = false;
+  protected final FloatBuffer buffer;
+  protected int vertexIdx = 0;
+  protected DrawRequest[] noSortRequests = new DrawRequest[6400];
+  protected int noSortReqCount = 0, noSortReqVertIdx = 0;
+  protected SortedDrawRequest[] sortedRequests = new SortedDrawRequest[2048];
+  protected float[] sortedRequestDst2 = new float[2048];
+  protected int sortedReqCount = 0, sortedReqVertIdx = 0;
+  protected float[] noSortReqVertices;
+  protected float[] sortedReqVeritces;
+
+  // temps
+  protected float[] tempVertices;
+
+  {
+    for (int i = 0; i < noSortRequests.length; i++) {
+      noSortRequests[i] = new DrawRequest();
+    }
+
+    for (int i = 0; i < sortedRequests.length; i++) {
+      sortedRequests[i] = new SortedDrawRequest();
+    }
   }
 
-  public StandardBatch3D(int maxVertices, int maxLights){
-    this(maxVertices, maxLights, Gl.triangles);
+  public StandardBatch3D(int max) {
+    this(max, 4);
   }
 
-  public StandardBatch3D(int maxVertices, int maxLights, int primitiveType){
+  public StandardBatch3D(int max, int maxLights) {
+    this(max, maxLights, Gl.triangles);
+  }
+
+  public StandardBatch3D(int max, int maxLights, int primitiveType) {
     this.lights = new LightSource[maxLights];
-    this.maxVertices = maxVertices;
+    this.maxVertices = max*3;
     this.primitiveType = primitiveType;
+
+    this.depthBuffer = new FrameBuffer(Pixmap.Format.rgba8888, Core.graphics.getWidth(), Core.graphics.getHeight(), true);
 
     setupLights();
     setupShaders(maxLights);
 
-    buffer = new FrameBuffer(Pixmap.Format.rgba8888, Core.graphics.getWidth(), Core.graphics.getHeight(), true);
-    depthBufferHandle = Gl.genBuffer();
-    Gl.bindRenderbuffer(Gl.renderbuffer, depthBufferHandle);
-    Gl.renderbufferStorage(Gl.renderbuffer, GL20.GL_DEPTH_COMPONENT, Core.graphics.getWidth(), Core.graphics.getHeight());
-    Gl.bindRenderbuffer(Gl.renderbuffer, 0);
-
-    VertexAttribute[] attribs = buildVertexAttributes();
-    mesh = new Mesh(false, maxVertices, 0, attribs);
-
-    vertices = new float[maxVertices * (mesh.vertexSize / 4)];
+    VertexAttribute[] attributes = buildVertexAttributes();
+    mesh = new Mesh(false, maxVertices, 0, attributes);
     vertexSize = mesh.vertexSize / 4;
-  }
+    maxVerticesSize = maxVertices*vertexSize;
+    buffer = mesh.getVerticesBuffer();
+    buffer.position(0);
+    buffer.limit(maxVerticesSize);
 
-  protected void setupLights(){
-    for (int i = 0; i < lights.length; i++) {
-      lights[i] = new LightSource();
-    }
-  }
-
-  protected VertexAttribute[] buildVertexAttributes(){
-    Seq<VertexAttribute> attribs = Seq.with(
-        VertexAttribute.position3,
-        new VertexAttribute(2, Shader.texcoordAttribute + "0"),
-        new VertexAttribute(2, Shader.texcoordAttribute + "1"),
-        new VertexAttribute(2, Shader.texcoordAttribute + "2"),
-        new VertexAttribute(2, Shader.texcoordAttribute + "3"),
-        VertexAttribute.color,
-        VertexAttribute.normal,
-        new VertexAttribute(3, "a_subTangent"),
-        new VertexAttribute(3, "a_tangent")
-    );
-
-    return attribs.toArray(VertexAttribute.class);
+    noSortReqVertices = new float[10000 * vertexSize];
+    sortedReqVeritces = new float[2048 * vertexSize];
+    tempVertices = new float[64 * vertexSize];
   }
 
   protected void setupShaders(int maxLights){
@@ -141,23 +148,31 @@ public class StandardBatch3D {
     );
   }
 
-  protected void applyShader(Shader shader, boolean hasNormalTex, boolean hasStandards){
+  protected void setupLights(){
+    for (int i = 0; i < lights.length; i++) {
+      lights[i] = new LightSource();
+    }
+  }
+
+  public static VertexAttribute[] buildVertexAttributes(){
+    Seq<VertexAttribute> attribs = Seq.with(
+        VertexAttribute.position3,
+        new VertexAttribute(2, Shader.texcoordAttribute + "0"),
+        new VertexAttribute(2, Shader.texcoordAttribute + "1"),
+        new VertexAttribute(2, Shader.texcoordAttribute + "2"),
+        new VertexAttribute(2, Shader.texcoordAttribute + "3"),
+        VertexAttribute.color,
+        VertexAttribute.normal,
+        new VertexAttribute(3, "a_subTangent"),
+        new VertexAttribute(3, "a_tangent")
+    );
+
+    return attribs.toArray(VertexAttribute.class);
+  }
+
+  protected void applyShader(Shader shader){
     shader.bind();
     shader.apply();
-
-    lastTexture.bind(0);
-    shader.setUniformi("u_texture", 0);
-
-    if (hasNormalTex) {
-      lastNormTexture.bind(1);
-      shader.setUniformi("u_normalTex", 1);
-    }
-    if (hasNormalTex && hasStandards) {
-      lastDiffTexture.bind(2);
-      shader.setUniformi("u_diffuseTex", 2);
-      lastSpecTexture.bind(3);
-      shader.setUniformi("u_specularTex", 3);
-    }
 
     shader.setUniformMatrix4("u_proj", camera.projection.val);
     shader.setUniformMatrix4("u_view", camera.view.val);
@@ -172,6 +187,10 @@ public class StandardBatch3D {
     for (int i = 0; i < lights.length; i++) {
       lights[i].apply(shader, i);
     }
+  }
+
+  protected void setSort(boolean sort) {
+    this.sort = sort;
   }
 
   public void preTransform(Mat3D transform){
@@ -191,7 +210,6 @@ public class StandardBatch3D {
   public Camera3D getCamera() {
     return camera;
   }
-
   public void setCamera(Camera3D camera) {
     flush();
     this.camera.width = camera.width;
@@ -209,7 +227,6 @@ public class StandardBatch3D {
     this.normalShader = normText;
     this.standardShader = standard;
   }
-
   public void setBaseShader(Shader baseShader) {
     flush();
     this.baseShader = baseShader;
@@ -230,7 +247,6 @@ public class StandardBatch3D {
     flush();
     transform.set(trans);
   }
-
   public Mat3D getTransform(){
     return transform;
   }
@@ -238,46 +254,38 @@ public class StandardBatch3D {
   public Vec3 getDirLight(){
     return directionalLightDir;
   }
-
   public void setDirLight(Vec3 pos){
     flush();
     directionalLightDir.set(pos);
   }
-
   public void setDirLight(float x, float y, float z){
     flush();
     directionalLightDir.set(x, y, z);
   }
-
   public void setDirLightColor(Color color){
     flush();
     directionalLightColor.set(color);
   }
-
   public void setDirLightColor(Color color, float intensity){
     flush();
     directionalLightColor.set(color);
     directionalLightColor.a(intensity);
   }
-
   public Color getDirLightColor(){
     return directionalLightColor;
-  }
-
-  public LightSource getLight(int index){
-    return lights[index];
   }
 
   public void resetLights(){
     flush();
     activeLights = 0;
   }
-
+  public LightSource getLight(int index){
+    return lights[index];
+  }
   public void activeLights(int num){
     flush();
     activeLights = num;
   }
-
   public void activeLights(LightSource... lights){
     flush();
     for (int i = 0; i < lights.length; i++) {
@@ -285,12 +293,10 @@ public class StandardBatch3D {
     }
     activeLights = lights.length;
   }
-
   public LightSource nextLight(){
     flush();
     return lights[activeLights++];
   }
-
   public LightSource nextLight(Vec3 lightPos, Color color){
     LightSource source = nextLight();
     source.position.set(lightPos);
@@ -298,7 +304,6 @@ public class StandardBatch3D {
     source.update();
     return source;
   }
-
   public LightSource nextLight(float x, float y, float z, Color color) {
     LightSource source = nextLight();
     source.position.set(x, y, z);
@@ -306,14 +311,12 @@ public class StandardBatch3D {
     source.update();
     return source;
   }
-
   public LightSource nextLight(LightSource light){
     LightSource source = nextLight();
     source.set(light);
     source.update();
     return source;
   }
-
   public void updateLights() {
     for (LightSource light : lights) {
       light.update();
@@ -325,7 +328,6 @@ public class StandardBatch3D {
     ambientColor.set(color);
     ambientColor.a(strength);
   }
-
   public Color getAmbientColor() {
     return ambientColor;
   }
@@ -357,76 +359,6 @@ public class StandardBatch3D {
       lastDiffTexture = diffTexture;
       lastSpecTexture = specTexture;
     }
-  }
-
-  public void vertices(Texture texture, float[] vertices, int offset, int counts){
-    vertices(texture, null, null, null, vertices, offset, counts);
-  }
-
-  public void vertices(Texture texture, Texture normTexture, float[] vertices, int offset, int counts){
-    vertices(texture, normTexture, null, null, vertices, offset, counts);
-  }
-
-  public void vertices(
-      Texture texture, Texture normTexture, Texture diffTexture, Texture specTexture,
-      float[] vertices, int offset, int counts
-  ){
-    switchTexture(texture, normTexture, diffTexture, specTexture);
-
-    if (vertexIdx + counts > this.vertices.length) flush();
-    float[] vert = this.vertices;
-    int idx = vertexIdx;
-
-    if (enablePreTransform) {
-      Mat3D trn = this.trn.set(preTransform).toNormalMatrix();
-      for (int i = 0; i < counts; i += vertexSize) {
-        int offVert = idx + i;
-        int offSource = offset + i;
-        preTrn(vert, vertices, offVert, offSource, preTransform, trn);
-      }
-    }
-    else {
-      System.arraycopy(vertices, offset, vert, vertexIdx, counts);
-    }
-
-    vertexIdx += counts;
-  }
-
-  protected static void preTrn(float[] vertices, float[] source, int idx, int off, Mat3D preTan, Mat3D trn) {
-    //position
-    temp1.set(source[off], source[off + 1], source[off + 2]);
-    Mat3D.prj(temp1, preTan);
-    vertices[idx] = temp1.x; vertices[idx + 1] = temp1.y; vertices[idx + 2] = temp1.z;
-
-    //coords
-    //base
-    vertices[idx + 3] = source[off + 3];
-    vertices[idx + 4] = source[off + 4];
-    //norm
-    vertices[idx + 5] = source[off + 5];
-    vertices[idx + 6] = source[off + 6];
-    //diff
-    vertices[idx + 7] = source[off + 7];
-    vertices[idx + 8] = source[off + 8];
-    //spec
-    vertices[idx + 9] = source[off + 9];
-    vertices[idx + 10] = source[off + 10];
-
-    //color
-    vertices[idx + 11] = source[off + 11];
-
-    //normal
-    temp1.set(source[off + 12], source[off + 13], source[off + 14]);
-    Mat3D.rot(temp1, trn);
-    vertices[idx + 12] = temp1.x; vertices[idx + 13] = temp1.y; vertices[idx + 14] = temp1.z;
-    //tangent
-    temp1.set(source[off + 15], source[off + 16], source[off + 17]);
-    Mat3D.rot(temp1, trn);
-    vertices[idx + 15] = temp1.x; vertices[idx + 16] = temp1.y; vertices[idx + 17] = temp1.z;
-    //subTangent
-    temp1.set(source[off + 18], source[off + 19], source[off + 20]);
-    Mat3D.rot(temp1, trn);
-    vertices[idx + 18] = temp1.x; vertices[idx + 19] = temp1.y; vertices[idx + 20] = temp1.z;
   }
 
   public void tri(
@@ -489,37 +421,44 @@ public class StandardBatch3D {
     float ex1 = x2 - x1, ey1 = y2 - y1, ez1 = z2 - z1;
     float ex2 = x3 - x1, ey2 = y3 - y1, ez2 = z3 - z1;
 
-    float k = t1 * b2 - b1 * t2;
+    float k = t1*b2 - b1*t2;
 
-    float normalX = ey1 * ez2 - ez1 * ey2;
-    float normalY = ez1 * ex2 - ex1 * ez2;
-    float normalZ = ex1 * ey2 - ey1 * ex2;
+    float normalX = ey1*ez2 - ez1*ey2;
+    float normalY = ez1*ex2 - ex1*ez2;
+    float normalZ = ex1*ey2 - ey1*ex2;
 
-    float tangX = k * (b2 * ex1 - b1 * ex2);
-    float tangY = k * (b2 * ey1 - b1 * ey2);
-    float tangZ = k * (b2 * ez1 - b1 * ez2);
+    float tangX = k*(b2*ex1 - b1*ex2);
+    float tangY = k*(b2*ey1 - b1*ey2);
+    float tangZ = k*(b2*ez1 - b1*ez2);
 
-    float subTangX = k * (t2 * ex1 - t1 * ex2);
-    float subTangY = k * (t2 * ey1 - t1 * ey2);
-    float subTangZ = k * (t2 * ez1 - t1 * ez2);
-
-    float ln = 1.0f / (float)Math.sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ);
+    float ln = 1.0f/(float) Math.sqrt(normalX*normalX + normalY*normalY + normalZ*normalZ);
     normalX *= ln; normalY *= ln; normalZ *= ln;
-    float lt = 1.0f / (float)Math.sqrt(tangX * tangX + tangY * tangY + tangZ * tangZ);
+    float lt = 1.0f/(float) Math.sqrt(tangX*tangX + tangY*tangY + tangZ*tangZ);
     tangX *= lt; tangY *= lt; tangZ *= lt;
-    float ls = 1.0f / (float)Math.sqrt(subTangX * subTangX + subTangY * subTangY + subTangZ * subTangZ);
-    subTangX *= ls; subTangY *= ls; subTangZ *= ls;
 
-    if (vertexIdx + vertexSize*3 >= vertices.length) flush();
-    switchTexture(texture, textureNorm, textureDiff, textureSpec);
+    float[] vertices;
+    int ind;
 
-    float[] vertices = this.vertices;
-    int ind = vertexIdx;
-    vertexIdx += vertexSize*3;
+    int count = vertexSize*3;
+    boolean batched = sort && !flushing;
+    boolean sorted = isAlpha;
+    int vertIdx = sorted? sortedReqVertIdx: noSortReqVertIdx;
+    if (batched) {
+      checkReqExpands(noSortReqCount + 1, sortedReqCount + 1);
+      checkVertExpands(noSortReqVertIdx + count, sortedReqVertIdx + count);
+
+      vertices = sorted? sortedReqVeritces : noSortReqVertices;
+      ind = vertIdx;
+    }
+    else {
+      if (vertexIdx + vertexSize*3 >= maxVerticesSize) flush();
+      switchTexture(texture, textureNorm, textureDiff, textureSpec);
+      vertices = checkTmpArr(count);
+      ind = 0;
+    }
 
     float colorBit = color.toFloatBits();
-
-    vertices[ind] = x1; vertices[ind+1] = y1; vertices[ind+2] = z1;
+    vertices[ind] = x1; vertices[ind + 1] = y1; vertices[ind + 2] = z1;
     vertices[ind + coordOff] = u1; vertices[ind + coordOff + 1] = v1;
     vertices[ind + coordNormOff] = un1; vertices[ind + coordNormOff + 1] = vn1;
     vertices[ind + coordDiffOff] = ud1; vertices[ind + coordDiffOff + 1] = vd1;
@@ -527,10 +466,9 @@ public class StandardBatch3D {
     vertices[ind + colorOff] = colorBit;
     vertices[ind + normOff] = normalX; vertices[ind + normOff + 1] = normalY; vertices[ind + normOff + 2] = normalZ;
     vertices[ind + tangOff] = tangX; vertices[ind + tangOff + 1] = tangY; vertices[ind + tangOff + 2] = tangZ;
-    vertices[ind + sTangOff] = subTangX; vertices[ind + sTangOff + 1] = subTangY; vertices[ind + sTangOff + 2] = subTangZ;
     ind += vertexSize;
 
-    vertices[ind] = x2; vertices[ind+1] = y2; vertices[ind+2] = z2;
+    vertices[ind] = x2; vertices[ind + 1] = y2; vertices[ind + 2] = z2;
     vertices[ind + coordOff] = u2; vertices[ind + coordOff + 1] = v2;
     vertices[ind + coordNormOff] = un2; vertices[ind + coordNormOff + 1] = vn2;
     vertices[ind + coordDiffOff] = ud2; vertices[ind + coordDiffOff + 1] = vd2;
@@ -538,10 +476,9 @@ public class StandardBatch3D {
     vertices[ind + colorOff] = colorBit;
     vertices[ind + normOff] = normalX; vertices[ind + normOff + 1] = normalY; vertices[ind + normOff + 2] = normalZ;
     vertices[ind + tangOff] = tangX; vertices[ind + tangOff + 1] = tangY; vertices[ind + tangOff + 2] = tangZ;
-    vertices[ind + sTangOff] = subTangX; vertices[ind + sTangOff + 1] = subTangY; vertices[ind + sTangOff + 2] = subTangZ;
     ind += vertexSize;
 
-    vertices[ind] = x3; vertices[ind+1] = y3; vertices[ind+2] = z3;
+    vertices[ind] = x3; vertices[ind + 1] = y3; vertices[ind + 2] = z3;
     vertices[ind + coordOff] = u3; vertices[ind + coordOff + 1] = v3;
     vertices[ind + coordNormOff] = un3; vertices[ind + coordNormOff + 1] = vn3;
     vertices[ind + coordDiffOff] = ud3; vertices[ind + coordDiffOff + 1] = vd3;
@@ -549,7 +486,268 @@ public class StandardBatch3D {
     vertices[ind + colorOff] = colorBit;
     vertices[ind + normOff] = normalX; vertices[ind + normOff + 1] = normalY; vertices[ind + normOff + 2] = normalZ;
     vertices[ind + tangOff] = tangX; vertices[ind + tangOff + 1] = tangY; vertices[ind + tangOff + 2] = tangZ;
-    vertices[ind + sTangOff] = subTangX; vertices[ind + sTangOff + 1] = subTangY; vertices[ind + sTangOff + 2] = subTangZ;
+
+    if (batched) {
+      int requestIdx = sorted? sortedReqCount: noSortReqCount;
+      DrawRequest request = sorted? sortedRequests[requestIdx]: noSortRequests[requestIdx];
+      if (!sorted){
+        DrawRequest lastRequest = requestIdx > 0? noSortRequests[requestIdx - 1]: null;
+
+        if (lastRequest != null && lastRequest.texture == texture && lastRequest.normalTexture == textureNorm
+            && lastRequest.diffTexture == textureDiff && lastRequest.specTexture == textureSpec) {
+          lastRequest.verticesSize += count;
+          noSortReqVertIdx += count;
+        }
+        else {
+          noSortReqCount++;
+          noSortReqVertIdx += count;
+
+          request.verticesOffset = vertIdx;
+          request.verticesSize = count;
+          request.texture = texture;
+          request.normalTexture = textureNorm;
+          request.diffTexture = textureDiff;
+          request.specTexture = textureSpec;
+        }
+      }
+      else {
+        SortedDrawRequest sortedReq = (SortedDrawRequest) request;
+        sortedReqCount++;
+        sortedReqVertIdx += count;
+
+        sortedReq.verticesOffset = vertIdx;
+        sortedReq.verticesSize = count;
+        sortedReq.texture = texture;
+        sortedReq.normalTexture = textureNorm;
+        sortedReq.diffTexture = textureDiff;
+        sortedReq.specTexture = textureSpec;
+
+        sortedReq.isAlpha = true;
+        sortedReq.runTask = null;
+
+        sortedReq.dst2 = calcVerticesDst(vertices, sortedReqVertIdx, count);
+        sortedRequestDst2[requestIdx] = sortedReq.dst2;
+      }
+    }
+    else {
+      buffer.position(vertexIdx);
+      buffer.put(vertices, 0, count);
+      vertexIdx += count;
+    }
+  }
+  public void vertices(Texture texture, float[] vertices, int offset, int counts){
+    vertices(texture, null, null, null, vertices, offset, counts);
+  }
+
+  public void vertices(Texture texture, Texture normTexture, float[] vertices, int offset, int counts){
+    vertices(texture, normTexture, null, null, vertices, offset, counts);
+  }
+
+  public void vertices(
+      Texture texture, Texture normTexture, Texture diffTexture, Texture specTexture,
+      float[] vertices, int offset, int counts
+  ){
+    if (sort && !flushing){
+      checkReqExpands(noSortReqCount + 1, sortedReqCount + 1);
+      checkVertExpands(noSortReqVertIdx + counts, sortedReqVertIdx + counts);
+      boolean sorted = isAlpha;
+
+      int requestIdx = sorted? sortedReqCount: noSortReqCount;
+      DrawRequest request = sorted? sortedRequests[requestIdx]: noSortRequests[requestIdx];
+
+      if (!sorted){
+        putReqVertices(noSortReqVertices, noSortReqVertIdx, vertices, offset, counts);
+
+        DrawRequest lastRequest = requestIdx > 0? noSortRequests[requestIdx - 1]: null;
+        if (lastRequest != null && lastRequest.texture == texture && lastRequest.normalTexture == normTexture
+            && lastRequest.diffTexture == diffTexture && lastRequest.specTexture == specTexture){
+          lastRequest.verticesSize += counts;
+          noSortReqVertIdx += counts;
+        }
+        else {
+          noSortReqCount++;
+
+          request.texture = texture;
+          request.normalTexture = normTexture;
+          request.diffTexture = diffTexture;
+          request.specTexture = specTexture;
+
+          request.verticesOffset = noSortReqVertIdx;
+          request.verticesSize = counts;
+        }
+
+        noSortReqVertIdx += counts;
+      }
+      else {
+        putReqVertices(sortedReqVeritces, sortedReqVertIdx, vertices, offset, counts);
+        SortedDrawRequest sortedReq = (SortedDrawRequest) request;
+
+        sortedReqCount++;
+
+        sortedReq.texture = texture;
+        sortedReq.normalTexture = normTexture;
+        sortedReq.diffTexture = diffTexture;
+        sortedReq.specTexture = specTexture;
+
+        sortedReq.verticesOffset = sortedReqVertIdx;
+        sortedReq.verticesSize = counts;
+        sortedReq.isAlpha = true;
+        sortedReq.runTask = null;
+
+        sortedReq.dst2 = calcVerticesDst(vertices, offset, counts);
+        sortedRequestDst2[requestIdx] = sortedReq.dst2;
+
+        sortedReqVertIdx += counts;
+      }
+    }
+    else putVertices(texture, normTexture, diffTexture, specTexture, vertices, offset, counts);
+  }
+
+  protected void checkReqExpands(int noSortCount, int sortedCount){
+    if (noSortRequests.length < noSortCount) {
+      int oldSize = noSortRequests.length;
+      noSortRequests = Arrays.copyOf(noSortRequests, noSortCount*7/4);
+      for (int i = oldSize; i < sortedCount; i++) {
+        noSortRequests[i] = new DrawRequest();
+      }
+    }
+    if (sortedRequests.length < sortedCount) {
+      int oldSize = sortedRequests.length;
+      sortedRequests = Arrays.copyOf(sortedRequests, sortedCount*7/4);
+      for (int i = oldSize; i < sortedCount; i++) {
+        sortedRequests[i] = new SortedDrawRequest();
+      }
+      sortedRequestDst2 = Arrays.copyOf(sortedRequestDst2, sortedCount);
+    }
+  }
+
+  protected void checkVertExpands(int noSortVertSize, int sortedVertSize){
+    if (noSortReqVertices.length < noSortVertSize) {
+      noSortReqVertices = Arrays.copyOf(noSortReqVertices, noSortVertSize);
+    }
+    if (sortedReqVeritces.length < sortedVertSize) {
+      sortedReqVeritces = Arrays.copyOf(sortedReqVeritces, sortedVertSize);
+    }
+  }
+
+  protected float calcVerticesDst(float[] vertices, int offset, int counts) {
+    float dst = 0;
+    float cx = camera.position.x, cy = camera.position.y, cz = camera.position.z;
+
+    for (int i = offset; i < offset + counts; i += vertexSize) {
+      float dx = vertices[i] - cx; float dy = vertices[i + 1] - cy; float dz = vertices[i + 2] - cz;
+      dst = Math.max(dst, dx * dx + dy * dy + dz * dz);
+    }
+
+    return dst;
+  }
+
+  protected void putVertices(
+      Texture texture, Texture normTexture, Texture diffTexture, Texture specTexture,
+      float[] vertices, int offset, int counts
+  ){
+    int verticesLen = maxVerticesSize;
+    int remainingVertices = verticesLen;
+
+    if (lastTexture != texture || lastNormTexture != normTexture || lastDiffTexture != diffTexture || lastSpecTexture != specTexture) {
+      switchTexture(texture, normTexture, diffTexture, specTexture);
+    }
+    else {
+      remainingVertices -= vertexIdx;
+      if(remainingVertices == 0){
+        flush();
+        remainingVertices = verticesLen;
+      }
+    }
+    int copyCount = Math.min(remainingVertices, counts);
+    FloatBuffer buf = buffer;
+
+    if (enablePreTransform) {
+      float[] tmpVert = checkTmpArr(counts);
+      for (int i = 0; i < counts; i += vertexSize) {
+        preTrn(tmpVert, i, vertices, offset + i, preTransform);
+      }
+      buf.put(tmpVert, 0, copyCount);
+    }
+    else {
+      buf.put(vertices, offset, copyCount);
+    }
+
+    vertexIdx += copyCount;
+    counts -= copyCount;
+
+    while(counts > 0){
+      offset += copyCount;
+      flush();
+      copyCount = Math.min(verticesLen, counts);
+      if (enablePreTransform) {
+        float[] tmpVert = checkTmpArr(counts);
+        for (int i = 0; i < counts; i += vertexSize) {
+          preTrn(tmpVert, i, vertices, offset + i, preTransform);
+        }
+        buf.put(tmpVert, 0, copyCount);
+      }
+      else {
+        buf.put(vertices, offset, copyCount);
+      }
+      vertexIdx += copyCount;
+      counts -= copyCount;
+    }
+  }
+
+  protected void putReqVertices(float[] reqVertices, int vertexIdx, float[] vertices, int offset, int counts){
+    if (enablePreTransform) {
+      for (int i = 0; i < counts; i += vertexSize) {
+        preTrn(reqVertices, vertexIdx + i, vertices, offset + i, preTransform);
+      }
+    }
+    else {
+      System.arraycopy(vertices, offset, reqVertices, vertexIdx, counts);
+    }
+  }
+
+  protected static void preTrn(float[] vertices, int idx, float[] source, int off, Mat3D preTan) {
+    //position
+    temp1.set(source[off], source[off + 1], source[off + 2]);
+    Mat3D.prj(temp1, preTan);
+    vertices[idx] = temp1.x; vertices[idx + 1] = temp1.y; vertices[idx + 2] = temp1.z;
+
+    //coords
+    //base
+    vertices[idx + 3] = source[off + 3];
+    vertices[idx + 4] = source[off + 4];
+    //norm
+    vertices[idx + 5] = source[off + 5];
+    vertices[idx + 6] = source[off + 6];
+    //diff
+    vertices[idx + 7] = source[off + 7];
+    vertices[idx + 8] = source[off + 8];
+    //spec
+    vertices[idx + 9] = source[off + 9];
+    vertices[idx + 10] = source[off + 10];
+
+    //color
+    vertices[idx + 11] = source[off + 11];
+
+    //normal
+    temp1.set(source[off + 12], source[off + 13], source[off + 14]);
+    Mat3D.rot(temp1, preTan);
+    vertices[idx + 12] = temp1.x; vertices[idx + 13] = temp1.y; vertices[idx + 14] = temp1.z;
+    //tangent
+    temp1.set(source[off + 15], source[off + 16], source[off + 17]);
+    Mat3D.rot(temp1, preTan);
+    vertices[idx + 15] = temp1.x; vertices[idx + 16] = temp1.y; vertices[idx + 17] = temp1.z;
+    //subTangent
+    temp1.set(source[off + 18], source[off + 19], source[off + 20]);
+    Mat3D.rot(temp1, preTan);
+    vertices[idx + 18] = temp1.x; vertices[idx + 19] = temp1.y; vertices[idx + 20] = temp1.z;
+  }
+
+  protected float[] checkTmpArr(int size) {
+    if (tempVertices.length < size) {
+      return this.tempVertices = new float[size];
+    }
+    return tempVertices;
   }
 
   public void rect(
@@ -635,8 +833,7 @@ public class StandardBatch3D {
 
     Blending.normal.apply();
 
-    //Gl.framebufferRenderbuffer(Gl.framebuffer, Gl.depthAttachment, Gl.renderbuffer, depthBufferHandle);
-    buffer.begin(Color.clear);
+    depthBuffer.begin(Color.clear);
 
     Gl.enable(Gl.depthTest);
     Gl.depthMask(true);
@@ -657,9 +854,8 @@ public class StandardBatch3D {
 
     flush();
 
-    buffer.end();
-    buffer.blit(SglShaders.simpleScreen);
-    //Gl.framebufferRenderbuffer(Gl.framebuffer, Gl.depthAttachment, Gl.renderbuffer, 0);
+    depthBuffer.end();
+    depthBuffer.blit(SglShaders.simpleScreen);
 
     Gl.disable(Gl.cullFace);
     Gl.disable(Gl.depthTest);
@@ -667,40 +863,49 @@ public class StandardBatch3D {
     isDrawing = false;
   }
 
-  public boolean flushMesh(){
-    if(vertexIdx < vertexSize*3) {
-      vertexIdx = 0;
-      return false;
+  public void flush(){
+    flushRequests();
+    flushVertices();
+  }
+
+  protected void flushVertices() {
+    if (!isDrawing) throw new RuntimeException("Batch not started");
+
+    if(vertexIdx < vertexSize*3) return;
+
+    Shader shader = getCurrShader();
+    applyShader(shader);
+
+    lastTexture.bind(0);
+    shader.setUniformi("u_texture", 0);
+
+    if (lastNormTexture != null) {
+      lastNormTexture.bind(1);
+      shader.setUniformi("u_normalTex", 1);
+
+      if (lastDiffTexture != null && lastSpecTexture != null) {
+        lastDiffTexture.bind(2);
+        shader.setUniformi("u_diffuseTex", 2);
+        lastSpecTexture.bind(3);
+        shader.setUniformi("u_specularTex", 3);
+      }
     }
 
     Mesh mesh = this.mesh;
-    mesh.setVertices(vertices, 0, vertexIdx);
-    vertexIdx = 0;
+    //calling buffer() marks it as dirty, so it gets reuploaded upon render
+    mesh.getVerticesBuffer();
 
-    return true;
-  }
-
-  public void flush(){
-    if (!isDrawing) throw new RuntimeException("Batch not started");
-
-    if (!flushMesh()) return;
-
-    Shader shader = getCurrShader();
-    applyShader(
-        shader, lastNormTexture != null,
-        lastDiffTexture != null && lastSpecTexture != null
-    );
+    buffer.position(0);
+    buffer.limit(vertexIdx);
 
     if (isAlpha) Gl.depthMask(false);
-
-    mesh.render(shader, primitiveType);
-
+    mesh.render(shader, primitiveType, 0, vertexIdx/vertexSize);
     if (isAlpha) Gl.depthMask(true);
 
-    lastTexture = null;
-    lastNormTexture = null;
-    lastDiffTexture = null;
-    lastSpecTexture = null;
+    buffer.limit(buffer.capacity());
+    buffer.position(0);
+
+    vertexIdx = 0;
 
     Gl.activeTexture(Gl.texture0);
   }
@@ -711,14 +916,199 @@ public class StandardBatch3D {
     else return baseShader;
   }
 
-  public int getMaxVertices(){
-    return maxVertices;
+  protected void flushRequests(){
+    if(!flushing && (noSortReqCount > 0 || sortedReqCount > 0)){
+      flushing = true;
+
+      sortRequests();
+
+      boolean lastPreTrnEnabled = enablePreTransform;
+      boolean lastAlpha = isAlpha;
+      enablePreTransform = false;
+
+      isAlpha = false;
+      DrawRequest[] requests = noSortRequests;
+      int noSortCount = noSortReqCount;
+      for (int i = 0; i < noSortCount; i++) {
+        DrawRequest req = requests[i];
+
+        putVertices(
+            req.texture, req.normalTexture, req.diffTexture, req.specTexture,
+            noSortReqVertices, req.verticesOffset, req.verticesSize
+        );
+      }
+
+      isAlpha = true;
+      SortedDrawRequest[] sortedReq = sortedRequests;
+      int sortedCount = sortedReqCount;
+      for (int i = 0; i < sortedCount; i++) {
+        SortedDrawRequest req = sortedReq[i];
+
+        putVertices(
+            req.texture, req.normalTexture, req.diffTexture, req.specTexture,
+            sortedReqVeritces, req.verticesOffset, req.verticesSize
+        );
+      }
+
+      enablePreTransform = lastPreTrnEnabled;
+      isAlpha = lastAlpha;
+
+      flushing = false;
+      noSortReqCount = 0;
+      sortedReqCount = 0;
+      noSortReqVertIdx = 0;
+      sortedReqVertIdx = 0;
+    }
   }
 
-  public void dispose(){
-    baseShader.dispose();
-    normalShader.dispose();
-    standardShader.dispose();
-    mesh.dispose();
+  protected void sortRequests() {
+    MergeSorter.init(sortedRequests.length);
+    //if (multiThread) MergeSorter.sortMultiThreads(processorThreads, requests, dst2, 0, requestCount - 1);
+    MergeSorter.sort(sortedRequests, sortedRequestDst2, 0, sortedReqCount - 1);
+  }
+
+  static class SortTask extends ForkJoinTask<Void> implements Pool.Poolable {
+    int threads;
+    SortedDrawRequest[] requests;
+    float[] dst2;
+    int left;
+    int right;
+
+    @Override
+    public void reset() {
+      requests = null;
+      dst2 = null;
+      left = right = threads = 0;
+    }
+
+    @Override public Void getRawResult() {return null;}
+    @Override protected void setRawResult(Void value) {}
+    @Override
+    protected boolean exec() {
+      MergeSorter.sortMultiThreads(threads, requests, dst2, left, right);
+      return true;
+    }
+  }
+
+  static class MergeSorter {
+    private static final ForkJoinPool commonPool = new ForkJoinPool();
+
+    static float[] tmpDst2l;
+    static float[] tmpDst2r;
+    static SortedDrawRequest[] tmpRequestsL;
+    static SortedDrawRequest[] tmpRequestsR;
+
+    public static void init(int size){
+      if(tmpDst2l == null || tmpDst2l.length < size) {
+        tmpDst2l = new float[size];
+        tmpDst2r = new float[size];
+        tmpRequestsL = new SortedDrawRequest[size];
+        tmpRequestsR = new SortedDrawRequest[size];
+      }
+    }
+
+    public static void sortMultiThreads(int threads, SortedDrawRequest[] requests, float[] dst2, int left, int right) {
+      if (threads <= 1) sort(requests, dst2, left, right);
+      else if (left < right) {
+        int mid = (left + right) / 2;
+
+        SortTask l = Pools.obtain(SortTask.class, SortTask::new);
+        SortTask r = Pools.obtain(SortTask.class, SortTask::new);
+
+        l.threads = r.threads = threads/2;
+        l.dst2 = r.dst2 = dst2;
+        l.requests = r.requests = requests;
+        l.left = left; l.right = mid;
+        r.left = mid + 1; r.right = right;
+
+        ForkJoinTask<?> t1 = commonPool.submit(l);
+        ForkJoinTask<?> t2 = commonPool.submit(r);
+
+        t1.join();
+        t2.join();
+
+        Pools.free(l);
+        Pools.free(r);
+
+        merge(requests, dst2, left, mid, right);
+      }
+    }
+
+    public static void sort(SortedDrawRequest[] requests, float[] dst2, int left, int right) {
+      if (left < right) {
+        if (right - left <= 16) {
+          insert(requests, dst2, left, right);
+        }
+        else {
+          int mid = (left + right)/2;
+          sort(requests, dst2, left, mid);
+          sort(requests, dst2, mid + 1, right);
+          merge(requests, dst2, left, mid, right);
+        }
+      }
+    }
+
+    private static void insert(SortedDrawRequest[] requests, float[] dst2, int left, int right){
+      for (int i = left + 1; i <= right; i++) {
+        float key = dst2[i];
+        SortedDrawRequest req = requests[i];
+        int j = i - 1;
+        while (j >= left && dst2[j] < key) {
+          dst2[j + 1] = dst2[j];
+          requests[j + 1] = requests[j];
+          j--;
+        }
+        dst2[j + 1] = key;
+        requests[j + 1] = req;
+      }
+    }
+
+    private static void merge(SortedDrawRequest[] requests, float[] dst2, int left, int mid, int right) {
+      int n1 = mid - left + 1;
+      int n2 = right - mid;
+
+      float[] tmpDl = tmpDst2l;
+      SortedDrawRequest[] tmpRl = tmpRequestsL;
+      float[] tmpDr = tmpDst2r;
+      SortedDrawRequest[] tmpRr = tmpRequestsR;
+
+      System.arraycopy(dst2, left, tmpDl, left, n1);
+      System.arraycopy(requests, left, tmpRl, left, n1);
+      System.arraycopy(dst2, mid + 1, tmpDr, mid + 1, n2);
+      System.arraycopy(requests, mid + 1, tmpRr, mid + 1, n2);
+
+      int i = 0, j = 0;
+      int k = left;
+      while (i < n1 && j < n2) {
+        int ni = left + i;
+        int nj = mid + 1 + j;
+        if (tmpDl[ni] >= tmpDr[nj]) {
+          dst2[k] = tmpDl[ni];
+          requests[k] = tmpRl[ni];
+          i++;
+        } else {
+          dst2[k] = tmpDr[nj];
+          requests[k] = tmpRr[nj];
+          j++;
+        }
+        k++;
+      }
+
+      while (i < n1) {
+        int ni = left + i;
+        dst2[k] = tmpDl[ni];
+        requests[k] = tmpRl[ni];
+        i++;
+        k++;
+      }
+
+      while (j < n2) {
+        int nj = mid + 1 + j;
+        dst2[k] = tmpDr[nj];
+        requests[k] = tmpRr[nj];
+        j++;
+        k++;
+      }
+    }
   }
 }
