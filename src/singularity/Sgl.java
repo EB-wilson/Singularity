@@ -60,6 +60,8 @@ public class Sgl{
   public static final Fi internalConfigDir = modFile.child("config");
   /**模组数据文件夹*/
   public static final Fi dataDirectory = modDirectory.child("data").child(modName);
+  /**行星上下文目录*/
+  public static final Fi planetDataDirectory = dataDirectory.child("planet_contexts");
   /**模组配置文件夹*/
   public static final Fi configDirectory = modDirectory.child("config").child(modName);
   /**模组的mod_config.hjson配置文件*/

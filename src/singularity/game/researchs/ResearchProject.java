@@ -10,6 +10,7 @@ import mindustry.ctype.UnlockableContent;
 import singularity.Sgl;
 import singularity.Singularity;
 import singularity.core.SglEventTypes;
+import singularity.game.planet.context.ResearchContext;
 import singularity.world.blocks.research.ResearchDevice;
 
 public class ResearchProject {
@@ -28,6 +29,8 @@ public class ResearchProject {
 
   @Nullable public Inspire inspire;
   @Nullable public RevealGroup reveal;
+
+  @Nullable public ResearchContext processing;
 
   public boolean showIfRevealess;
   public boolean hideTechs;
@@ -139,6 +142,10 @@ public class ResearchProject {
 
   public float progress(){
     return (float)researched / techRequiresReal;
+  }
+
+  public boolean isProcessing(){
+    return processing != null;
   }
 
   public boolean researchProcess(int techPoints){

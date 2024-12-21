@@ -256,7 +256,6 @@ public class Draw3D {
 
       toBuffer.position(vertices * vertexSize + StandardBatch3D.coordOff); toBuffer.put(u); toBuffer.put(v);
       toBuffer.position(vertices * vertexSize + StandardBatch3D.coordNormOff); toBuffer.put(u); toBuffer.put(v);
-      toBuffer.position(vertices * vertexSize + StandardBatch3D.coordDiffOff); toBuffer.put(u); toBuffer.put(v);
       toBuffer.position(vertices * vertexSize + StandardBatch3D.coordSpecOff); toBuffer.put(u); toBuffer.put(v);
 
       toBuffer.position(vertices * vertexSize + StandardBatch3D.tangOff);

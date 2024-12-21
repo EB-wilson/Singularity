@@ -2,13 +2,40 @@ package singularity.game.planet;
 
 import arc.util.io.Reads;
 import arc.util.io.Writes;
-import mindustry.graphics.g3d.PlanetRenderer;
+import mindustry.game.Team;
+import singularity.game.planet.context.Dependence;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 public abstract class ChunkContext implements Cloneable{
+  public final Team team;
+
   private Chunk ownerChunk;
+
+  protected ChunkContext(Team team) {
+    this.team = team;
+  }
 
   public void init(Chunk ownerChunk){
     this.ownerChunk = ownerChunk;
+
+    Class<?> clazz = getClass();
+    try {
+      while (clazz != ChunkContext.class){
+        for (Field field : clazz.getDeclaredFields()) {
+          if ((field.getModifiers() & (Modifier.FINAL | Modifier.STATIC)) != 0
+            && field.getAnnotation(Dependence.class) != null) {
+            ChunkContext inject = ownerChunk.getContext(team, field.getType().asSubclass(ChunkContext.class));
+            field.set(this, inject);
+          }
+        }
+
+        clazz = clazz.getSuperclass();
+      }
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public Chunk getOwnerChunk() {
@@ -43,4 +70,8 @@ public abstract class ChunkContext implements Cloneable{
   }
   public abstract void load(Reads reads);
   public abstract void save(Writes writes);
+
+  public boolean active() {
+    return true;
+  }
 }

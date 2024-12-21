@@ -2,9 +2,14 @@ package singularity.game.planet.context;
 
 import arc.util.io.Reads;
 import arc.util.io.Writes;
+import mindustry.game.Team;
 import singularity.game.planet.ChunkContext;
 
 public class ChunkAdministration extends ChunkContext {
+  public ChunkAdministration(Team team) {
+    super(team);
+  }
+
   @Override
   public void install() {
 

@@ -26,13 +26,12 @@ public class StandardBatch3D {
   public static final int
       coordOff = 3,
       coordNormOff = 5,
-      coordDiffOff = 7,
-      coordSpecOff = 9,
-      colorOff = 11,
-      normOff = 12,
-      tangOff = 15;
+      coordSpecOff = 7,
+      colorOff = 9,
+      normOff = 10,
+      tangOff = 13;
 
-  protected final FrameBuffer depthBuffer;
+  protected FrameBuffer targetBuffer;
 
   // attributes
   protected final Mesh mesh;
@@ -49,7 +48,6 @@ public class StandardBatch3D {
   // state - modified will cause this batch flush
   protected Texture lastTexture;
   protected Texture lastNormTexture;
-  protected Texture lastDiffTexture;
   protected Texture lastSpecTexture;
   protected final Vec3 directionalLightDir = new Vec3(0, -1, 0);
   protected final Color directionalLightColor = new Color();
@@ -101,8 +99,6 @@ public class StandardBatch3D {
     this.lights = new LightSource[maxLights];
     this.maxVertices = max*3;
     this.primitiveType = primitiveType;
-
-    this.depthBuffer = new FrameBuffer(Pixmap.Format.rgba8888, Core.graphics.getWidth(), Core.graphics.getHeight(), true);
 
     setupLights();
     setupShaders(maxLights);
@@ -160,10 +156,8 @@ public class StandardBatch3D {
         new VertexAttribute(2, Shader.texcoordAttribute + "0"),
         new VertexAttribute(2, Shader.texcoordAttribute + "1"),
         new VertexAttribute(2, Shader.texcoordAttribute + "2"),
-        new VertexAttribute(2, Shader.texcoordAttribute + "3"),
         VertexAttribute.color,
         VertexAttribute.normal,
-        new VertexAttribute(3, "a_subTangent"),
         new VertexAttribute(3, "a_tangent")
     );
 
@@ -191,6 +185,14 @@ public class StandardBatch3D {
 
   protected void setSort(boolean sort) {
     this.sort = sort;
+  }
+
+  public void setTarget(FrameBuffer buffer) {
+    if (isDrawing) flush();
+    this.targetBuffer = buffer;
+  }
+  public FrameBuffer getTarget() {
+    return targetBuffer;
   }
 
   public void preTransform(Mat3D transform){
@@ -351,12 +353,11 @@ public class StandardBatch3D {
     }
   }
 
-  public void switchTexture(Texture texture, Texture normTexture, Texture diffTexture, Texture specTexture){
-    if (lastTexture != texture || lastNormTexture != normTexture || lastDiffTexture != diffTexture || lastSpecTexture != specTexture) {
+  public void switchTexture(Texture texture, Texture normTexture, Texture specTexture){
+    if (lastTexture != texture || lastNormTexture != normTexture || lastSpecTexture != specTexture) {
       flush();
       lastTexture = texture;
       lastNormTexture = normTexture;
-      lastDiffTexture = diffTexture;
       lastSpecTexture = specTexture;
     }
   }
@@ -369,10 +370,10 @@ public class StandardBatch3D {
       Color color
   ){
     tri(
-        texture, null, null, null,
-        x1, y1, z1, u1, v1, 0, 0, 0, 0, 0, 0,
-        x2, y2, z2, u2, v2, 0, 0, 0, 0, 0, 0,
-        x3, y3, z3, u3, v3, 0, 0, 0, 0, 0, 0,
+        texture, null, null,
+        x1, y1, z1, u1, v1, 0, 0, 0, 0,
+        x2, y2, z2, u2, v2, 0, 0, 0, 0,
+        x3, y3, z3, u3, v3, 0, 0, 0, 0,
         color
     );
   }
@@ -385,20 +386,20 @@ public class StandardBatch3D {
       Color color
   ){
     tri(
-        texture, textureNorm, null, null,
-        x1, y1, z1, u1, v1, un1, vn1, 0, 0, 0, 0,
-        x2, y2, z2, u2, v2, un2, vn2, 0, 0, 0, 0,
-        x3, y3, z3, u3, v3, un3, vn3, 0, 0, 0, 0,
+        texture, textureNorm, null,
+        x1, y1, z1, u1, v1, un1, vn1, 0, 0,
+        x2, y2, z2, u2, v2, un2, vn2, 0, 0,
+        x3, y3, z3, u3, v3, un3, vn3, 0, 0,
         color
     );
   }
 
   @SuppressWarnings("DuplicatedCode")
   public void tri(
-      Texture texture, Texture textureNorm, Texture textureDiff, Texture textureSpec,
-      float x1, float y1, float z1, float u1, float v1, float un1, float vn1, float ud1, float vd1, float us1, float vs1,
-      float x2, float y2, float z2, float u2, float v2, float un2, float vn2, float ud2, float vd2, float us2, float vs2,
-      float x3, float y3, float z3, float u3, float v3, float un3, float vn3, float ud3, float vd3, float us3, float vs3,
+      Texture texture, Texture textureNorm, Texture textureSpec,
+      float x1, float y1, float z1, float u1, float v1, float un1, float vn1, float us1, float vs1,
+      float x2, float y2, float z2, float u2, float v2, float un2, float vn2, float us2, float vs2,
+      float x3, float y3, float z3, float u3, float v3, float un3, float vn3, float us3, float vs3,
       Color color
   ){
     if (enablePreTransform) {
@@ -452,7 +453,7 @@ public class StandardBatch3D {
     }
     else {
       if (vertexIdx + vertexSize*3 >= maxVerticesSize) flush();
-      switchTexture(texture, textureNorm, textureDiff, textureSpec);
+      switchTexture(texture, textureNorm, textureSpec);
       vertices = checkTmpArr(count);
       ind = 0;
     }
@@ -461,7 +462,6 @@ public class StandardBatch3D {
     vertices[ind] = x1; vertices[ind + 1] = y1; vertices[ind + 2] = z1;
     vertices[ind + coordOff] = u1; vertices[ind + coordOff + 1] = v1;
     vertices[ind + coordNormOff] = un1; vertices[ind + coordNormOff + 1] = vn1;
-    vertices[ind + coordDiffOff] = ud1; vertices[ind + coordDiffOff + 1] = vd1;
     vertices[ind + coordSpecOff] = us1; vertices[ind + coordSpecOff + 1] = vs1;
     vertices[ind + colorOff] = colorBit;
     vertices[ind + normOff] = normalX; vertices[ind + normOff + 1] = normalY; vertices[ind + normOff + 2] = normalZ;
@@ -471,7 +471,6 @@ public class StandardBatch3D {
     vertices[ind] = x2; vertices[ind + 1] = y2; vertices[ind + 2] = z2;
     vertices[ind + coordOff] = u2; vertices[ind + coordOff + 1] = v2;
     vertices[ind + coordNormOff] = un2; vertices[ind + coordNormOff + 1] = vn2;
-    vertices[ind + coordDiffOff] = ud2; vertices[ind + coordDiffOff + 1] = vd2;
     vertices[ind + coordSpecOff] = us2; vertices[ind + coordSpecOff + 1] = vs2;
     vertices[ind + colorOff] = colorBit;
     vertices[ind + normOff] = normalX; vertices[ind + normOff + 1] = normalY; vertices[ind + normOff + 2] = normalZ;
@@ -481,7 +480,6 @@ public class StandardBatch3D {
     vertices[ind] = x3; vertices[ind + 1] = y3; vertices[ind + 2] = z3;
     vertices[ind + coordOff] = u3; vertices[ind + coordOff + 1] = v3;
     vertices[ind + coordNormOff] = un3; vertices[ind + coordNormOff + 1] = vn3;
-    vertices[ind + coordDiffOff] = ud3; vertices[ind + coordDiffOff + 1] = vd3;
     vertices[ind + coordSpecOff] = us3; vertices[ind + coordSpecOff + 1] = vs3;
     vertices[ind + colorOff] = colorBit;
     vertices[ind + normOff] = normalX; vertices[ind + normOff + 1] = normalY; vertices[ind + normOff + 2] = normalZ;
@@ -493,8 +491,11 @@ public class StandardBatch3D {
       if (!sorted){
         DrawRequest lastRequest = requestIdx > 0? noSortRequests[requestIdx - 1]: null;
 
-        if (lastRequest != null && lastRequest.texture == texture && lastRequest.normalTexture == textureNorm
-            && lastRequest.diffTexture == textureDiff && lastRequest.specTexture == textureSpec) {
+        if (lastRequest != null && lastRequest.mesh == null
+            && lastRequest.texture == texture
+            && lastRequest.normalTexture == textureNorm
+            && lastRequest.specTexture == textureSpec
+        ) {
           lastRequest.verticesSize += count;
           noSortReqVertIdx += count;
         }
@@ -506,7 +507,6 @@ public class StandardBatch3D {
           request.verticesSize = count;
           request.texture = texture;
           request.normalTexture = textureNorm;
-          request.diffTexture = textureDiff;
           request.specTexture = textureSpec;
         }
       }
@@ -519,7 +519,6 @@ public class StandardBatch3D {
         sortedReq.verticesSize = count;
         sortedReq.texture = texture;
         sortedReq.normalTexture = textureNorm;
-        sortedReq.diffTexture = textureDiff;
         sortedReq.specTexture = textureSpec;
 
         sortedReq.isAlpha = true;
@@ -559,8 +558,10 @@ public class StandardBatch3D {
         putReqVertices(noSortReqVertices, noSortReqVertIdx, vertices, offset, counts);
 
         DrawRequest lastRequest = requestIdx > 0? noSortRequests[requestIdx - 1]: null;
-        if (lastRequest != null && lastRequest.texture == texture && lastRequest.normalTexture == normTexture
-            && lastRequest.diffTexture == diffTexture && lastRequest.specTexture == specTexture){
+        if (lastRequest != null && lastRequest.mesh == null
+            && lastRequest.texture == texture && lastRequest.normalTexture == normTexture
+            && lastRequest.specTexture == specTexture
+        ){
           lastRequest.verticesSize += counts;
           noSortReqVertIdx += counts;
         }
@@ -569,7 +570,6 @@ public class StandardBatch3D {
 
           request.texture = texture;
           request.normalTexture = normTexture;
-          request.diffTexture = diffTexture;
           request.specTexture = specTexture;
 
           request.verticesOffset = noSortReqVertIdx;
@@ -586,7 +586,6 @@ public class StandardBatch3D {
 
         sortedReq.texture = texture;
         sortedReq.normalTexture = normTexture;
-        sortedReq.diffTexture = diffTexture;
         sortedReq.specTexture = specTexture;
 
         sortedReq.verticesOffset = sortedReqVertIdx;
@@ -600,7 +599,36 @@ public class StandardBatch3D {
         sortedReqVertIdx += counts;
       }
     }
-    else putVertices(texture, normTexture, diffTexture, specTexture, vertices, offset, counts);
+    else putVertices(texture, normTexture, specTexture, vertices, offset, counts);
+  }
+
+  public void draw(Texture texture, Texture normTexture, Texture specTexture, Mesh mesh){
+    if (sort && !flushing){
+      checkReqExpands(noSortReqCount + 1, sortedReqCount + 1);
+      boolean sorted = isAlpha;
+
+      DrawRequest request = sorted? sortedRequests[sortedReqCount]: noSortRequests[noSortReqCount];
+      request.texture = texture;
+      request.normalTexture = normTexture;
+      request.specTexture = specTexture;
+      request.mesh = mesh;
+
+      if (sorted){
+        sortedReqCount++;
+        SortedDrawRequest sortedReq = (SortedDrawRequest) request;
+
+        transform.getTranslation(temp1);
+        sortedReq.dst2 = camera.position.dst2(temp1);
+        sortedReq.isAlpha = true;
+        sortedReq.runTask = null;
+      }
+      else {
+        noSortReqCount++;
+      }
+    }
+    else {
+      putMesh(texture, normTexture, specTexture, isAlpha, mesh);
+    }
   }
 
   protected void checkReqExpands(int noSortCount, int sortedCount){
@@ -643,14 +671,14 @@ public class StandardBatch3D {
   }
 
   protected void putVertices(
-      Texture texture, Texture normTexture, Texture diffTexture, Texture specTexture,
+      Texture texture, Texture normTexture, Texture specTexture,
       float[] vertices, int offset, int counts
   ){
     int verticesLen = maxVerticesSize;
     int remainingVertices = verticesLen;
 
-    if (lastTexture != texture || lastNormTexture != normTexture || lastDiffTexture != diffTexture || lastSpecTexture != specTexture) {
-      switchTexture(texture, normTexture, diffTexture, specTexture);
+    if (lastTexture != texture || lastNormTexture != normTexture || lastSpecTexture != specTexture) {
+      switchTexture(texture, normTexture, specTexture);
     }
     else {
       remainingVertices -= vertexIdx;
@@ -693,6 +721,30 @@ public class StandardBatch3D {
       vertexIdx += copyCount;
       counts -= copyCount;
     }
+  }
+
+  protected void putMesh(Texture texture, Texture normalTexture, Texture specTexture, boolean isAlpha, Mesh mesh) {
+    Shader shader = getCurrShader(normalTexture != null, specTexture != null);
+    applyShader(shader);
+
+    texture.bind(0);
+    shader.setUniformi("u_texture", 0);
+
+    if (normalTexture != null) {
+      normalTexture.bind(1);
+      shader.setUniformi("u_normalTex", 1);
+
+      if (specTexture != null) {
+        specTexture.bind(2);
+        shader.setUniformi("u_specularTex", 2);
+      }
+    }
+
+    if (isAlpha) Gl.depthMask(false);
+    mesh.render(shader, primitiveType);
+    if (isAlpha) Gl.depthMask(true);
+
+    Gl.activeTexture(Gl.texture0);
   }
 
   protected void putReqVertices(float[] reqVertices, int vertexIdx, float[] vertices, int offset, int counts){
@@ -759,17 +811,17 @@ public class StandardBatch3D {
       Color color
   ){
     tri(
-        region.texture, null, null, null,
-        x1, y1, z1, region.u, region.v2, 0, 0, 0, 0, 0, 0,
-        x2, y2, z2, region.u2, region.v2, 0, 0, 0, 0, 0, 0,
-        x3, y3, z3, region.u2, region.v, 0, 0, 0, 0, 0, 0,
+        region.texture, null, null,
+        x1, y1, z1, region.u, region.v2, 0, 0, 0, 0,
+        x2, y2, z2, region.u2, region.v2, 0, 0, 0, 0,
+        x3, y3, z3, region.u2, region.v, 0, 0, 0, 0,
         color
     );
     tri(
-        region.texture, null, null, null,
-        x3, y3, z3, region.u2, region.v, 0, 0, 0, 0, 0, 0,
-        x4, y4, z4, region.u, region.v, 0, 0, 0, 0, 0, 0,
-        x1, y1, z1, region.u, region.v2, 0, 0, 0, 0, 0, 0,
+        region.texture, null, null,
+        x3, y3, z3, region.u2, region.v, 0, 0, 0, 0,
+        x4, y4, z4, region.u, region.v, 0, 0, 0, 0,
+        x1, y1, z1, region.u, region.v2, 0, 0, 0, 0,
         color
     );
   }
@@ -783,23 +835,23 @@ public class StandardBatch3D {
       Color color
   ){
     tri(
-        region.texture, normRegion.texture, null, null,
-        x1, y1, z1, region.u, region.v2, normRegion.u, normRegion.v2, 0, 0, 0, 0,
-        x2, y2, z2, region.u2, region.v2, normRegion.u2, normRegion.v2, 0, 0, 0, 0,
-        x3, y3, z3, region.u2, region.v, normRegion.u2, normRegion.v, 0, 0, 0, 0,
+        region.texture, normRegion.texture, null,
+        x1, y1, z1, region.u, region.v2, normRegion.u, normRegion.v2, 0, 0,
+        x2, y2, z2, region.u2, region.v2, normRegion.u2, normRegion.v2, 0, 0,
+        x3, y3, z3, region.u2, region.v, normRegion.u2, normRegion.v, 0, 0,
         color
     );
     tri(
-        region.texture, normRegion.texture, null, null,
-        x3, y3, z3, region.u2, region.v, normRegion.u2, normRegion.v, 0, 0, 0, 0,
-        x4, y4, z4, region.u, region.v, normRegion.u, normRegion.v, 0, 0, 0, 0,
-        x1, y1, z1, region.u, region.v2, normRegion.u, normRegion.v2, 0, 0, 0, 0,
+        region.texture, normRegion.texture, null,
+        x3, y3, z3, region.u2, region.v, normRegion.u2, normRegion.v, 0, 0,
+        x4, y4, z4, region.u, region.v, normRegion.u, normRegion.v, 0, 0,
+        x1, y1, z1, region.u, region.v2, normRegion.u, normRegion.v2, 0, 0,
         color
     );
   }
 
   public void rect(
-      TextureRegion region, TextureRegion normRegion, TextureRegion diffRegion, TextureRegion specRegion,
+      TextureRegion region, TextureRegion normRegion, TextureRegion specRegion,
       float x1, float y1, float z1,
       float x2, float y2, float z2,
       float x3, float y3, float z3,
@@ -807,17 +859,17 @@ public class StandardBatch3D {
       Color color
   ){
     tri(
-        region.texture, normRegion.texture, diffRegion.texture, specRegion.texture,
-        x1, y1, z1, region.u, region.v2, normRegion.u, normRegion.v2, diffRegion.u, diffRegion.v2, specRegion.u, specRegion.v2,
-        x2, y2, z2, region.u2, region.v2, normRegion.u2, normRegion.v2, diffRegion.u2, diffRegion.v2, specRegion.u2, specRegion.v2,
-        x3, y3, z3, region.u2, region.v, normRegion.u2, normRegion.v, diffRegion.u2, diffRegion.v, specRegion.u2, specRegion.v,
+        region.texture, normRegion.texture, specRegion.texture,
+        x1, y1, z1, region.u, region.v2, normRegion.u, normRegion.v2, specRegion.u, specRegion.v2,
+        x2, y2, z2, region.u2, region.v2, normRegion.u2, normRegion.v2, specRegion.u2, specRegion.v2,
+        x3, y3, z3, region.u2, region.v, normRegion.u2, normRegion.v, specRegion.u2, specRegion.v,
         color
     );
     tri(
-        region.texture, normRegion.texture, diffRegion.texture, specRegion.texture,
-        x3, y3, z3, region.u2, region.v, normRegion.u2, normRegion.v, diffRegion.u2, diffRegion.v, specRegion.u2, specRegion.v,
-        x4, y4, z4, region.u, region.v, normRegion.u, normRegion.v, diffRegion.u, diffRegion.v, specRegion.u, specRegion.v,
-        x1, y1, z1, region.u, region.v2, normRegion.u, normRegion.v2, diffRegion.u, diffRegion.v2, specRegion.u, specRegion.v2,
+        region.texture, normRegion.texture, specRegion.texture,
+        x3, y3, z3, region.u2, region.v, normRegion.u2, normRegion.v, specRegion.u2, specRegion.v,
+        x4, y4, z4, region.u, region.v, normRegion.u, normRegion.v, specRegion.u, specRegion.v,
+        x1, y1, z1, region.u, region.v2, normRegion.u, normRegion.v2, specRegion.u, specRegion.v2,
         color
     );
   }
@@ -833,7 +885,9 @@ public class StandardBatch3D {
 
     Blending.normal.apply();
 
-    depthBuffer.begin(Color.clear);
+    if (targetBuffer != null) {
+      targetBuffer.begin(Color.clear);
+    }
 
     Gl.enable(Gl.depthTest);
     Gl.depthMask(true);
@@ -854,8 +908,10 @@ public class StandardBatch3D {
 
     flush();
 
-    depthBuffer.end();
-    depthBuffer.blit(SglShaders.simpleScreen);
+    if (targetBuffer != null) {
+      targetBuffer.end();
+      targetBuffer.blit(SglShaders.simpleScreen);
+    }
 
     Gl.disable(Gl.cullFace);
     Gl.disable(Gl.depthTest);
@@ -873,7 +929,7 @@ public class StandardBatch3D {
 
     if(vertexIdx < vertexSize*3) return;
 
-    Shader shader = getCurrShader();
+    Shader shader = getCurrShader(lastNormTexture != null, lastSpecTexture != null);
     applyShader(shader);
 
     lastTexture.bind(0);
@@ -883,11 +939,9 @@ public class StandardBatch3D {
       lastNormTexture.bind(1);
       shader.setUniformi("u_normalTex", 1);
 
-      if (lastDiffTexture != null && lastSpecTexture != null) {
-        lastDiffTexture.bind(2);
-        shader.setUniformi("u_diffuseTex", 2);
-        lastSpecTexture.bind(3);
-        shader.setUniformi("u_specularTex", 3);
+      if (lastSpecTexture != null) {
+        lastSpecTexture.bind(2);
+        shader.setUniformi("u_specularTex", 2);
       }
     }
 
@@ -910,9 +964,9 @@ public class StandardBatch3D {
     Gl.activeTexture(Gl.texture0);
   }
 
-  protected Shader getCurrShader() {
-    if (lastNormTexture != null && lastDiffTexture != null && lastSpecTexture != null) return standardShader;
-    else if (lastNormTexture != null) return normalShader;
+  protected Shader getCurrShader(boolean hasNormal, boolean hasSpecular) {
+    if (hasNormal && hasSpecular) return standardShader;
+    else if (hasNormal) return normalShader;
     else return baseShader;
   }
 
@@ -932,10 +986,17 @@ public class StandardBatch3D {
       for (int i = 0; i < noSortCount; i++) {
         DrawRequest req = requests[i];
 
-        putVertices(
-            req.texture, req.normalTexture, req.diffTexture, req.specTexture,
-            noSortReqVertices, req.verticesOffset, req.verticesSize
-        );
+        if (req.mesh != null) {
+          putMesh(
+              req.texture, req.normalTexture, req.specTexture, false, req.mesh
+          );
+        }
+        else {
+          putVertices(
+              req.texture, req.normalTexture, req.specTexture,
+              noSortReqVertices, req.verticesOffset, req.verticesSize
+          );
+        }
       }
 
       isAlpha = true;
@@ -944,10 +1005,17 @@ public class StandardBatch3D {
       for (int i = 0; i < sortedCount; i++) {
         SortedDrawRequest req = sortedReq[i];
 
-        putVertices(
-            req.texture, req.normalTexture, req.diffTexture, req.specTexture,
-            sortedReqVeritces, req.verticesOffset, req.verticesSize
-        );
+        if (req.mesh != null) {
+          putMesh(
+              req.texture, req.normalTexture, req.specTexture, req.isAlpha, req.mesh
+          );
+        }
+        else {
+          putVertices(
+              req.texture, req.normalTexture, req.specTexture,
+              noSortReqVertices, req.verticesOffset, req.verticesSize
+          );
+        }
       }
 
       enablePreTransform = lastPreTrnEnabled;

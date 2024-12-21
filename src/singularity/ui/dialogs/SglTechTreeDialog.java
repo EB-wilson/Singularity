@@ -5,6 +5,7 @@ import arc.graphics.Color;
 import arc.graphics.g2d.*;
 import arc.input.KeyCode;
 import arc.math.Mathf;
+import arc.math.geom.Circle;
 import arc.math.geom.Rect;
 import arc.scene.Element;
 import arc.scene.Group;
@@ -13,6 +14,7 @@ import arc.scene.event.InputEvent;
 import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
 import arc.scene.style.BaseDrawable;
+import arc.scene.style.NinePatchDrawable;
 import arc.scene.ui.Image;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
@@ -20,6 +22,7 @@ import arc.struct.OrderedMap;
 import arc.struct.Seq;
 import arc.util.Align;
 import arc.util.Scaling;
+import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.ctype.UnlockableContent;
@@ -358,12 +361,13 @@ public class SglTechTreeDialog extends BaseDialog {
       clearChildren();
 
       if (!isMark) {
+        NinePatchDrawable drawable = ((NinePatchDrawable) Tex.buttonSideRightOver).tint(SglDrawConst.matrixNet);
         Table tab = table(Tex.buttonSideRight, t -> {
           t.update(() -> t.setBackground(
               project.dependenciesCompleted()?
                   project.isCompleted()?
                       Tex.buttonSideRightDown:
-                  Tex.buttonSideRightOver:
+                  project.isProcessing()? drawable: Tex.buttonSideRightOver:
               Tex.buttonSideRight
           ));
 
@@ -379,13 +383,55 @@ public class SglTechTreeDialog extends BaseDialog {
               Draw.color(Pal.darkestGray, parentAlpha);
               Fill.circle(x + width/2f, y + height/2f, width/2f - Scl.scl(4f));
 
-              SglDraw.drawCircleProgress(
-                  x + width/2, y + height/2, width/2f,
-                  Scl.scl(6f), Scl.scl(3f),
-                  project.progress(),
-                  project.inspire == null || project.inspire.applied? 0: project.inspire.provProgress,
-                  SglDrawConst.matrixNet, SglDrawConst.matrixNet
-              );
+              float frameStroke = Scl.scl(6f);
+              float barStroke = Scl.scl(3f);
+              float progress = project.progress();
+              float subProgress = project.inspire == null || project.inspire.applied? 0: project.inspire.provProgress;
+              float parentAlpha1 = Draw.getColor().a;
+              float rad = width/2f - frameStroke/2f;
+
+              Draw.color(Color.black, parentAlpha1);
+              Lines.stroke(frameStroke);
+              Lines.circle(x + width/2, y + height/2, rad);
+              Draw.color(SglDrawConst.matrixNet, 0.6f*parentAlpha1);
+              Lines.circle(x + width/2, y + height/2, rad);
+              Draw.color(Color.black, 0.6f*parentAlpha1);
+              Lines.stroke(barStroke);
+              Lines.circle(x + width/2, y + height/2, rad);
+
+              if (project.isProcessing()) {
+                Lines.stroke(barStroke);
+                Draw.color(SglDrawConst.matrixNetDark, parentAlpha);
+                SglDraw.dashCircle(
+                    x + width/2, y + height/2, width/2f - Scl.scl(3f), 10, 180, -Time.globalTime
+                );
+              }
+
+              if (progress > 0) {
+                Lines.stroke(barStroke);
+                Draw.color(SglDrawConst.matrixNet, parentAlpha1);
+                SglDraw.arc(
+                    x + width/2, y + height/2, rad,
+                    -360f*progress, 90
+                );
+              }
+
+              if (subProgress > 0){
+                Lines.stroke(frameStroke);
+                Draw.color(SglDrawConst.matrixNet, 0.5f*parentAlpha1);
+                float angel = -360f*Math.min(subProgress, 1 - progress);
+                SglDraw.arc(
+                    x + width/2, y + height/2, rad, angel,
+                    90 - progress*360f
+                );
+
+                Draw.color(Color.black, 0.2f*parentAlpha1);
+                Lines.stroke(frameStroke/3f);
+                SglDraw.arc(
+                    x + width/2, y + height/2, rad, angel,
+                    90 - progress*360f
+                );
+              }
             }
           }, img -> {
             if (isReveal) {
@@ -519,6 +565,29 @@ public class SglTechTreeDialog extends BaseDialog {
           fillParent = true;
           visible(() -> !project.dependenciesCompleted());
           touchable = Touchable.disabled;
+        }});
+
+        tab.addChild(new Table(){{
+          fillParent = true;
+          visible(project::isProcessing);
+          touchable = Touchable.childrenOnly;
+
+          top().right().button(t -> {
+            t.image(new BaseDrawable(){
+              @Override
+              public void draw(float x, float y, float width, float height) {
+                Draw.color(SglDrawConst.matrixNet, parentAlpha);
+                Lines.stroke(Scl.scl(2f));
+                Lines.square(x + width/2, y + height/2, width/6f, 45f);
+                Lines.stroke(Scl.scl(3f));
+                Lines.circle(x + width/2, y + height/2, width/2 - Scl.scl(6f));
+                SglDraw.dashCircle(x + width/2, y + height/2,
+                    width/2 - Scl.scl(3f), 8, 180, Time.globalTime);
+              }
+            }).size(36f);
+          }, () -> {
+            //TODO
+          }).fill().top().right().margin(8f).padRight(-8f).padTop(-8f);
         }});
       }
       else {

@@ -3,7 +3,6 @@ attribute vec3 a_position;
 attribute vec2 a_texCoord0;
 attribute vec2 a_texCoord1;
 attribute vec2 a_texCoord2;
-attribute vec2 a_texCoord3;
 attribute vec4 a_color;
 attribute vec3 a_normal;
 attribute vec3 a_tangent;
@@ -75,8 +74,7 @@ mat3 transpose(mat3 m) {
 void main(){
     v_texCoords = a_texCoord0;
     v_normCoords = a_texCoord1;
-    v_diffCoords = a_texCoord2;
-    v_specCoords = a_texCoord3;
+    v_specCoords = a_texCoord2;
     v_color = a_color;
 
     vec3 subTangent = normalize(cross(a_normal, a_tangent));

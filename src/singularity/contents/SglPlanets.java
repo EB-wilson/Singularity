@@ -1,5 +1,7 @@
 package singularity.contents;
 
+import arc.func.Func;
+import arc.func.Func2;
 import arc.graphics.Color;
 import mindustry.content.Items;
 import mindustry.content.Planets;
@@ -11,6 +13,13 @@ import mindustry.graphics.g3d.MultiMesh;
 import mindustry.graphics.g3d.SunMesh;
 import mindustry.maps.planet.SerpuloPlanetGenerator;
 import mindustry.type.Planet;
+import singularity.game.planet.Chunk;
+import singularity.game.planet.ChunkContext;
+import singularity.game.planet.ChunkContextIncubator;
+import singularity.game.planet.context.ChunkAdministration;
+import singularity.game.planet.context.ResearchContext;
+import singularity.game.planet.context.ResourceStatistic;
+import singularity.type.SglPlanet;
 import singularity.world.gen.ForyustGenerator;
 
 public class SglPlanets implements ContentList{
@@ -37,7 +46,15 @@ public class SglPlanets implements ContentList{
       );
     }};
 
-    foryust = new Planet("foryust", seazer, 3.2f){{
+    foryust = new SglPlanet("foryust", Planets.sun, 1.8f, 3){{
+      addIncubators(
+          ChunkContextIncubator.list(
+              ChunkAdministration.class, (Func<Team, ChunkContext>) ChunkAdministration::new,
+              ResourceStatistic.class, (Func<Team, ChunkContext>) ResourceStatistic::new,
+              ResearchContext.class, (Func<Team, ChunkContext>) ResearchContext::new
+          )
+      );
+
       generator = new SerpuloPlanetGenerator();
       meshLoader = () -> new HexMesh(this, 6);
       cloudMeshLoader = () -> new MultiMesh(
@@ -45,8 +62,11 @@ public class SglPlanets implements ContentList{
           new HexSkyMesh(this, 1, 0.6f, 0.16f, 5, Color.white.cpy().lerp(Pal.spore, 0.55f).a(0.75f), 2, 0.45f, 1f, 0.41f)
       );
 
+      orbitRadius = 9f;
+      orbitOffset = 5f;
+
       launchCapacityMultiplier = 0.5f;
-      sectorSeed = 2;
+      sectorSeed = 3;
       allowWaves = true;
       allowWaveSimulation = true;
       allowSectorInvasion = true;

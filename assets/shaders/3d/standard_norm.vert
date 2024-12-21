@@ -3,7 +3,6 @@ attribute vec3 a_position;
 attribute vec2 a_texCoord0;
 attribute vec2 a_texCoord1;
 attribute vec2 a_texCoord2;
-attribute vec2 a_texCoord3;
 attribute vec4 a_color;
 attribute vec3 a_normal;
 attribute vec3 a_tangent;

@@ -88,7 +88,7 @@ public class Singularity extends Mod{
         Sgl.ui.mainMenu.show();
         Sgl.ui.techTreeDialog.show();
 
-        new TestDialog().show();
+        //new TestDialog().show();
       });
     }
 

@@ -2,8 +2,11 @@ package singularity.ui.dialogs;
 
 import arc.Core;
 import arc.graphics.Color;
+import arc.graphics.Gl;
 import arc.graphics.Mesh;
+import arc.graphics.Pixmap;
 import arc.graphics.g3d.Camera3D;
+import arc.graphics.gl.FrameBuffer;
 import arc.input.KeyCode;
 import arc.math.geom.Mat3D;
 import arc.math.geom.Vec3;
@@ -16,10 +19,9 @@ import mindustry.content.Planets;
 import mindustry.input.Binding;
 import singularity.graphic.graphic3d.Draw3D;
 import singularity.graphic.graphic3d.StandardBatch3D;
+import singularity.graphic.graphic3d.StdShadowBatch3D;
 import singularity.ui.SglStyles;
 import universecore.util.handler.FieldHandler;
-
-import java.nio.FloatBuffer;
 
 public class TestDialog extends Dialog {
   public TestDialog() {
@@ -35,15 +37,11 @@ public class TestDialog extends Dialog {
     Draw3D.meshToStandardVertices(
         grid,
         planet,
-        new int[]{0, 6, 5}
+        new int[]{0, 5, 4}// p, n, c
     );
-    FloatBuffer buffer = planet.getVerticesBuffer();
-    float[] vertices = new float[buffer.capacity()];
-    buffer.position(0);
-    buffer.get(vertices);
 
-    StandardBatch3D batch3D = new StandardBatch3D(4000);
-    //StdShadowBatch3D batch3D = new StdShadowBatch3D(4000, 1, Gl.triangles, 1024);
+    //StandardBatch3D batch3D = new StandardBatch3D(4000);
+    StdShadowBatch3D batch3D = new StdShadowBatch3D(4000, 1, Gl.triangles, 1024);
     Camera3D camera = batch3D.getCamera();
     camera.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
     camera.up.set(0, 1, 0);
@@ -84,6 +82,9 @@ public class TestDialog extends Dialog {
       }
     });
 
+    FrameBuffer targetBuffer = new FrameBuffer(Pixmap.Format.rgba8888, Core.graphics.getWidth(), Core.graphics.getHeight(), true);
+    batch3D.setTarget(targetBuffer);
+
     Vec3 axis = new Vec3(1, 0, 0).nor();
     cont.fill((x, y, w, h) -> {
       camera.position.set(camPos);
@@ -93,23 +94,34 @@ public class TestDialog extends Dialog {
       Draw3D.begin(batch3D, true);
       Draw3D.camera(camera);
       Draw3D.resetLights();
-      Draw3D.nextLight(-13, 10, -0, Color.white);
+      Draw3D.nextLight(-5, 20, -0, Color.white);
       //Draw3D.nextLight(-20, 6, -0, Color.white).color.a(0.6f);
       //Draw3D.nextLight(0, 4, -0, Color.white).color.a(0.6f);
 
-      //Draw3D.dirLightColor(Color.red, 0.2f);
-      //Draw3D.lightDir(-1, -1, -1);
+      Draw3D.dirLightColor(Color.white, 0.2f);
+      Draw3D.lightDir(-1, -1, -1);
 
       Draw3D.setAmbientColor(1f, 1f, 1f, 0.1f);
 
-      Draw3D.alpha(false);
       Draw3D.resetPreTransform();
-      batch3D.vertices(
-          Core.atlas.white().texture,
-          vertices,
-          0,
-          vertices.length
+      Draw3D.alpha(true);
+      batch3D.draw(
+          Core.atlas.white().texture, null, null, planet
       );
+      Draw3D.alpha(false);
+      Draw3D.rect(
+          -50, -10, -50,
+          -50, -10, 50,
+          50, -10, 50,
+          50, -10, -50,
+          Color.white
+      );
+
+      for (int i = 0; i < 10; i++) {
+        Draw3D.cube(
+            5, i*4, 5, 2, Color.white
+        );
+      }
 
       Draw3D.end();
     }).touchable = Touchable.disabled;

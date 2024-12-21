@@ -213,6 +213,14 @@ public class StdShadowBatch3D extends StandardBatch3D {
 
           shadowBuffer.begin();
           mesh.render(shader, primitiveType);
+          for (int l = 0; l < noSortReqCount; l++) {
+            DrawRequests.DrawRequest req = noSortRequests[l];
+            if (req.mesh != null) req.mesh.render(shader, primitiveType);
+          }
+          for (int l = 0; l < sortedReqCount; l++) {
+            DrawRequests.SortedDrawRequest req = sortedRequests[l];
+            if (req.mesh != null) req.mesh.render(shader, primitiveType);
+          }
           shadowBuffer.end();
         }
       }
@@ -267,20 +275,34 @@ public class StdShadowBatch3D extends StandardBatch3D {
     for (int i = 0; i < num; i++) {
       DrawRequests.DrawRequest req = r[i];
 
-      putVertices(
-          req.texture, req.normalTexture, req.diffTexture, req.specTexture,
-          noSortReqVertices, req.verticesOffset, req.verticesSize
-      );
+      if (req.mesh != null) {
+        putMesh(
+            req.texture, req.normalTexture, req.specTexture, false, req.mesh
+        );
+      }
+      else {
+        putVertices(
+            req.texture, req.normalTexture, req.specTexture,
+            noSortReqVertices, req.verticesOffset, req.verticesSize
+        );
+      }
     }
 
     isAlpha = true;
     for (int i = 0; i < snum; i++) {
       DrawRequests.SortedDrawRequest req = sr[i];
 
-      putVertices(
-          req.texture, req.normalTexture, req.diffTexture, req.specTexture,
-          sortedReqVeritces, req.verticesOffset, req.verticesSize
-      );
+      if (req.mesh != null) {
+        putMesh(
+            req.texture, req.normalTexture, req.specTexture, true, req.mesh
+        );
+      }
+      else {
+        putVertices(
+            req.texture, req.normalTexture, req.specTexture,
+            noSortReqVertices, req.verticesOffset, req.verticesSize
+        );
+      }
     }
 
     enablePreTransform = lastPreTrnEnabled;
