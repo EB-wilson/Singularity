@@ -46,7 +46,7 @@ dependencies {
   compileOnly "com.github.EB-wilson.UniverseCore:dynamilizer:$uncVersion"
   compileOnly "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
 
-  compileOnly "com.github.EB-wilson:TooManyItems:2.4.1"
+  compileOnly "com.github.EB-wilson:TooManyItems:2.5.1"
 
   implementation "com.github.EB-wilson.JavaDynamilizer:annotations:V1.8-A3"
 
