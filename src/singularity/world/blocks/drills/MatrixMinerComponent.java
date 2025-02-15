@@ -9,8 +9,8 @@ import arc.util.io.Writes;
 import mindustry.gen.Tex;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
-import mindustry.ui.LiquidDisplay;
 import mindustry.world.meta.Stat;
+import mindustry.world.meta.StatValues;
 import mindustry.world.meta.Stats;
 import universecore.world.consumers.BaseConsumers;
 import universecore.world.consumers.ConsumeLiquidCond;
@@ -39,7 +39,7 @@ public class MatrixMinerComponent extends MatrixMinerPlugin{
           for (LiquidStack stack : cons.getCons()) {
             Liquid liquid = stack.liquid;
 
-            t.add(new LiquidDisplay(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(10).left().top();
+            t.add(StatValues.displayLiquid(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(10).left().top();
             t.table(Tex.underline, bt -> {
               bt.left().defaults().padRight(3).left();
               bt.add("[lightgray]" + Core.bundle.get("misc.efficiency") + "[accent]" + Strings.autoFixed(boostEff.get(liquid)*100, 2) + "%[]");

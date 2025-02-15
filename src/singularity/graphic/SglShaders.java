@@ -6,12 +6,17 @@ import arc.graphics.Color;
 import arc.graphics.Texture;
 import arc.graphics.gl.Shader;
 import arc.math.geom.Vec2;
+import arc.util.ArcRuntimeException;
+import arc.util.Log;
 import arc.util.Time;
 import singularity.Singularity;
 
 import static mindustry.Vars.renderer;
 
 public class SglShaders {
+  // 3D stage
+  public static Shader planet, solar, standardBase, standard;
+
   // scene space shaders
   public static Shader baseShader, simpleScreen;
   public static SglSurfaceShader boundWater;
@@ -24,9 +29,91 @@ public class SglShaders {
 
   public static final Fi internalShaderDir = Singularity.getInternalFile("shaders");
 
+  public static class SglShader extends Shader{
+    public SglShader(String vertexShader, String fragmentShader) {
+      super(vertexShader, fragmentShader);
+    }
+
+    public SglShader(Fi vertexShader, Fi fragmentShader) {
+      super(vertexShader, fragmentShader);
+    }
+
+    @Override
+    protected String preprocess(String source, boolean fragment) {
+      //disallow gles qualifiers
+      if(source.contains("#ifdef GL_ES")){
+        throw new ArcRuntimeException("Shader contains GL_ES specific code; this should be handled by the preprocessor. Code: \n```\n" + source + "\n```");
+      }
+
+      //disallow explicit versions
+      if(source.contains("#version")){
+        throw new ArcRuntimeException("Shader contains explicit version requirement; this should be handled by the preprocessor. Code: \n```\n" + source + "\n```");
+      }
+
+      //add GL_ES precision qualifiers
+      if(fragment){
+        source =
+            "#ifdef GL_ES\n" +
+            "precision " + (source.contains("#define HIGHP") && !source.contains("//#define HIGHP") ? "highp" : "mediump") + " float;\n" +
+            "precision mediump int;\n" +
+            "#else\n" +
+            "#define lowp  \n" +
+            "#define mediump \n" +
+            "#define highp \n" +
+            "#endif\n" + source;
+      }else{
+        //strip away precision qualifiers
+        source =
+            "#ifndef GL_ES\n" +
+            "#define lowp  \n" +
+            "#define mediump \n" +
+            "#define highp \n" +
+            "#endif\n" + source;
+      }
+
+      //preprocess source to function correctly with OpenGL 3.x core
+      //note that this is required on Mac
+      if(Core.gl30 != null){
+
+        //if there already is a version, do nothing
+        //if on a desktop platform, pick 150 or 130 depending on supported version
+        //if on anything else, it's GLES, so pick 300 ES
+        String version =
+            source.contains("#version ") ? "" :
+                Core.app.isDesktop() ? (Core.graphics.getGLVersion().atLeast(3, 2) ? "150" : "130") :
+                    "300 es";
+
+        return
+            "#version " + version + "\n"
+            + "#extension GL_ARB_explicit_attrib_location : require\n"
+            + (fragment ? "out" + (Core.app.isMobile() ? " lowp" : "") + " vec4 fragColor;\n" : "")
+            + source
+                .replace("varying", fragment ? "in" : "out")
+                .replace("attribute", fragment ? "???" : "in")
+                .replace("texture2D(", "texture(")
+                .replace("textureCube(", "texture(")
+                .replace("gl_FragColor", "fragColor");
+      }
+      return source;
+    }
+  }
+
   public static void load() {
-    simpleScreen = new Shader(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child("simple.frag"));
-    baseShader = new Shader(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child("dist_base.frag"));
+    planet = new SglShader(
+        internalShaderDir.child("3d").child("planet.vert"),
+        internalShaderDir.child("3d").child("planet.frag")
+    );
+    solar = new SglShader(
+        internalShaderDir.child("3d").child("solar.vert"),
+        internalShaderDir.child("3d").child("solar.frag")
+    );
+    standardBase = new SglShader(
+        internalShaderDir.child("3d").child("standard_base.vert"),
+        internalShaderDir.child("3d").child("standard_base.frag")
+    );
+
+    simpleScreen = new SglShader(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child("simple.frag"));
+    baseShader = new SglShader(Core.files.internal("shaders/screenspace.vert"), internalShaderDir.child("dist_base.frag"));
     boundWater = new SglSurfaceShader("boundwater");
     alphaMask = new MaskShader("alpha_mask");
     mirrorField = new MirrorFieldShader();
@@ -35,7 +122,7 @@ public class SglShaders {
     lerpAlpha = new AlphaAdjust(internalShaderDir.child("lerp_alpha_adjust.frag"));
   }
 
-  public static class SglSurfaceShader extends Shader {
+  public static class SglSurfaceShader extends SglShader {
     Texture noiseTex;
 
     public SglSurfaceShader(String frag){
@@ -74,7 +161,7 @@ public class SglShaders {
     }
   }
 
-  public static class WaveShader extends Shader{
+  public static class WaveShader extends SglShader{
     public Color waveMix = Color.white;
     public float mixAlpha = 0.4f;
     public float mixOmiga = 0.75f;
@@ -101,7 +188,7 @@ public class SglShaders {
     }
   }
 
-  public static class MirrorFieldShader extends Shader {
+  public static class MirrorFieldShader extends SglShader {
     public Color waveMix = Color.white;
     public Vec2 offset = new Vec2(0, 0);
     public float stroke = 2;
@@ -136,7 +223,7 @@ public class SglShaders {
     }
   }
 
-  public static class MaskShader extends Shader {
+  public static class MaskShader extends SglShader {
     public Texture texture;
 
     public MaskShader(String fragment) {
@@ -152,7 +239,7 @@ public class SglShaders {
     }
   }
 
-  public static class AlphaAdjust extends Shader{
+  public static class AlphaAdjust extends SglShader{
     public float coef;
 
     public AlphaAdjust(Fi fragmentShader) {

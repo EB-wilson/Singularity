@@ -86,9 +86,8 @@ public class Singularity extends Mod{
     if(Sgl.config.showModMenuWenLaunch){
       Events.on(ClientLoadEvent.class, e -> {
         Sgl.ui.mainMenu.show();
-        Sgl.ui.techTreeDialog.show();
 
-        //new TestDialog().show();
+        new TestDialog().show();
       });
     }
 

@@ -1,22 +1,20 @@
 
-in vec3 a_position;
-in vec2 a_texCoord0;
-in vec2 a_texCoord1;
-in vec2 a_texCoord2;
-in vec3 a_normal;
-in vec3 a_tangent;
-in vec4 a_color;
+attribute vec3 a_position;
+attribute vec2 a_texCoord0;
+attribute vec2 a_texCoord1;
+attribute vec2 a_texCoord2;
+attribute vec4 a_color;
+attribute vec3 a_normal;
+attribute vec3 a_tangent;
 
 uniform mat4 u_proj;
 uniform mat4 u_view;
 uniform mat4 u_transform;
 
-out vec2 v_diffCoords;
-out vec2 v_normCoords;
-out vec2 v_specCoords;
-out vec4 v_color;
-out vec3 v_position;
-out vec3 v_tbn;
+varying vec2 v_texCoords;
+varying vec4 v_color;
+varying vec3 v_fragPos;
+varying vec3 v_normal;
 
 #if version < 300
 mat3 inverse(mat3 m) {
@@ -58,23 +56,17 @@ mat3 transpose(mat3 m) {
 #endif
 
 void main(){
-    v_diffCoords = a_texCoord0;
-    v_normCoords = a_texCoord1;
-    v_specCoords = a_texCoord2;
+    v_texCoords = a_texCoord0;
     v_color = a_color;
-    v_position = (u_transform * vec4(a_position, 1.0)).xyz;
-
-    vec3 bitangent = normalize(cross(a_normal, a_tangent));
-    mat3 trans = transpose(inverse(mat3(
-        u_transform[0][0], u_transform[0][1], u_transform[0][2],
-        u_transform[1][0], u_transform[1][1], u_transform[1][2],
-        u_transform[2][0], u_transform[2][1], u_transform[2][2]
+    mat3 v = transpose(inverse(mat3(
+          u_transform[0][0], u_transform[0][1], u_transform[0][2],
+          u_transform[1][0], u_transform[1][1], u_transform[1][2],
+          u_transform[2][0], u_transform[2][1], u_transform[2][2]
     )));
-    vec3 T = normalize(a_tangent);
-    vec3 B = normalize(bitangent);
-    vec3 N = normalize(a_normal);
-
-    v_tbn = trans * transpose(mat3(T, B, N));
+    v_normal = v * a_normal;
+    v_fragPos = vec3(u_transform * vec4(a_position, 1.0));
+    //v_normal = a_normal;
+    //v_fragPos = a_position;
 
     gl_Position = u_proj * u_view * u_transform * vec4(a_position, 1.0);
 }

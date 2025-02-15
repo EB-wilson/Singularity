@@ -31,7 +31,6 @@ import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
 import mindustry.ui.Bar;
-import mindustry.ui.ItemDisplay;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 import mindustry.world.meta.*;
@@ -170,7 +169,7 @@ public class NormalCrafter extends SglBlock implements FactoryBlockComp {
       t.row();
       t.table(i -> {
         i.add(Core.bundle.get("misc.extra") + ":");
-        i.add(new ItemDisplay(item, base)).left().padLeft(6);
+        i.add(StatValues.displayItem(item, base)).left().padLeft(6);
         i.add("[gray]" + (base > 0? " +": "") + Strings.autoFixed(chance*100, 2) + "%[]");
       }).left().padLeft(5);
     });

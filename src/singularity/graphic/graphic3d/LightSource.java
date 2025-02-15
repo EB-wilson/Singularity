@@ -2,30 +2,27 @@ package singularity.graphic.graphic3d;
 
 import arc.graphics.Color;
 import arc.graphics.gl.Shader;
-import arc.math.geom.Vec3;
+import singularity.world.GameObject;
+import universecore.annotations.Annotations;
 
-public class LightSource {
-  public final Vec3 position = new Vec3();
+public interface LightSource extends GameObject {
+  @Annotations.BindField(value = "lightColor", initialize = "arc.graphics.Color.white")
+  default Color getLightColor(){ return null; }
+  @Annotations.BindField("lightColor")
+  default void setLightColor(Color color){}
+  @Annotations.BindField(value = "lightRadius", initialize = "400f")
+  default float getLightRadius(){ return 0f; }
+  @Annotations.BindField("lightRadius")
+  default void setLightRadius(float radius){}
+  @Annotations.BindField(value = "lightAttenuation", initialize = "3.8f")
+  default float getLightAttenuation(){ return 0f; }
+  @Annotations.BindField("lightAttenuation")
+  default void setLightAttenuation(float attenuation){}
 
-  public final Color color = new Color();
-  public float radius = 500;
-  public float intensity = 1;
-  public float attenuation = 3.8f;
-
-  public void update(){}
-
-  public void apply(Shader shader, int off){
-    shader.setUniformf("u_light[" + off + "].position", position);
-    shader.setUniformf("u_light[" + off + "].color", color);
-    shader.setUniformf("u_light[" + off + "].radius", radius);
-    shader.setUniformf("u_light[" + off + "].attenuation", attenuation);
-  }
-
-  public void set(LightSource light) {
-    position.set(light.position);
-    color.set(light.color);
-    radius = light.radius;
-    intensity = light.intensity;
-    attenuation = light.attenuation;
+  default void apply(Shader shader, int off){
+    shader.setUniformf("u_lightSources[" + off + "].position", getX(), getY(), getZ());
+    shader.setUniformf("u_lightSources[" + off + "].color", getLightColor());
+    shader.setUniformf("u_lightSources[" + off + "].radius", getLightRadius());
+    shader.setUniformf("u_lightSources[" + off + "].attenuation", getLightAttenuation());
   }
 }

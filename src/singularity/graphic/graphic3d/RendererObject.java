@@ -2,51 +2,36 @@ package singularity.graphic.graphic3d;
 
 import arc.graphics.Gl;
 import arc.graphics.Mesh;
+import arc.math.geom.BoundingBox;
 import arc.math.geom.Mat3D;
-import arc.struct.Seq;
-import singularity.world.Transform;
+import arc.scene.Group;
+import singularity.world.GameObject;
 import universecore.annotations.Annotations;
 
-public interface RendererObject extends Transform {
-  Seq<RendererObject> tmpStack = new Seq<>();
-
-  boolean isSort();
-  Material material();
+public interface RendererObject extends GameObject {
   Mesh mesh();
-  RendererObject parent();
+  Material material();
 
-  @Annotations.BindField(value = "tempTrans", initialize = "new Mat3D()")
-  default Mat3D parentTrans(){ return null; }
-  @Annotations.BindField("parTransformed")
-  default boolean parTransformed(){ return false; }
-  @Annotations.BindField("parTransformed")
-  default void parTransformed(boolean transformed){}
+  @Annotations.BindField(value = "boundBox", initialize = "new arc.math.geom.BoundingBox()")
+  default BoundingBox bounds() { return null; }
+
+  default BoundingBox getTransformedBounds(BoundingBox result, Mat3D tmp) {
+    result.set(bounds());
+    Mat3D trn = getAbsTransform(tmp);
+    Mat3D.prj(result.min, trn);
+    Mat3D.prj(result.max, trn);
+    return result;
+  }
+
+  @Annotations.BindField("renderValid")
+  default boolean renderValid(){ return false; }
+  @Annotations.BindField("renderValid")
+  default void renderValid(boolean valid){}
 
   default void renderer() {
-    Seq<RendererObject> stack = tmpStack.clear();
-
-    if (!parTransformed()) {
-      RendererObject curr = this;
-      while (curr != null) {
-        stack.add(curr);
-
-        curr = curr.parent();
-      }
-
-      for (int i = stack.size - 1; i >= 0; i--) {
-        RendererObject obj = stack.get(i);
-        if (obj.parent() == null) obj.parentTrans().idt();
-        else {
-          obj.parent().getTransform(obj.parentTrans()).mulLeft(obj.parent().parentTrans());
-        }
-        obj.parTransformed(true);
-      }
-    }
-
-    material().begin();
-    if (parent() != null) material().drawObject(this, parentTrans());
-    else material().drawObject(this);
-    material().end();
+    ShaderProgram shaderProgram = material().shader;
+    material().setupData();
+    shaderProgram.drawObject(this);
   }
 
   default int meshOffset() {

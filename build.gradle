@@ -15,7 +15,8 @@ sourceSets.test.java.srcDirs = ["test"]
 
 ext {
   //the build number that this mod is made for
-  mindustryVersion = "v146"
+  mindustryVersion = 'release'
+  arcVersion = 'ed5dd285b7'
   uncVersion = "2.2.0"
   //version of SDK you will be using
   minSdkAPI = 30
@@ -37,7 +38,7 @@ dependencies {
     maven { url 'https://www.jitpack.io' }
   }
 
-  compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+  compileOnly "com.github.Anuken.Arc:arc-core:$arcVersion"
   compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
   compileOnly "com.github.EB-wilson.UniverseCore:core:$uncVersion"

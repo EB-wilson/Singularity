@@ -1,25 +1,31 @@
 package singularity.ui.dialogs;
 
 import arc.Core;
-import arc.graphics.Color;
-import arc.graphics.Gl;
-import arc.graphics.Mesh;
-import arc.graphics.Pixmap;
+import arc.graphics.*;
+import arc.graphics.g2d.TextureRegion;
 import arc.graphics.g3d.Camera3D;
-import arc.graphics.gl.FrameBuffer;
 import arc.input.KeyCode;
+import arc.math.Mathf;
+import arc.math.WindowedMean;
 import arc.math.geom.Mat3D;
 import arc.math.geom.Vec3;
 import arc.scene.event.InputEvent;
 import arc.scene.event.InputListener;
 import arc.scene.event.Touchable;
 import arc.scene.ui.Dialog;
+import arc.util.Interval;
+import arc.util.Strings;
+import arc.util.Time;
 import arc.util.Tmp;
+import mindustry.content.Blocks;
 import mindustry.content.Planets;
+import mindustry.graphics.CubemapMesh;
 import mindustry.input.Binding;
-import singularity.graphic.graphic3d.Draw3D;
-import singularity.graphic.graphic3d.StandardBatch3D;
-import singularity.graphic.graphic3d.StdShadowBatch3D;
+import singularity.graphic.SglDrawConst;
+import singularity.graphic.graphic3d.*;
+import singularity.graphic.graphic3d.shaders.BaseGeneralShaderProgram;
+import singularity.graphic.graphic3d.shaders.PlanetShaderProgram;
+import singularity.graphic.graphic3d.shaders.SolarShaderProgram;
 import singularity.ui.SglStyles;
 import universecore.util.handler.FieldHandler;
 
@@ -30,25 +36,144 @@ public class TestDialog extends Dialog {
     addCloseButton();
 
     Mesh grid = FieldHandler.getValueDefault(Planets.serpulo.mesh, "mesh");
-    Mesh planet = new Mesh(true,
-        grid.getMaxVertices(), 0,
-        StandardBatch3D.buildVertexAttributes()
-    );
-    Draw3D.meshToStandardVertices(
-        grid,
-        planet,
-        new int[]{0, 5, 4}// p, n, c
+    Mesh solGrid = FieldHandler.getValueDefault(Planets.sun.mesh, "mesh");
+    Mesh cube = new Mesh(true, 24, 36,
+        VertexAttribute.position3, VertexAttribute.texCoords, VertexAttribute.normal, VertexAttribute.color
     );
 
-    //StandardBatch3D batch3D = new StandardBatch3D(4000);
-    StdShadowBatch3D batch3D = new StdShadowBatch3D(4000, 1, Gl.triangles, 1024);
-    Camera3D camera = batch3D.getCamera();
+    float c = Color.white.toFloatBits();
+    TextureRegion region = Blocks.copperWall.region;
+    float u1 = region.u, v1 = region.v;
+    float u2 = region.u2, v2 = region.v2;
+    cube.setVertices(new float[]{
+        // 后面
+        -0.5f, -0.5f, -0.5f, u1, v1, 0.0f,  0.0f, -1.0f,  c,
+        0.5f, -0.5f, -0.5f,  u2, v1, 0.0f,  0.0f, -1.0f,  c,
+        0.5f,  0.5f, -0.5f,  u2, v2, 0.0f,  0.0f, -1.0f,  c,
+        -0.5f,  0.5f, -0.5f, u1, v2, 0.0f,  0.0f, -1.0f, c,
+        // 前面                                     c,
+        -0.5f, -0.5f,  0.5f, u1, v1,  0.0f,  0.0f,  1.0f, c,
+        0.5f, -0.5f,  0.5f,  u2, v1, 0.0f,  0.0f,  1.0f,  c,
+        0.5f,  0.5f,  0.5f,  u2, v2, 0.0f,  0.0f,  1.0f,  c,
+        -0.5f,  0.5f,  0.5f, u1, v2,  0.0f,  0.0f,  1.0f, c,
+        // 左侧                                     c,
+        -0.5f, -0.5f, -0.5f, u1, v1, -1.0f,  0.0f,  0.0f, c,
+        -0.5f,  0.5f, -0.5f, u2, v1, -1.0f,  0.0f,  0.0f, c,
+        -0.5f,  0.5f,  0.5f, u2, v2, -1.0f,  0.0f,  0.0f, c,
+        -0.5f, -0.5f,  0.5f, u1, v2, -1.0f,  0.0f,  0.0f, c,
+        // 右侧                                     c,
+        0.5f, -0.5f, -0.5f, u1, v1, 1.0f,  0.0f,  0.0f,  c,
+        0.5f,  0.5f, -0.5f, u2, v1, 1.0f,  0.0f,  0.0f,  c,
+        0.5f,  0.5f,  0.5f, u2, v2, 1.0f,  0.0f,  0.0f,  c,
+        0.5f, -0.5f,  0.5f, u1, v2, 1.0f,  0.0f,  0.0f,  c,
+        // 顶部                                     c,
+        -0.5f,  0.5f, -0.5f, u1, v1,  0.0f,  1.0f,  0.0f, c,
+        0.5f,  0.5f, -0.5f,  u2, v1, 0.0f,  1.0f,  0.0f,  c,
+        0.5f,  0.5f,  0.5f,  u2, v2, 0.0f,  1.0f,  0.0f,  c,
+        -0.5f,  0.5f,  0.5f, u1, v2,  0.0f,  1.0f,  0.0f, c,
+        // 底部                                     c,
+        -0.5f, -0.5f, -0.5f, u1, v1,  0.0f, -1.0f,  0.0f, c,
+        0.5f, -0.5f, -0.5f,  u2, v1, 0.0f, -1.0f,  0.0f,  c,
+        0.5f, -0.5f,  0.5f,  u2, v2, 0.0f, -1.0f,  0.0f,  c,
+        -0.5f, -0.5f,  0.5f, u1, v2,  0.0f, -1.0f,  0.0f, c,
+    });
+
+    cube.setIndices(new short[]{
+        // 后面
+        0, 2, 1,
+        0, 3, 2,
+        // 前面
+        4, 5, 6,
+        4, 6, 7,
+        // 左侧
+        8, 10, 9,
+        8, 11, 10,
+        // 右侧
+        12, 13, 14,
+        12, 14, 15,
+        // 顶部
+        16, 18, 17,
+        16, 19, 18,
+        // 底部
+        20, 21, 22,
+        20, 22, 23
+    });
+
+    Stage3D stage = new Stage3D();
+    stage.postAutoUpdate(1);
+    stage.skybox = new Skybox(new Cubemap("cubemaps/stars/"));
+    stage.renderSkybox = true;
+    
+    PlanetShaderProgram s = new PlanetShaderProgram();
+    BaseGeneralShaderProgram m = new BaseGeneralShaderProgram();
+    SolarShaderProgram sol = new SolarShaderProgram();
+
+    stage.add(new RendererObj(){{
+      material = new Material(s);
+      setMesh(grid);
+      bounds().set(Tmp.v31.set(-10, -10, -10), Tmp.v32.set(10, 10, 10));
+      setPosition(10, 0, 15);
+    }
+      @Override
+      public void update() {
+        rotate(0, -0.5f*Time.delta, 0);
+      }
+    });
+    stage.add(new RendererObj(){{
+      material = new Material(s);
+      setMesh(grid);
+      bounds().set(Tmp.v31.set(-10, -10, -10), Tmp.v32.set(10, 10, 10));
+
+      setPosition(20, 0, 12);
+    }
+      @Override
+      public void update() {
+        rotate(0, Time.delta, 0);
+      }
+    });
+    stage.add(new RendererObj(){{
+      material = new Material(s);
+      setMesh(grid);
+      bounds().set(Tmp.v31.set(-10, -10, -10), Tmp.v32.set(10, 10, 10));
+
+      RendererObj s = this;
+      stage.add(new RendererObj(){{
+        material = new Material(m);
+
+        material.setData(m.diffTexture, Blocks.copperWall.region.texture);
+        parentObj = s;
+
+        setMesh(cube);
+        bounds().set(Tmp.v31.set(-1, -1, -1), Tmp.v32.set(1, 1, 1));
+        setPosition(0.5f, 0, 0);
+        setScale(0.5f, 0.5f, 0.5f);
+      }});
+    }
+      @Override
+      public void update() {
+        setPosition(
+            Mathf.sinDeg(Time.globalTime*0.2f)*10, -2, Mathf.cosDeg(Time.globalTime*0.2f)*15
+        );
+        rotate(0, Time.delta, 0);
+      }
+    });
+
+    stage.add(new Light(){{
+      material = new Material(sol);
+      setMesh(solGrid);
+      bounds().set(Tmp.v31.set(-10, -10, -10), Tmp.v32.set(10, 10, 10));
+      setPosition(0, 0, 0);
+    }});
+
+    Camera3D camera = stage.camera3D;
     camera.resize(Core.graphics.getWidth(), Core.graphics.getHeight());
     camera.up.set(0, 1, 0);
     Vec3 right = new Vec3(1, 0, 0);
 
-    Vec3 camPos = new Vec3(4, 0, 10);
-    Vec3 vec = new Vec3();
+    Vec3 camPos = new Vec3(3, 0, 0);
+    camera.position.set(camPos);
+    camera.lookAt(0, 0, 0);
+    camera.update();
     update(() -> {
       Tmp.v31.set(
           Core.input.axis(Binding.move_x),
@@ -61,6 +186,10 @@ public class TestDialog extends Dialog {
       if (Core.input.keyDown(KeyCode.space)) Tmp.v31.add(0, 0.1f, 0);
       if (Core.input.keyDown(KeyCode.shiftLeft)) Tmp.v31.add(0, -0.1f, 0);
       camPos.add(Tmp.v31);
+
+      camera.position.set(camPos);
+      camera.up.set(0, 1, 0);
+      camera.update();
     });
 
     addCaptureListener(new InputListener(){
@@ -82,58 +211,19 @@ public class TestDialog extends Dialog {
       }
     });
 
-    FrameBuffer targetBuffer = new FrameBuffer(Pixmap.Format.rgba8888, Core.graphics.getWidth(), Core.graphics.getHeight(), true);
-    batch3D.setTarget(targetBuffer);
-
-    Vec3 axis = new Vec3(1, 0, 0).nor();
     cont.fill((x, y, w, h) -> {
-      camera.position.set(camPos);
-      camera.up.set(0, 1, 0);
-      camera.update();
-
-      Draw3D.begin(batch3D, true);
-      Draw3D.camera(camera);
-      Draw3D.resetLights();
-      Draw3D.nextLight(-5, 20, -0, Color.white);
-      //Draw3D.nextLight(-20, 6, -0, Color.white).color.a(0.6f);
-      //Draw3D.nextLight(0, 4, -0, Color.white).color.a(0.6f);
-
-      Draw3D.dirLightColor(Color.white, 0.2f);
-      Draw3D.lightDir(-1, -1, -1);
-
-      Draw3D.setAmbientColor(1f, 1f, 1f, 0.1f);
-
-      Draw3D.resetPreTransform();
-      Draw3D.alpha(true);
-      batch3D.draw(
-          Core.atlas.white().texture, null, null, planet
-      );
-      Draw3D.alpha(false);
-      Draw3D.rect(
-          -50, -10, -50,
-          -50, -10, 50,
-          50, -10, 50,
-          50, -10, -50,
-          Color.white
-      );
-
-      for (int i = 0; i < 10; i++) {
-        Draw3D.cube(
-            5, i*4, 5, 2, Color.white
-        );
-      }
-
-      Draw3D.end();
+      stage.renderer();
     }).touchable = Touchable.disabled;
 
-    //fill(t -> {
-    //  t.row();
-    //  t.add("").update(l -> l.setText(Strings.fixed(60/Time.delta, 2) + "fps"));
-    //  t.row();
-    //  t.top().slider(0, 10, 0.0001f, batch3D.shadowBias, f -> {
-    //    batch3D.shadowBias = f;
-    //  }).width(200f);
-    //  t.add("").update(l -> l.setText("Shadow bias: " + batch3D.shadowBias)).width(100f);
-    //});
+    cont.fill(t -> {
+      WindowedMean mean = new WindowedMean(10);
+      Interval interval = new Interval();
+      t.add("").update(l -> {
+        mean.add(Time.delta);
+        if (interval.get(10f)) {
+          l.setText(Strings.fixed(60/mean.mean(), 2) + "fps");
+        }
+      });
+    });
   }
 }

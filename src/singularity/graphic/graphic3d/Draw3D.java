@@ -301,11 +301,6 @@ public class Draw3D {
   public static LightSource getLightSource(int index){return batch.getLight(index);}
   public static void resetLights(){batch.resetLights();}
   public static void activeLights(int num){batch.activeLights(num);}
-  public static void activeLights(LightSource... lights){batch.activeLights(lights);}
-  public static LightSource nextLight(){return batch.nextLight();}
-  public static LightSource nextLight(float x, float y, float z, Color color){ return batch.nextLight(x, y, z, color);}
-  public static LightSource nextLight(Vec3 lightPos, Color color){ return batch.nextLight(lightPos, color);}
-  public static LightSource nextLight(LightSource light){ return batch.nextLight(light);}
   public void setAmbientColor(Color color, float strength){batch.setAmbientColor(color, strength);}
 
   public static void setAmbientColor(float r, float g, float b, float strength) {
