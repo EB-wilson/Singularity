@@ -33,7 +33,6 @@ import mindustry.logic.Ranged;
 import mindustry.type.ItemStack;
 import mindustry.type.Liquid;
 import mindustry.type.LiquidStack;
-import mindustry.ui.LiquidDisplay;
 import mindustry.world.blocks.ControlBlock;
 import mindustry.world.meta.*;
 import singularity.graphic.SglDrawConst;
@@ -273,7 +272,7 @@ public class SglTurret extends SglBlock{
           for (LiquidStack stack : cons.getCons()) {
             Liquid liquid = stack.liquid;
 
-            t.add(new LiquidDisplay(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(40).left().top().height(50);
+            t.add(StatValues.displayLiquid(liquid, usageBase*usageMult.get(liquid)*60, true)).padRight(40).left().top().height(50);
             t.table(Tex.underline, tb -> {
               tb.right().add(Core.bundle.format("bullet.reload", Strings.autoFixed(coolEff.get(liquid)*100, 1))).growX().right();
             }).height(50).growX().right();

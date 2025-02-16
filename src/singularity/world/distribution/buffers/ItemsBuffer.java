@@ -323,31 +323,6 @@ public class ItemsBuffer extends BaseBuffer<ItemStack, Item, ItemsBuffer.ItemPac
       }
       return null;
     }
-    
-    @Override
-    @Nullable
-    public Item takeIndex(int takeRotation){
-      for(int i = 0; i < items.length; i++){
-        int index = (i + takeRotation);
-        if(index >= items.length) index -= items.length;
-        if(get(index) > 0){
-          return content.item(index);
-        }
-      }
-      return null;
-    }
-    
-    @Override
-    public int nextIndex(int takeRotation){
-      for(int i = 1; i < items.length; i++){
-        int index = (i + takeRotation);
-        if(index >= items.length) index -= items.length;
-        if(get(index) > 0){
-          return (takeRotation + i) % items.length;
-        }
-      }
-      return takeRotation;
-    }
   
     @Override
     public void each(ItemConsumer cons){

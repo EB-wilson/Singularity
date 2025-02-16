@@ -381,7 +381,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
           consume.time(buildTime);
 
           consume.selectable = () ->
-              (!state.rules.hiddenBuildItems.isEmpty() && Structs.contains(req, i -> state.rules.hiddenBuildItems.contains(i.item))) || !unit.supportsEnv(state.rules.env)? BaseConsumers.Visibility.hidden:
+              (!unit.supportsEnv(state.rules.env))? BaseConsumers.Visibility.hidden:
               unit.unlockedNow()? BaseConsumers.Visibility.usable:
               BaseConsumers.Visibility.unusable;
 
@@ -974,7 +974,7 @@ public class SglUnitFactory extends PayloadCrafter implements DistElementBlockCo
         task.factoryIndex = factoryIndex;
         task.queueAmount = amount;
 
-        task.command = task.buildUnit.defaultCommand != null? task.buildUnit.defaultCommand: task.buildUnit.commands[0];
+        task.command = task.buildUnit.defaultCommand != null? task.buildUnit.defaultCommand: task.buildUnit.commands.first();
 
         return task;
       }

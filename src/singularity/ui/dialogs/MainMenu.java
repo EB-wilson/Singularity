@@ -65,11 +65,6 @@ public class MainMenu extends BaseDialog {
   }
   
   public void build() {
-
-    TextureRegion region =  Items.copper.fullIcon;
-    Pixmap map = region.texture.getTextureData().getPixmap();
-    map.crop((int) (region.u*region.width), (int) (region.v*region.height), region.width, region.height);
-
     cont.top().table(main -> {
       main.image(SglDrawConst.sglLaunchLogo).size(220, 110).padTop(30);
       main.row();

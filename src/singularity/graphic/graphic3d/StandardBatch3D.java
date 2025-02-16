@@ -100,7 +100,6 @@ public class StandardBatch3D {
     this.maxVertices = max*3;
     this.primitiveType = primitiveType;
 
-    setupLights();
     setupShaders(maxLights);
 
     VertexAttribute[] attributes = buildVertexAttributes();
@@ -142,12 +141,6 @@ public class StandardBatch3D {
         SglShaders.internalShaderDir.child("3d").child("standard.vert"),
         SglShaders.internalShaderDir.child("3d").child("standard.frag")
     );
-  }
-
-  protected void setupLights(){
-    for (int i = 0; i < lights.length; i++) {
-      lights[i] = new LightSource();
-    }
   }
 
   public static VertexAttribute[] buildVertexAttributes(){
@@ -287,42 +280,6 @@ public class StandardBatch3D {
   public void activeLights(int num){
     flush();
     activeLights = num;
-  }
-  public void activeLights(LightSource... lights){
-    flush();
-    for (int i = 0; i < lights.length; i++) {
-      this.lights[i].set(lights[i]);
-    }
-    activeLights = lights.length;
-  }
-  public LightSource nextLight(){
-    flush();
-    return lights[activeLights++];
-  }
-  public LightSource nextLight(Vec3 lightPos, Color color){
-    LightSource source = nextLight();
-    source.position.set(lightPos);
-    source.color.set(color);
-    source.update();
-    return source;
-  }
-  public LightSource nextLight(float x, float y, float z, Color color) {
-    LightSource source = nextLight();
-    source.position.set(x, y, z);
-    source.color.set(color);
-    source.update();
-    return source;
-  }
-  public LightSource nextLight(LightSource light){
-    LightSource source = nextLight();
-    source.set(light);
-    source.update();
-    return source;
-  }
-  public void updateLights() {
-    for (LightSource light : lights) {
-      light.update();
-    }
   }
 
   public void setAmbientColor(Color color, float strength){
@@ -881,7 +838,6 @@ public class StandardBatch3D {
   public void begin(boolean cullFace){
     if (isDrawing) throw new RuntimeException("Batch already started");
 
-    updateLights();
 
     Blending.normal.apply();
 
