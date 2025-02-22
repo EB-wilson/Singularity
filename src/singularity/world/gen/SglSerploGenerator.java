@@ -8,10 +8,7 @@ import arc.math.geom.Geometry;
 import arc.math.geom.Point2;
 import arc.math.geom.Vec2;
 import arc.math.geom.Vec3;
-import arc.struct.FloatSeq;
-import arc.struct.ObjectMap;
-import arc.struct.ObjectSet;
-import arc.struct.Seq;
+import arc.struct.*;
 import arc.util.Structs;
 import arc.util.Tmp;
 import arc.util.noise.Noise;
@@ -578,11 +575,11 @@ public class SglSerploGenerator extends PlanetGenerator{
     });
 
     float difficulty = sector.threat;
-    ints.clear();
-    ints.ensureCapacity(width * height / 4);
 
     int ruinCount = rand.random(-2, 4);
     if(ruinCount > 0){
+      IntSeq ints = new IntSeq(width*height/4);
+
       int padding = 25;
 
       //create list of potential positions
@@ -622,7 +619,7 @@ public class SglSerploGenerator extends PlanetGenerator{
         }
 
         //actually place the part
-        if(part != null && BaseGenerator.tryPlace(part, x, y, Team.derelict, (cx, cy) -> {
+        if(part != null && BaseGenerator.tryPlace(part, x, y, Team.derelict, rand, (cx, cy) -> {
           Tile other = tiles.getn(cx, cy);
           if(other.floor().hasSurface()){
             other.setOverlay(Blocks.oreScrap);

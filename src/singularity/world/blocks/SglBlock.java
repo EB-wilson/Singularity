@@ -209,7 +209,7 @@ public class SglBlock extends Block implements ConsumerBlockComp, PostAtlasGener
     stats.add(Stat.size, "@x@", size, size);
     stats.add(Stat.health, health, StatUnit.none);
     if(canBeBuilt()){
-      stats.add(Stat.buildTime, buildCost / 60, StatUnit.seconds);
+      stats.add(Stat.buildTime, buildTime / 60, StatUnit.seconds);
       stats.add(Stat.buildCost, StatValues.items(false, requirements));
     }
 
