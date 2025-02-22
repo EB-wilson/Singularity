@@ -39,7 +39,7 @@ dependencies {
   }
 
   compileOnly "com.github.Anuken.Arc:arc-core:$arcVersion"
-  compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+  compileOnly "com.github.Anuken.MindustryJitpack:core:$mindustryVersion"
 
   compileOnly "com.github.EB-wilson.UniverseCore:core:$uncVersion"
   compileOnly "com.github.EB-wilson.UniverseCore:scenes:$uncVersion"
@@ -55,7 +55,7 @@ dependencies {
   annotationProcessor "com.github.EB-wilson.JavaDynamilizer:apt:V1.8-A3"
 
   testImplementation "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-  testImplementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
+  testImplementation "com.github.Anuken.MindustryJitpack:core:$mindustryVersion"
 }
 
 tasks.register('jarAndroid') {
