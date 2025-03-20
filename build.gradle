@@ -3,7 +3,7 @@ import java.util.jar.JarOutputStream
 
 plugins {
   id 'java'
-  id 'com.github.johnrengelman.shadow' version '2.0.4'
+  id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 version 'alpha-0.10.0'
@@ -15,8 +15,8 @@ sourceSets.test.java.srcDirs = ["test"]
 
 ext {
   //the build number that this mod is made for
-  mindustryVersion = 'release'
-  arcVersion = 'ed5dd285b7'
+  mindustryVersion = 'e0846b04f0'
+  arcVersion = 'deacd9c98e'
   uncVersion = "2.2.0"
   //version of SDK you will be using
   minSdkAPI = 30
@@ -39,7 +39,7 @@ dependencies {
   }
 
   compileOnly "com.github.Anuken.Arc:arc-core:$arcVersion"
-  compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
+  compileOnly "com.github.Anuken.MindustryJitpack:core:$mindustryVersion"
 
   compileOnly "com.github.EB-wilson.UniverseCore:core:$uncVersion"
   compileOnly "com.github.EB-wilson.UniverseCore:scenes:$uncVersion"
@@ -47,7 +47,7 @@ dependencies {
   compileOnly "com.github.EB-wilson.UniverseCore:dynamilizer:$uncVersion"
   compileOnly "com.github.EB-wilson.UniverseCore:annotations:$uncVersion"
 
-  compileOnly "com.github.EB-wilson:TooManyItems:2.4.1"
+  compileOnly "com.github.EB-wilson:TooManyItems:2.5.1"
 
   implementation "com.github.EB-wilson.JavaDynamilizer:annotations:V1.8-A3"
 
@@ -55,7 +55,7 @@ dependencies {
   annotationProcessor "com.github.EB-wilson.JavaDynamilizer:apt:V1.8-A3"
 
   testImplementation "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-  testImplementation "com.github.Anuken.Mindustry:core:$mindustryVersion"
+  testImplementation "com.github.Anuken.MindustryJitpack:core:$mindustryVersion"
 }
 
 tasks.register('jarAndroid') {
